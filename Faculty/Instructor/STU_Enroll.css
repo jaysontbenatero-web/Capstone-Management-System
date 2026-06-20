@@ -1,0 +1,700 @@
+/* ================= GLOBAL ================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins', sans-serif;
+}
+
+body{
+    background:#f5f7fb;
+    overflow-x:hidden;
+    color:#2d1b45;
+}
+
+/* ================= ENROLL MODE TOGGLE ================= */
+
+.mode-card{
+    grid-column:1 / -1;
+    background:transparent;
+    padding:0;
+}
+
+.enroll-mode-toggle{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    background:rgba(255,255,255,0.75);
+    border:1px solid rgba(45, 27, 69, 0.10);
+    border-radius:18px;
+    padding:10px;
+    backdrop-filter:blur(8px);
+}
+
+.mode-btn{
+    border:none;
+    cursor:pointer;
+    border-radius:14px;
+    padding:12px 14px;
+    font-weight:700;
+    color:#2e1065;
+    background:rgba(46, 16, 101, 0.08);
+    transition:all 0.2s ease;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.mode-btn:hover{
+    background:rgba(46, 16, 101, 0.14);
+}
+
+.mode-btn.is-active{
+    background:linear-gradient(135deg, #6d28d9, #9333ea);
+    color:#fff;
+}
+
+.enroll-mode-wrap{
+    grid-column:1 / -1;
+    display:grid;
+    grid-template-columns:1fr 350px;
+    gap:18px;
+    align-items:start;
+}
+
+.enroll-mode-wrap.is-hidden{
+    display:none;
+}
+
+@media(max-width:1200px){
+    .enroll-mode-wrap{
+        grid-template-columns:1fr;
+    }
+}
+
+/* ================= BULK ENROLL ================= */
+
+.bulk-card{
+    grid-column:1 / 2;
+}
+
+.bulk-instructions{
+    background:rgba(109, 40, 217, 0.07);
+    border:1px solid rgba(109, 40, 217, 0.14);
+    padding:14px 14px;
+    border-radius:14px;
+    margin-bottom:14px;
+}
+
+.bulk-instructions p{
+    font-size:13px;
+    margin-bottom:6px;
+    color:#4b2a6d;
+}
+
+.bulk-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+}
+
+.secondary-btn{
+    border:none;
+    background:rgba(46, 16, 101, 0.10);
+    color:#2e1065;
+    padding:12px 14px;
+    border-radius:12px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all 0.2s ease;
+}
+
+.secondary-btn:hover{
+    background:rgba(46, 16, 101, 0.16);
+}
+
+.bulk-result{
+    margin-top:16px;
+    padding-top:12px;
+    border-top:1px dashed rgba(45, 27, 69, 0.20);
+}
+
+.bulk-result h3{
+    font-size:16px;
+    margin-bottom:8px;
+}
+
+.bulk-table-wrapper{
+    margin-top:10px;
+    overflow:auto;
+    border-radius:14px;
+}
+
+.view-btn{
+    background:rgba(245, 158, 11, 0.12);
+    color:#92400e;
+}
+
+.view-btn:hover{
+    background:rgba(245, 158, 11, 0.18);
+}
+
+/* ================= BACKGROUND ================= */
+
+.bg1{
+    position:fixed;
+    width:500px;
+    height:500px;
+    background:#c084fc;
+    border-radius:50%;
+    top:-200px;
+    right:-150px;
+    filter:blur(140px);
+    opacity:0.25;
+    z-index:-1;
+}
+
+.bg2{
+    position:fixed;
+    width:400px;
+    height:400px;
+    background:#fde68a;
+    border-radius:50%;
+    bottom:-180px;
+    left:-120px;
+    filter:blur(140px);
+    opacity:0.20;
+    z-index:-1;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+    width:260px;
+    height:100vh;
+    position:fixed;
+    left:0;
+    top:0;
+    background:linear-gradient(
+        180deg,
+        #2e1065,
+        #6d28d9
+    );
+    padding:28px 18px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    box-shadow:10px 0 35px rgba(0,0,0,0.08);
+
+    overflow-y:auto;
+    overflow-x:hidden;
+}
+
+.logo h1{
+    color:white;
+    font-size:32px;
+    font-weight:700;
+}
+
+.logo p{
+    color:#d9c9ff;
+    font-size:13px;
+    margin-top:4px;
+}
+
+/* ================= MENU ================= */
+
+.menu{
+    margin-top:35px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.menu-title{
+    color:#c4b5fd;
+    font-size:11px;
+    margin:18px 12px 5px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+}
+
+.menu-item{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 16px;
+    border-radius:16px;
+    cursor:pointer;
+    transition:0.3s;
+    color:white;
+    font-size:14px;
+}
+
+.menu-item:hover{
+    background:rgba(255,255,255,0.12);
+}
+
+.menu-item.active{
+    background:white;
+    color:#5b21b6;
+    font-weight:600;
+}
+
+.menu-item i{
+    font-size:16px;
+}
+
+/* ================= MAIN ================= */
+
+.main{
+    margin-left:260px;
+    padding:30px;
+}
+
+/* ================= TOPBAR ================= */
+
+.admin-portal .admin-main .topbar .welcome h1,
+.topbar .welcome h1{
+    font-size:1.65rem;
+    color:#1e1b4b;
+}
+
+.admin-portal .admin-main .topbar .welcome p,
+.topbar .welcome p{
+    margin-top:6px;
+    color:#5b5678;
+}
+
+/* ================= GRID ================= */
+
+.content-grid{
+    display:grid;
+    grid-template-columns:1fr 350px;
+    gap:24px;
+    margin-top:28px;
+}
+
+/* ================= CARD ================= */
+
+.form-card,
+.preview-card{
+    background:white;
+    border-radius:30px;
+    padding:28px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.05);
+}
+
+/* ================= TITLE ================= */
+
+.card-title{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-bottom:28px;
+}
+
+.icon{
+    width:60px;
+    height:60px;
+    border-radius:20px;
+    background:#f3e8ff;
+    color:#7c3aed;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+}
+
+.card-title h2{
+    color:#2e1065;
+    font-size:28px;
+}
+
+/* ================= INPUT ================= */
+
+.input-group{
+    margin-bottom:22px;
+}
+
+.input-group label{
+    display:block;
+    margin-bottom:10px;
+    font-weight:600;
+    color:#2e1065;
+}
+
+.input-group input,
+.input-group select{
+    width:100%;
+    padding:16px 18px;
+    border:none;
+    outline:none;
+    border-radius:18px;
+    background:#f5f3ff;
+    color:#2e1065;
+    font-size:15px;
+}
+
+/* ================= BUTTON ================= */
+
+.enroll-btn{
+    width:100%;
+    border:none;
+    padding:18px;
+    border-radius:18px;
+    background:linear-gradient(
+        135deg,
+        #7c3aed,
+        #a855f7
+    );
+    color:white;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.3s;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+
+    margin-top:10px;
+}
+
+.enroll-btn:hover{
+    transform:translateY(-2px);
+}
+
+/* ================= PREVIEW ================= */
+
+.preview-card{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.preview-box{
+    background:#faf8ff;
+    border:1px solid #ece3ff;
+    border-radius:24px;
+    padding:24px;
+}
+
+.preview-box h3{
+    color:#7c3aed;
+    font-size:13px;
+    margin-bottom:14px;
+    letter-spacing:1px;
+}
+
+.preview-box p{
+    color:#2e1065;
+    font-size:20px;
+    font-weight:600;
+    word-break:break-word;
+}
+
+.credential-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+/* ================= TABLE ================= */
+
+.table-section{
+    margin-top:28px;
+}
+
+.student-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+.student-table thead{
+    background:#f3e8ff;
+}
+
+.student-table th{
+    padding:18px;
+    text-align:left;
+    color:#5b21b6;
+    font-size:14px;
+}
+
+.student-table td{
+    padding:18px;
+    border-bottom:1px solid #eee;
+    color:#2e1065;
+    font-size:14px;
+}
+
+/* ================= ACTION ================= */
+
+.action-buttons{
+    display:flex;
+    gap:10px;
+}
+
+.view-btn,
+.edit-btn,
+.delete-btn{
+    border:none;
+    padding:10px 16px;
+    border-radius:14px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.view-btn{
+    background:#dbeafe;
+    color:#1d4ed8;
+}
+
+.view-btn:hover{
+    background:#bfdbfe;
+    transform:translateY(-1px);
+}
+
+.edit-btn{
+    background:#ede9fe;
+    color:#6d28d9;
+}
+
+.delete-btn{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+/* ================= VIEW MODAL ================= */
+
+.modal-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:18px;
+}
+
+.modal-subtitle{
+    margin-top:6px;
+    color:#6d5f85;
+    font-size:13px;
+}
+
+.close-modal-btn{
+    border:none;
+    background:rgba(46, 16, 101, 0.08);
+    color:#2e1065;
+    width:42px;
+    height:42px;
+    border-radius:14px;
+    cursor:pointer;
+    transition:0.2s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.close-modal-btn:hover{
+    background:rgba(46, 16, 101, 0.14);
+    transform:translateY(-1px);
+}
+
+.view-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:18px;
+}
+
+.view-item{
+    background:rgba(109, 40, 217, 0.06);
+    border:1px solid rgba(109, 40, 217, 0.12);
+    border-radius:16px;
+    padding:14px;
+}
+
+.view-label{
+    display:block;
+    font-size:12px;
+    letter-spacing:0.3px;
+    text-transform:uppercase;
+    color:#6d5f85;
+    margin-bottom:8px;
+    font-weight:700;
+}
+
+.view-value{
+    display:block;
+    color:#2e1065;
+    font-weight:700;
+    word-break:break-word;
+}
+
+.view-value.mono{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    letter-spacing:0.3px;
+}
+
+@media(max-width:560px){
+    .view-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:1200px){
+
+    .content-grid{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media(max-width:768px){
+
+    .sidebar{
+        width:90px;
+    }
+
+    .logo p,
+    .menu-item span,
+    .menu-title{
+        display:none;
+    }
+
+    .logo h1{
+        font-size:18px;
+    }
+
+    .main{
+        margin-left:90px;
+        padding:20px;
+    }
+
+    .topbar h1{
+        font-size:30px;
+    }
+
+    .student-table{
+        display:block;
+        overflow-x:auto;
+    }
+
+}
+
+/* ================= EDIT MODAL ================= */
+
+.modal-overlay{
+
+    position:fixed;
+    inset:0;
+
+    background:rgba(0,0,0,0.45);
+
+    display:none;
+
+    align-items:center;
+    justify-content:center;
+
+    z-index:9999;
+
+}
+
+.modal-box{
+
+    width:500px;
+    background:white;
+
+    border-radius:28px;
+
+    padding:30px;
+
+    box-shadow:
+    0 20px 50px rgba(0,0,0,0.15);
+
+    animation:modalShow 0.25s ease;
+
+}
+
+.modal-box h2{
+
+    color:#2e1065;
+    margin-bottom:25px;
+
+}
+
+.modal-actions{
+
+    display:flex;
+    justify-content:flex-end;
+    gap:14px;
+
+    margin-top:25px;
+
+}
+
+.cancel-btn,
+.save-btn{
+
+    border:none;
+
+    padding:12px 22px;
+
+    border-radius:14px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+    font-size:14px;
+
+}
+
+.cancel-btn{
+
+    background:#eee;
+    color:#333;
+
+}
+
+.save-btn{
+
+    background:linear-gradient(
+        135deg,
+        #7c3aed,
+        #a855f7
+    );
+
+    color:white;
+
+}
+
+@keyframes modalShow{
+
+    from{
+
+        opacity:0;
+        transform:scale(0.9);
+
+    }
+
+    to{
+
+        opacity:1;
+        transform:scale(1);
+
+    }
+
+}

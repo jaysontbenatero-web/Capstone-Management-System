@@ -1,0 +1,243 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation | CMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="Consultation.css">
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+<body class="admin-portal">
+    <div class="bg1"></div><div class="bg2"></div>
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo"><div class="logo-mark"><img src="../../Images/CapstoneXicon.png" alt="CMS"></div><div><h1>CMS</h1><p>Adviser Portal</p></div></div>
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" onclick="window.location.href='AdviserDash.html'"><i class="fa-solid fa-house"></i><span>Dashboard</span></div>
+                <div class="menu-title">Capstone</div>
+                <div class="menu-item" onclick="window.location.href='Capstone_Group.html'"><i class="fa-solid fa-users-gear"></i><span>Capstone Groups</span></div>
+                <div class="menu-item" onclick="window.location.href='Adviser_Request.html'"><i class="fa-solid fa-user-check"></i><span>Adviser Request</span></div>
+                <div class="menu-item" onclick="window.location.href='Documents.html'"><i class="fa-solid fa-file-lines"></i><span>Document Review</span></div>
+                <div class="menu-item active" onclick="window.location.href='Consultation.html'"><i class="fa-solid fa-comments"></i><span>Consultation</span></div>
+            </div>
+        </div>
+        <div class="sidebar-footer"><div class="menu-item logout-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></div></div>
+    </aside>
+
+    <main class="main admin-main">
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Consultation Requests</h1>
+                <p>Review student consultation requests assigned to you and schedule sessions.</p>
+            </div>
+            <div class="top-actions">
+                <button class="history-toggle-btn" id="historyToggleBtn" onclick="toggleHistory()">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    History
+                </button>
+            </div>
+        </div>
+
+        <!-- ACTIVE REQUESTS -->
+        <section class="card" id="activeSection">
+            <div class="section-head">
+                <h2><i class="fa-solid fa-inbox" style="color:#7c3aed;margin-right:8px;"></i>Active Requests</h2>
+                <p>Set the schedule below for each request. Status is determined automatically from the time you provide.</p>
+            </div>
+            <div class="consultation-grid" id="consultationGrid">
+                <div class="consultation-card"><p>Loading consultation requests...</p></div>
+            </div>
+        </section>
+
+        <!-- HISTORY -->
+        <section class="card" id="historySection" style="display:none;">
+            <div class="section-head">
+                <h2><i class="fa-solid fa-clock-rotate-left" style="color:#059669;margin-right:8px;"></i>Consultation History</h2>
+                <p>All completed consultation sessions with students.</p>
+            </div>
+            <div class="consultation-grid" id="historyGrid">
+                <div class="consultation-card"><p>Loading history...</p></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const facultyUserId = localStorage.getItem("userId");
+        let consultations = [];
+        let showingHistory = false;
+
+        function logout(){ localStorage.clear(); window.location.href = "../../Log-in.html"; }
+        function modeLabel(mode){ return mode === "Online Consultation" ? "Meeting Link" : "Location/Place"; }
+
+        /* ── Compute status from schedule fields (mirrors server logic) ── */
+        function computeStatus(item) {
+            if (!item.scheduled_date) return "Pending";
+            const endTime   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : null;
+            const startTime = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : null;
+            const dateStr   = String(item.scheduled_date).slice(0,10);
+            const now       = new Date();
+            if (endTime) {
+                const endDt   = new Date(`${dateStr}T${endTime}`);
+                const startDt = startTime ? new Date(`${dateStr}T${startTime}`) : endDt;
+                if (now >= startDt && now <= endDt) return "Ongoing";
+                if (now > endDt) return "Completed";
+            }
+            return "Scheduled";
+        }
+
+        function sClass(status){
+            const k = String(status||"").toLowerCase();
+            if(k==="scheduled")  return "b-scheduled";
+            if(k==="ongoing")    return "b-ongoing";
+            if(k==="completed")  return "b-completed";
+            if(k==="cancelled")  return "b-cancelled";
+            return "b-pending";
+        }
+
+        function toggleModeField(id){
+            const mode = document.getElementById(`mode-${id}`).value;
+            document.getElementById(`locLabel-${id}`).innerText = modeLabel(mode);
+        }
+
+        function toggleHistory(){
+            showingHistory = !showingHistory;
+            document.getElementById("activeSection").style.display  = showingHistory ? "none" : "block";
+            document.getElementById("historySection").style.display = showingHistory ? "block" : "none";
+            const btn = document.getElementById("historyToggleBtn");
+            btn.innerHTML = showingHistory
+                ? '<i class="fa-solid fa-list"></i> Active Requests'
+                : '<i class="fa-solid fa-clock-rotate-left"></i> History';
+            if(showingHistory) renderHistory();
+        }
+
+        async function updateConsultation(id){
+            const scheduledDate      = document.getElementById(`date-${id}`).value;
+            const scheduledStartTime = document.getElementById(`start-${id}`).value;
+            const scheduledEndTime   = document.getElementById(`end-${id}`).value;
+            const consultationMode   = document.getElementById(`mode-${id}`).value;
+            const locationOrLink     = document.getElementById(`loc-${id}`).value.trim();
+            const scheduleNotes      = document.getElementById(`notes-${id}`).value.trim();
+
+            if(!scheduledDate){ alert("Please set a date for the consultation."); return; }
+            if(!scheduledEndTime){ alert("Please set an end time."); return; }
+
+            const res = await fetch(`http://localhost:3005/faculty-consultations/${id}/schedule`, {
+                method:"PUT",
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify({
+                    facultyUserId, scheduledDate, scheduledStartTime, scheduledEndTime,
+                    consultationMode, locationOrLink, scheduleNotes
+                })
+            });
+            const data = await res.json();
+            alert(data.message || "Update processed.");
+            if(data.success){
+                loadConsultations();
+                if(window.PortalNotifications){ window.PortalNotifications.refresh(false); }
+            }
+        }
+
+        function buildCard(item, isHistory){
+            const status = computeStatus(item);
+            const dateStr = item.scheduled_date ? String(item.scheduled_date).slice(0,10) : "";
+            const startStr = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : "";
+            const endStr   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : "";
+
+            if(isHistory){
+                return `
+                    <article class="consultation-card history-card">
+                        <span class="badge b-completed"><i class="fa-solid fa-circle-check"></i> Completed</span>
+                        <h3>${item.consultation_code}</h3>
+                        <p><strong>Student:</strong> ${item.student_name} (${item.student_user_id})</p>
+                        <p><strong>Type:</strong> ${item.consultation_type}</p>
+                        <p><strong>Topic:</strong> ${item.topic || "N/A"}</p>
+                        <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
+                        <div class="sched-summary">
+                            <i class="fa-solid fa-calendar-check"></i>
+                            <span>${dateStr} &nbsp;${startStr}${endStr ? " – " + endStr : ""}</span>
+                            <span class="mode-pill">${item.consultation_mode || "N/A"}</span>
+                        </div>
+                        ${item.location_or_link ? `<p><strong>Location/Link:</strong> ${item.location_or_link}</p>` : ""}
+                        ${item.schedule_notes ? `<p><strong>Notes:</strong> ${item.schedule_notes}</p>` : ""}
+                    </article>
+                `;
+            }
+
+            return `
+                <article class="consultation-card">
+                    <div class="card-status-row">
+                        <span class="badge ${sClass(status)}">${status}</span>
+                        <span class="consult-code">${item.consultation_code}</span>
+                    </div>
+                    <p><strong>Student:</strong> ${item.student_name} (${item.student_user_id})</p>
+                    <p><strong>Type:</strong> ${item.consultation_type}</p>
+                    <p><strong>Topic:</strong> ${item.topic || "N/A"}</p>
+                    <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
+                    <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+
+                    <div class="schedule-form">
+                        <div class="sched-form-title">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                            Set Schedule
+                            <span class="auto-status-note">Status is set automatically from date &amp; time</span>
+                        </div>
+                        <div class="form-grid">
+                            <div class="input-group"><label>Date</label><input type="date" id="date-${item.id}" value="${dateStr}"></div>
+                            <div class="input-group"><label>Start Time</label><input type="time" id="start-${item.id}" value="${startStr}"></div>
+                            <div class="input-group"><label>End Time</label><input type="time" id="end-${item.id}" value="${endStr}"></div>
+                            <div class="input-group"><label>Mode</label>
+                                <select id="mode-${item.id}" onchange="toggleModeField(${item.id})">
+                                    <option value="Personal Consultation" ${item.consultation_mode==="Personal Consultation"?"selected":""}>Personal Consultation</option>
+                                    <option value="Online Consultation" ${item.consultation_mode==="Online Consultation"?"selected":""}>Online Consultation</option>
+                                </select>
+                            </div>
+                            <div class="input-group" style="grid-column:span 2">
+                                <label id="locLabel-${item.id}">${modeLabel(item.consultation_mode)}</label>
+                                <input type="text" id="loc-${item.id}" value="${item.location_or_link || ""}">
+                            </div>
+                        </div>
+                        <div class="input-group"><label>Notes</label><textarea id="notes-${item.id}">${item.schedule_notes || ""}</textarea></div>
+                        <button class="save-btn" onclick="updateConsultation(${item.id})">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Schedule
+                        </button>
+                    </div>
+                </article>
+            `;
+        }
+
+        function renderConsultations(){
+            const grid = document.getElementById("consultationGrid");
+            const active = consultations.filter(c => computeStatus(c) !== "Completed");
+            if(!active.length){
+                grid.innerHTML = `<div class="consultation-card"><p>No active consultation requests.</p></div>`;
+                return;
+            }
+            grid.innerHTML = active.map(item => buildCard(item, false)).join("");
+        }
+
+        function renderHistory(){
+            const grid = document.getElementById("historyGrid");
+            const done = consultations.filter(c => computeStatus(c) === "Completed");
+            if(!done.length){
+                grid.innerHTML = `<div class="consultation-card"><p>No completed consultations yet.</p></div>`;
+                return;
+            }
+            grid.innerHTML = done.map(item => buildCard(item, true)).join("");
+        }
+
+        async function loadConsultations(){
+            const res = await fetch(`http://localhost:3005/faculty-consultations?facultyUserId=${encodeURIComponent(facultyUserId)}&assignedRole=Adviser`);
+            const data = await res.json();
+            consultations = data.success ? (data.consultations || []) : [];
+            renderConsultations();
+            if(showingHistory) renderHistory();
+        }
+
+        loadConsultations();
+    </script>
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+</html>

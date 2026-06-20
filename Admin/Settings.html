@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Admin Settings | CMS
+    </title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="../Images/CapstoneXicon.png"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+    <link
+        rel="stylesheet"
+        href="Settings.css"
+    >
+
+    <link rel="stylesheet" href="AdminTheme.css">
+
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        if(userRole !== "admin"){
+
+            alert("You do not have permission to access the Admin Portal.");
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+        <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Admin Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='AdminDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Management</div>
+                <div class="menu-item" id="nav-faculty" onclick="window.location.href='FAC_Enroll.html'">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Register Faculty</span>
+                </div>
+
+                <div class="menu-item" id="nav-student" onclick="window.location.href='STU_Enroll.html'">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Register Student</span>
+                </div>
+
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Repository</span>
+                </div>
+
+                <div class="menu-item" id="nav-document-review" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>Document Review</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" id="nav-announcements" onclick="window.location.href='Announcements.html'">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </div>
+
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">System</div>
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div class="menu-item active" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Settings</h1>
+
+                <p>
+                    Manage your admin profile, role access, profile picture, and password.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <!-- PROFILE SUMMARY -->
+        <section class="profile-summary-card">
+
+            <div class="profile-left">
+
+                <div
+                    class="profile-avatar"
+                    id="profileAvatar"
+                >
+                    A
+                </div>
+
+                <div>
+                    <h2 id="summaryName">
+                        Loading...
+                    </h2>
+
+                    <p id="summaryDetails">
+                        Admin information is loading.
+                    </p>
+
+                    <span class="profile-badge">
+                        Admin Account
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="profile-upload-box">
+
+                <input
+                    type="file"
+                    id="profileImageInput"
+                    accept=".jpg,.jpeg,.png,.webp"
+                    hidden
+                    onchange="previewProfileImage()"
+                >
+
+                <button
+                    class="upload-image-btn"
+                    onclick="document.getElementById('profileImageInput').click()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-image"></i>
+                    Choose Photo
+                </button>
+
+                <button
+                    class="save-image-btn"
+                    onclick="uploadProfileImage()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-upload"></i>
+                    Save Photo
+                </button>
+
+            </div>
+
+        </section>
+
+        <div class="settings-grid">
+
+            <!-- ADMIN INFO -->
+            <section class="settings-card">
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>
+                            Admin Information
+                        </h2>
+
+                        <p>
+                            Update your admin profile details.
+                        </p>
+                    </div>
+
+                    <div class="section-icon">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+
+                </div>
+
+                <div class="form-grid">
+
+                    <div class="input-group">
+                        <label>
+                            Admin ID
+                        </label>
+
+                        <input
+                            type="text"
+                            id="adminId"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Full Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="fullname"
+                            placeholder="Enter full name"
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Position
+                        </label>
+
+                        <select id="position" onchange="confirmPositionChange(this)">
+                            <option value="">
+                                Select Position
+                            </option>
+
+                            <option value="Admin">
+                                Admin
+                            </option>
+
+                            <option value="Dean">
+                                Dean
+                            </option>
+
+                            <option value="Program Chairperson IS">
+                                Program Chairperson IS
+                            </option>
+
+                            <option value="Program Chairperson IT">
+                                Program Chairperson IT
+                            </option>
+
+                            <option value="None / Terminated">
+                                None / Terminated
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Program / Office
+                        </label>
+
+                        <select id="program">
+                            <option value="">
+                                Select Program / Office
+                            </option>
+
+                            <option value="BSIS">
+                                BSIS
+                            </option>
+
+                            <option value="BSIT">
+                                BSIT
+                            </option>
+
+                            <option value="Both">
+                                Both
+                            </option>
+
+                            <option value="Dean Office">
+                                Dean Office
+                            </option>
+
+                            <option value="N/A">
+                                N/A
+                            </option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="note-box">
+                    <i class="fa-solid fa-circle-info"></i>
+
+                    <p>
+                        Admin is the highest account type. You may still enable or disable your academic role access below depending on your assigned responsibilities.
+                    </p>
+                </div>
+
+                <div class="card-actions">
+
+                    <button
+                        class="save-btn"
+                        onclick="updateAdminProfile()"
+                    >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Profile Changes
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- SIDE COLUMN -->
+            <aside class="side-column">
+
+                <section class="settings-card small-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                Role Access
+                            </h2>
+
+                            <p>
+                                Enable or disable your academic role portals.
+                            </p>
+                        </div>
+
+                        <div class="section-icon">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+
+                    </div>
+
+                    <div class="access-list">
+
+                        <div class="access-row">
+
+                            <div>
+                                <h3>
+                                    Adviser Access
+                                </h3>
+
+                                <p>
+                                    Allows access to Adviser portal and adviser functions.
+                                </p>
+                            </div>
+
+                            <label class="switch">
+                                <input
+                                    type="checkbox"
+                                    id="adviserToggle"
+                                    onchange="confirmToggleAccess('adviser')"
+                                >
+                                <span class="slider"></span>
+                            </label>
+
+                        </div>
+
+                        <div class="access-row">
+
+                            <div>
+                                <h3>
+                                    Panelist Access
+                                </h3>
+
+                                <p>
+                                    Allows access to Panelist portal and panelist functions.
+                                </p>
+                            </div>
+
+                            <label class="switch">
+                                <input
+                                    type="checkbox"
+                                    id="panelistToggle"
+                                    onchange="confirmToggleAccess('panelist')"
+                                >
+                                <span class="slider"></span>
+                            </label>
+
+                        </div>
+
+                        <div class="access-row">
+
+                            <div>
+                                <h3>
+                                    Instructor Access
+                                </h3>
+
+                                <p>
+                                    Allows access to Instructor portal and instructor functions.
+                                </p>
+                            </div>
+
+                            <label class="switch">
+                                <input
+                                    type="checkbox"
+                                    id="instructorToggle"
+                                    onchange="confirmToggleAccess('instructor')"
+                                >
+                                <span class="slider"></span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section class="settings-card small-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                E-Signature
+                            </h2>
+
+                            <p>
+                                Upload your digital signature for document signing.
+                            </p>
+                        </div>
+
+                        <div class="section-icon">
+                            <i class="fa-solid fa-signature"></i>
+                        </div>
+
+                    </div>
+
+                    <div class="signature-upload-container">
+                        <div 
+                            class="signature-preview-area" 
+                            id="signaturePreviewArea"
+                            onclick="triggerSignatureUpload()"
+                            ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event)"
+                        >
+                            <div class="signature-placeholder" id="signaturePlaceholder">
+                                <i class="fa-solid fa-file-signature"></i>
+                                <p>No signature uploaded</p>
+                                <span>Drag & drop or click here to upload</span>
+                            </div>
+                            <img id="signatureImage" src="" alt="Signature Preview" style="display: none;">
+                        </div>
+                        <input 
+                            type="file" 
+                            id="signatureFileInput" 
+                            accept=".png,.jpg,.jpeg,.webp" 
+                            hidden
+                            onchange="handleSignatureSelect(event)"
+                        >
+                        <div class="signature-actions">
+                            <button 
+                                type="button" 
+                                class="sig-btn secondary-btn" 
+                                onclick="triggerSignatureUpload()"
+                            >
+                                <i class="fa-solid fa-file-image"></i> Choose File
+                            </button>
+                            <button 
+                                type="button" 
+                                class="sig-btn primary-btn" 
+                                onclick="saveSignatureUI()"
+                            >
+                                <i class="fa-solid fa-floppy-disk"></i> Save
+                            </button>
+                            <button 
+                                type="button" 
+                                class="sig-btn clear-btn" 
+                                onclick="clearSignaturePreview()" 
+                                id="clearSigBtn" 
+                                style="display: none;"
+                            >
+                                <i class="fa-solid fa-trash-can"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+
+                </section>
+
+                <section class="settings-card small-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                Change Password
+                            </h2>
+
+                            <p>
+                                Keep your admin account secure.
+                            </p>
+                        </div>
+
+                        <div class="section-icon">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Current Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="currentPassword"
+                            placeholder="Enter current password"
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            New Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="newPassword"
+                            placeholder="Enter new password"
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Confirm New Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            placeholder="Confirm new password"
+                        >
+                    </div>
+
+                    <button
+                        class="password-btn"
+                        onclick="changePassword()"
+                    >
+                        <i class="fa-solid fa-key"></i>
+                        Change Password
+                    </button>
+
+                </section>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        const loggedInAdminId =
+            localStorage.getItem("userId");
+
+        let selectedProfileFile = null;
+        let isLoadingToggles = false;
+        let previousPosition = "";
+
+        function confirmPositionChange(selectEl){
+
+            const newPosition = selectEl.value;
+
+            if(!newPosition){
+                selectEl.value = previousPosition;
+                return;
+            }
+
+            if(newPosition === previousPosition){
+                return;
+            }
+
+            const confirmed = confirm(
+                `Are you sure you want to change your position to: "${newPosition}"?`
+            );
+
+            if(!confirmed){
+                selectEl.value = previousPosition;
+            }
+
+        }
+
+        async function loadAdminSettings(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/admin-settings/${loggedInAdminId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    alert(
+                        data.message || "Failed to load settings."
+                    );
+
+                    return;
+
+                }
+
+                const admin =
+                    data.admin;
+
+                document.getElementById("adminId").value =
+                    admin.user_id || "";
+
+                document.getElementById("fullname").value =
+                    admin.fullname || "";
+
+                document.getElementById("position").value =
+                    admin.position || "";
+
+                previousPosition =
+                    admin.position || "";
+
+                document.getElementById("program").value =
+                    admin.program || "";
+
+                document.getElementById("summaryName").innerText =
+                    admin.fullname || "Admin";
+
+                document.getElementById("summaryDetails").innerText =
+                    `${admin.user_id || "No ID"} • ${admin.position || "No Position"} • ${admin.program || "No Program"}`;
+
+                isLoadingToggles =
+                    true;
+
+                document.getElementById("adviserToggle").checked =
+                    Number(admin.adviser_access) === 1;
+
+                document.getElementById("panelistToggle").checked =
+                    Number(admin.panelist_access) === 1;
+
+                document.getElementById("instructorToggle").checked =
+                    Number(admin.instructor_access) === 1;
+
+                isLoadingToggles =
+                    false;
+
+                localStorage.setItem(
+                    "adviser_access",
+                    String(admin.adviser_access)
+                );
+
+                localStorage.setItem(
+                    "panelist_access",
+                    String(admin.panelist_access)
+                );
+
+                localStorage.setItem(
+                    "instructor_access",
+                    String(admin.instructor_access)
+                );
+
+                const avatar =
+                    document.getElementById("profileAvatar");
+
+                if(admin.profile_image){
+
+                    avatar.innerHTML =
+                        `<img src="http://localhost:3005${admin.profile_image}" alt="Profile Photo">`;
+
+                }else{
+
+                    avatar.innerText =
+                        admin.fullname
+                        ? admin.fullname.charAt(0).toUpperCase()
+                        : "A";
+
+                }
+
+                if(admin.digital_signature){
+
+                    applySavedSignatureImage(admin.digital_signature);
+
+                }else{
+
+                    clearSignaturePreview();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        async function updateAdminProfile(){
+
+            const fullname =
+                document.getElementById("fullname").value.trim();
+
+            const position =
+                document.getElementById("position").value;
+
+            const program =
+                document.getElementById("program").value;
+
+            if(
+                !fullname ||
+                !position ||
+                !program
+            ){
+
+                alert("Please complete all admin information fields.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/update-admin-profile",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                adminUserId:loggedInAdminId,
+                                fullname,
+                                position,
+                                program
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Profile update processed."
+                );
+
+                if(data.success){
+
+                    localStorage.setItem("fullname", fullname);
+
+                    loadAdminSettings();
+
+                } else {
+                    document.getElementById("position").value = previousPosition;
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot update profile.");
+                document.getElementById("position").value = previousPosition;
+
+            }
+
+        }
+
+        function previewProfileImage(){
+
+            const input =
+                document.getElementById("profileImageInput");
+
+            if(!input.files[0]){
+                return;
+            }
+
+            selectedProfileFile =
+                input.files[0];
+
+            const allowedExtensions =
+                ["jpg", "jpeg", "png", "webp"];
+
+            const fileExtension =
+                selectedProfileFile.name
+                .split(".")
+                .pop()
+                .toLowerCase();
+
+            if(!allowedExtensions.includes(fileExtension)){
+
+                alert("Only JPG, PNG, and WEBP images are allowed.");
+
+                input.value =
+                    "";
+
+                selectedProfileFile =
+                    null;
+
+                return;
+
+            }
+
+            const reader =
+                new FileReader();
+
+            reader.onload = function(event){
+
+                document.getElementById("profileAvatar").innerHTML =
+                    `<img src="${event.target.result}" alt="Preview">`;
+
+            };
+
+            reader.readAsDataURL(selectedProfileFile);
+
+        }
+
+        async function uploadProfileImage(){
+
+            if(!selectedProfileFile){
+
+                alert("Please choose a profile image first.");
+
+                return;
+
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append("adminUserId", loggedInAdminId);
+            formData.append("profileImage", selectedProfileFile);
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/update-admin-profile-image",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Profile image update processed."
+                );
+
+                if(data.success){
+
+                    selectedProfileFile =
+                        null;
+
+                    document.getElementById("profileImageInput").value =
+                        "";
+
+                    loadAdminSettings();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot upload profile image.");
+
+            }
+
+        }
+
+        async function confirmToggleAccess(accessType){
+
+            if(isLoadingToggles){
+                return;
+            }
+
+            const toggleMap = {
+                adviser:"adviserToggle",
+                panelist:"panelistToggle",
+                instructor:"instructorToggle"
+            };
+
+            const labelMap = {
+                adviser:"Adviser",
+                panelist:"Panelist",
+                instructor:"Instructor"
+            };
+
+            const input =
+                document.getElementById(toggleMap[accessType]);
+
+            const newValue =
+                input.checked ? 1 : 0;
+
+            const actionText =
+                newValue === 1 ? "enable" : "disable";
+
+            const warning =
+                newValue === 1
+                ? `Enable ${labelMap[accessType]} access for this admin account?`
+                : `Disable ${labelMap[accessType]} access? You will no longer be able to open the ${labelMap[accessType]} portal unless you enable it again.`;
+
+            const confirmed =
+                confirm(warning);
+
+            if(!confirmed){
+
+                input.checked =
+                    !input.checked;
+
+                return;
+
+            }
+
+            await updateRoleAccess(
+                accessType,
+                newValue
+            );
+
+        }
+
+        async function updateRoleAccess(accessType, accessValue){
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/toggle-admin-role-access",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                adminUserId:loggedInAdminId,
+                                accessType,
+                                accessValue
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Role access update processed."
+                );
+
+                if(data.success){
+
+                    if(accessType === "adviser"){
+
+                        localStorage.setItem(
+                            "adviser_access",
+                            String(accessValue)
+                        );
+
+                    }else if(accessType === "panelist"){
+
+                        localStorage.setItem(
+                            "panelist_access",
+                            String(accessValue)
+                        );
+
+                    }else if(accessType === "instructor"){
+
+                        localStorage.setItem(
+                            "instructor_access",
+                            String(accessValue)
+                        );
+
+                    }
+
+                    loadAdminSettings();
+
+                }else{
+
+                    loadAdminSettings();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot update role access.");
+
+                loadAdminSettings();
+
+            }
+
+        }
+
+        async function changePassword(){
+
+            const currentPassword =
+                document.getElementById("currentPassword").value;
+
+            const newPassword =
+                document.getElementById("newPassword").value;
+
+            const confirmPassword =
+                document.getElementById("confirmPassword").value;
+
+            if(
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword
+            ){
+
+                alert("Please complete all password fields.");
+
+                return;
+
+            }
+
+            if(newPassword !== confirmPassword){
+
+                alert("New password and confirm password do not match.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/change-admin-password",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                adminUserId:loggedInAdminId,
+                                currentPassword,
+                                newPassword
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Password change processed."
+                );
+
+                if(data.success){
+
+                    document.getElementById("currentPassword").value =
+                        "";
+
+                    document.getElementById("newPassword").value =
+                        "";
+
+                    document.getElementById("confirmPassword").value =
+                        "";
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot change password.");
+
+            }
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        let selectedSignatureFile = null;
+
+        function triggerSignatureUpload(){
+            document.getElementById('signatureFileInput').click();
+        }
+
+        function handleSignatureSelect(event){
+            const file = event.target.files[0];
+            if(file){
+                previewSignature(file);
+            }
+        }
+
+        function previewSignature(file){
+            const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
+            const fileExtension = file.name.split(".").pop().toLowerCase();
+
+            if(!allowedExtensions.includes(fileExtension)){
+                alert("Only JPG, PNG, and WEBP images are allowed.");
+                return;
+            }
+
+            selectedSignatureFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e){
+                document.getElementById('signatureImage').src = e.target.result;
+                document.getElementById('signatureImage').style.display = 'block';
+                document.getElementById('signaturePlaceholder').style.display = 'none';
+                document.getElementById('clearSigBtn').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleDragOver(event){
+            event.preventDefault();
+            document.getElementById('signaturePreviewArea').classList.add('dragover');
+        }
+
+        function handleDragLeave(event){
+            event.preventDefault();
+            document.getElementById('signaturePreviewArea').classList.remove('dragover');
+        }
+
+        function handleDrop(event){
+            event.preventDefault();
+            document.getElementById('signaturePreviewArea').classList.remove('dragover');
+            const file = event.dataTransfer.files[0];
+            if(file){
+                previewSignature(file);
+            }
+        }
+
+        function clearSignaturePreview(){
+            selectedSignatureFile = null;
+            document.getElementById('signatureFileInput').value = '';
+            document.getElementById('signatureImage').src = '';
+            document.getElementById('signatureImage').style.display = 'none';
+            document.getElementById('signaturePlaceholder').style.display = 'flex';
+            document.getElementById('clearSigBtn').style.display = 'none';
+        }
+
+        function applySavedSignatureImage(path){
+
+            selectedSignatureFile = null;
+            document.getElementById("signatureFileInput").value = "";
+
+            document.getElementById("signatureImage").src =
+                `http://localhost:3005${path}`;
+
+            document.getElementById("signatureImage").style.display =
+                "block";
+
+            document.getElementById("signaturePlaceholder").style.display =
+                "none";
+
+            document.getElementById("clearSigBtn").style.display =
+                "flex";
+
+        }
+
+        async function saveSignatureUI(){
+
+            if(!selectedSignatureFile){
+
+                alert("Please select or drag a signature image first.");
+
+                return;
+
+            }
+
+            if(!loggedInAdminId){
+
+                alert("You are not logged in. Please log in again.");
+
+                return;
+
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append("adminUserId", loggedInAdminId);
+            formData.append("signatureImage", selectedSignatureFile);
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/update-user-digital-signature",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+                const rawText =
+                    await response.text();
+
+                let data;
+
+                try{
+
+                    data = JSON.parse(rawText);
+
+                }catch(parseError){
+
+                    console.error(parseError, rawText);
+
+                    alert(
+                        "The server did not respond correctly. Stop Node, run \"node Server.js\" in the project folder, then try again."
+                    );
+
+                    return;
+
+                }
+
+                if(!data.success){
+
+                    alert(
+                        data.message || "Failed to save digital signature."
+                    );
+
+                    return;
+
+                }
+
+                alert(data.message);
+
+                selectedSignatureFile = null;
+                document.getElementById("signatureFileInput").value = "";
+                loadAdminSettings();
+
+            }catch(error){
+
+                console.error(error);
+
+                alert(
+                    "Network error while saving signature. Make sure the server is running on port 3005."
+                );
+
+            }
+
+        }
+
+        loadAdminSettings();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

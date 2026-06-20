@@ -1,0 +1,2986 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Consultation | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Documents.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="student-portal.css">
+</head>
+
+<body class="admin-portal">
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='StudentDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-titles"
+                    onclick="window.location.href='Capstone_Titles.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-members"
+                    onclick="window.location.href='Members.html'"
+                >
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-adviser"
+                    onclick="window.location.href='Req_Adviser.html'"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+
+                <div
+                    class="menu-item active"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-messages"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">
+                    Updates
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-notifications"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-settings"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Consultation</h1>
+
+                <p>
+                    Upload, manage, and send consultation and defense documents to faculty or admin users.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <!-- GROUP INFO -->
+        <section class="group-card">
+
+            <div class="group-info">
+
+                <div class="group-icon">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+
+                <div>
+                    <h2 id="groupName">
+                        Loading group...
+                    </h2>
+
+                    <p id="groupDetails">
+                        Please wait while your group information is loaded.
+                    </p>
+                </div>
+
+            </div>
+
+            <span
+                class="group-program"
+                id="groupProgramBadge"
+            >
+                N/A
+            </span>
+
+        </section>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalDocuments">
+                        0
+                    </h2>
+
+                    <p>
+                        Total Uploads
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+
+                <div>
+                    <h2 id="notSentDocuments">
+                        0
+                    </h2>
+
+                    <p>
+                        Not Sent
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </div>
+
+                <div>
+                    <h2 id="sentDocuments">
+                        0
+                    </h2>
+
+                    <p>
+                        Sent Documents
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CONSULTATION SECTIONS -->
+        <section class="consultation-hub">
+
+            <div class="hub-header">
+                <div>
+                    <h2>
+                        Upload by category
+                    </h2>
+
+                    <p>
+                        Choose a required document below and upload the file. “Other” lets you add a custom file type label.
+                    </p>
+                </div>
+
+                <div class="hub-badges">
+                    <span class="hub-badge">
+                        <i class="fa-solid fa-comments"></i>
+                        Consultation
+                    </span>
+                    <span class="hub-badge">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                        Presentation
+                    </span>
+                    <span class="hub-badge">
+                        <i class="fa-solid fa-shield"></i>
+                        Defense
+                    </span>
+                </div>
+            </div>
+
+            <div
+                class="phase-grid"
+                id="consultationPhaseGrid"
+            >
+                <div class="empty-card">
+                    Loading consultation requirements...
+                </div>
+            </div>
+
+        </section>
+
+        <!-- UPLOAD FORM -->
+        <section class="upload-card">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>
+                        General Consultation Upload
+                    </h2>
+
+                    <p>
+                        Use this for general consultations (drafts, notes, extra files). You can still pick “Other” here too.
+                    </p>
+                </div>
+
+                <div class="header-icon">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+
+            </div>
+
+            <div class="upload-form">
+
+                <div class="input-group">
+                    <label>
+                        Document Type
+                    </label>
+
+                    <select
+                        id="documentType"
+                        onchange="setDefaultDocumentTitle()"
+                    >
+                        <option value="">
+                            Select document type
+                        </option>
+
+                        <option value="Proposed Title">
+                            Proposed Title
+                        </option>
+
+                        <option value="Environmental Scanning">
+                            Environmental Scanning
+                        </option>
+
+                        <option value="Chapter 1">
+                            Chapter 1
+                        </option>
+
+                        <option value="Chapter 2">
+                            Chapter 2
+                        </option>
+
+                        <option value="Chapter 3">
+                            Chapter 3
+                        </option>
+
+                        <option value="Chapter 1-3">
+                            Chapter 1-3
+                        </option>
+
+                        <option value="Adviser Signing">
+                            Adviser Signing
+                        </option>
+
+                        <option value="Panel Signing">
+                            Panel Signing
+                        </option>
+
+                        <option value="Final Manuscript">
+                            Final Manuscript
+                        </option>
+
+                        <option value="Final Documents">
+                            Final Documents
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Document Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="documentTitle"
+                        placeholder="Document title will appear here"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        File Upload
+                    </label>
+
+                    <input
+                        type="file"
+                        id="documentFile"
+                        accept=".pdf,.doc,.docx"
+                    >
+                </div>
+
+                <button
+                    class="upload-btn"
+                    onclick="uploadStudentDocument()"
+                >
+                    <i class="fa-solid fa-upload"></i>
+                    Upload Document
+                </button>
+
+            </div>
+
+            <div class="note-box">
+                <i class="fa-solid fa-circle-info"></i>
+
+                <p>
+                    Only your assigned adviser's approval locks a requirement file. Reviews from instructors or other faculty do not lock the file — you can still upload, edit, or send again.
+                </p>
+            </div>
+
+        </section>
+
+        <!-- DOCUMENTS LIST -->
+        <section class="documents-card">
+
+            <div class="table-header">
+
+                <div>
+                    <h2>
+                        General Consultation Files
+                    </h2>
+
+                    <p>
+                        Files uploaded through General Consultation Upload only. Category requirements are managed above per slot.
+                    </p>
+                </div>
+
+                <div class="toolbar">
+
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+
+                        <input
+                            type="text"
+                            id="searchDocument"
+                            placeholder="Search document..."
+                            onkeyup="filterDocuments()"
+                        >
+                    </div>
+
+                    <select
+                        id="statusFilter"
+                        onchange="filterDocuments()"
+                    >
+                        <option value="All">
+                            All Status
+                        </option>
+
+                        <option value="Not Sent">
+                            Not Sent
+                        </option>
+
+                        <option value="Sent">
+                            Sent
+                        </option>
+                    </select>
+
+                </div>
+
+            </div>
+
+            <div
+                class="document-grid"
+                id="documentGrid"
+            >
+                <div class="empty-card">
+                    Loading documents...
+                </div>
+            </div>
+
+        </section>
+
+        <!-- DOCUMENTS RECEIVED FROM FACULTY -->
+        <section class="received-docs-card">
+
+            <div class="table-header">
+
+                <div>
+                    <h2>
+                        <i class="fa-solid fa-inbox" style="color:#7c3aed;margin-right:10px;font-size:22px;"></i>
+                        Documents Received from Faculty
+                    </h2>
+
+                    <p>
+                        Documents sent to you by your adviser or instructor. Review, download, and keep track of files shared with you.
+                    </p>
+                </div>
+
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input
+                            type="text"
+                            id="searchReceivedDoc"
+                            placeholder="Search received..."
+                            onkeyup="filterReceivedDocuments()"
+                        >
+                    </div>
+                </div>
+
+            </div>
+
+            <div
+                class="received-doc-grid"
+                id="receivedDocGrid"
+            >
+                <div class="empty-card">
+                    Loading received documents...
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- OTHER FILE TYPE MODAL -->
+    <div class="modal-overlay" id="otherUploadModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h2>
+                        Add “Other” document
+                    </h2>
+
+                    <p>
+                        Enter the file type label, optional title, then choose a file to upload.
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    type="button"
+                    onclick="closeOtherUploadModal()"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Category
+                </label>
+                <input type="text" id="otherCategory" readonly>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    File type label
+                </label>
+                <input
+                    type="text"
+                    id="otherTypeLabel"
+                    placeholder="e.g., Adviser notes, Forms, Appendix, etc."
+                >
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Document title (optional)
+                </label>
+                <input
+                    type="text"
+                    id="otherTitle"
+                    placeholder="Leave blank to auto-generate"
+                >
+            </div>
+
+            <div class="input-group">
+                <label>
+                    File upload
+                </label>
+                <input
+                    type="file"
+                    id="otherFile"
+                    accept=".pdf,.doc,.docx"
+                >
+            </div>
+
+            <div class="modal-actions">
+                <button
+                    class="cancel-btn"
+                    type="button"
+                    onclick="closeOtherUploadModal()"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    type="button"
+                    onclick="uploadOtherDocument()"
+                >
+                    <i class="fa-solid fa-upload"></i>
+                    Upload
+                </button>
+            </div>
+            </div>
+    </div>
+
+    <!-- HIDDEN QUICK UPLOAD INPUT (for template rows) -->
+    <input
+        type="file"
+        id="templateUploadFile"
+        accept=".pdf,.doc,.docx"
+        style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;"
+    >
+
+    <!-- SEND DOCUMENT MODAL -->
+    <div
+        class="modal-overlay"
+        id="sendModal"
+    >
+
+        <div class="modal-box send-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2>
+                        Send Document
+                    </h2>
+
+                    <p>
+                        Send to your assigned adviser and instructor. Only adviser approval locks the file for defense panel review.
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeSendModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="attached-document-box">
+
+                <h3 id="sendDocumentTitle">
+                    Document Title
+                </h3>
+
+                <p id="sendDocumentDetails">
+                    Attached document details will appear here.
+                </p>
+
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Search Recipient
+                </label>
+
+                <input
+                    type="text"
+                    id="recipientSearch"
+                    placeholder="Search faculty or admin..."
+                    onkeyup="filterRecipients()"
+                >
+            </div>
+
+            <div
+                class="recipient-list"
+                id="recipientList"
+            >
+                Loading recipients...
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Message / Comment
+                </label>
+
+                <textarea
+                    id="submissionMessage"
+                    placeholder="Add a message or instruction for the selected recipients..."
+                ></textarea>
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeSendModal()"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="sendStudentDocument()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Send Document
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="student-portal.js"></script>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let studentDocuments = [];
+        let titleProposals = [];
+        let defenseVerdicts = []; // Latest verdict per defense_type from the server
+        let recipients = [];
+        let selectedDocumentId = null;
+        let pinnedRecipients = {
+            adviserUserId:null,
+            instructorUserId:null
+        };
+
+        const defaultTitles = {
+            "Proposed Title":"Proposed Title Document",
+            "Environmental Scanning":"Environmental Scanning Document",
+            "Chapter 1":"Chapter 1 Manuscript",
+            "Chapter 2":"Chapter 2 Manuscript",
+            "Chapter 3":"Chapter 3 Manuscript",
+            "Chapter 1-3":"Chapter 1 to Chapter 3 Manuscript",
+            "Adviser Signing":"Adviser Signing Document",
+            "Panel Signing":"Panel Signing Document",
+            "Final Manuscript":"Final Manuscript",
+            "Final Documents":"Final Documents",
+            "Other":""
+        };
+
+        function setDefaultDocumentTitle(){
+
+            const documentType =
+                document.getElementById("documentType").value;
+
+            document.getElementById("documentTitle").value =
+                defaultTitles[documentType] || "";
+
+        }
+
+        async function loadStudentDocuments(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/student-documents/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    document.getElementById("groupName").innerText =
+                        "No group found";
+
+                    document.getElementById("groupDetails").innerText =
+                        data.message || "Please create or join a group first.";
+
+                    document.getElementById("groupProgramBadge").innerText =
+                        "N/A";
+
+                    studentDocuments =
+                        [];
+
+                    updateStats();
+
+                    renderConsultationHub();
+
+                    renderDocuments([]);
+
+                    return;
+
+                }
+
+                const group =
+                    data.group;
+
+                studentDocuments =
+                    data.documents || [];
+
+                titleProposals =
+                    data.title_proposals || [];
+
+                defenseVerdicts =
+                    data.defense_verdicts || [];
+
+                pinnedRecipients = {
+                    adviserUserId: group.adviser_user_id || null,
+                    instructorUserId: group.instructor_user_id || null
+                };
+
+                const programText =
+                    group.program === "IS"
+                    ? "BSIS"
+                    : group.program === "IT"
+                    ? "BSIT"
+                    : "Not Set";
+
+                document.getElementById("groupName").innerText =
+                    group.group_name || "My Group";
+
+                document.getElementById("groupDetails").innerText =
+                    `${group.project_title || "No project title yet."} — Documents, progress, and updates are shared with your whole group.`;
+
+                document.getElementById("groupProgramBadge").innerText =
+                    programText;
+
+                updateStats();
+
+                renderConsultationHub();
+
+                filterDocuments();
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        async function loadRecipients(){
+
+            if(!loggedInUserId){
+                recipients = [];
+                return;
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/document-recipients?studentUserId=${encodeURIComponent(loggedInUserId)}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    recipients =
+                        Array.isArray(data.recipients)
+                        ? data.recipients
+                        : [];
+
+                }else{
+
+                    recipients = [];
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                recipients = [];
+
+            }
+
+        }
+
+        function updateStats(){
+
+            const generalDocs =
+                getGeneralDocuments();
+
+            const total =
+                generalDocs.length;
+
+            const sent =
+                generalDocs.filter(document =>
+                    Number(document.is_sent) === 1
+                ).length;
+
+            const notSent =
+                total - sent;
+
+            document.getElementById("totalDocuments").innerText =
+                total;
+
+            document.getElementById("sentDocuments").innerText =
+                sent;
+
+            document.getElementById("notSentDocuments").innerText =
+                notSent;
+
+        }
+
+        async function uploadStudentDocument(){
+
+            const documentType =
+                document.getElementById("documentType").value;
+
+            const documentTitle =
+                document.getElementById("documentTitle").value.trim();
+
+            const fileInput =
+                document.getElementById("documentFile");
+
+            if(!documentType){
+
+                alert("Please select a document type.");
+
+                return;
+
+            }
+
+            if(!documentTitle){
+
+                alert("Please enter a document title.");
+
+                return;
+
+            }
+
+            if(!fileInput.files[0]){
+
+                alert("Please select a file to upload.");
+
+                return;
+
+            }
+
+            const selectedFile =
+                fileInput.files[0];
+
+            const allowedExtensions =
+                ["pdf", "doc", "docx"];
+
+            const fileExtension =
+                selectedFile.name.split(".").pop().toLowerCase();
+
+            if(!allowedExtensions.includes(fileExtension)){
+
+                alert("Only PDF, DOC, and DOCX files are allowed.");
+
+                return;
+
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append("studentUserId", loggedInUserId);
+            formData.append("documentType", documentType);
+            formData.append("documentTitle", documentTitle);
+            formData.append("documentFile", selectedFile);
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/upload-student-document",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Upload processed."
+                );
+
+                if(data.success){
+
+                    document.getElementById("documentType").value =
+                        "";
+
+                    document.getElementById("documentTitle").value =
+                        "";
+
+                    fileInput.value =
+                        "";
+
+                    loadStudentDocuments();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot upload document.");
+
+            }
+
+        }
+
+        function renderDocuments(list){
+
+            const grid =
+                document.getElementById("documentGrid");
+
+            grid.innerHTML = "";
+
+            if(list.length === 0){
+
+                grid.innerHTML = `
+                    <div class="empty-card">
+                        No uploaded documents found.
+                    </div>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(documentItem => {
+
+                const submissionCount =
+                    Number(documentItem.submission_count || 0);
+
+                const documentStatus =
+                    String(documentItem.document_status || "").trim();
+
+                const latestStatusRaw =
+                    String(documentItem.latest_review_status || "").trim();
+
+                const latestStatus =
+                    latestStatusRaw === "Subject to Change"
+                    ? "For Revision"
+                    : latestStatusRaw;
+
+                const isSent =
+                    submissionCount > 0;
+
+                let statusText =
+                    "Not Sent";
+
+                let statusClass =
+                    "not-sent";
+
+                if(documentStatus === "For Revision"){
+                    statusText = "Need Revision";
+                    statusClass = getSlotStatusClass(statusText);
+                }else if(documentStatus === "Rejected"){
+                    statusText = "Rejected";
+                    statusClass = getSlotStatusClass(statusText);
+                }else if(documentStatus === "Approved"){
+                    statusText = "Approved";
+                    statusClass = getSlotStatusClass(statusText);
+                }else if(isSent){
+                    statusText =
+                        latestStatus === "Approved" && documentStatus !== "Approved"
+                        ? "Approved (faculty — editable)"
+                        : (formatReviewStatusLabel(latestStatus) || "Pending Review");
+                    statusClass = getSlotStatusClass(statusText);
+                }else if(slotHasFile(documentItem)){
+                    statusText = "Not Sent";
+                    statusClass = "not-sent";
+                }
+
+                const sendButton =
+                    `
+                        <button
+                            class="send-btn"
+                            onclick="openSendModal('${documentItem.id}')"
+                        >
+                            <i class="fa-solid fa-paper-plane"></i>
+                            ${isSent ? "Send Again" : "Send"}
+                        </button>
+                    `;
+
+                const deleteButton =
+                    documentStatus === "Approved"
+                    ? `
+                        <button
+                            class="disabled-btn"
+                            disabled
+                            title="Approved documents cannot be deleted."
+                        >
+                            <i class="fa-solid fa-lock"></i>
+                            Locked
+                        </button>
+                    `
+                    : `
+                        <button
+                            class="delete-btn"
+                            onclick="deleteStudentDocument('${documentItem.id}')"
+                        >
+                            <i class="fa-solid fa-trash"></i>
+                            Delete
+                        </button>
+                    `;
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    "document-card";
+
+                card.innerHTML = `
+                    <div class="document-top">
+
+                        <div class="document-icon">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+
+                        <div>
+                            <h3>
+                                ${documentItem.document_title}
+                            </h3>
+
+                            <p>
+                                ${documentItem.document_code}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="document-meta">
+
+                        <span>
+                            ${documentItem.document_type}
+                        </span>
+
+                        <span class="${statusClass}">
+                            ${statusText}
+                        </span>
+
+                        <span>
+                            ${documentItem.file_format}
+                        </span>
+
+                    </div>
+
+                    <div class="document-info">
+
+                        <p>
+                            <strong>File:</strong>
+                            ${documentItem.file_name}
+                        </p>
+
+                        <p>
+                            <strong>Uploaded by:</strong>
+                            ${documentItem.uploaded_by_name || "Unknown"}
+                        </p>
+
+                        <p>
+                            <strong>Date:</strong>
+                            ${formatDate(documentItem.created_at)}
+                        </p>
+
+                    </div>
+
+                    <div class="document-actions">
+
+                        <a
+                            class="view-btn"
+                            href="http://localhost:3005${documentItem.file_path}"
+                            target="_blank"
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                            View
+                        </a>
+
+                        ${sendButton}
+
+                        ${deleteButton}
+
+                    </div>
+                `;
+
+                grid.appendChild(card);
+
+            });
+
+        }
+
+        function filterDocuments(){
+
+            const keyword =
+                document.getElementById("searchDocument").value.toLowerCase();
+
+            const status =
+                document.getElementById("statusFilter").value;
+
+            const filtered =
+                getGeneralDocuments().filter(documentItem => {
+
+                    const isSent =
+                        Number(documentItem.is_sent) === 1;
+
+                    const statusText =
+                        isSent ? "Sent" : "Not Sent";
+
+                    const matchesKeyword =
+                        String(documentItem.document_code || "").toLowerCase().includes(keyword)
+                        ||
+                        String(documentItem.document_title || "").toLowerCase().includes(keyword)
+                        ||
+                        String(documentItem.document_type || "").toLowerCase().includes(keyword)
+                        ||
+                        String(documentItem.file_name || "").toLowerCase().includes(keyword)
+                        ||
+                        String(documentItem.uploaded_by_name || "").toLowerCase().includes(keyword);
+
+                    const matchesStatus =
+                        status === "All"
+                        ||
+                        statusText === status;
+
+                    return matchesKeyword && matchesStatus;
+
+                });
+
+            renderDocuments(filtered);
+
+        }
+
+        async function openSendModal(documentId){
+
+            const documentItem =
+                studentDocuments.find(item =>
+                    String(item.id) === String(documentId)
+                );
+
+            if(!documentItem){
+                return;
+            }
+
+            if(isAdviserLocked(documentItem)){
+                alert("This document was approved by your adviser and is locked.");
+                return;
+            }
+
+            selectedDocumentId =
+                documentItem.id;
+
+            document.getElementById("sendDocumentTitle").innerText =
+                documentItem.document_title;
+
+            document.getElementById("sendDocumentDetails").innerText =
+                `${documentItem.document_code} • ${documentItem.document_type} • ${documentItem.file_name}`;
+
+            document.getElementById("submissionMessage").value =
+                "";
+
+            document.getElementById("recipientSearch").value =
+                "";
+
+            const recipientList =
+                document.getElementById("recipientList");
+
+            recipientList.innerHTML =
+                `
+                    <p class="empty-text">
+                        Loading recipients...
+                    </p>
+                `;
+
+            document.getElementById("sendModal").style.display =
+                "flex";
+
+            await loadRecipients();
+
+            renderRecipients(recipients);
+
+        }
+
+        function closeSendModal(){
+
+            document.getElementById("sendModal").style.display =
+                "none";
+
+            selectedDocumentId =
+                null;
+
+        }
+
+        function renderRecipients(list){
+
+            const recipientList =
+                document.getElementById("recipientList");
+
+            recipientList.innerHTML =
+                "";
+
+            if(list.length === 0){
+
+                recipientList.innerHTML =
+                    `
+                        <p class="empty-text">
+                            No faculty recipients available. Make sure you are in a group with an assigned adviser, and that your account was enrolled by an instructor. Try refreshing the page after restarting the server.
+                        </p>
+                    `;
+
+                return;
+
+            }
+
+            const adviserFirst = [];
+            const instructorFirst = [];
+            const deanFirst = [];
+            const chairpersonFirst = [];
+            const rest = [];
+
+            list.forEach(user => {
+                if(
+                    user.recipient_type === "adviser"
+                    || (
+                        pinnedRecipients.adviserUserId
+                        && user.user_id === pinnedRecipients.adviserUserId
+                    )
+                ){
+                    adviserFirst.push(user);
+                    return;
+                }
+                if(
+                    user.recipient_type === "instructor"
+                    || (
+                        pinnedRecipients.instructorUserId
+                        && user.user_id === pinnedRecipients.instructorUserId
+                    )
+                ){
+                    instructorFirst.push(user);
+                    return;
+                }
+                if(user.position === "Dean"){
+                    deanFirst.push(user);
+                    return;
+                }
+                if(user.position === "Program Chairperson IS" || user.position === "Program Chairperson IT"){
+                    chairpersonFirst.push(user);
+                    return;
+                }
+                rest.push(user);
+            });
+
+            function renderUserRow(user) {
+                const roleText =
+                    user.role === "admin"
+                    ? "Admin"
+                    : "Faculty";
+
+                let accessText =
+                    "";
+
+                if(user.recipient_type === "adviser"){
+                    accessText = "Your Adviser";
+                }else if(user.recipient_type === "instructor"){
+                    accessText = "Your Instructor";
+                }else{
+
+                    if(Number(user.adviser_access) === 1){
+                        accessText += "Adviser ";
+                    }
+
+                    if(Number(user.panelist_access) === 1){
+                        accessText += "Panelist ";
+                    }
+
+                    if(Number(user.instructor_access) === 1){
+                        accessText += "Instructor ";
+                    }
+
+                    if(!accessText){
+                        accessText =
+                            user.position || roleText;
+                    }
+
+                }
+
+                const isPrimary =
+                    user.recipient_type === "adviser"
+                    || user.recipient_type === "instructor"
+                    || user.position === "Dean"
+                    || user.position === "Program Chairperson IS"
+                    || user.position === "Program Chairperson IT"
+                    || (
+                        pinnedRecipients.adviserUserId
+                        && user.user_id === pinnedRecipients.adviserUserId
+                    )
+                    || (
+                        pinnedRecipients.instructorUserId
+                        && user.user_id === pinnedRecipients.instructorUserId
+                    );
+
+                const displayName =
+                    String(user.fullname || user.user_id || "Faculty").trim();
+
+                return `
+                    <label class="recipient-row">
+
+                        <input
+                            type="checkbox"
+                            class="recipient-checkbox"
+                            value="${user.id}"
+                        >
+
+                        <div class="recipient-avatar">
+                            ${displayName.charAt(0).toUpperCase()}
+                        </div>
+
+                        <div>
+                            <h4>
+                                ${displayName}
+                            </h4>
+
+                            <p>
+                                ${user.user_id} • ${roleText} • ${user.position || accessText}
+                            </p>
+                        </div>
+
+                    </label>
+                `;
+            }
+
+            let html = "";
+
+            if(adviserFirst.length > 0){
+                html += `
+                    <div class="recipient-section-title">
+                        Your Adviser
+                    </div>
+                `;
+                adviserFirst.forEach(user => {
+                    html += renderUserRow(user);
+                });
+            }
+
+            if(instructorFirst.length > 0){
+                html += `
+                    <div class="recipient-section-title">
+                        Your Instructor
+                    </div>
+                `;
+                instructorFirst.forEach(user => {
+                    html += renderUserRow(user);
+                });
+            }
+
+            if(deanFirst.length > 0){
+                html += `
+                    <div class="recipient-section-title">
+                        Dean
+                    </div>
+                `;
+                deanFirst.forEach(user => {
+                    html += renderUserRow(user);
+                });
+            }
+
+            if(chairpersonFirst.length > 0){
+                html += `
+                    <div class="recipient-section-title">
+                        Program Chairperson
+                    </div>
+                `;
+                chairpersonFirst.forEach(user => {
+                    html += renderUserRow(user);
+                });
+            }
+
+            if(rest.length > 0){
+                html += `
+                    <div class="recipient-section-title">
+                        Other recipients
+                    </div>
+                `;
+                rest.forEach(user => {
+                    html += renderUserRow(user);
+                });
+            }
+
+            recipientList.innerHTML = html;
+
+        }
+
+        function filterRecipients(){
+
+            const keyword =
+                document.getElementById("recipientSearch")
+                .value
+                .toLowerCase();
+
+            const filtered =
+                recipients.filter(user =>
+                    String(user.fullname || "").toLowerCase().includes(keyword)
+                    ||
+                    String(user.user_id || "").toLowerCase().includes(keyword)
+                    ||
+                    String(user.role || "").toLowerCase().includes(keyword)
+                    ||
+                    String(user.position || "").toLowerCase().includes(keyword)
+                );
+
+            renderRecipients(filtered);
+
+        }
+
+        function getReviewStatusClass(status){
+            const s = String(status || "").toLowerCase();
+            if(s.includes("approved")){
+                return "status-approved";
+            }
+            if(s.includes("rejected")){
+                return "status-rejected";
+            }
+            if(s.includes("revision") || s.includes("change")){
+                return "status-revision";
+            }
+            return "status-pending";
+        }
+
+        async function sendStudentDocument(){
+
+            const selectedRecipients =
+                Array.from(
+                    document.querySelectorAll(".recipient-checkbox:checked")
+                ).map(input =>
+                    input.value
+                );
+
+            const submissionMessage =
+                document.getElementById("submissionMessage")
+                .value
+                .trim();
+
+            if(selectedRecipients.length === 0){
+
+                alert("Please select at least one recipient.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/send-student-document",
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                studentUserId:loggedInUserId,
+                                documentId:selectedDocumentId,
+                                recipientIds:selectedRecipients,
+                                submissionMessage
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Send processed."
+                );
+
+                if(data.success){
+
+                    closeSendModal();
+
+                    loadStudentDocuments();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot send document.");
+
+            }
+
+        }
+
+        async function deleteStudentDocument(documentId){
+
+            const confirmed =
+                confirm(
+                    "Delete this document? This will remove the file permanently."
+                );
+
+            if(!confirmed){
+                return;
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/delete-student-document/${documentId}`,
+                        {
+                            method:"DELETE",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                studentUserId:loggedInUserId
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Delete processed."
+                );
+
+                if(data.success){
+
+                    loadStudentDocuments();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot delete document.");
+
+            }
+
+        }
+
+        function formatDate(dateValue){
+
+            if(!dateValue){
+                return "N/A";
+            }
+
+            const date =
+                new Date(dateValue);
+
+            return date.toLocaleDateString(
+                "en-US",
+                {
+                    year:"numeric",
+                    month:"short",
+                    day:"numeric"
+                }
+            );
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        /* ================= CONSULTATION SLOTS ================= */
+
+        const CONSULTATION_CATALOG = [
+            {
+                category: "Concept Presentation",
+                icon: "fa-lightbulb",
+                iconClass: "purple",
+                description: "Enter your 3 proposed titles in Request Adviser, then upload each PDF here as Proposed concept paper (1–3). Send to your adviser and instructor; only adviser approval locks the file for panel review.",
+                items: [
+                    { label: "Proposed concept paper", slots: 3 },
+                    { label: "Adviser acceptance for advisory", slots: 1 },
+                    { label: "Environmental scanning", slots: 1 },
+                    { label: "Recommendation for concept presentation", slots: 1 },
+                    { label: "Concept presentation evaluation sheet", slots: 1 }
+                ]
+            },
+            {
+                category: "Outline Defense",
+                icon: "fa-clipboard-check",
+                iconClass: "yellow",
+                description: "Upload early chapters and defense requirements.",
+                items: [
+                    { label: "Chapter 1 and 2", slots: 1 },
+                    { label: "Recommendation for outline defense", slots: 1 },
+                    { label: "Outline defense evaluation sheet", slots: 1 },
+                    { label: "Defense minutes", slots: 1 }
+                ]
+            },
+            {
+                category: "Pre-Final Defense",
+                icon: "fa-person-chalkboard",
+                iconClass: "blue",
+                description: "Upload mid chapters, defense minutes, and supporting files.",
+                items: [
+                    { label: "Chapter 3-4", slots: 1 },
+                    { label: "Defense minutes", slots: 1 }
+                ]
+            },
+            {
+                category: "Final Defense",
+                icon: "fa-graduation-cap",
+                iconClass: "purple",
+                description: "Upload final chapters, defense minutes, and supporting files.",
+                items: [
+                    { label: "Chapter 3-4", slots: 1 },
+                    { label: "Defense minutes", slots: 1 }
+                ]
+            }
+        ];
+
+        const CONSULTATION_CATEGORIES =
+            CONSULTATION_CATALOG.map(phase => phase.category);
+
+        let pendingTemplateUpload = null;
+
+        function buildSlotDocumentType(category, baseLabel, slotIndex, totalSlots){
+            if(totalSlots > 1){
+                return `${category} • ${baseLabel} (${slotIndex})`;
+            }
+            return `${category} • ${baseLabel}`;
+        }
+
+        function buildDocumentType(category, itemLabel){
+            return `${category} • ${itemLabel}`;
+        }
+
+        function getSlotTypeCandidates(category, baseLabel, slotIndex, totalSlots){
+            const candidates = [
+                buildSlotDocumentType(category, baseLabel, slotIndex, totalSlots)
+            ];
+
+            if(slotIndex === 1 && totalSlots > 1){
+                candidates.push(
+                    `${category} • ${baseLabel} (${totalSlots})`
+                );
+            }
+
+            if(totalSlots === 1){
+                candidates.push(`${category} • ${baseLabel}`);
+            }
+
+            return candidates;
+        }
+
+        function slotHasFile(documentItem){
+            return !!(
+                documentItem
+                && documentItem.file_path
+                && String(documentItem.file_path).trim()
+            );
+        }
+
+        function findDocumentForSlot(category, baseLabel, slotIndex, totalSlots){
+            const candidates =
+                getSlotTypeCandidates(category, baseLabel, slotIndex, totalSlots);
+
+            for(const docType of candidates){
+                const matches =
+                    studentDocuments.filter(doc =>
+                        String(doc.document_type || "") === docType
+                    );
+
+                if(matches.length > 0){
+                    return matches.sort((a, b) =>
+                        Number(b.id) - Number(a.id)
+                    )[0];
+                }
+            }
+
+            return null;
+        }
+
+        function isConsultationDocument(documentItem){
+            const docType =
+                String(documentItem.document_type || "");
+
+            return CONSULTATION_CATEGORIES.some(category =>
+                docType.startsWith(`${category} •`)
+            );
+        }
+
+        function getGeneralDocuments(){
+            return studentDocuments.filter(documentItem =>
+                !isConsultationDocument(documentItem)
+            );
+        }
+
+        function isDefenseMinutesLabel(label){
+            return String(label || "").trim().toLowerCase() === "defense minutes";
+        }
+
+        function isAdviserLocked(documentItem){
+            return !!(
+                documentItem
+                && (
+                    documentItem.adviser_locked === true
+                    || documentItem.adviser_locked === 1
+                )
+            );
+        }
+
+        function getTitleProposalForSlot(slotIndex){
+            return titleProposals.find(item =>
+                Number(item.title_number) === Number(slotIndex)
+            ) || null;
+        }
+
+        function getSlotDisplayLabel(baseLabel, slotIndex, totalSlots, category){
+            if(
+                category === "Concept Presentation"
+                && baseLabel === "Proposed concept paper"
+            ){
+                const proposal =
+                    getTitleProposalForSlot(slotIndex);
+
+                const titleText =
+                    proposal && proposal.proposed_title
+                    ? proposal.proposed_title
+                    : null;
+
+                if(titleText){
+                    return `${baseLabel} (${slotIndex}) — ${titleText}`;
+                }
+            }
+
+            if(totalSlots > 1){
+                return `${baseLabel} (${slotIndex})`;
+            }
+
+            return baseLabel;
+        }
+
+        function getSlotStatusInfo(documentItem){
+            if(!documentItem){
+                return {
+                    text: "Not uploaded",
+                    className: "not-uploaded"
+                };
+            }
+
+            const documentStatus =
+                String(documentItem.document_status || "").trim();
+
+            if(isAdviserLocked(documentItem)){
+                return {
+                    text: "Approved by adviser — locked",
+                    className: "approved"
+                };
+            }
+
+            if(documentStatus === "For Revision"){
+                return {
+                    text: "Need Revision",
+                    className: "for-revision"
+                };
+            }
+
+            if(documentStatus === "Rejected"){
+                return {
+                    text: "Rejected",
+                    className: "rejected"
+                };
+            }
+
+            const submissionCount =
+                Number(documentItem.submission_count || 0);
+
+            const latestStatusRaw =
+                String(documentItem.latest_review_status || "").trim();
+
+            const latestStatus =
+                formatReviewStatusLabel(latestStatusRaw);
+
+            if(submissionCount > 0 && latestStatus){
+                const displayText =
+                    latestStatusRaw.toLowerCase() === "approved"
+                    && documentStatus !== "Approved"
+                    ? "Approved (faculty — editable)"
+                    : latestStatus;
+
+                return {
+                    text: displayText,
+                    className: getSlotStatusClass(latestStatus)
+                };
+            }
+
+            if(submissionCount > 0){
+                return {
+                    text: "Pending Review",
+                    className: "pending"
+                };
+            }
+
+            if(slotHasFile(documentItem)){
+                return {
+                    text: "Not Sent",
+                    className: "not-sent"
+                };
+            }
+
+            return {
+                text: "Not uploaded",
+                className: "not-uploaded"
+            };
+        }
+
+        function formatReviewStatusLabel(status){
+            const raw =
+                String(status || "").trim();
+
+            if(!raw){
+                return "";
+            }
+
+            if(raw === "Subject to Change"){
+                return "Need Revision";
+            }
+
+            if(raw === "For Revision"){
+                return "Need Revision";
+            }
+
+            if(raw === "Approved"){
+                return "Approved";
+            }
+
+            if(raw === "Rejected"){
+                return "Rejected";
+            }
+
+            if(raw === "Pending Review"){
+                return "Pending Review";
+            }
+
+            return raw;
+        }
+
+        function getSlotStatusClass(status){
+            const normalized =
+                String(status || "").toLowerCase();
+
+            if(normalized.includes("approved")){
+                return "approved";
+            }
+
+            if(normalized.includes("rejected")){
+                return "rejected";
+            }
+
+            if(
+                normalized.includes("revision")
+                || normalized.includes("need")
+                || normalized.includes("change")
+            ){
+                return "for-revision";
+            }
+
+            if(normalized.includes("not sent")){
+                return "not-sent";
+            }
+
+            if(normalized.includes("not uploaded")){
+                return "not-uploaded";
+            }
+
+            return "pending";
+        }
+
+        function canDeleteConsultationDocument(documentItem){
+            if(!documentItem){
+                return false;
+            }
+
+            return !isAdviserLocked(documentItem);
+        }
+
+        function getPhaseIndexByCategory(category){
+            return CONSULTATION_CATALOG.findIndex(phase =>
+                phase.category === category
+            );
+        }
+
+        /**
+         * Get the latest defense verdict for a specific category/phase.
+         * Returns the result string (e.g. "Passed", "Passed with Revisions",
+         * "Conditional Passed", "For Re-Defense") or null if no verdict yet.
+         */
+        function getLatestVerdictForPhase(category){
+            const match = defenseVerdicts.find(v =>
+                String(v.defense_type || "").trim() === category
+            );
+            return match ? String(match.latest_result || "").trim() : null;
+        }
+
+        /**
+         * Returns true if the phase's defense verdict qualifies the group
+         * to proceed to the next phase.
+         * Passed / Passed with Revisions → yes
+         * Conditional Passed / For Re-Defense → no (need re-defense first)
+         * No verdict → fall back to document-based logic
+         */
+        function isPhasePassedByVerdict(category){
+            const verdict = getLatestVerdictForPhase(category);
+            if(!verdict) return null; // no verdict yet
+            return verdict === "Passed" || verdict === "Passed with Revisions";
+        }
+
+        function isCatalogSlotApproved(category, baseLabel, slotIndex, totalSlots){
+            if(isDefenseMinutesLabel(baseLabel)){
+                return true;
+            }
+
+            const documentItem =
+                findDocumentForSlot(category, baseLabel, slotIndex, totalSlots);
+
+            return isAdviserLocked(documentItem);
+        }
+
+        function isPhaseComplete(category){
+            // If the defense verdict already says they passed, consider this phase complete
+            const verdictPassed = isPhasePassedByVerdict(category);
+            if(verdictPassed === true){
+                return true;
+            }
+
+            // If verdict exists but they haven't passed (Conditional/Re-Defense), not complete
+            if(verdictPassed === false){
+                return false;
+            }
+
+            // No verdict yet — fall back to document approval logic
+            const phase =
+                CONSULTATION_CATALOG.find(item =>
+                    item.category === category
+                );
+
+            if(!phase){
+                return true;
+            }
+
+            return phase.items.every(item => {
+                if(isDefenseMinutesLabel(item.label)){
+                    return true;
+                }
+
+                const totalSlots =
+                    Number(item.slots || 1);
+
+                for(let slotIndex = 1; slotIndex <= totalSlots; slotIndex++){
+                    if(!isCatalogSlotApproved(category, item.label, slotIndex, totalSlots)){
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        function getActivePhaseIndex(){
+            for(let i = 0; i < CONSULTATION_CATALOG.length; i++){
+                if(!isPhaseComplete(CONSULTATION_CATALOG[i].category)){
+                    return i;
+                }
+            }
+
+            return CONSULTATION_CATALOG.length;
+        }
+
+        function isCatalogPhaseLocked(category, baseLabel){
+            if(isDefenseMinutesLabel(baseLabel)){
+                return false;  // phase-lock bypassed for defense minutes
+            }
+
+            const phaseIndex =
+                getPhaseIndexByCategory(category);
+
+            if(phaseIndex < 0){
+                return false;
+            }
+
+            return phaseIndex > getActivePhaseIndex();
+        }
+
+        /**
+         * Defense Minutes prerequisite check.
+         * A student may only UPLOAD defense minutes for a phase once the
+         * PREVIOUS phase is considered complete (passed verdict or all
+         * non-minutes documents approved).  The first phase has no
+         * prerequisite, so its minutes are always uploadable.
+         */
+        function isPreviousPhaseComplete(category){
+            const phaseIndex = getPhaseIndexByCategory(category);
+            if(phaseIndex <= 0){
+                // Concept Presentation — no prior phase required
+                return true;
+            }
+            const previousCategory = CONSULTATION_CATALOG[phaseIndex - 1].category;
+            return isPhaseComplete(previousCategory);
+        }
+
+        function getPhaseStatusLabel(category){
+            if(isCatalogPhaseLocked(category)){
+                return {
+                    text: "Locked — complete previous phase first",
+                    className: "phase-locked"
+                };
+            }
+
+            // Show verdict-specific status when defense is done
+            const verdict = getLatestVerdictForPhase(category);
+            if(verdict){
+                if(verdict === "Passed" || verdict === "Passed with Revisions"){
+                    return {
+                        text: `Defense ${verdict} ✓ — next phase unlocked`,
+                        className: "phase-complete"
+                    };
+                }
+                if(verdict === "Conditional Passed" || verdict === "Conditional Pass"){
+                    return {
+                        text: "Conditional Passed — re-defense required before next phase",
+                        className: "phase-active"
+                    };
+                }
+                if(verdict === "For Re-Defense"){
+                    return {
+                        text: "For Re-Defense — complete re-defense before next phase",
+                        className: "phase-active"
+                    };
+                }
+            }
+
+            if(isPhaseComplete(category)){
+                return {
+                    text: "All documents approved",
+                    className: "phase-complete"
+                };
+            }
+
+            if(getPhaseIndexByCategory(category) === getActivePhaseIndex()){
+                return {
+                    text: "In progress — upload & get approval here",
+                    className: "phase-active"
+                };
+            }
+
+            return {
+                text: "Pending",
+                className: "phase-pending"
+            };
+        }
+
+        function renderConsultationHub(){
+            const grid =
+                document.getElementById("consultationPhaseGrid");
+
+            if(!grid){
+                return;
+            }
+
+            grid.innerHTML = "";
+
+            CONSULTATION_CATALOG.forEach(phase => {
+
+                const phaseLocked =
+                    getPhaseIndexByCategory(phase.category) > getActivePhaseIndex();
+
+                const phaseStatus =
+                    getPhaseStatusLabel(phase.category);
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    "phase-card"
+                    + (phaseLocked ? " phase-locked" : "")
+                    + (phaseStatus.className === "phase-complete" ? " phase-complete" : "")
+                    + (phaseStatus.className === "phase-active" ? " phase-active" : "");
+
+                const listHtml = [];
+
+                phase.items.forEach(item => {
+                    const totalSlots =
+                        Number(item.slots || 1);
+
+                    for(let slotIndex = 1; slotIndex <= totalSlots; slotIndex++){
+                        listHtml.push(
+                            buildConsultationSlotRow(
+                                phase.category,
+                                item.label,
+                                slotIndex,
+                                totalSlots,
+                                isCatalogPhaseLocked(phase.category, item.label)
+                            )
+                        );
+                    }
+                });
+
+                listHtml.push(`
+                    <button
+                        class="doc-row other"
+                        type="button"
+                        onclick="openOtherUploadModal('${phase.category.replace(/'/g, "\\'")}')"
+                    >
+                        <span class="doc-name">Other</span>
+                        <span class="doc-action">
+                            <i class="fa-solid fa-plus"></i>
+                            Add file type
+                        </span>
+                    </button>
+                `);
+
+                card.innerHTML = `
+                    <div class="phase-title">
+                        <div class="phase-icon ${phase.iconClass}">
+                            <i class="fa-solid ${phase.icon}"></i>
+                        </div>
+                        <div>
+                            <h3>${phase.category}</h3>
+                            <p>${phase.description}</p>
+                            <span class="phase-status-badge ${phaseStatus.className}">
+                                ${phaseStatus.text}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="phase-list">
+                        ${listHtml.join("")}
+                    </div>
+                `;
+
+                grid.appendChild(card);
+
+            });
+
+            renderConsultationOtherRows();
+        }
+
+        function renderConsultationOtherRows(){
+            const otherDocs =
+                studentDocuments.filter(doc => {
+                    const docType =
+                        String(doc.document_type || "");
+
+                    return CONSULTATION_CATEGORIES.some(cat =>
+                        docType.startsWith(`${cat} • Other -`)
+                    );
+                });
+
+            if(otherDocs.length === 0){
+                return;
+            }
+
+            const byCategory = {};
+
+            otherDocs.forEach(doc => {
+                const category =
+                    String(doc.document_type || "").split(" • ")[0];
+
+                if(!byCategory[category]){
+                    byCategory[category] = [];
+                }
+
+                byCategory[category].push(doc);
+            });
+
+            Object.keys(byCategory).forEach(category => {
+                const phaseCards =
+                    document.querySelectorAll("#consultationPhaseGrid .phase-card");
+
+                phaseCards.forEach(card => {
+                    const title =
+                        card.querySelector(".phase-title h3");
+
+                    if(!title || title.textContent.trim() !== category){
+                        return;
+                    }
+
+                    const phaseList =
+                        card.querySelector(".phase-list");
+
+                    const otherButton =
+                        phaseList.querySelector(".doc-row.other");
+
+                    byCategory[category].forEach(doc => {
+                        const label =
+                            String(doc.document_type || "")
+                            .replace(`${category} • Other - `, "")
+                            .trim();
+
+                        const row =
+                            buildConsultationOtherSlotRow(
+                                category,
+                                label,
+                                doc
+                            );
+
+                        if(otherButton){
+                            phaseList.insertBefore(row, otherButton);
+                        }else{
+                            phaseList.appendChild(row);
+                        }
+                    });
+                });
+            });
+        }
+
+        function buildConsultationOtherSlotRow(category, label, documentItem){
+            const statusInfo =
+                getSlotStatusInfo(documentItem);
+
+            const isLocked =
+                isAdviserLocked(documentItem);
+
+            const canDelete =
+                canDeleteConsultationDocument(documentItem);
+
+            const row =
+                document.createElement("div");
+
+            row.className = "doc-slot-row";
+
+            row.innerHTML = `
+                <div class="doc-slot-main">
+                    <span class="doc-name">Other — ${label}</span>
+                    <span class="slot-status ${statusInfo.className}">
+                        ${statusInfo.text}
+                    </span>
+                </div>
+                <div class="doc-slot-actions">
+                    ${buildSlotUploadButton(
+                        category,
+                        `Other - ${label}`,
+                        1,
+                        1,
+                        isLocked,
+                        true,
+                        false
+                    )}
+                    ${buildSlotViewButton(documentItem)}
+                    ${buildSlotSendButton(documentItem, isLocked, false, `Other - ${label}`)}
+                    ${buildSlotDeleteButton(documentItem, canDelete)}
+                </div>
+            `;
+
+            return row;
+        }
+
+        function buildConsultationSlotRow(category, baseLabel, slotIndex, totalSlots, isPhaseLocked){
+            const documentItem =
+                findDocumentForSlot(
+                    category,
+                    baseLabel,
+                    slotIndex,
+                    totalSlots
+                );
+
+            const statusInfo =
+                getSlotStatusInfo(documentItem);
+
+            const isLocked =
+                isAdviserLocked(documentItem);
+
+            const canDelete =
+                canDeleteConsultationDocument(documentItem);
+
+            const displayLabel =
+                getSlotDisplayLabel(baseLabel, slotIndex, totalSlots, category);
+
+            const rowClass =
+                isPhaseLocked
+                ? "doc-slot-row phase-slot-locked"
+                : "doc-slot-row";
+
+            return `
+                <div class="${rowClass}">
+                    <div class="doc-slot-main">
+                        <span class="doc-name">${displayLabel}</span>
+                        <span class="slot-status ${statusInfo.className}">
+                            ${statusInfo.text}
+                        </span>
+                    </div>
+                    <div class="doc-slot-actions">
+                        ${buildSlotUploadButton(
+                            category,
+                            baseLabel,
+                            slotIndex,
+                            totalSlots,
+                            isLocked,
+                            false,
+                            isPhaseLocked
+                        )}
+                        ${buildSlotViewButton(documentItem)}
+                        ${buildSlotSendButton(documentItem, isLocked, isPhaseLocked, baseLabel)}
+                        ${buildSlotDeleteButton(documentItem, canDelete)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildSlotUploadButton(
+            category,
+            baseLabel,
+            slotIndex,
+            totalSlots,
+            isApproved,
+            isOtherLabel,
+            isPhaseLocked
+        ){
+            if(isApproved){
+                return `
+                    <button class="slot-btn disabled" type="button" disabled title="Approved by adviser — locked">
+                        <i class="fa-solid fa-lock"></i>
+                        Locked
+                    </button>
+                `;
+            }
+
+            if(isPhaseLocked && !isOtherLabel && !isDefenseMinutesLabel(baseLabel)){
+                return `
+                    <button class="slot-btn disabled" type="button" disabled title="Complete and get approval for the previous phase first">
+                        <i class="fa-solid fa-lock"></i>
+                        Phase locked
+                    </button>
+                `;
+            }
+
+            // Defense Minutes: only allow upload when the previous phase is complete
+            if(isDefenseMinutesLabel(baseLabel) && !isPreviousPhaseComplete(category)){
+                const phaseIndex = getPhaseIndexByCategory(category);
+                const prevPhaseName = phaseIndex > 0
+                    ? CONSULTATION_CATALOG[phaseIndex - 1].category
+                    : "the previous phase";
+                return `
+                    <button class="slot-btn disabled" type="button" disabled
+                        title="Complete '${prevPhaseName}' before uploading defense minutes for this phase">
+                        <i class="fa-solid fa-lock"></i>
+                        Locked
+                    </button>
+                `;
+            }
+
+            const safeCategory =
+                category.replace(/'/g, "\\'");
+
+            const safeLabel =
+                baseLabel.replace(/'/g, "\\'");
+
+            return `
+                <button
+                    class="slot-btn upload"
+                    type="button"
+                    onclick="uploadFromSlot('${safeCategory}','${safeLabel}',${slotIndex},${totalSlots},${isOtherLabel})"
+                >
+                    <i class="fa-solid fa-upload"></i>
+                    Upload
+                </button>
+            `;
+        }
+
+        function buildSlotViewButton(documentItem){
+            if(!slotHasFile(documentItem)){
+                return `
+                    <button class="slot-btn disabled" type="button" disabled>
+                        <i class="fa-solid fa-eye"></i>
+                        View
+                    </button>
+                `;
+            }
+
+            return `
+                <a
+                    class="slot-btn view"
+                    href="http://localhost:3005${documentItem.file_path}"
+                    target="_blank"
+                >
+                    <i class="fa-solid fa-eye"></i>
+                    View
+                </a>
+            `;
+        }
+
+        function buildSlotSendButton(documentItem, isLocked, isPhaseLocked, baseLabel){
+            if(
+                !slotHasFile(documentItem)
+                || isLocked
+                || (isPhaseLocked && !isDefenseMinutesLabel(baseLabel))
+            ){
+                return `
+                    <button class="slot-btn disabled" type="button" disabled>
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Send
+                    </button>
+                `;
+            }
+
+            const isSent =
+                Number(documentItem.submission_count || 0) > 0;
+
+            return `
+                <button
+                    class="slot-btn send"
+                    type="button"
+                    onclick="openSendModal('${documentItem.id}')"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    ${isSent ? "Send Again" : "Send"}
+                </button>
+            `;
+        }
+
+        function buildSlotDeleteButton(documentItem, canDelete){
+            if(!documentItem){
+                return "";
+            }
+
+            if(!canDelete){
+                return `
+                    <button class="slot-btn disabled" type="button" disabled title="Approved documents cannot be deleted">
+                        <i class="fa-solid fa-trash"></i>
+                        Delete
+                    </button>
+                `;
+            }
+
+            return `
+                <button
+                    class="slot-btn delete"
+                    type="button"
+                    onclick="deleteStudentDocument('${documentItem.id}')"
+                >
+                    <i class="fa-solid fa-trash"></i>
+                    Delete
+                </button>
+            `;
+        }
+
+        function uploadFromSlot(
+            category,
+            baseLabel,
+            slotIndex,
+            totalSlots,
+            isOtherLabel
+        ){
+            if(
+                !isOtherLabel
+                && !isDefenseMinutesLabel(baseLabel)
+                && isCatalogPhaseLocked(category, baseLabel)
+            ){
+
+                const activePhase =
+                    CONSULTATION_CATALOG[getActivePhaseIndex()]
+                    ? CONSULTATION_CATALOG[getActivePhaseIndex()].category
+                    : "the current phase";
+
+                alert(
+                    `Complete and get adviser approval for "${activePhase}" before uploading this file.`
+                );
+
+                return;
+
+            }
+
+            // Defense Minutes: block upload if the previous phase is not yet complete
+            if(isDefenseMinutesLabel(baseLabel) && !isPreviousPhaseComplete(category)){
+                const phaseIndex = getPhaseIndexByCategory(category);
+                const prevPhaseName = phaseIndex > 0
+                    ? CONSULTATION_CATALOG[phaseIndex - 1].category
+                    : "the previous phase";
+                alert(
+                    `You can only upload defense minutes for "${category}" after completing "${prevPhaseName}". ` +
+                    `Defense minutes must be uploaded after your presentation, not before.`
+                );
+                return;
+            }
+
+            if(
+                category === "Concept Presentation"
+                && baseLabel === "Proposed concept paper"
+            ){
+                const proposal =
+                    getTitleProposalForSlot(slotIndex);
+
+                if(!proposal || !String(proposal.proposed_title || "").trim()){
+                    alert(
+                        `Enter proposed title ${slotIndex} in Request Adviser first, then upload the PDF here.`
+                    );
+                    window.location.href = "Req_Adviser.html";
+                    return;
+                }
+            }
+
+            const documentType =
+                isOtherLabel
+                ? buildDocumentType(category, baseLabel)
+                : buildSlotDocumentType(
+                    category,
+                    baseLabel,
+                    slotIndex,
+                    totalSlots
+                );
+
+            const displayLabel =
+                isOtherLabel
+                ? baseLabel.replace(/^Other - /, "")
+                : getSlotDisplayLabel(baseLabel, slotIndex, totalSlots, category);
+
+            let documentTitle = `${category} - ${displayLabel}`;
+
+            if(
+                category === "Concept Presentation"
+                && baseLabel === "Proposed concept paper"
+            ){
+                const proposal =
+                    getTitleProposalForSlot(slotIndex);
+
+                if(proposal && proposal.proposed_title){
+                    documentTitle = proposal.proposed_title;
+                }
+            }
+
+            pendingTemplateUpload = {
+                documentType,
+                documentTitle
+            };
+
+            const fileInput =
+                document.getElementById("templateUploadFile");
+
+            fileInput.value = "";
+            fileInput.click();
+        }
+
+        document
+            .getElementById("templateUploadFile")
+            .addEventListener("change", async (e) => {
+
+                if(!pendingTemplateUpload){
+                    return;
+                }
+
+                const file =
+                    e.target.files && e.target.files[0];
+
+                if(!file){
+                    pendingTemplateUpload = null;
+                    return;
+                }
+
+                await uploadStudentDocumentDirect(
+                    pendingTemplateUpload.documentType,
+                    pendingTemplateUpload.documentTitle,
+                    file
+                );
+
+                pendingTemplateUpload = null;
+
+            });
+
+        async function uploadStudentDocumentDirect(
+            documentType,
+            documentTitle,
+            selectedFile
+        ){
+            const allowedExtensions =
+                ["pdf", "doc", "docx"];
+
+            const fileExtension =
+                selectedFile.name.split(".").pop().toLowerCase();
+
+            if(!allowedExtensions.includes(fileExtension)){
+                alert("Only PDF, DOC, and DOCX files are allowed.");
+                return;
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append("studentUserId", loggedInUserId);
+            formData.append("documentType", documentType);
+            formData.append("documentTitle", documentTitle);
+            formData.append("documentFile", selectedFile);
+
+            try{
+                const response =
+                    await fetch(
+                        "http://localhost:3005/upload-student-document",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Upload processed."
+                );
+
+                if(data.success){
+                    loadStudentDocuments();
+                }
+
+            }catch(error){
+                console.log(error);
+                alert("Cannot upload document.");
+            }
+        }
+
+        function openOtherUploadModal(category){
+            document.getElementById("otherCategory").value =
+                category || "Other";
+
+            document.getElementById("otherTypeLabel").value =
+                "";
+
+            document.getElementById("otherTitle").value =
+                "";
+
+            document.getElementById("otherFile").value =
+                "";
+
+            document.getElementById("otherUploadModal").style.display =
+                "flex";
+        }
+
+        function closeOtherUploadModal(){
+            document.getElementById("otherUploadModal").style.display =
+                "none";
+        }
+
+        async function uploadOtherDocument(){
+            const category =
+                document.getElementById("otherCategory").value.trim();
+
+            const label =
+                document.getElementById("otherTypeLabel").value.trim();
+
+            const title =
+                document.getElementById("otherTitle").value.trim();
+
+            const fileInput =
+                document.getElementById("otherFile");
+
+            if(!label){
+                alert("Please enter a file type label.");
+                return;
+            }
+
+            if(!fileInput.files[0]){
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const docType =
+                buildDocumentType(category, `Other - ${label}`);
+
+            const docTitle =
+                title || `${category} - Other (${label})`;
+
+            await uploadStudentDocumentDirect(
+                docType,
+                docTitle,
+                fileInput.files[0]
+            );
+
+            closeOtherUploadModal();
+        }
+
+        /* ================= RECEIVED DOCUMENTS FROM FACULTY ================= */
+
+        let receivedFacultyDocuments = [];
+
+        async function loadReceivedDocuments(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/student-received-documents/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+                    receivedFacultyDocuments =
+                        Array.isArray(data.receivedDocuments)
+                        ? data.receivedDocuments
+                        : [];
+                }else{
+                    receivedFacultyDocuments = [];
+                }
+
+            }catch(error){
+
+                console.log(error);
+                receivedFacultyDocuments = [];
+
+            }
+
+            renderReceivedDocuments(receivedFacultyDocuments);
+
+        }
+
+        function renderReceivedDocuments(list){
+
+            const grid =
+                document.getElementById("receivedDocGrid");
+
+            if(!grid){ return; }
+
+            grid.innerHTML = "";
+
+            if(list.length === 0){
+
+                grid.innerHTML = `
+                    <div class="empty-card">
+                        No documents received from faculty yet. Documents sent to you by your adviser or instructor will appear here.
+                    </div>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(item => {
+
+                const card = document.createElement("div");
+                card.className = "received-doc-card";
+
+                const senderInitial =
+                    String(item.sender_name || "?").charAt(0).toUpperCase();
+
+                const senderBadgeColor =
+                    (item.sender_type || "").toLowerCase().includes("adviser")
+                    ? "adviser"
+                    : "instructor";
+
+                card.innerHTML = `
+                    <div class="received-doc-header">
+                        <div class="received-doc-icon">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                        </div>
+                        <div class="received-doc-title-block">
+                            <h3>${item.document_title || "Untitled Document"}</h3>
+                            <p>${item.document_code || ""} ${item.document_type ? "• " + item.document_type : ""}</p>
+                        </div>
+                    </div>
+
+                    <div class="received-doc-sender">
+                        <div class="received-sender-avatar">
+                            ${senderInitial}
+                        </div>
+                        <div>
+                            <span class="received-sender-name">${item.sender_name || "Faculty"}</span>
+                            <span class="received-sender-badge ${senderBadgeColor}">
+                                ${item.sender_type || item.sender_role || "Faculty"}
+                            </span>
+                        </div>
+                    </div>
+
+                    ${item.submission_message
+                        ? `<div class="received-doc-message">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <span>${item.submission_message}</span>
+                           </div>`
+                        : ""
+                    }
+
+                    <div class="received-doc-footer">
+                        <span class="received-doc-date">
+                            <i class="fa-solid fa-clock"></i>
+                            ${formatDate(item.sent_at)}
+                        </span>
+                        <div class="received-doc-actions">
+                            <a
+                                class="slot-btn view"
+                                href="http://localhost:3005${item.file_path}"
+                                target="_blank"
+                            >
+                                <i class="fa-solid fa-eye"></i>
+                                View
+                            </a>
+                            <a
+                                class="slot-btn download-btn"
+                                href="http://localhost:3005${item.file_path}"
+                                download="${item.file_name || 'document'}"
+                            >
+                                <i class="fa-solid fa-download"></i>
+                                Download
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+
+            });
+
+        }
+
+        function filterReceivedDocuments(){
+
+            const keyword =
+                document.getElementById("searchReceivedDoc")
+                .value.toLowerCase();
+
+            const filtered =
+                receivedFacultyDocuments.filter(item =>
+                    String(item.document_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.document_type || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.sender_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.document_code || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.sender_type || "").toLowerCase().includes(keyword)
+                );
+
+            renderReceivedDocuments(filtered);
+
+        }
+
+        async function initDocumentsPage(){
+
+            await loadStudentDocuments();
+            await loadRecipients();
+            await loadReceivedDocuments();
+            await initStudentGroupGate({
+                requireGroup:true,
+                activeNav:"nav-documents"
+            });
+
+            if(!window.__studentDocsRefreshTimer){
+                window.__studentDocsRefreshTimer =
+                    window.setInterval(() => {
+                        const overlay =
+                            document.getElementById("groupRequiredOverlay");
+
+                        if(!overlay || overlay.hidden){
+                            loadStudentDocuments();
+                            loadReceivedDocuments();
+                        }
+                    }, 20000);
+            }
+        }
+
+
+        initDocumentsPage();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

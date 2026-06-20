@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Members | CMS</title>
+
+    <!-- GOOGLE FONT -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="Members.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="student-portal.css">
+    <script src="student-portal.js"></script>
+</head>
+
+<body class="admin-portal">
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+   <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='StudentDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-titles"
+                    onclick="window.location.href='Capstone_Titles.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-members"
+                    onclick="window.location.href='Members.html'"
+                >
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-adviser"
+                    onclick="window.location.href='Req_Adviser.html'"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-messages"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">
+                    Updates
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-notifications"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-settings"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div class="welcome">
+
+                <h1>Group Members</h1>
+
+                <p>
+                    Manage your capstone team, monitor progress,
+                    and keep everyone aligned with your project goals.
+                </p>
+
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="edit-btn"
+                    id="edit-group"
+                >
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    Edit Group
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- MEMBERS GRID -->
+        <div class="members-grid">
+
+            <!-- LEFT SECTION -->
+            <section class="left-section">
+
+                <!-- GROUP CARD -->
+                <div class="card group-card">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <h2 id="groupNameDisplay">
+                                My Group
+                            </h2>
+
+                            <p id="group-status">
+                                No group created yet.
+                            </p>
+
+                            <p
+                                id="groupProgramDisplay"
+                                class="group-program-text"
+                            >
+                                Program: Not Set
+                            </p>
+
+                            <p
+                                id="groupInstructorMatchDisplay"
+                                class="group-instructor-match-text"
+                                style="margin-top: 4px; font-size: 13px;"
+                            >
+                                Similar Instructor: N/A
+                            </p>
+
+                        </div>
+
+                        <span
+                            class="status ongoing"
+                            id="groupStatusBadge"
+                        >
+                            No Group
+                        </span>
+
+                    </div>
+
+                    <div class="group-summary">
+
+                        <div class="summary-card">
+
+                            <i class="fa-solid fa-user-group"></i>
+
+                            <h3 id="memberCount">
+                                0
+                            </h3>
+
+                            <p>
+                                Members
+                            </p>
+
+                        </div>
+
+                        <div class="summary-card">
+
+                            <i class="fa-solid fa-layer-group"></i>
+
+                            <h3 id="groupStage">
+                                N/A
+                            </h3>
+
+                            <p>
+                                Current Stage
+                            </p>
+
+                        </div>
+
+                        <div class="summary-card">
+
+                            <i class="fa-solid fa-chart-line"></i>
+
+                            <h3 id="groupProgress">
+                                0%
+                            </h3>
+
+                            <p>
+                                Progress
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- CAPSTONE STAGE PROGRESS (same as Student Dashboard) -->
+                <div class="card stage-tracker-card" id="stageTrackerCard">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Capstone Stage Progress
+                        </h2>
+
+                        <span class="status-badge-tracker current-stage-badge" id="currentStageBadge">
+                            Loading...
+                        </span>
+
+                    </div>
+
+                    <div class="workflow-tracker">
+
+                        <div class="workflow-steps" id="workflowSteps">
+                            <div style="text-align:center;color:#7b6f96;padding:30px 0;width:100%">
+                                <i class="fa-solid fa-spinner fa-spin" style="font-size:22px;color:#7c3aed;"></i>
+                                <p style="margin-top:10px;font-size:13px;">Loading your progress...</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="progress-section">
+
+                        <div class="progress-info">
+
+                            <span>
+                                Overall Progress
+                            </span>
+
+                            <span id="progressPercent">
+                                0%
+                            </span>
+
+                        </div>
+
+                        <div class="progress-bar">
+
+                            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- RIGHT SECTION -->
+            <aside class="right-section">
+
+                <!-- TEAM MEMBERS -->
+                <div
+                    class="card"
+                    id="teamMembersCard"
+                >
+
+                    <div class="card-header">
+
+                        <h2>
+                            Team Members
+                        </h2>
+
+                    </div>
+
+                    <div id="teamMembersList">
+
+                        <p class="empty-text">
+                            No group members yet.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- ADVISER SECTION -->
+                <div class="card adviser-card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Adviser
+                        </h2>
+
+                    </div>
+
+                    <div
+                        class="adviser-empty"
+                        id="adviserSection"
+                    >
+
+                        <div class="adviser-icon">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+
+                        <h3>
+                            No adviser assigned yet
+                        </h3>
+
+                        <p>
+                            Your group does not have an assigned capstone adviser at the moment.
+                        </p>
+
+                        <button
+                            class="request-adviser-btn"
+                            onclick="requestAdviser()"
+                        >
+                            <i class="fa-solid fa-paper-plane"></i>
+                            Request Adviser
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <!-- GROUP MODAL -->
+    <div
+        class="modal-overlay"
+        id="groupModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <h2>
+                    Create / Edit Group
+                </h2>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeGroupModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="input-group">
+
+                <label>
+                    Group Name
+                </label>
+
+                <input
+                    type="text"
+                    id="groupName"
+                    placeholder="Example: Group 1"
+                >
+
+            </div>
+
+            <div class="input-group">
+
+                <label>
+                    Group Program
+                </label>
+
+                <input type="hidden" id="groupProgram" value="">
+                <div id="groupProgramBadge" style="padding: 10px 14px; border-radius: 8px; background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.35); color: #c084fc; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; min-height: 40px; display: flex; align-items: center;">—</div>
+
+            </div>
+
+            <div id="memberInputs">
+
+                <div class="member-input-container new-member-container">
+                    <div class="member-input-row new-member-row">
+
+                        <input
+                            type="text"
+                            class="memberStudentId"
+                            placeholder="Student ID e.g. STU2026-0002"
+                            oninput="verifyMemberInput(this)"
+                        >
+
+                        <select class="memberPosition">
+
+                            <option value="">
+                                Select Position
+                            </option>
+
+                            <option value="System Analyst">
+                                System Analyst
+                            </option>
+
+                            <option value="System Developer">
+                                System Developer
+                            </option>
+
+                        </select>
+
+                    </div>
+                    <div class="member-info-preview" style="font-size: 12px; color: #a78bfa; margin: -5px 0 10px 0; padding-left: 10px; display: none;"></div>
+                </div>
+
+            </div>
+
+            <button
+                class="add-member-btn"
+                onclick="addMemberInput()"
+            >
+                + Add Member
+            </button>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeGroupModal()"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="saveGroup()"
+                >
+                    Save Group
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let currentStudent = null;
+        let currentGroupId = null;
+
+        /* ================= CHECK PERMISSION ================= */
+
+        async function checkPermission(){
+
+            try{
+
+                const response = await fetch(
+                    `http://localhost:3005/student-info/${loggedInUserId}`
+                );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    currentStudent =
+                        data.student;
+
+                }else{
+
+                    currentStudent =
+                        null;
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= OPEN GROUP MODAL ================= */
+
+        async function openGroupModal(){
+
+            await checkPermission();
+
+            const position =
+                currentStudent?.student_position
+                ?.trim()
+                ?.toLowerCase();
+
+            if(position !== "project manager"){
+
+                alert(
+                    `You don't have permission to create or edit a group. Only the Project Manager can do this. Your current position is: ${currentStudent?.student_position || "Not Found"}`
+                );
+
+                return;
+
+            }
+
+            await loadGroupIntoModal();
+
+            document.getElementById(
+                "groupModal"
+            ).style.display = "flex";
+
+        }
+
+        /* ================= CLOSE GROUP MODAL ================= */
+
+        function closeGroupModal(){
+
+            document.getElementById(
+                "groupModal"
+            ).style.display = "none";
+
+        }
+
+        /* ================= LOAD GROUP INTO MODAL ================= */
+
+        async function loadGroupIntoModal(){
+
+            try{
+
+                const response = await fetch(
+                    `http://localhost:3005/student-group/${loggedInUserId}`
+                );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    currentGroupId =
+                        null;
+
+                    document.getElementById(
+                        "groupName"
+                    ).value = "";
+
+                    let progCode = "";
+                    let progText = "—";
+                    if (currentStudent?.program === "BSIS" || currentStudent?.program === "IS") {
+                        progCode = "IS";
+                        progText = "BSIS";
+                    } else if (currentStudent?.program === "BSIT" || currentStudent?.program === "IT") {
+                        progCode = "IT";
+                        progText = "BSIT";
+                    }
+                    document.getElementById("groupProgram").value = progCode;
+                    document.getElementById("groupProgramBadge").textContent = progText;
+
+                    resetMemberInputs();
+
+                    return;
+
+                }
+
+                const group =
+                    data.group;
+
+                currentGroupId =
+                    group.group_id;
+
+                document.getElementById(
+                    "groupName"
+                ).value =
+                    group.group_name || "";
+
+                const existingProg = group.program || "";
+                const existingProgText = existingProg === "IS" ? "BSIS" : existingProg === "IT" ? "BSIT" : existingProg || "—";
+                document.getElementById("groupProgram").value = existingProg;
+                document.getElementById("groupProgramBadge").textContent = existingProgText;
+
+                const memberInputs =
+                    document.getElementById(
+                        "memberInputs"
+                    );
+
+                memberInputs.innerHTML = "";
+
+                group.members.forEach(member => {
+
+                    const isProjectManager =
+                        member.member_position === "Project Manager";
+
+                    const positionOptions = [
+                        "System Analyst",
+                        "System Developer",
+                        "Project Manager"
+                    ].map(opt =>
+                        `<option value="${opt}" ${member.member_position === opt ? 'selected' : ''}>${opt}</option>`
+                    ).join('');
+
+                    memberInputs.innerHTML += `
+                        <div class="member-input-row existing-member-row">
+
+                            <input
+                                type="text"
+                                class="memberStudentId"
+                                value="${member.user_id}"
+                                readonly
+                            >
+
+                            <select
+                                class="memberPosition"
+                                ${isProjectManager ? 'disabled' : ''}
+                            >
+                                ${positionOptions}
+                            </select>
+
+                            ${
+                                isProjectManager
+                                ? `
+                                    <button
+                                        class="remove-member-btn disabled"
+                                        disabled
+                                    >
+                                        PM
+                                    </button>
+                                `
+                                : `
+                                    <button
+                                        class="remove-member-btn"
+                                        onclick="removeGroupMember('${member.user_id}')"
+                                    >
+                                        Remove
+                                    </button>
+                                `
+                            }
+
+                        </div>
+                    `;
+
+                });
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= RESET MEMBER INPUTS ================= */
+
+        function resetMemberInputs(){
+
+            document.getElementById(
+                "memberInputs"
+            ).innerHTML = `
+                <div class="member-input-container new-member-container">
+                    <div class="member-input-row new-member-row">
+
+                        <input
+                            type="text"
+                            class="memberStudentId"
+                            placeholder="Student ID e.g. STU2026-0002"
+                            oninput="verifyMemberInput(this)"
+                        >
+
+                        <select class="memberPosition">
+
+                            <option value="">
+                                Select Position
+                            </option>
+
+                            <option value="System Analyst">
+                                System Analyst
+                            </option>
+
+                            <option value="System Developer">
+                                System Developer
+                            </option>
+
+                        </select>
+
+                    </div>
+                    <div class="member-info-preview" style="font-size: 12px; color: #a78bfa; margin: -5px 0 10px 0; padding-left: 10px; display: none;"></div>
+                </div>
+            `;
+
+        }
+
+        /* ================= ADD MEMBER INPUT ================= */
+
+        function addMemberInput(){
+
+            const currentRows =
+                document.querySelectorAll(
+                    ".member-input-row"
+                );
+
+            if(currentRows.length >= 4){
+
+                alert(
+                    "Only 4 members are allowed per group, including the Project Manager."
+                );
+
+                return;
+
+            }
+
+            const container =
+                document.getElementById(
+                    "memberInputs"
+                );
+
+            const wrapper =
+                document.createElement("div");
+
+            wrapper.className =
+                "member-input-container new-member-container";
+
+            wrapper.innerHTML = `
+                <div class="member-input-row new-member-row">
+                    <input
+                        type="text"
+                        class="memberStudentId"
+                        placeholder="Student ID e.g. STU2026-0003"
+                        oninput="verifyMemberInput(this)"
+                    >
+
+                    <select class="memberPosition">
+
+                        <option value="">
+                            Select Position
+                        </option>
+
+                        <option value="System Analyst">
+                            System Analyst
+                        </option>
+
+                        <option value="System Developer">
+                            System Developer
+                        </option>
+
+                    </select>
+                </div>
+                <div class="member-info-preview" style="font-size: 12px; color: #a78bfa; margin: -5px 0 10px 0; padding-left: 10px; display: none;"></div>
+            `;
+
+            container.appendChild(wrapper);
+
+        }
+
+        /* ================= VERIFY MEMBER INPUT ================= */
+
+        async function verifyMemberInput(inputEl) {
+            const studentId = inputEl.value.trim();
+            const container = inputEl.closest('.new-member-container') || inputEl.parentElement;
+            let previewEl = container.querySelector('.member-info-preview');
+            if (!previewEl) {
+                previewEl = document.createElement('div');
+                previewEl.className = 'member-info-preview';
+                previewEl.style.fontSize = '12px';
+                previewEl.style.margin = '-5px 0 10px 0';
+                previewEl.style.paddingLeft = '10px';
+                container.appendChild(previewEl);
+            }
+
+            if (!studentId) {
+                previewEl.style.display = 'none';
+                previewEl.innerHTML = '';
+                return;
+            }
+
+            if (studentId === loggedInUserId) {
+                previewEl.style.display = 'block';
+                previewEl.style.color = '#ef4444';
+                previewEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> You cannot add yourself as a member (you are the Project Manager).';
+                return;
+            }
+
+            // Check duplicates in inputs
+            const allInputs = document.querySelectorAll('.memberStudentId');
+            let dupCount = 0;
+            allInputs.forEach(inp => {
+                if (inp.value.trim() === studentId) dupCount++;
+            });
+            if (dupCount > 1) {
+                previewEl.style.display = 'block';
+                previewEl.style.color = '#ef4444';
+                previewEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Duplicate student ID entered.';
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3005/student-info/${studentId}`);
+                const data = await response.json();
+                if (data.success) {
+                    const student = data.student;
+                    const pmProgram = currentStudent?.program || '';
+                    const programMatch = student.program === pmProgram;
+                    const instructorText = student.instructor_name ? `${student.instructor_name} (${student.enrolled_by_user_id})` : 'None';
+
+                    let statusHtml = '';
+                    if (programMatch) {
+                        statusHtml = `<span style="color: #10b981; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Program Match (${student.program})</span>`;
+                    } else {
+                        statusHtml = `<span style="color: #ef4444; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> Program Mismatch (${student.program} vs Group: ${pmProgram})</span>`;
+                    }
+
+                    previewEl.style.display = 'block';
+                    previewEl.style.color = '#c084fc';
+                    previewEl.innerHTML = `
+                        <strong>Name:</strong> ${student.fullname} | ${statusHtml}<br>
+                        <strong>Instructor:</strong> ${instructorText}
+                    `;
+
+                    // Auto-fill position from the student's enrolled position
+                    const posSelect = inputEl.closest('.new-member-container')?.querySelector('.memberPosition');
+                    if (posSelect && student.student_position && student.student_position !== 'Not Assigned' && student.student_position !== '') {
+                        posSelect.value = student.student_position;
+                    }
+                } else {
+                    previewEl.style.display = 'block';
+                    previewEl.style.color = '#ef4444';
+                    previewEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Student not found.`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        /* ================= SAVE GROUP ================= */
+
+        async function saveGroup(){
+
+            const groupName =
+                document.getElementById(
+                    "groupName"
+                ).value.trim();
+
+            const groupProgram =
+                document.getElementById(
+                    "groupProgram"
+                ).value;
+
+            const newRows =
+                document.querySelectorAll(
+                    ".new-member-row"
+                );
+
+            const members = [];
+
+            newRows.forEach(row => {
+
+                const studentUserId =
+                    row.querySelector(
+                        ".memberStudentId"
+                    ).value.trim();
+
+                const memberPosition =
+                    row.querySelector(
+                        ".memberPosition"
+                    ).value;
+
+                if(studentUserId && memberPosition){
+
+                    members.push({
+                        studentUserId,
+                        memberPosition
+                    });
+
+                }
+
+            });
+
+            if(!groupName || !groupProgram){
+
+                alert(
+                    "Please enter group name and group program."
+                );
+
+                return;
+
+            }
+
+            const existingCount = document.querySelectorAll(".existing-member-row").length;
+            const totalMembers = (currentGroupId ? existingCount : 1) + members.length;
+
+            if (totalMembers < 3 || totalMembers > 4) {
+                alert("A group must have a minimum of 3 members and a maximum of 4 members, including the Project Manager.");
+                return;
+            }
+
+            try{
+
+                let url = "";
+                let method = "";
+
+                if(currentGroupId){
+
+                    url =
+                        "http://localhost:3005/update-group";
+
+                    method =
+                        "PUT";
+
+                }else{
+
+                    url =
+                        "http://localhost:3005/create-group";
+
+                    method =
+                        "POST";
+
+                }
+
+                const response = await fetch(
+                    url,
+                    {
+                        method: method,
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            groupId: currentGroupId,
+                            groupName,
+                            groupProgram,
+                            projectManagerUserId: loggedInUserId,
+                            members
+                        })
+                    }
+                );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    // Sync each member's chosen position back to their user account
+                    // so it reflects in STU_Enroll.html Registered Students table
+                    const positionSyncPromises = [];
+                    document.querySelectorAll('.member-input-row').forEach(row => {
+                        const sidEl = row.querySelector('.memberStudentId');
+                        const posEl = row.querySelector('.memberPosition:not([disabled])');
+                        if (sidEl && posEl) {
+                            const sid = sidEl.value.trim();
+                            const pos = posEl.value;
+                            if (sid && pos) {
+                                positionSyncPromises.push(
+                                    fetch('http://localhost:3005/update-student-position', {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ studentUserId: sid, position: pos })
+                                    }).catch(e => console.log('Position sync error:', e))
+                                );
+                            }
+                        }
+                    });
+                    if (positionSyncPromises.length > 0) {
+                        try { await Promise.all(positionSyncPromises); } catch(e) { console.log(e); }
+                    }
+
+                    alert(
+                        data.message || "Group saved successfully."
+                    );
+
+                    closeGroupModal();
+
+                    if(typeof clearStudentGroupCache === "function"){
+                        clearStudentGroupCache();
+                    }
+
+                    loadStudentGroup();
+
+                }else{
+
+                    alert(
+                        data.message || "Failed to save group."
+                    );
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= REMOVE GROUP MEMBER ================= */
+
+        async function removeGroupMember(studentUserId){
+
+            const confirmRemove =
+                confirm(
+                    `Remove ${studentUserId} from this group?`
+                );
+
+            if(!confirmRemove){
+
+                return;
+
+            }
+
+            try{
+
+                const response = await fetch(
+                    "http://localhost:3005/remove-group-member",
+                    {
+                        method: "DELETE",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            groupId: currentGroupId,
+                            studentUserId,
+                            projectManagerUserId: loggedInUserId
+                        })
+                    }
+                );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    alert(
+                        "Member removed successfully."
+                    );
+
+                    loadStudentGroup();
+
+                    loadGroupIntoModal();
+
+                }else{
+
+                    alert(
+                        data.message || "Failed to remove member."
+                    );
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= CAPSTONE STAGE PROGRESS TRACKER ================= */
+
+        const STAGES = [
+            {
+                key: "Concept Presentation",
+                label: "Concept Presentation",
+                icon: "fa-lightbulb",
+                pendingRemark: "Waiting to be scheduled"
+            },
+            {
+                key: "Outline Defense",
+                label: "Outline Defense",
+                icon: "fa-book-open",
+                pendingRemark: "Pending Concept Presentation approval"
+            },
+            {
+                key: "Pre-Final Defense",
+                label: "Pre-Final Defense",
+                icon: "fa-file-shield",
+                pendingRemark: "Pending Outline Defense approval"
+            },
+            {
+                key: "Final Defense",
+                label: "Final Defense",
+                icon: "fa-graduation-cap",
+                pendingRemark: "Pending Pre-Final Defense approval"
+            },
+            {
+                key: "Completed",
+                label: "Completed",
+                icon: "fa-circle-check",
+                pendingRemark: "Final compilation pending"
+            }
+        ];
+
+        function stageToCompletedIndex(stage) {
+            const map = {
+                "Stage 1": 0,
+                "Stage 2": 1,
+                "Stage 3": 2,
+                "Stage 4": 3,
+                "Final": 4
+            };
+            return map[stage] ?? 0;
+        }
+
+        function formatDefenseDate(dateStr) {
+            if (!dateStr) {
+                return "";
+            }
+
+            return new Date(dateStr).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+            });
+        }
+
+        function buildStepHtml(stageObj, state, defenseRecord, isLast) {
+            let badgeClass = "not-started";
+            let badgeLabel = "Not Started";
+            let remark = stageObj.pendingRemark;
+
+            if (state === "completed") {
+                const result = defenseRecord?.panel_result || "";
+
+                if (result === "Passed") {
+                    badgeClass = "approved";
+                    badgeLabel = "Passed";
+                } else if (result === "Passed with Revisions") {
+                    badgeClass = "for-adviser";
+                    badgeLabel = "Passed w/ Revisions";
+                } else {
+                    badgeClass = "approved";
+                    badgeLabel = "Completed";
+                }
+
+                remark = defenseRecord?.defense_date
+                    ? `Completed on ${formatDefenseDate(defenseRecord.defense_date)}`
+                    : "Completed";
+
+            } else if (state === "active") {
+
+                if (defenseRecord) {
+
+                    if (defenseRecord.defense_status === "Completed") {
+                        const result = defenseRecord.panel_result || "";
+
+                        if (result === "Failed" || result === "Disapproved") {
+                            badgeClass = "for-revision";
+                            badgeLabel = "For Revision";
+                            remark = `Result: ${result} — ${formatDefenseDate(defenseRecord.defense_date)}`;
+                        } else {
+                            badgeClass = "approved";
+                            badgeLabel = "Evaluated";
+                            remark = `Evaluated on ${formatDefenseDate(defenseRecord.defense_date)}`;
+                        }
+
+                    } else {
+                        badgeClass = "scheduled";
+                        badgeLabel = "Scheduled";
+                        remark = `Scheduled for ${formatDefenseDate(defenseRecord.defense_date)}`;
+                    }
+
+                } else {
+                    badgeClass = "for-adviser";
+                    badgeLabel = "In Progress";
+                    remark = "Awaiting schedule from instructor";
+                }
+            }
+
+            const lineHtml = !isLast
+                ? `<div class="step-line"></div>`
+                : "";
+
+            return `
+                <div class="step ${state}">
+                    <div class="step-icon-wrap">
+                        ${lineHtml}
+                        <div class="step-icon"><i class="fa-solid ${stageObj.icon}"></i></div>
+                    </div>
+                    <div class="step-content">
+                        <h4>${stageObj.label}</h4>
+                        <span class="status-badge-tracker ${badgeClass}">${badgeLabel}</span>
+                        <p class="step-remarks">${remark}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStageTracker(group, defenses) {
+            const badgeEl = document.getElementById("currentStageBadge");
+            const stepsEl = document.getElementById("workflowSteps");
+            const fill = document.getElementById("progressFill");
+            const pctLabel = document.getElementById("progressPercent");
+
+            if (!group) {
+                badgeEl.textContent = "No Group";
+                stepsEl.innerHTML =
+                    `<p style="text-align:center;color:#7b6f96;padding:20px;">Create or join a group to track capstone stage progress here.</p>`;
+
+                if (fill) {
+                    fill.style.width = "0%";
+                }
+
+                if (pctLabel) {
+                    pctLabel.textContent = "0%";
+                }
+
+                return;
+            }
+
+            const defenseMap = {};
+
+            (defenses || []).forEach(defense => {
+                defenseMap[defense.defense_type] = defense;
+            });
+
+            const completedCount =
+                stageToCompletedIndex(group.stage || "Stage 1");
+
+            const stageNames = [
+                "Concept Presentation",
+                "Outline Defense",
+                "Pre-Final Defense",
+                "Final Defense",
+                "Completed"
+            ];
+
+            const currentStageName =
+                stageNames[completedCount] || "Concept Presentation";
+
+            badgeEl.textContent =
+                completedCount >= 4
+                ? "All Stages Completed"
+                : `Active: ${currentStageName}`;
+
+            let stepsHtml = "";
+
+            STAGES.forEach((stageObj, idx) => {
+                let state = "pending";
+
+                if (idx < completedCount) {
+                    state = "completed";
+                } else if (idx === completedCount) {
+                    state = "active";
+                }
+
+                const defRec = defenseMap[stageObj.key] || null;
+                const isLast = (idx === STAGES.length - 1);
+
+                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast);
+            });
+
+            stepsEl.innerHTML = stepsHtml;
+
+            const pct = Number(group.progress || 0);
+
+            if (fill) {
+                fill.style.width = `${pct}%`;
+            }
+
+            if (pctLabel) {
+                pctLabel.textContent = `${pct}%`;
+            }
+        }
+
+        /* ================= LOAD STUDENT GROUP ================= */
+       
+async function loadStudentGroup(){
+
+    try{
+
+        const [groupResponse, defenseResponse] = await Promise.all([
+            fetch(`http://localhost:3005/student-group/${loggedInUserId}`),
+            fetch(`http://localhost:3005/student-defense-history/${loggedInUserId}`)
+        ]);
+
+        const data = await groupResponse.json();
+        const defenseData = await defenseResponse.json();
+
+        const defenses =
+            defenseData.success
+            ? defenseData.defenses
+            : [];
+
+        if(typeof clearStudentGroupCache === "function"){
+            clearStudentGroupCache();
+        }
+
+        const teamMembersList =
+            document.getElementById(
+                "teamMembersList"
+            );
+
+        const adviserSection =
+            document.getElementById(
+                "adviserSection"
+            );
+
+        if(!data.success){
+
+            document.getElementById(
+                "groupNameDisplay"
+            ).innerText = "My Group";
+
+            document.getElementById(
+                "group-status"
+            ).innerText = "No group created yet.";
+
+            document.getElementById(
+                "groupProgramDisplay"
+            ).innerText = "Program: Not Set";
+
+            document.getElementById(
+                "groupStatusBadge"
+            ).innerText = "No Group";
+
+            document.getElementById(
+                "memberCount"
+            ).innerText = "0";
+
+            document.getElementById(
+                "groupStage"
+            ).innerText = "N/A";
+
+            document.getElementById(
+                "groupProgress"
+            ).innerText = "0%";
+
+            renderStageTracker(null, []);
+
+            teamMembersList.innerHTML = `
+                <p class="empty-text">
+                    No group members yet.
+                </p>
+            `;
+
+            adviserSection.innerHTML = `
+                <div class="adviser-icon">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+
+                <h3>
+                    No adviser assigned yet
+                </h3>
+
+                <p>
+                    Your group does not have an assigned capstone adviser at the moment.
+                </p>
+
+                <button
+                    class="request-adviser-btn"
+                    onclick="requestAdviser()"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Request Adviser
+                </button>
+            `;
+
+            return;
+
+        }
+
+        const group =
+            data.group;
+
+        const programText =
+            group.program === "IS"
+            ? "BSIS"
+            : group.program === "IT"
+            ? "BSIT"
+            : "Not Set";
+
+        document.getElementById(
+            "groupNameDisplay"
+        ).innerText =
+            group.group_name || "My Group";
+
+        document.getElementById(
+            "group-status"
+        ).innerText =
+            group.status
+            ? `Status: ${group.status}`
+            : "Status: Active";
+
+        document.getElementById(
+            "groupProgramDisplay"
+        ).innerText =
+            `Program: ${programText}`;
+
+        document.getElementById(
+            "groupStatusBadge"
+        ).innerText =
+            group.status || "Active";
+
+        document.getElementById(
+            "memberCount"
+        ).innerText =
+            group.members.length;
+
+        document.getElementById(
+            "groupStage"
+        ).innerText =
+            group.stage || "Stage 1";
+
+        document.getElementById(
+            "groupProgress"
+        ).innerText =
+            `${group.progress || 0}%`;
+
+        renderStageTracker(group, defenses);
+
+        teamMembersList.innerHTML = "";
+
+        group.members.forEach(member => {
+
+            const initial =
+                member.fullname
+                .charAt(0)
+                .toUpperCase();
+
+            teamMembersList.innerHTML += `
+                <div class="member">
+
+                    <div class="member-avatar">
+                        ${initial}
+                    </div>
+
+                    <div>
+                        <h3>
+                            ${member.fullname}
+                        </h3>
+
+                        <p>
+                            ${member.member_position}
+                        </p>
+
+                        <small>
+                            ${member.user_id}
+                        </small>
+                        
+                        <p class="member-instructor" style="font-size: 11px; color: #a78bfa; margin-top: 4px;">
+                            <i class="fa-solid fa-chalkboard-user"></i> Instructor: ${member.instructor_name || 'None'}
+                        </p>
+                    </div>
+
+                </div>
+            `;
+
+        });
+
+        // Compute and display Similar Instructor match status
+        const instructors = group.members
+            .map(m => m.instructor_name)
+            .filter(Boolean);
+
+        const uniqueInstructors = [...new Set(instructors)];
+        const instructorMatchEl = document.getElementById("groupInstructorMatchDisplay");
+        if (instructorMatchEl) {
+            if (uniqueInstructors.length === 0) {
+                instructorMatchEl.innerText = "Instructor: Not Set";
+                instructorMatchEl.style.color = "#7b6f96";
+            } else if (uniqueInstructors.length === 1 && instructors.length === group.members.length) {
+                instructorMatchEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Similar Instructor: Yes (${uniqueInstructors[0]})`;
+                instructorMatchEl.style.color = "#10b981";
+            } else {
+                instructorMatchEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> Similar Instructor: No (Different Instructors)`;
+                instructorMatchEl.style.color = "#f59e0b";
+            }
+        }
+
+        if(group.adviser_name){
+
+    adviserSection.innerHTML = `
+        <div class="assigned-adviser-card">
+
+            <div class="assigned-adviser-top">
+
+                <div class="assigned-adviser-avatar">
+                    ${group.adviser_name.charAt(0).toUpperCase()}
+                </div>
+
+                <div class="assigned-adviser-main">
+                    <h3>${group.adviser_name}</h3>
+                    <p>${group.adviser_position || "Capstone Adviser"}</p>
+                    <span class="assigned-adviser-id">
+                        ${group.adviser_user_id}
+                    </span>
+                </div>
+
+                <span class="assigned-adviser-badge">
+                    Assigned
+                </span>
+
+            </div>
+
+            <div class="assigned-adviser-grid">
+
+                <div class="assigned-adviser-info">
+                    <span>Program</span>
+                    <strong>${group.adviser_program || "Not Set"}</strong>
+                </div>
+
+                <div class="assigned-adviser-info">
+                    <span>Year Level</span>
+                    <strong>${group.adviser_year_level || "Not Set"}</strong>
+                </div>
+
+                <div class="assigned-adviser-info">
+                    <span>Status</span>
+                    <strong>${group.adviser_status || "Not Set"}</strong>
+                </div>
+
+                <div class="assigned-adviser-info">
+                    <span>Capacity</span>
+                    <strong>${group.adviser_capacity ?? "Not Set"}</strong>
+                </div>
+
+            </div>
+
+        </div>
+             `;
+
+        }else{
+
+            adviserSection.innerHTML = `
+                <div class="adviser-icon">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+
+                <h3>
+                    No adviser assigned yet
+                </h3>
+
+                <p>
+                    Your group does not have an assigned capstone adviser at the moment.
+                </p>
+
+                <button
+                    class="request-adviser-btn"
+                    onclick="requestAdviser()"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Request Adviser
+                </button>
+            `;
+
+        }
+
+    }catch(error){
+
+        console.log(error);
+
+        document.getElementById("currentStageBadge").textContent = "Error";
+        document.getElementById("workflowSteps").innerHTML =
+            `<p style="text-align:center;color:#b91c1c;padding:20px;">Failed to load progress. Please refresh the page.</p>`;
+
+    }
+
+}
+        
+
+        /* ================= REQUEST ADVISER ================= */
+
+        function requestAdviser(){
+
+            window.location.href =
+                "Req_Adviser.html";
+
+        }
+
+        /* ================= LOGOUT ================= */
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        /* ================= EVENTS ================= */
+
+        document.getElementById(
+            "edit-group"
+        ).addEventListener(
+            "click",
+            openGroupModal
+        );
+
+        loadStudentGroup();
+
+        document.getElementById("nav-members").classList.add("active");
+
+    </script>
+
+    
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

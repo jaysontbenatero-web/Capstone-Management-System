@@ -1,0 +1,1011 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Evaluation | CMS</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="Panel_Evaluation.css">
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole = localStorage.getItem("role");
+        const instructorAccess = localStorage.getItem("instructor_access");
+
+        if (userRole === "admin" && instructorAccess !== "1") {
+            alert("Your Instructor access is disabled. Enable it in Admin Settings first.");
+            window.location.href = "../../Admin/AdminDash.html";
+        } else if (userRole !== "admin" && instructorAccess !== "1") {
+            alert("You do not have permission to access this role.");
+            window.location.href = "../FacultyDash.html";
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Instructor Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" onclick="window.location.href='InstructorDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Management</div>
+                <div class="menu-item" onclick="window.location.href='STU_Enroll.html'">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Enroll Student</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Manage_Adviser.html'">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Manage Adviser</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Capstone_Group.html'">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Capstone Groups</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>Document Review</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Defense_Schedule.html'">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Schedule Defense</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+                <div class="menu-item active" onclick="window.location.href='Panel_Evaluation.html'">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span>Panel Evaluation</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main admin-main">
+
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Panel Evaluation Reports</h1>
+                <p id="instructorSubtitle">View completed defense evaluations and official evaluation receipts.</p>
+            </div>
+            <div class="top-actions"></div>
+
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div>
+                    <h2 id="totalEvaluated">0</h2>
+                    <p>Total Evaluated</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <h2 id="passedCount">0</h2>
+                    <p>Passed</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h2 id="revisionCount">0</h2>
+                    <p>Revisions / Re-Defense</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <div>
+                    <h2 id="failedCount">0</h2>
+                    <p>Failed</p>
+                </div>
+            </div>
+        </div>
+
+        <section class="filter-card">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                    type="text"
+                    id="evalSearch"
+                    placeholder="Search group, schedule code, title, or defense type..."
+                    onkeyup="applyFilters()"
+                >
+            </div>
+            <select id="typeFilter" onchange="applyFilters()">
+                <option value="All">All Defense Types</option>
+            </select>
+            <select id="outcomeFilter" onchange="applyFilters()">
+                <option value="All">All Outcomes</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Passed">Passed</option>
+                <option value="Passed with Revisions">Passed with Revisions</option>
+                <option value="For Re-Defense">For Re-Defense</option>
+                <option value="Failed">Failed</option>
+            </select>
+        </section>
+
+        <div class="evaluation-grid">
+
+            <section class="panel-card list-panel">
+                <div class="panel-card-header">
+                    <div>
+                        <h2><i class="fa-solid fa-list-check"></i> Evaluated Groups</h2>
+                        <p>Completed defenses with panel evaluation on record.</p>
+                    </div>
+                    <span class="list-count" id="listCount">0 shown</span>
+                </div>
+
+                <div class="evaluation-list" id="evalListContainer">
+                    <div class="list-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        Loading evaluated defense schedules...
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel-card receipt-card">
+                <div class="panel-card-header">
+                    <div>
+                        <h2><i class="fa-solid fa-file-invoice"></i> Evaluation Receipt</h2>
+                        <p>Official sheet for the selected defense schedule.</p>
+                    </div>
+                </div>
+
+                <div class="receipt-viewport" id="receiptViewport">
+                    <div class="empty-receipt">
+                        <i class="fa-solid fa-clipboard-question"></i>
+                        <h3>No Group Selected</h3>
+                        <p>Select an evaluated defense from the list to view its evaluation receipt and panel results.</p>
+                    </div>
+                </div>
+
+                <div class="receipt-actions" id="receiptActions" style="display:none;">
+                    <button class="btn-print" type="button" onclick="window.print()">
+                        <i class="fa-solid fa-print"></i>
+                        Print Receipt
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        let allSchedules = [];
+        let filteredSchedules = [];
+        let activeScheduleId = null;
+
+        async function loadInstructorSubtitle() {
+            const userId = localStorage.getItem("userId");
+
+            try {
+                const response = await fetch(`http://localhost:3005/faculty-dashboard/${userId}`);
+                const data = await response.json();
+
+                if (data.success && data.faculty) {
+                    const faculty = data.faculty;
+                    document.getElementById("instructorSubtitle").innerText =
+                        `${faculty.fullname} • ${faculty.user_id} • Completed defense evaluations & receipts`;
+                }
+            } catch (e) {
+                const fullname = localStorage.getItem("fullname") || "Instructor";
+                document.getElementById("instructorSubtitle").innerText =
+                    `${fullname} • Panel evaluation reports`;
+            }
+        }
+
+        function updateStats(list) {
+            const complete = list.filter(s => s.evaluations_complete).length;
+            const passed = list.filter(s =>
+                s.evaluations_complete && String(s.panel_result || "").trim() === "Passed"
+            ).length;
+            const revision = list.filter(s => {
+                if (!s.evaluations_complete) return false;
+                const r = String(s.panel_result || "").trim();
+                return r === "Passed with Revisions" || r === "For Re-Defense";
+            }).length;
+            const failed = list.filter(s =>
+                s.evaluations_complete && String(s.panel_result || "").trim() === "Failed"
+            ).length;
+
+            document.getElementById("totalEvaluated").innerText = list.length;
+            document.getElementById("passedCount").innerText = passed;
+            document.getElementById("revisionCount").innerText = revision;
+            document.getElementById("failedCount").innerText = failed;
+        }
+
+        function populateTypeFilter(list) {
+            const select = document.getElementById("typeFilter");
+            const current = select.value;
+            const types = [...new Set(list.map(s => String(s.defense_type || "").trim()).filter(Boolean))].sort();
+
+            select.innerHTML = `<option value="All">All Defense Types</option>`;
+            types.forEach(type => {
+                const opt = document.createElement("option");
+                opt.value = type;
+                opt.textContent = type;
+                select.appendChild(opt);
+            });
+
+            if ([...select.options].some(o => o.value === current)) {
+                select.value = current;
+            }
+        }
+
+        async function loadEvaluations() {
+            const listContainer = document.getElementById("evalListContainer");
+            listContainer.innerHTML = `
+                <div class="list-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Loading evaluations...
+                </div>
+            `;
+
+            try {
+                const response = await fetch("http://localhost:3005/defense-schedules");
+                const data = await response.json();
+
+                if (data.success) {
+                    allSchedules = (data.schedules || []).filter(sched =>
+                        Number(sched.evaluations_submitted || 0) > 0
+                    );
+                    populateTypeFilter(allSchedules);
+                    updateStats(allSchedules);
+                    applyFilters();
+                } else {
+                    listContainer.innerHTML = `
+                        <div class="list-empty list-error">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            Failed to load evaluation list.
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error("Error loading schedules:", e);
+                listContainer.innerHTML = `
+                    <div class="list-empty list-error">
+                        <i class="fa-solid fa-plug-circle-xmark"></i>
+                        Cannot connect to the server. Make sure the backend is running.
+                    </div>
+                `;
+            }
+        }
+
+        function getOutcomeClass(outcome) {
+            const val = String(outcome || "").trim();
+            if (val === "Passed") return "badge-passed";
+            if (val === "Passed with Revisions") return "badge-revision";
+            if (val === "For Re-Defense") return "badge-redefense";
+            if (val === "Failed") return "badge-failed";
+            if (val === "In Progress") return "badge-pending";
+            return "badge-pending";
+        }
+
+        function applyFilters() {
+            const q = document.getElementById("evalSearch").value.toLowerCase().trim();
+            const typeVal = document.getElementById("typeFilter").value;
+            const outcomeVal = document.getElementById("outcomeFilter").value;
+
+            filteredSchedules = allSchedules.filter(sched => {
+                const haystack = [
+                    sched.group_name,
+                    sched.schedule_code,
+                    sched.project_title,
+                    sched.defense_type
+                ].map(v => String(v || "").toLowerCase()).join(" ");
+
+                const matchesSearch = !q || haystack.includes(q);
+                const matchesType = typeVal === "All" || String(sched.defense_type || "") === typeVal;
+                const resultLabel = sched.evaluations_complete
+                    ? String(sched.panel_result || "").trim()
+                    : "In Progress";
+
+                const matchesOutcome =
+                    outcomeVal === "All"
+                    || (outcomeVal === "In Progress" && !sched.evaluations_complete)
+                    || (sched.evaluations_complete && resultLabel === outcomeVal);
+
+                return matchesSearch && matchesType && matchesOutcome;
+            });
+
+            if (activeScheduleId && !filteredSchedules.some(s => s.id === activeScheduleId)) {
+                activeScheduleId = null;
+                resetReceiptViewport();
+            }
+
+            renderEvaluationsList(filteredSchedules);
+            document.getElementById("listCount").innerText =
+                `${filteredSchedules.length} shown`;
+        }
+
+        function resetReceiptViewport() {
+            document.getElementById("receiptViewport").innerHTML = `
+                <div class="empty-receipt">
+                    <i class="fa-solid fa-clipboard-question"></i>
+                    <h3>No Group Selected</h3>
+                    <p>Select an evaluated defense from the list to view its evaluation receipt and panel results.</p>
+                </div>
+            `;
+            document.getElementById("receiptActions").style.display = "none";
+        }
+
+        function renderEvaluationsList(list) {
+            const container = document.getElementById("evalListContainer");
+            container.innerHTML = "";
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="list-empty">
+                        <i class="fa-solid fa-folder-open"></i>
+                        No evaluated defenses match your filters.
+                    </div>
+                `;
+                return;
+            }
+
+            list.forEach(sched => {
+                const item = document.createElement("div");
+                item.className = `evaluation-item${sched.id === activeScheduleId ? " active" : ""}`;
+                item.dataset.scheduleId = sched.id;
+                item.onclick = () => selectEvaluation(sched.id);
+
+                const progressText =
+                    `${Number(sched.evaluations_submitted || 0)}/${Number(sched.evaluations_required || 0)} panel grades`;
+
+                const outcomeLabel = sched.evaluations_complete
+                    ? (sched.panel_result || "Pending")
+                    : "In Progress";
+
+                item.innerHTML = `
+                    <div class="eval-info">
+                        <h3>${escapeHtml(sched.group_name)}</h3>
+                        <p><strong>Project:</strong> ${escapeHtml(sched.project_title || "Pending Title")}</p>
+                        <div class="eval-meta">
+                            <span class="badge ${getOutcomeClass(outcomeLabel)}">${escapeHtml(outcomeLabel)}</span>
+                            <span class="badge badge-type">${escapeHtml(sched.defense_type || "Defense")}</span>
+                            <span>${escapeHtml(progressText)}</span>
+                        </div>
+                    </div>
+                    <button class="btn-receipt" type="button">
+                        <i class="fa-solid fa-file-invoice"></i>
+                        View
+                    </button>
+                `;
+
+                container.appendChild(item);
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function getPanelEvalSignatureDetails(panelEval) {
+
+            if (panelEval.concept_evaluation_details) {
+                try {
+                    const conceptDetails = typeof panelEval.concept_evaluation_details === "string"
+                        ? JSON.parse(panelEval.concept_evaluation_details)
+                        : panelEval.concept_evaluation_details;
+
+                    if (conceptDetails?.signature_attached) {
+                        if (!conceptDetails.signature_image_path && panelEval.panelist_signature) {
+                            conceptDetails.signature_image_path = panelEval.panelist_signature;
+                        }
+                        return conceptDetails;
+                    }
+                } catch (e) {
+                    console.error("Concept signature parse error:", e);
+                }
+            }
+
+            const outlineDetails = parseOutlineDetails(panelEval.outline_evaluation_details);
+
+            if (outlineDetails?.signature_attached) {
+                if (!outlineDetails.signature_image_path && panelEval.panelist_signature) {
+                    outlineDetails.signature_image_path = panelEval.panelist_signature;
+                }
+                return outlineDetails;
+            }
+
+            return null;
+        }
+
+        function renderPanelistSignatureHtml(details) {
+
+            if (!details || !details.signature_attached) {
+                return `<span style="font-size:0.75rem;color:#9ca3af;font-style:italic;">No signature attached</span>`;
+            }
+
+            const name = escapeHtml(details.evaluated_by || "Panelist");
+
+            const imageHtml = details.signature_image_path
+                ? `<img src="http://localhost:3005${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:6px 0;background:transparent;">`
+                : "";
+
+            return `
+                <div class="sig-badge"><i class="fa-solid fa-signature"></i> E-Signed: ${name}</div>
+                ${imageHtml}
+            `;
+        }
+
+        function getSystemDocSheetShortLabel(defenseType) {
+            const value = String(defenseType || "").toLowerCase().trim();
+
+            if (value.includes("pre-final") || value.includes("prefinal")) {
+                return "Pre-Final defense";
+            }
+
+            if (value.includes("final") && !value.includes("pre")) {
+                return "Final defense";
+            }
+
+            return "Outline defense";
+        }
+
+        function parseOutlineDetails(raw) {
+            if (!raw) {
+                return null;
+            }
+
+            try {
+                return typeof raw === "string" ? JSON.parse(raw) : raw;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function buildOutlinePanelSheetHtml(details, defenseType) {
+            const sheetLabel = getSystemDocSheetShortLabel(defenseType);
+
+            const presentersHtml = (details.presenters || []).map((p, pIdx) => {
+                const indWeighted = (Number(p.disposition_score) * 0.20 + Number(p.delivery_score) * 0.80).toFixed(1);
+                const indGpa = convert100ToGpa(indWeighted);
+                return `
+                    <p style="font-size:12px;color:#6d5f85;margin-bottom:4px;">
+                        Student ${pIdx + 1} (${escapeHtml(p.fullname)}):
+                        Disposition <strong>${escapeHtml(p.disposition_score)}</strong>,
+                        Delivery <strong>${escapeHtml(p.delivery_score)}</strong>
+                        &mdash; Individual Weighted: <strong style="color:#7c3aed;">${indWeighted} (GPA: ${indGpa})</strong>
+                    </p>
+                `;
+            }).join("");
+
+            const groupTotal = ((Number(details.system_score) + Number(details.documentation_score)) / 2).toFixed(1);
+            const groupGpa = convert100ToGpa(groupTotal);
+
+            return `
+                <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd6fe;">
+                    <p style="font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:6px;">
+                        <i class="fa-solid fa-file-shield" style="margin-right:4px;"></i>
+                        ${escapeHtml(sheetLabel)} evaluation sheet
+                    </p>
+                    <p style="font-size:12px;font-weight:600;color:#6d5f85;margin-bottom:4px;">Individual Grades:</p>
+                    ${presentersHtml}
+                    <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e5e7eb;font-size:12px;color:#6d5f85;">
+                        <p style="margin-bottom:2px;">System (50%): <strong>${escapeHtml(String(details.system_score))}</strong></p>
+                        <p style="margin-bottom:2px;">Documentation (50%): <strong>${escapeHtml(String(details.documentation_score))}</strong></p>
+                        <p style="margin-bottom:0;">Group Total: <strong style="color:#7c3aed;">${groupTotal} (GPA: ${groupGpa})</strong></p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function convert100ToGpa(score) {
+            score = parseFloat(score);
+            if (isNaN(score) || score < 0) return "--";
+            if (score >= 97) return "1.00";
+            if (score >= 94) return "1.25";
+            if (score >= 91) return "1.50";
+            if (score >= 88) return "1.75";
+            if (score >= 85) return "2.00";
+            if (score >= 82) return "2.25";
+            if (score >= 79) return "2.50";
+            if (score >= 76) return "2.75";
+            if (score === 75) return "3.00";
+            return "5.00";
+        }
+
+        async function selectEvaluation(id) {
+            activeScheduleId = id;
+
+            document.querySelectorAll(".evaluation-item").forEach(el => {
+                el.classList.toggle("active", Number(el.dataset.scheduleId) === Number(id));
+            });
+
+            const sched = allSchedules.find(s => Number(s.id) === Number(id));
+            if (!sched) return;
+
+            const viewport = document.getElementById("receiptViewport");
+            const actions = document.getElementById("receiptActions");
+
+            viewport.innerHTML = `
+                <div class="list-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Loading all panel evaluations...
+                </div>
+            `;
+            actions.style.display = "flex";
+
+            try {
+                const response =
+                    await fetch(`http://localhost:3005/defense-panel-evaluations/${id}`);
+
+                const data = await response.json();
+
+                if (data.success) {
+                    sched.panel_evaluations = data.panel_evaluations || [];
+                    sched.evaluations_required = data.evaluations_required;
+                    sched.evaluations_submitted = data.evaluations_submitted;
+                    sched.evaluations_complete = data.evaluations_complete;
+
+                    if (data.evaluations_complete && data.panel_result) {
+                        sched.panel_result = data.panel_result;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to refresh panel evaluations:", e);
+            }
+
+            viewport.innerHTML = "";
+            renderCompiledPanelReport(sched, viewport);
+        }
+
+        function getReceiptOutcomeClass(outcome) {
+            const value = String(outcome || "").trim();
+            if (value === "Passed") {
+                return "outcome-passed";
+            }
+            if (value === "Passed with Revisions") {
+                return "outcome-revision";
+            }
+            if (value === "Conditional Passed" || value === "Conditional Pass") {
+                return "outcome-conditional";
+            }
+            if (value === "For Re-Defense") {
+                return "outcome-redefense";
+            }
+            if (value === "Failed") {
+                return "outcome-failed";
+            }
+            return "outcome-pending";
+        }
+
+        function buildPanelSignatureHtml(details) {
+            if (!details || !details.signature_attached) {
+                return `<p class="panel-receipt-line" style="color:var(--text-muted);font-style:italic;">No e-signature attached</p>`;
+            }
+
+            const name = escapeHtml(details.evaluated_by || "Panelist");
+            const imageHtml = details.signature_image_path
+                ? `<img src="http://localhost:3005${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:8px 0;background:transparent;">`
+                : "";
+
+            return `
+                <p class="panel-receipt-line" style="color:#10B981;font-weight:600;">
+                    <i class="fa-solid fa-circle-check"></i> E-Signed: ${name}
+                </p>
+                ${imageHtml}
+            `;
+        }
+
+        function renderCompiledPanelReport(sched, viewport) {
+            const panelEvaluations = sched.panel_evaluations || [];
+            const formattedDate = formatDefenseDate(sched.defense_date);
+            const progressText =
+                `${Number(sched.evaluations_submitted || 0)}/${Number(sched.evaluations_required || 0)} panel evaluations received`;
+
+            let html = `
+                <div class="receipt-container compiled-report">
+                    <div class="receipt-header">
+                        <h1>Institute of Computing</h1>
+                        <h2>Compiled Panel Evaluation — ${escapeHtml(sched.group_name)}</h2>
+                    </div>
+
+                    <div class="receipt-meta">
+                        <div>
+                            <p><strong>Date:</strong> ${formattedDate}</p>
+                            <p><strong>Defense Type:</strong> ${escapeHtml(sched.defense_type)}</p>
+                            <p><strong>Project:</strong> ${escapeHtml(sched.project_title || "N/A")}</p>
+                        </div>
+                        <div class="receipt-meta-right">
+                            <p><strong>Schedule:</strong> ${escapeHtml(sched.schedule_code)}</p>
+                            <p><strong>Progress:</strong> ${escapeHtml(progressText)}</p>
+                            <p><strong>Final Result:</strong>
+                                <strong style="color:#7c3aed;text-transform:uppercase;">
+                                    ${sched.evaluations_complete ? escapeHtml(sched.panel_result) : "Pending all panel grades"}
+                                </strong>
+                            </p>
+                        </div>
+                    </div>
+            `;
+
+            if (sched.evaluations_complete && sched.evaluation) {
+                html += `
+                    <div class="receipt-summary-box">
+                        <p><strong>Compiled panel decision</strong> (after all panelists submitted)</p>
+                        <p>• Final outcome: <strong style="color:#7c3aed;">${escapeHtml(sched.panel_result)}</strong></p>
+                        <p>• Compiled grade / score: <strong>${escapeHtml(String(sched.evaluation.score ?? "N/A"))}</strong></p>
+                    </div>
+                `;
+            }
+
+            html += `<div class="receipt-section-title">Individual Panel Evaluations</div>`;
+
+            if (panelEvaluations.length === 0) {
+                html += `<p class="section-hint">No panel evaluations submitted yet.</p>`;
+            } else {
+                html += `<div class="panel-grades-grid">`;
+
+                panelEvaluations.forEach((panelEval, index) => {
+                    let conceptHtml = "";
+                    let outlineHtml = "";
+
+                    if (panelEval.concept_evaluation_details) {
+                        try {
+                            const details = typeof panelEval.concept_evaluation_details === "string"
+                                ? JSON.parse(panelEval.concept_evaluation_details)
+                                : panelEval.concept_evaluation_details;
+
+                            const presentersHtml = (details.presenters || []).map((p, pIdx) => {
+                                const weighted = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
+                                return `
+                                    <p class="panel-receipt-line">
+                                        Student ${pIdx + 1} (${escapeHtml(p.fullname)}):
+                                        Disposition ${escapeHtml(p.disposition_score)}, Delivery ${escapeHtml(p.delivery_score)}
+                                        (Weighted: ${escapeHtml(weighted)})
+                                    </p>
+                                `;
+                            }).join("");
+
+                            const chosenTitleHtml = details.selected_title_text
+                                ? `<p class="panel-receipt-line"><strong>Title selected:</strong> <em>${escapeHtml(details.selected_title_text)}</em></p>`
+                                : "";
+
+                            conceptHtml = `
+                                <div class="panel-receipt-block">
+                                    <p class="panel-receipt-label">Concept presentation sheet</p>
+                                    ${chosenTitleHtml}
+                                    ${presentersHtml}
+                                    <p class="panel-receipt-line">
+                                        <strong>Group concept papers:</strong>
+                                        ${escapeHtml(details.group_score)}
+                                        (GPA: ${escapeHtml(convert100ToGpa(details.group_score))})
+                                    </p>
+                                </div>
+                            `;
+                        } catch (e) {
+                            console.error("Concept details parse error:", e);
+                        }
+                    }
+
+                    if (panelEval.outline_evaluation_details) {
+                        const details = parseOutlineDetails(panelEval.outline_evaluation_details);
+
+                        if (details) {
+                            const sheetLabel = getSystemDocSheetShortLabel(details.defense_type || sched.defense_type);
+                            let presentersHtml = "";
+
+                            (details.presenters || []).forEach((presenter, idx) => {
+                                const weighted = (Number(presenter.disposition_score) * 0.2 + Number(presenter.delivery_score) * 0.8).toFixed(1);
+                                presentersHtml += `
+                                    <p class="panel-receipt-line">
+                                        Student ${idx + 1} (${escapeHtml(presenter.fullname)}):
+                                        Disposition ${escapeHtml(presenter.disposition_score)},
+                                        Delivery ${escapeHtml(presenter.delivery_score)}
+                                        &mdash; Weighted ${escapeHtml(weighted)}
+                                    </p>
+                                `;
+                            });
+
+                            const groupTotal = ((Number(details.system_score) + Number(details.documentation_score)) / 2).toFixed(1);
+
+                            outlineHtml = `
+                                <div class="panel-receipt-block">
+                                    <p class="panel-receipt-label"><i class="fa-solid fa-file-shield"></i> ${escapeHtml(sheetLabel)} evaluation sheet</p>
+                                    ${presentersHtml}
+                                    <p class="panel-receipt-line">
+                                        <strong>System (50%):</strong>
+                                        ${escapeHtml(details.system_score)}
+                                    </p>
+                                    <p class="panel-receipt-line">
+                                        <strong>Documentation (50%):</strong>
+                                        ${escapeHtml(details.documentation_score)}
+                                    </p>
+                                    <p class="panel-receipt-line">
+                                        <strong>Group average:</strong>
+                                        ${escapeHtml(groupTotal)}
+                                        (GPA: ${escapeHtml(convert100ToGpa(groupTotal))})
+                                    </p>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    const signatureDetails = getPanelEvalSignatureDetails(panelEval);
+                    const signatureHtml = buildPanelSignatureHtml(signatureDetails);
+
+                    html += `
+                        <div class="panel-receipt-card">
+                            <div class="panel-receipt-card-head">
+                                <span class="panel-receipt-index">Panelist ${index + 1}</span>
+                                <span class="panel-outcome-badge ${getReceiptOutcomeClass(panelEval.panel_result)}">${escapeHtml(panelEval.panel_result)}</span>
+                            </div>
+                            <h4 class="panel-receipt-name">${escapeHtml(panelEval.panelist_name)}</h4>
+                            <p class="panel-receipt-meta">${escapeHtml(panelEval.panelist_position || "Panelist")}</p>
+                            <p class="panel-receipt-line"><strong>Score:</strong> ${escapeHtml(String(panelEval.score ?? "N/A"))}</p>
+                            <p class="panel-receipt-line"><strong>Comments:</strong> ${escapeHtml(panelEval.comments || "None")}</p>
+                            <p class="panel-receipt-line"><strong>Recommendations:</strong> ${escapeHtml(panelEval.recommendations || "None")}</p>
+                            ${conceptHtml}
+                            ${outlineHtml}
+                            <div class="panel-receipt-signature-block">
+                                ${signatureHtml}
+                                <div class="panel-receipt-signature-line"></div>
+                                <p class="panel-receipt-signature-caption">Signature over Printed Name of Panelist</p>
+                                <p class="panel-receipt-signature-name">${escapeHtml(panelEval.panelist_name)}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            viewport.innerHTML = html;
+        }
+
+        function renderConceptReceipt(sched, details, viewport) {
+            let presenterNamesHtml = "";
+            let tableHeaderPresenters = "";
+            let dispositionCells = "";
+            let deliveryCells = "";
+            let studentTotals = "";
+
+            (details.presenters || []).forEach((p, idx) => {
+                presenterNamesHtml += `<p>${idx + 1}. <strong>${escapeHtml(p.fullname)}</strong> (${escapeHtml(p.role)})</p>`;
+                tableHeaderPresenters += `<th class="score-col">${idx + 1}</th>`;
+                dispositionCells += `<td class="score-col">${escapeHtml(p.disposition_score)}</td>`;
+                deliveryCells += `<td class="score-col">${escapeHtml(p.delivery_score)}</td>`;
+
+                const individualWeighted = p.disposition_score * 0.20 + p.delivery_score * 0.80;
+                const individualGpa = convert100ToGpa(individualWeighted);
+                studentTotals += `<td class="score-col" style="background:#f9fafb;font-weight:bold;color:#7c3aed;">${individualWeighted.toFixed(1)} (${individualGpa})</td>`;
+            });
+
+            for (let i = (details.presenters || []).length; i < 3; i++) {
+                tableHeaderPresenters += `<th class="score-col">—</th>`;
+                dispositionCells += `<td class="score-col">—</td>`;
+                deliveryCells += `<td class="score-col">—</td>`;
+                studentTotals += `<td class="score-col">—</td>`;
+            }
+
+            const groupGpa = convert100ToGpa(details.group_score);
+            const formattedDate = formatDefenseDate(sched.defense_date);
+
+            viewport.innerHTML = `
+                <div class="receipt-container">
+                    <div class="receipt-header">
+                        <h1>Institute of Computing</h1>
+                        <h2>Concept Proposal Evaluation Sheet</h2>
+                    </div>
+
+                    <div class="receipt-meta">
+                        <div>
+                            <p><strong>Date:</strong> ${formattedDate}</p>
+                            <p><strong>Group Name:</strong> ${escapeHtml(sched.group_name)}</p>
+                            <p><strong>Capstone Title:</strong> ${escapeHtml(sched.project_title || "N/A")}</p>
+                        </div>
+                        <div class="receipt-meta-right">
+                            <p><strong>Schedule ID:</strong> ${escapeHtml(sched.schedule_code)}</p>
+                            <p><strong>Defense Type:</strong> ${escapeHtml(sched.defense_type)}</p>
+                            <p><strong>Panel Outcome:</strong> <strong style="color:#7c3aed;text-transform:uppercase;">${escapeHtml(sched.panel_result)}</strong></p>
+                        </div>
+                    </div>
+
+                    <p style="font-weight:600;font-size:0.85rem;margin-bottom:6px;">Presenters' Names</p>
+                    <div style="font-size:0.8rem;line-height:1.6;margin-bottom:16px;padding-left:8px;color:#374151;">
+                        ${presenterNamesHtml}
+                    </div>
+
+                    <div class="receipt-section-title">Individual Grade</div>
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th>Criteria and Weight</th>
+                                ${tableHeaderPresenters}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>I. Disposition (20%)</strong>
+                                    <div class="criteria-desc">a. Generally neat in appearance</div>
+                                    <div class="criteria-desc">b. Projects an aura of confidence</div>
+                                    <div class="criteria-desc">c. Preparedness and teamwork</div>
+                                </td>
+                                ${dispositionCells}
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>II. Delivery and Presentation (80%)</strong>
+                                    <div class="criteria-desc">a. Organization of Content</div>
+                                    <div class="criteria-desc">b. Manner of Presentation</div>
+                                    <div class="criteria-desc">c. Ability to Defend Ideas</div>
+                                </td>
+                                ${deliveryCells}
+                            </tr>
+                            <tr style="font-weight:bold;background:#f3f4f6;">
+                                <td>Individual Weighted Average (GPA)</td>
+                                ${studentTotals}
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="receipt-section-title">Group Grade</div>
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th>Criteria and Weight</th>
+                                <th class="score-col">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>Concept Papers (100%)</strong>
+                                    <div class="criteria-desc">• Mechanics, completeness, and content</div>
+                                </td>
+                                <td class="score-col">${escapeHtml(details.group_score)}</td>
+                            </tr>
+                            <tr style="font-weight:bold;background:#f3f4f6;">
+                                <td>Total Group Grade (GPA Equivalent)</td>
+                                <td class="score-col" style="color:#7c3aed;">${groupGpa}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="receipt-feedback">
+                        <div>
+                            <p><strong>Comments</strong></p>
+                            <p class="receipt-quote">"${escapeHtml(sched.evaluation.comments || "None")}"</p>
+                        </div>
+                        <div class="receipt-feedback-border">
+                            <p><strong>Recommendations</strong></p>
+                            <p class="receipt-quote">"${escapeHtml(sched.evaluation.recommendations || "None")}"</p>
+                        </div>
+                    </div>
+
+                    <div class="signature-area">
+                        <div>
+                            <p><strong>Overall Calculated Team Grade</strong></p>
+                            <span class="grade-highlight">${escapeHtml(sched.evaluation.score)} (GPA)</span>
+                        </div>
+                        <div class="sig-block">
+                            ${renderPanelistSignatureHtml(details)}
+                            <div class="sig-line">Signature over Printed Name of Panelist</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFallbackReceipt(sched, viewport) {
+            const formattedDate = formatDefenseDate(sched.defense_date);
+
+            viewport.innerHTML = `
+                <div class="receipt-container">
+                    <div class="receipt-header">
+                        <h1>Institute of Computing</h1>
+                        <h2>Defense Panel Evaluation Receipt</h2>
+                    </div>
+
+                    <div class="receipt-meta">
+                        <div>
+                            <p><strong>Date:</strong> ${formattedDate}</p>
+                            <p><strong>Group Name:</strong> ${escapeHtml(sched.group_name)}</p>
+                            <p><strong>Capstone Title:</strong> ${escapeHtml(sched.project_title || "N/A")}</p>
+                        </div>
+                        <div class="receipt-meta-right">
+                            <p><strong>Schedule ID:</strong> ${escapeHtml(sched.schedule_code)}</p>
+                            <p><strong>Defense Type:</strong> ${escapeHtml(sched.defense_type)}</p>
+                            <p><strong>Panel Outcome:</strong> <strong style="color:#7c3aed;text-transform:uppercase;">${escapeHtml(sched.panel_result)}</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="receipt-summary-box">
+                        <p style="margin-bottom:10px;line-height:1.7;">
+                            Official panel record for <strong>${escapeHtml(sched.group_name)}</strong>
+                            during <strong>${escapeHtml(sched.defense_type)}</strong> on
+                            <strong>${formattedDate}</strong> in room <strong>${escapeHtml(sched.room_name || "N/A")}</strong>.
+                        </p>
+                        <p>• Final Panel Decision: <strong style="color:#7c3aed;">${escapeHtml(sched.panel_result)}</strong></p>
+                        <p>• Final Grade / Score: <strong>${escapeHtml(String(sched.evaluation?.score ?? "N/A"))}</strong></p>
+                    </div>
+
+                    <div style="margin-top:20px;font-size:0.88rem;">
+                        <p><strong>Comments &amp; Observations</strong></p>
+                        <p class="receipt-quote">"${escapeHtml(sched.evaluation?.comments || "No comments recorded.")}"</p>
+                    </div>
+
+                    <div style="margin-top:16px;font-size:0.88rem;">
+                        <p><strong>Panel Recommendations</strong></p>
+                        <p class="receipt-quote">"${escapeHtml(sched.evaluation?.recommendations || "No recommendations recorded.")}"</p>
+                    </div>
+
+                    <div class="signature-area">
+                        <div>
+                            <p><strong>Record Status</strong></p>
+                            <span class="status-seal"><i class="fa-solid fa-circle-check"></i> Official System Log</span>
+                        </div>
+                        <div class="sig-block">
+                            <div class="sig-line">Official Panel Evaluation Record</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatDefenseDate(value) {
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return "N/A";
+            return date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../../Log-in.html";
+        }
+
+        loadInstructorSubtitle();
+        loadEvaluations();
+    </script>
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+</html>

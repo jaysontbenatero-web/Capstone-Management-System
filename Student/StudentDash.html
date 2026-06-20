@@ -1,0 +1,1021 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Student Dashboard | CMS</title>
+
+    <!-- GOOGLE FONT -->
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <!-- CSS -->
+
+    <link
+        rel="stylesheet"
+        href="StudentDash.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <!-- BACKGROUND -->
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+
+   <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='StudentDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-titles"
+                    onclick="window.location.href='Capstone_Titles.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-members"
+                    onclick="window.location.href='Members.html'"
+                >
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-adviser"
+                    onclick="window.location.href='Req_Adviser.html'"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-messages"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">
+                    Updates
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-notifications"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-settings"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+
+    <main class="main admin-main">
+
+        <!-- TOPBAR -->
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Student Dashboard</h1>
+
+                <p id="studentSubtitle">
+                    Loading your student dashboard information...
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="dashboardSearch"
+                        placeholder="Search dashboard..."
+                    >
+                </div>
+            </div>
+
+        </div>
+
+        <!-- DASHBOARD GRID -->
+
+        <div class="dashboard-grid">
+
+            <!-- LEFT -->
+
+            <section class="left-section">
+
+                <!-- STATS -->
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-layer-group"></i>
+
+                        <h2 id="statStageValue">
+                            —
+                        </h2>
+
+                        <p>
+                            Current Stage
+                        </p>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-users"></i>
+
+                        <h2 id="statMemberCount">
+                            —
+                        </h2>
+
+                        <p>
+                            Team Members
+                        </p>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-book"></i>
+
+                        <h2 id="statRepositoryCount">
+                            —
+                        </h2>
+
+                        <p>
+                            Repository Titles
+                        </p>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-calendar-days"></i>
+
+                        <h2 id="statDefenseDate">
+                            —
+                        </h2>
+
+                        <p>
+                            Next Defense
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- CAPSTONE STAGE TRACKER -->
+                <div class="card stage-tracker-card" id="stageTrackerCard">
+                    <div class="card-header">
+                        <h2>Capstone Stage Progress</h2>
+                        <span class="status-badge-tracker current-stage-badge" id="currentStageBadge">Loading...</span>
+                    </div>
+                    <div class="workflow-tracker">
+                        <div class="workflow-steps" id="workflowSteps">
+                            <!-- dynamically rendered by JS -->
+                            <div style="text-align:center;color:#7b6f96;padding:30px 0;width:100%">
+                                <i class="fa-solid fa-spinner fa-spin" style="font-size:22px;color:#7c3aed;"></i>
+                                <p style="margin-top:10px;font-size:13px;">Loading your progress...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROJECT -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            My Capstone
+                        </h2>
+
+                        <span class="status ongoing" id="projectStatusBadge">
+                            Loading...
+                        </span>
+
+                    </div>
+
+                    <h3 class="project-title" id="projectTitle">
+                        Loading project...
+                    </h3>
+
+                    <p class="project-description" id="projectDescription">
+                        Please wait while your group information is loaded.
+                    </p>
+
+                    <div class="progress-section">
+
+                        <div class="progress-info">
+
+                            <span>
+                                Progress
+                            </span>
+
+                            <span id="progressPercent">
+                                0%
+                            </span>
+
+                        </div>
+
+                        <div class="progress-bar">
+
+                            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- TASKS -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Upcoming Tasks
+                        </h2>
+
+                    </div>
+
+                    <div id="tasksList">
+                        <p style="color:#7b6f96;font-size:13px;padding:8px 0;">
+                            Loading upcoming items...
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- RIGHT -->
+
+            <aside class="right-section">
+
+                <!-- MEMBERS -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Team Members
+                        </h2>
+
+                    </div>
+
+                    <div id="teamMembersList">
+                        <p style="color:#7b6f96;font-size:13px;padding:8px 0;">
+                            Loading team...
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- ANNOUNCEMENTS -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Announcements
+                        </h2>
+
+                    </div>
+
+                    <div id="dashboardAnnouncementsList">
+                        <p style="color:#7b6f96;font-size:13px;padding:8px 0;">
+                            Loading announcements...
+                        </p>
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        async function loadStudentDashboardHeader(){
+
+            const userId =
+                localStorage.getItem("userId");
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/student-info/${userId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success && data.student){
+
+                    const student =
+                        data.student;
+
+                    const positionLabel =
+                        student.student_position
+                        || student.program
+                        || "Student";
+
+                    document.getElementById("studentSubtitle").innerText =
+                        `${student.fullname || "Student"} • ${student.user_id || "No ID"} • ${positionLabel}`;
+
+                    localStorage.setItem(
+                        "fullname",
+                        student.fullname || ""
+                    );
+
+                    return;
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+            const fullname =
+                localStorage.getItem("fullname");
+
+            const storedUserId =
+                localStorage.getItem("userId");
+
+            const studentPosition =
+                localStorage.getItem("student_position");
+
+            document.getElementById("studentSubtitle").innerText =
+                `${fullname || "Student"} • ${storedUserId || "No ID"} • ${studentPosition || "Student"}`;
+
+        }
+
+        /* ============================================================
+           CAPSTONE STAGE PROGRESS TRACKER
+           Fetches group stage/progress and defense history to
+           dynamically render the workflow stepper.
+        ============================================================ */
+
+        const STAGES = [
+            {
+                key: "Concept Presentation",
+                label: "Concept Presentation",
+                icon: "fa-lightbulb",
+                pendingRemark: "Waiting to be scheduled"
+            },
+            {
+                key: "Outline Defense",
+                label: "Outline Defense",
+                icon: "fa-book-open",
+                pendingRemark: "Pending Concept Presentation approval"
+            },
+            {
+                key: "Pre-Final Defense",
+                label: "Pre-Final Defense",
+                icon: "fa-file-shield",
+                pendingRemark: "Pending Outline Defense approval"
+            },
+            {
+                key: "Final Defense",
+                label: "Final Defense",
+                icon: "fa-graduation-cap",
+                pendingRemark: "Pending Pre-Final Defense approval"
+            },
+            {
+                key: "Completed",
+                label: "Completed",
+                icon: "fa-circle-check",
+                pendingRemark: "Final compilation pending"
+            }
+        ];
+
+        /* Map server stage string → how many defense stages are DONE */
+        function stageToCompletedIndex(stage) {
+            /* stage is the CURRENT active stage
+               'Stage 1' or null = only Concept active
+               'Stage 2'         = Concept done, Outline active
+               'Stage 3'         = Concept+Outline done, Pre-Final active
+               'Stage 4'         = Concept+Outline+Pre-Final done, Final active
+               'Final'           = all 4 done → Completed active
+            */
+            const map = {
+                "Stage 1": 0,
+                "Stage 2": 1,
+                "Stage 3": 2,
+                "Stage 4": 3,
+                "Final":   4
+            };
+            return map[stage] ?? 0;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        function buildStepHtml(stageObj, state, defenseRecord, isLast) {
+            /* state: 'completed' | 'active' | 'pending' */
+            let badgeClass = "not-started";
+            let badgeLabel = "Not Started";
+            let remark = stageObj.pendingRemark;
+
+            if (state === "completed") {
+                const result = defenseRecord?.panel_result || "";
+                if (result === "Passed") {
+                    badgeClass = "approved"; badgeLabel = "Passed";
+                } else if (result === "Passed with Revisions") {
+                    badgeClass = "for-adviser"; badgeLabel = "Passed w/ Revisions";
+                } else {
+                    badgeClass = "approved"; badgeLabel = "Completed";
+                }
+                remark = defenseRecord?.defense_date
+                    ? `Completed on ${formatDate(defenseRecord.defense_date)}`
+                    : "Completed";
+            } else if (state === "active") {
+                if (defenseRecord) {
+                    if (defenseRecord.defense_status === "Completed") {
+                        const result = defenseRecord.panel_result || "";
+                        if (result === "Failed" || result === "Disapproved") {
+                            badgeClass = "for-revision"; badgeLabel = "For Revision";
+                            remark = `Result: ${result} — ${formatDate(defenseRecord.defense_date)}`;
+                        } else if (result === "Conditional Passed" || result === "Conditional Pass") {
+                            badgeClass = "conditional-pass"; badgeLabel = "Conditional Passed";
+                            remark = `Result: Conditional Passed — ${formatDate(defenseRecord.defense_date)}`;
+                            if (defenseRecord.comments) {
+                                remark += `<br/><span style="font-size:10px;color:#6d28d9;font-weight:500;">Feedback: ${escapeHtml(defenseRecord.comments)}</span>`;
+                            }
+                        } else if (result === "For Re-Defense") {
+                            badgeClass = "re-defense"; badgeLabel = "For Re-Defense";
+                            remark = `Result: For Re-Defense — ${formatDate(defenseRecord.defense_date)}`;
+                            if (defenseRecord.comments) {
+                                remark += `<br/><span style="font-size:10px;color:#db2777;font-weight:500;">Feedback: ${escapeHtml(defenseRecord.comments)}</span>`;
+                            }
+                        } else {
+                            badgeClass = "approved"; badgeLabel = "Evaluated";
+                            remark = `Evaluated on ${formatDate(defenseRecord.defense_date)}`;
+                        }
+                    } else {
+                        badgeClass = "scheduled"; badgeLabel = "Scheduled";
+                        remark = `Scheduled for ${formatDate(defenseRecord.defense_date)}`;
+                    }
+                } else {
+                    badgeClass = "for-adviser"; badgeLabel = "In Progress";
+                    remark = "Awaiting schedule from instructor";
+                }
+            }
+
+            const lineHtml = !isLast
+                ? `<div class="step-line"></div>`
+                : "";
+
+            return `
+                <div class="step ${state}">
+                    <div class="step-icon-wrap">
+                        ${lineHtml}
+                        <div class="step-icon"><i class="fa-solid ${stageObj.icon}"></i></div>
+                    </div>
+                    <div class="step-content">
+                        <h4>${stageObj.label}</h4>
+                        <span class="status-badge-tracker ${badgeClass}">${badgeLabel}</span>
+                        <p class="step-remarks">${remark}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatDateShort(dateStr) {
+            if (!dateStr) {
+                return "TBD";
+            }
+
+            return new Date(dateStr).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric"
+            });
+        }
+
+        function formatDateTime(dateStr, timeStr) {
+            const datePart = formatDateShort(dateStr);
+
+            if (!timeStr) {
+                return datePart;
+            }
+
+            const timeValue =
+                String(timeStr).length >= 5
+                ? String(timeStr).slice(0, 5)
+                : timeStr;
+
+            return `${datePart} • ${timeValue}`;
+        }
+
+        function getMemberInitial(name) {
+            const trimmed = String(name || "").trim();
+            return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
+        }
+
+        function normalizeProjectStatus(status) {
+            const value = String(status || "Ongoing").trim();
+
+            if (/complete/i.test(value)) {
+                return { label: "Completed", className: "completed" };
+            }
+
+            if (/pending|hold/i.test(value)) {
+                return { label: value, className: "pending" };
+            }
+
+            return { label: value || "Ongoing", className: "ongoing" };
+        }
+
+        function renderTeamMembers(members) {
+            const container = document.getElementById("teamMembersList");
+
+            if (!members || members.length === 0) {
+                container.innerHTML =
+                    `<p style="color:#7b6f96;font-size:13px;">No team members yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = members.map(member => `
+                <div class="member">
+                    <div class="member-avatar">
+                        ${escapeHtml(getMemberInitial(member.fullname))}
+                    </div>
+                    <div>
+                        <h3>${escapeHtml(member.fullname || "Member")}</h3>
+                        <p>${escapeHtml(member.member_position || "Member")}</p>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function renderAnnouncements(announcements) {
+            const container = document.getElementById("dashboardAnnouncementsList");
+
+            if (!announcements || announcements.length === 0) {
+                container.innerHTML =
+                    `<p style="color:#7b6f96;font-size:13px;">No announcements right now.</p>`;
+                return;
+            }
+
+            container.innerHTML = announcements.slice(0, 4).map(item => `
+                <div class="announcement">
+                    <div class="announcement-dot"></div>
+                    <div>
+                        <h3>${escapeHtml(item.announcement_title || "Announcement")}</h3>
+                        <p>${escapeHtml(
+                            String(item.announcement_content || "")
+                                .replace(/\s+/g, " ")
+                                .trim()
+                                .slice(0, 90)
+                            || "No details provided."
+                        )}${String(item.announcement_content || "").length > 90 ? "…" : ""}</p>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function renderUpcomingTasks(group, defenses) {
+            const container = document.getElementById("tasksList");
+            const tasks = [];
+
+            if (!group) {
+                container.innerHTML = `
+                    <div class="task">
+                        <div class="task-dot"></div>
+                        <div>
+                            <h3>Create or join a group</h3>
+                            <p>Go to Members to unlock capstone progress tracking.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (!group.adviser_name) {
+                tasks.push({
+                    title: "Request an adviser",
+                    detail: "Your group has no assigned adviser yet."
+                });
+            }
+
+            const upcomingDefenses = (defenses || [])
+                .filter(defense =>
+                    String(defense.defense_status || "") !== "Cancelled"
+                    && String(defense.defense_status || "") !== "Completed"
+                )
+                .sort((a, b) => {
+                    const dateA = new Date(`${a.defense_date || ""}T${a.start_time || "00:00"}`);
+                    const dateB = new Date(`${b.defense_date || ""}T${b.start_time || "00:00"}`);
+                    return dateA - dateB;
+                });
+
+            upcomingDefenses.slice(0, 3).forEach(defense => {
+                tasks.push({
+                    title: defense.defense_type || "Defense",
+                    detail: `${formatDateTime(defense.defense_date, defense.start_time)} — ${defense.defense_status || "Scheduled"}`
+                });
+            });
+
+            const revisionDefenses = (defenses || []).filter(defense => {
+                const result = String(defense.panel_result || "");
+                return result === "Passed with Revisions"
+                    || result === "For Re-Defense"
+                    || result === "Failed";
+            });
+
+            revisionDefenses.slice(0, 2).forEach(defense => {
+                tasks.push({
+                    title: `Follow up: ${defense.defense_type}`,
+                    detail: `Panel result: ${defense.panel_result}`
+                });
+            });
+
+            if (tasks.length === 0) {
+                container.innerHTML =
+                    `<p style="color:#7b6f96;font-size:13px;">No upcoming tasks. You're on track for ${escapeHtml(group.stage || "your current stage")}.</p>`;
+                return;
+            }
+
+            container.innerHTML = tasks.map(task => `
+                <div class="task">
+                    <div class="task-dot"></div>
+                    <div>
+                        <h3>${escapeHtml(task.title)}</h3>
+                        <p>${escapeHtml(task.detail)}</p>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function updateStatCards(group, defenses, repositoryCount) {
+            const stageNames = [
+                "Concept Presentation",
+                "Outline Defense",
+                "Pre-Final Defense",
+                "Final Defense",
+                "Completed"
+            ];
+
+            if (!group) {
+                document.getElementById("statStageValue").textContent = "—";
+                document.getElementById("statMemberCount").textContent = "0";
+                document.getElementById("statRepositoryCount").textContent =
+                    String(repositoryCount ?? "—");
+                document.getElementById("statDefenseDate").textContent = "—";
+                return;
+            }
+
+            const completedCount =
+                stageToCompletedIndex(group.stage || "Stage 1");
+
+            document.getElementById("statStageValue").textContent =
+                completedCount >= 4
+                ? "Final"
+                : (group.stage || "Stage 1");
+
+            document.getElementById("statMemberCount").textContent =
+                String((group.members || []).length);
+
+            document.getElementById("statRepositoryCount").textContent =
+                String(repositoryCount ?? 0);
+
+            const nextDefense = (defenses || [])
+                .filter(defense =>
+                    String(defense.defense_status || "") !== "Cancelled"
+                    && String(defense.defense_status || "") !== "Completed"
+                )
+                .sort((a, b) => {
+                    const dateA = new Date(`${a.defense_date || ""}T${a.start_time || "00:00"}`);
+                    const dateB = new Date(`${b.defense_date || ""}T${b.start_time || "00:00"}`);
+                    return dateA - dateB;
+                })[0];
+
+            document.getElementById("statDefenseDate").textContent =
+                nextDefense
+                ? formatDateShort(nextDefense.defense_date)
+                : "None";
+        }
+
+        function updateProjectCard(group) {
+            const titleEl = document.getElementById("projectTitle");
+            const descEl = document.getElementById("projectDescription");
+            const statusEl = document.getElementById("projectStatusBadge");
+
+            if (!group) {
+                titleEl.textContent = "No group yet";
+                descEl.textContent =
+                    "Create or join a capstone group in Members to track your team's project, progress, and defenses here.";
+                statusEl.textContent = "No Group";
+                statusEl.className = "status pending";
+                return;
+            }
+
+            const statusInfo = normalizeProjectStatus(group.status);
+            const programLabel =
+                group.program === "IS"
+                ? "BSIS"
+                : group.program === "IT"
+                ? "BSIT"
+                : (group.program || "Not Set");
+
+            titleEl.textContent =
+                group.project_title
+                || group.group_name
+                || "Capstone Project";
+
+            const adviserLine = group.adviser_name
+                ? `Adviser: ${group.adviser_name}`
+                : "Adviser: Not assigned yet";
+
+            descEl.textContent =
+                `${group.group_name || "Group"} (${group.group_id || "—"}) • ${programLabel} • ${adviserLine} • Stage: ${group.stage || "Stage 1"}`;
+
+            statusEl.textContent = statusInfo.label;
+            statusEl.className = `status ${statusInfo.className}`;
+        }
+
+        function renderStageTracker(group, defenses) {
+            if (!group) {
+                document.getElementById("currentStageBadge").textContent = "No Group";
+                document.getElementById("workflowSteps").innerHTML =
+                    `<p style="text-align:center;color:#7b6f96;padding:20px;">No group found. Join or create a group first on the Members page.</p>`;
+                return;
+            }
+
+            const defenseMap = {};
+            (defenses || []).forEach(defense => {
+                defenseMap[defense.defense_type] = defense;
+            });
+
+            const completedCount =
+                stageToCompletedIndex(group.stage || "Stage 1");
+
+            const stageNames = [
+                "Concept Presentation",
+                "Outline Defense",
+                "Pre-Final Defense",
+                "Final Defense",
+                "Completed"
+            ];
+
+            const currentStageName =
+                stageNames[completedCount] || "Concept Presentation";
+
+            document.getElementById("currentStageBadge").textContent =
+                completedCount >= 4
+                ? "All Stages Completed"
+                : `Active: ${currentStageName}`;
+
+            let stepsHtml = "";
+
+            STAGES.forEach((stageObj, idx) => {
+                let state = "pending";
+
+                if (idx < completedCount) {
+                    state = "completed";
+                } else if (idx === completedCount) {
+                    state = "active";
+                }
+
+                const defRec = defenseMap[stageObj.key] || null;
+                const isLast = (idx === STAGES.length - 1);
+
+                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast);
+            });
+
+            document.getElementById("workflowSteps").innerHTML = stepsHtml;
+
+            const pct = Number(group.progress || 0);
+            const fill = document.getElementById("progressFill");
+            const pctLabel = document.getElementById("progressPercent");
+
+            if (fill) {
+                fill.style.width = `${pct}%`;
+            }
+
+            if (pctLabel) {
+                pctLabel.textContent = `${pct}%`;
+            }
+        }
+
+        async function loadStudentDashboard() {
+            const userId = localStorage.getItem("userId");
+
+            if (!userId) {
+                return;
+            }
+
+            await loadStudentDashboardHeader();
+
+            async function parseApiJson(response, label) {
+                const rawText = await response.text();
+
+                try {
+                    return JSON.parse(rawText);
+                } catch (parseError) {
+                    console.error(`Invalid JSON from ${label}:`, rawText);
+                    return { success: false, message: `Invalid response from ${label}` };
+                }
+            }
+
+            try {
+                const [groupRes, defenseRes, repoRes, notifRes] = await Promise.all([
+                    fetch(`http://localhost:3005/student-group/${userId}`),
+                    fetch(`http://localhost:3005/student-defense-history/${userId}`),
+                    fetch("http://localhost:3005/repository-titles"),
+                    fetch(`http://localhost:3005/student-notifications/${userId}`)
+                ]);
+
+                const groupData = await parseApiJson(groupRes, "student-group");
+                const defenseData = await parseApiJson(defenseRes, "student-defense-history");
+                const repoData = await parseApiJson(repoRes, "repository-titles");
+                const notifData = await parseApiJson(notifRes, "student-notifications");
+
+                const group =
+                    groupData.success
+                    ? groupData.group
+                    : null;
+
+                const defenses =
+                    defenseData.success
+                    ? defenseData.defenses
+                    : [];
+
+                const repositoryCount =
+                    repoData.success && Array.isArray(repoData.titles)
+                    ? repoData.titles.length
+                    : 0;
+
+                const announcements =
+                    notifData.success && Array.isArray(notifData.announcements)
+                    ? notifData.announcements
+                    : [];
+
+                updateStatCards(group, defenses, repositoryCount);
+                updateProjectCard(group);
+                renderStageTracker(group, defenses);
+                renderUpcomingTasks(group, defenses);
+                renderTeamMembers(group ? group.members : []);
+                renderAnnouncements(announcements);
+
+            } catch (err) {
+                console.error("Error loading student dashboard:", err);
+
+                document.getElementById("workflowSteps").innerHTML =
+                    `<p style="text-align:center;color:#b91c1c;padding:20px;">Failed to load dashboard. Please refresh the page.</p>`;
+            }
+        }
+
+        loadStudentDashboard();
+
+        /* LOGOUT */
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+        
+
+    </script>
+    <script>
+    document.getElementById("nav-home").classList.add("active");
+</script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

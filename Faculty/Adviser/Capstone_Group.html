@@ -1,0 +1,1125 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Assigned Capstone Groups | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Capstone_Group.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+    const userRole =
+        localStorage.getItem("role");
+
+    const adviserAccess =
+        localStorage.getItem("adviser_access");
+
+    if(userRole !== "admin" && adviserAccess !== "1"){
+
+        alert(
+            "You do not have permission to access this role."
+        );
+
+        if(userRole === "admin"){
+
+            window.location.href =
+                "../../Admin/AdminDash.html";
+
+        }else{
+
+            window.location.href =
+                "../FacultyDash.html";
+
+        }
+
+    }
+</script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Adviser Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='AdviserDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>
+                        Dashboard
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item active"
+                    id="nav-groups"
+                    onclick="window.location.href='Capstone_Group.html'"
+                >
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>
+                        Capstone Groups
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-requests"
+                    onclick="window.location.href='Adviser_Request.html'"
+                >
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>
+                        Adviser Request
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>
+                        Documents
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>
+                        Consultation
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Assigned Capstone Groups</h1>
+
+                <p>
+                    View and monitor the capstone groups currently assigned to you as adviser.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalGroups">
+                        0
+                    </h2>
+
+                    <p>
+                        Assigned Groups
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalMembers">
+                        0
+                    </h2>
+
+                    <p>
+                        Total Students
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalProposals">
+                        0
+                    </h2>
+
+                    <p>
+                        Title Proposals
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+
+                <div>
+                    <h2 id="averageProgress">
+                        0%
+                    </h2>
+
+                    <p>
+                        Average Progress
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="searchGroup"
+                    placeholder="Search assigned group..."
+                    onkeyup="filterGroups()"
+                >
+            </div>
+
+            <select
+                id="programFilter"
+                onchange="filterGroups()"
+            >
+                <option value="All">
+                    All Programs
+                </option>
+
+                <option value="IS">
+                    BSIS
+                </option>
+
+                <option value="IT">
+                    BSIT
+                </option>
+            </select>
+
+            <select
+                id="statusFilter"
+                onchange="filterGroups()"
+            >
+                <option value="All">
+                    All Status
+                </option>
+
+                <option value="Active">
+                    Active
+                </option>
+
+                <option value="Pending">
+                    Pending
+                </option>
+
+                <option value="Completed">
+                    Completed
+                </option>
+
+                <option value="Inactive">
+                    Inactive
+                </option>
+            </select>
+
+        </div>
+
+        <!-- GROUP GRID -->
+        <section
+            class="group-grid"
+            id="groupGrid"
+        >
+
+            <div class="empty-card">
+                Loading assigned groups...
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- VIEW MODAL -->
+    <div
+        class="modal-overlay"
+        id="groupModal"
+    >
+
+        <div class="modal-box large-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="modalGroupName">
+                        Group Details
+                    </h2>
+
+                    <p id="modalGroupId">
+                        GRP2026-0000
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeGroupModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="details-grid">
+
+                <div class="detail-card">
+                    <span>Project Title</span>
+                    <h3 id="modalProjectTitle">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Program</span>
+                    <h3 id="modalProgram">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Project Manager</span>
+                    <h3 id="modalProjectManager">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Status</span>
+                    <h3 id="modalStatus">Active</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Stage</span>
+                    <h3 id="modalStage">Stage 1</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Progress</span>
+                    <h3 id="modalProgress">0%</h3>
+                </div>
+
+            </div>
+
+            <!-- WORKFLOW TRACKER -->
+            <div class="modal-section-tracker" style="margin-top: 25px; margin-bottom: 25px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
+                <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Capstone Stage Progress</h3>
+                <p id="modalRecordsNote" style="color: #6d5f85; font-size: 13px; margin-bottom: 15px;"></p>
+                <div class="workflow-tracker">
+                    <div class="workflow-steps" id="modalWorkflowSteps">
+                        <p style="color:#6d5f85;text-align:center;padding:12px;">Loading stage progress...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box">
+
+                <h3>
+                    Group Members
+                </h3>
+
+                <div
+                    class="member-list"
+                    id="modalMembers"
+                >
+                    Loading members...
+                </div>
+
+            </div>
+
+            <div class="section-box">
+
+                <h3>
+                    Proposed Capstone Titles
+                </h3>
+
+                <p class="section-note">
+                    These are the title proposal PDFs submitted before adviser assignment.
+                </p>
+
+                <div
+                    class="proposal-list"
+                    id="modalProposals"
+                >
+                    Loading title proposals...
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="close-action-btn"
+                    onclick="closeGroupModal()"
+                    type="button"
+                >
+                    Close
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let assignedGroups = [];
+
+        const CAPSTONE_STAGES = [
+            {
+                key: "Concept Presentation",
+                label: "Concept Presentation",
+                icon: "fa-lightbulb",
+                pendingRemark: "Waiting to be scheduled"
+            },
+            {
+                key: "Outline Defense",
+                label: "Outline Defense",
+                icon: "fa-book-open",
+                pendingRemark: "Pending Concept Presentation approval"
+            },
+            {
+                key: "Pre-Final Defense",
+                label: "Pre-Final Defense",
+                icon: "fa-file-shield",
+                pendingRemark: "Pending Outline Defense approval"
+            },
+            {
+                key: "Final Defense",
+                label: "Final Defense",
+                icon: "fa-graduation-cap",
+                pendingRemark: "Pending Pre-Final Defense approval"
+            },
+            {
+                key: "Completed",
+                label: "Completed",
+                icon: "fa-circle-check",
+                pendingRemark: "Final compilation pending"
+            }
+        ];
+
+        function stageToCompletedIndex(stage){
+            const map = {
+                "Stage 1": 0,
+                "Stage 2": 1,
+                "Stage 3": 2,
+                "Stage 4": 3,
+                "Final": 4
+            };
+
+            return map[stage] ?? 0;
+        }
+
+        function getActiveStageLabel(stage){
+            const labels = [
+                "Concept Presentation",
+                "Outline Defense",
+                "Pre-Final Defense",
+                "Final Defense",
+                "Completed"
+            ];
+
+            const index =
+                stageToCompletedIndex(stage || "Stage 1");
+
+            return labels[index] || "Concept Presentation";
+        }
+
+        function formatTrackerDate(dateStr){
+            if(!dateStr){
+                return "";
+            }
+
+            return new Date(dateStr).toLocaleDateString(
+                "en-US",
+                {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric"
+                }
+            );
+        }
+
+        function buildDefenseMap(defenses){
+            const defenseMap = {};
+
+            (defenses || []).forEach(defense => {
+                defenseMap[defense.defense_type] = defense;
+            });
+
+            return defenseMap;
+        }
+
+        function buildTrackerStepHtml(stageObj, state, defenseRecord, isLast){
+            let badgeClass = "not-started";
+            let badgeLabel = "Not Started";
+            let remark = stageObj.pendingRemark;
+
+            if(state === "completed"){
+                const result = defenseRecord?.panel_result || "";
+
+                if(result === "Passed"){
+                    badgeClass = "approved";
+                    badgeLabel = "Passed";
+                }else if(result === "Passed with Revisions"){
+                    badgeClass = "for-adviser";
+                    badgeLabel = "Passed w/ Revisions";
+                }else{
+                    badgeClass = "approved";
+                    badgeLabel = "Completed";
+                }
+
+                remark = defenseRecord?.defense_date
+                    ? `Completed on ${formatTrackerDate(defenseRecord.defense_date)}`
+                    : "Completed";
+
+            }else if(state === "active"){
+
+                if(defenseRecord){
+
+                    if(defenseRecord.defense_status === "Completed"){
+                        const result = defenseRecord.panel_result || "";
+
+                        if(result === "Failed" || result === "Disapproved"){
+                            badgeClass = "for-revision";
+                            badgeLabel = "For Revision";
+                            remark = `Result: ${result} — ${formatTrackerDate(defenseRecord.defense_date)}`;
+                        }else{
+                            badgeClass = "approved";
+                            badgeLabel = "Evaluated";
+                            remark = `Evaluated on ${formatTrackerDate(defenseRecord.defense_date)}`;
+                        }
+
+                    }else{
+                        badgeClass = "scheduled";
+                        badgeLabel = "Scheduled";
+                        remark = `Scheduled for ${formatTrackerDate(defenseRecord.defense_date)}`;
+                    }
+
+                }else{
+                    badgeClass = "for-adviser";
+                    badgeLabel = "In Progress";
+                    remark = "Awaiting schedule from instructor";
+                }
+
+            }
+
+            const lineHtml =
+                !isLast
+                ? `<div class="step-line"></div>`
+                : "";
+
+            return `
+                <div class="step ${state}">
+                    <div class="step-icon-wrap">
+                        ${lineHtml}
+                        <div class="step-icon">
+                            <i class="fa-solid ${stageObj.icon}"></i>
+                        </div>
+                    </div>
+                    <div class="step-content">
+                        <h4>${stageObj.label}</h4>
+                        <span class="status-badge-tracker ${badgeClass}">${badgeLabel}</span>
+                        <p class="step-remarks">${remark}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWorkflowTracker(group){
+            const stepsEl =
+                document.getElementById("modalWorkflowSteps");
+
+            const recordsNote =
+                document.getElementById("modalRecordsNote");
+
+            if(!stepsEl){
+                return;
+            }
+
+            const docProgress =
+                Number(group.document_progress || 0);
+
+            const uploaded =
+                Number(group.documents_uploaded || 0);
+
+            const required =
+                Number(group.documents_required || 0);
+
+            if(recordsNote){
+                recordsNote.innerText =
+                    `Records Management: ${uploaded}/${required} consultation files uploaded (${docProgress}%).`;
+            }
+
+            const defenseMap =
+                buildDefenseMap(group.defenses);
+
+            const completedCount =
+                stageToCompletedIndex(group.stage || "Stage 1");
+
+            let stepsHtml = "";
+
+            CAPSTONE_STAGES.forEach((stageObj, idx) => {
+                let state = "pending";
+
+                if(idx < completedCount){
+                    state = "completed";
+                }else if(idx === completedCount){
+                    state = "active";
+                }
+
+                const defenseRecord =
+                    defenseMap[stageObj.key] || null;
+
+                const isLast =
+                    idx === CAPSTONE_STAGES.length - 1;
+
+                stepsHtml +=
+                    buildTrackerStepHtml(
+                        stageObj,
+                        state,
+                        defenseRecord,
+                        isLast
+                    );
+            });
+
+            stepsEl.innerHTML = stepsHtml;
+        }
+
+        async function loadAssignedGroups(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/adviser-capstone-groups/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    alert(
+                        data.message || "Failed to load assigned groups."
+                    );
+
+                    renderGroups([]);
+
+                    return;
+
+                }
+
+                assignedGroups =
+                    data.groups;
+
+                updateStats();
+
+                filterGroups();
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function updateStats(){
+
+            const totalGroups =
+                assignedGroups.length;
+
+            const totalMembers =
+                assignedGroups.reduce(
+                    (sum, group) => sum + group.members.length,
+                    0
+                );
+
+            const totalProposals =
+                assignedGroups.reduce(
+                    (sum, group) => sum + group.proposals.length,
+                    0
+                );
+
+            const averageProgress =
+                totalGroups === 0
+                ? 0
+                : Math.round(
+                    assignedGroups.reduce(
+                        (sum, group) =>
+                            sum + Number(group.capstone_progress ?? group.progress ?? 0),
+                        0
+                    ) / totalGroups
+                );
+
+            document.getElementById("totalGroups").innerText =
+                totalGroups;
+
+            document.getElementById("totalMembers").innerText =
+                totalMembers;
+
+            document.getElementById("totalProposals").innerText =
+                totalProposals;
+
+            document.getElementById("averageProgress").innerText =
+                `${averageProgress}%`;
+
+        }
+
+        function renderGroups(list){
+
+            const grid =
+                document.getElementById("groupGrid");
+
+            grid.innerHTML = "";
+
+            if(list.length === 0){
+
+                grid.innerHTML = `
+                    <div class="empty-card">
+                        No assigned capstone groups found.
+                    </div>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(group => {
+
+                const programText =
+                    group.program === "IS"
+                    ? "BSIS"
+                    : group.program === "IT"
+                    ? "BSIT"
+                    : "Not Set";
+
+                const capstoneProgress =
+                    Number(group.capstone_progress ?? group.progress ?? 0);
+
+                const documentProgress =
+                    Number(group.document_progress || 0);
+
+                const activeStage =
+                    getActiveStageLabel(group.stage);
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    "group-card";
+
+                card.innerHTML = `
+                    <div class="group-top">
+
+                        <div class="group-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+
+                        <div>
+                            <h3>
+                                ${group.group_name || "Unnamed Group"}
+                            </h3>
+
+                            <p>
+                                ${group.group_id}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="group-meta">
+
+                        <span>
+                            ${programText}
+                        </span>
+
+                        <span>
+                            ${group.status || "Active"}
+                        </span>
+
+                        <span class="stage-pill">
+                            ${activeStage}
+                        </span>
+
+                    </div>
+
+                    <div class="group-info">
+
+                        <p>
+                            <strong>Project Title:</strong>
+                            ${group.project_title || "Not Set"}
+                        </p>
+
+                        <p>
+                            <strong>Project Manager:</strong>
+                            ${group.project_manager_name || "Not Set"}
+                        </p>
+
+                        <p>
+                            <strong>Members:</strong>
+                            ${group.members.length}
+                        </p>
+
+                    </div>
+
+                    <div class="progress-wrap">
+
+                        <div class="progress-info">
+                            <span>
+                                Capstone Stage
+                            </span>
+
+                            <span>
+                                ${capstoneProgress}%
+                            </span>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div
+                                class="progress-fill"
+                                style="width:${capstoneProgress}%"
+                            ></div>
+                        </div>
+
+                    </div>
+
+                    <div class="progress-wrap document-progress-wrap">
+
+                        <div class="progress-info">
+                            <span>
+                                Records Uploaded
+                            </span>
+
+                            <span>
+                                ${documentProgress}%
+                            </span>
+                        </div>
+
+                        <div class="progress-bar document-progress-bar">
+                            <div
+                                class="progress-fill document-progress-fill"
+                                style="width:${documentProgress}%"
+                            ></div>
+                        </div>
+
+                        <p class="progress-footnote">
+                            ${group.documents_uploaded || 0} of ${group.documents_required || 0} consultation files
+                        </p>
+
+                    </div>
+
+                    <button
+                        class="view-group-btn"
+                        onclick="openGroupModal('${group.group_id}')"
+                        type="button"
+                    >
+                        <i class="fa-solid fa-eye"></i>
+                        View Group
+                    </button>
+                `;
+
+                grid.appendChild(card);
+
+            });
+
+        }
+
+        function filterGroups(){
+
+            const keyword =
+                document.getElementById("searchGroup")
+                .value
+                .toLowerCase();
+
+            const program =
+                document.getElementById("programFilter")
+                .value;
+
+            const status =
+                document.getElementById("statusFilter")
+                .value;
+
+            const filtered =
+                assignedGroups.filter(group => {
+
+                    const matchesKeyword =
+                        String(group.group_id || "").toLowerCase().includes(keyword)
+                        ||
+                        String(group.group_name || "").toLowerCase().includes(keyword)
+                        ||
+                        String(group.project_title || "").toLowerCase().includes(keyword)
+                        ||
+                        String(group.project_manager_name || "").toLowerCase().includes(keyword);
+
+                    const matchesProgram =
+                        program === "All"
+                        ||
+                        group.program === program;
+
+                    const matchesStatus =
+                        status === "All"
+                        ||
+                        group.status === status;
+
+                    return matchesKeyword && matchesProgram && matchesStatus;
+
+                });
+
+            renderGroups(filtered);
+
+        }
+
+        function openGroupModal(groupId){
+
+            const group =
+                assignedGroups.find(item =>
+                    item.group_id === groupId
+                );
+
+            if(!group){
+                return;
+            }
+
+            const programText =
+                group.program === "IS"
+                ? "BSIS"
+                : group.program === "IT"
+                ? "BSIT"
+                : "Not Set";
+
+            document.getElementById("modalGroupName").innerText =
+                group.group_name || "Group Details";
+
+            document.getElementById("modalGroupId").innerText =
+                group.group_id;
+
+            document.getElementById("modalProjectTitle").innerText =
+                group.project_title || "Not Set";
+
+            document.getElementById("modalProgram").innerText =
+                programText;
+
+            document.getElementById("modalProjectManager").innerText =
+                group.project_manager_name
+                ? `${group.project_manager_name} (${group.project_manager_user_id})`
+                : "Not Set";
+
+            document.getElementById("modalStatus").innerText =
+                group.status || "Active";
+
+            document.getElementById("modalStage").innerText =
+                `${group.stage || "Stage 1"} — ${getActiveStageLabel(group.stage)}`;
+
+            document.getElementById("modalProgress").innerText =
+                `${group.capstone_progress ?? group.progress ?? 0}%`;
+
+            renderWorkflowTracker(group);
+
+            const members =
+                document.getElementById("modalMembers");
+
+            members.innerHTML = "";
+
+            if(group.members.length === 0){
+
+                members.innerHTML = `
+                    <p class="empty-text">
+                        No members found.
+                    </p>
+                `;
+
+            }else{
+
+                group.members.forEach(member => {
+
+                    members.innerHTML += `
+                        <div class="member-row">
+
+                            <div class="member-avatar">
+                                ${member.fullname.charAt(0).toUpperCase()}
+                            </div>
+
+                            <div>
+                                <h4>
+                                    ${member.fullname}
+                                </h4>
+
+                                <p>
+                                    ${member.user_id} • ${member.member_position}
+                                </p>
+
+                                <small>
+                                    ${member.program || "No Program"} • ${member.year_level || "No Year Level"}
+                                </small>
+                            </div>
+
+                        </div>
+                    `;
+
+                });
+
+            }
+
+            const proposals =
+                document.getElementById("modalProposals");
+
+            proposals.innerHTML = "";
+
+            if(group.proposals.length === 0){
+
+                proposals.innerHTML = `
+                    <p class="empty-text">
+                        No title proposals uploaded.
+                    </p>
+                `;
+
+            }else{
+
+                group.proposals.forEach(proposal => {
+
+                    proposals.innerHTML += `
+                        <div class="proposal-row">
+
+                            <div class="proposal-icon">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+
+                            <div>
+                                <h4>
+                                    Proposal ${proposal.title_number}: ${proposal.proposed_title}
+                                </h4>
+
+                                <p>
+                                    Status: ${proposal.status}
+                                </p>
+
+                                <a
+                                    href="http://localhost:3005${proposal.file_path}"
+                                    target="_blank"
+                                >
+                                    View PDF
+                                </a>
+                            </div>
+
+                        </div>
+                    `;
+
+                });
+
+            }
+
+            document.getElementById("groupModal").style.display =
+                "flex";
+
+        }
+
+        function closeGroupModal(){
+
+            document.getElementById("groupModal").style.display =
+                "none";
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+        loadAssignedGroups();
+
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

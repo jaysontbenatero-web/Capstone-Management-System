@@ -1,0 +1,1229 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Register Student | CMS
+    </title>
+
+    <!-- GOOGLE FONT -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+    <link
+        rel="stylesheet"
+        href="STU_Enroll.css"
+    >
+
+    <link rel="stylesheet" href="AdminTheme.css">
+
+</head>
+
+<body class="admin-portal">
+
+
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+   <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Admin Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='AdminDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Management</div>
+                <div class="menu-item" id="nav-faculty" onclick="window.location.href='FAC_Enroll.html'">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Register Faculty</span>
+                </div>
+
+                <div class="menu-item active" id="nav-student" onclick="window.location.href='STU_Enroll.html'">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Register Student</span>
+                </div>
+
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Repository</span>
+                </div>
+
+                <div class="menu-item" id="nav-document-review" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>Document Review</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" id="nav-announcements" onclick="window.location.href='Announcements.html'">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </div>
+
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">System</div>
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Student Registration</h1>
+
+                <p>
+                    Register student accounts, generate credentials, and manage enrolled capstone students.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="content-grid">
+
+            <section class="mode-card">
+                <div class="enroll-mode-toggle" role="tablist" aria-label="Enrollment mode">
+                    <button type="button" class="mode-btn is-active" id="modeManualBtn" onclick="setEnrollMode('manual')">
+                        <i class="fa-solid fa-user-plus"></i>
+                        Manual Registration
+                    </button>
+                    <button type="button" class="mode-btn" id="modeBulkBtn" onclick="setEnrollMode('bulk')">
+                        <i class="fa-solid fa-file-import"></i>
+                        Bulk Registration (CSV)
+                    </button>
+                </div>
+            </section>
+
+            <div id="manualEnrollWrap" class="enroll-mode-wrap">
+                <!-- FORM -->
+                <section class="form-card">
+
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+
+                    <div>
+                        <h2>
+                            Register Student
+                        </h2>
+
+                        <p>
+                            Fill in the student details to generate a login account.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Student Full Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="studentName"
+                        placeholder="Enter student full name"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Program
+                    </label>
+
+                    <select id="studentProgram">
+                        <option value="">
+                            Select Program
+                        </option>
+
+                        <option value="BSIT">
+                            BSIT
+                        </option>
+
+                        <option value="BSIS">
+                            BSIS
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Year Level
+                    </label>
+
+                    <select id="studentYear">
+                        <option value="">
+                            Select Year Level
+                        </option>
+
+                        <option value="3rd Year">
+                            3rd Year
+                        </option>
+
+                        <option value="4th Year">
+                            4th Year
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Student Position
+                    </label>
+
+                    <select id="studentPosition">
+                        <option value="">
+                            Select Position Optional
+                        </option>
+
+                        <option value="Project Manager">
+                            Project Manager
+                        </option>
+
+                        <option value="System Analyst">
+                            System Analyst
+                        </option>
+
+                        <option value="System Developer">
+                            System Developer
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Student Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="studentEmail"
+                        placeholder="Enter student email"
+                    >
+                </div>
+
+                <button
+                    class="enroll-btn"
+                    onclick="enrollStudent()"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Generate Student Account
+                </button>
+
+                </section>
+
+                <!-- PREVIEW -->
+                <aside class="preview-card">
+
+                <div class="preview-box">
+                    <div class="preview-icon">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+
+                    <h3>
+                        STUDENT ID
+                    </h3>
+
+                    <p id="studentId">
+                        Not Generated Yet
+                    </p>
+                </div>
+
+                <div class="preview-box">
+                    <div class="preview-icon">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+
+                    <h3>
+                        TEMP PASSWORD
+                    </h3>
+
+                    <p id="tempPassword">
+                        Not Generated Yet
+                    </p>
+                </div>
+
+                <div class="preview-box">
+                    <div class="preview-icon">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+
+                    <h3>
+                        ACCOUNT ROLE
+                    </h3>
+
+                    <p>
+                        Student
+                    </p>
+                </div>
+
+            </aside>
+            </div>
+
+            <div id="bulkEnrollWrap" class="enroll-mode-wrap is-hidden">
+                <!-- BULK ENROLL -->
+                <section class="form-card bulk-card">
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-file-import"></i>
+                    </div>
+
+                    <div>
+                        <h2>
+                            Bulk Enrollment (CSV)
+                        </h2>
+
+                        <p>
+                            Import a CSV file to create multiple student accounts at once.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bulk-instructions">
+                    <p><strong>Required columns:</strong> fullname, program, year_level</p>
+                    <p><strong>Optional column:</strong> student_position</p>
+                    <p><strong>Allowed year_level:</strong> 3rd Year, 4th Year</p>
+                </div>
+
+                <div class="bulk-actions">
+                    <button class="secondary-btn" type="button" onclick="downloadCsvTemplate()">
+                        <i class="fa-solid fa-download"></i>
+                        Download CSV Template
+                    </button>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Import CSV File
+                    </label>
+                    <input type="file" id="bulkCsvFile" accept=".csv" />
+                </div>
+
+                <button class="enroll-btn" type="button" onclick="bulkEnrollFromCsv()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    Import and Enroll Students
+                </button>
+
+                <div class="bulk-result" id="bulkResult" style="display:none;">
+                    <h3>Import Result</h3>
+                    <p id="bulkResultSummary"></p>
+                    <div class="bulk-table-wrapper">
+                        <table class="student-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Full Name</th>
+                                    <th>Student ID</th>
+                                    <th>Temp Password</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkResultBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="bulk-actions">
+                        <button class="secondary-btn" type="button" onclick="downloadBulkResultCsv()">
+                            <i class="fa-solid fa-file-csv"></i>
+                            Download Result CSV
+                        </button>
+                    </div>
+                </div>
+
+                </section>
+            </div>
+
+        </div>
+
+        <!-- STUDENT TABLE -->
+        <section class="table-card">
+
+            <div class="table-header">
+
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+
+                    <div>
+                        <h2>
+                            Registered Students
+                        </h2>
+
+                        <p>
+                            View, edit, or remove student accounts.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="searchStudent"
+                        placeholder="Search student..."
+                        onkeyup="filterStudents()"
+                    >
+                </div>
+
+            </div>
+
+            <div class="table-wrapper">
+
+                <table class="student-table">
+
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Full Name</th>
+                            <th>Program</th>
+                            <th>Year</th>
+                            <th>Position</th>
+                            <th>Password</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="studentTableBody">
+                        <tr>
+                            <td colspan="7">
+                                Loading students...
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- EDIT MODAL -->
+    <div
+        class="modal-overlay"
+        id="editModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <h2>
+                    Edit Student
+                </h2>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeEditModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Full Name
+                </label>
+
+                <input
+                    type="text"
+                    id="editFullname"
+                >
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Program
+                </label>
+
+                <select id="editProgram">
+                    <option value="BSIT">
+                        BSIT
+                    </option>
+
+                    <option value="BSIS">
+                        BSIS
+                    </option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Year Level
+                </label>
+
+                <select id="editYear">
+                    <option value="3rd Year">
+                        3rd Year
+                    </option>
+
+                    <option value="4th Year">
+                        4th Year
+                    </option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Student Position
+                </label>
+
+                <select id="editPosition">
+                    <option value="Not Assigned">
+                        Not Assigned
+                    </option>
+
+                    <option value="Project Manager">
+                        Project Manager
+                    </option>
+
+                    <option value="System Analyst">
+                        System Analyst
+                    </option>
+
+                    <option value="System Developer">
+                        System Developer
+                    </option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Password
+                </label>
+
+                <input
+                    type="text"
+                    id="editPassword"
+                >
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeEditModal()"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="saveStudentEdit()"
+                >
+                    Save Changes
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        let selectedStudentId = null;
+        let students = [];
+
+        /* ================= ENROLL STUDENT ================= */
+
+        async function enrollStudent(){
+
+            const fullname =
+                document.getElementById("studentName").value.trim();
+
+            const program =
+                document.getElementById("studentProgram").value;
+
+            const year_level =
+                document.getElementById("studentYear").value;
+
+            const student_position =
+                document.getElementById("studentPosition").value || "Not Assigned";
+
+            if(!fullname || !program || !year_level){
+
+                alert("Please complete student name, program, and year level.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/enroll-student",
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                fullname,
+                                program,
+                                year_level,
+                                student_position,
+                                enrolledByUserId:
+                                    localStorage.getItem("userId") || ""
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    document.getElementById("studentId").innerText =
+                        data.studentId;
+
+                    document.getElementById("tempPassword").innerText =
+                        data.tempPassword;
+
+                    document.getElementById("studentName").value = "";
+                    document.getElementById("studentProgram").value = "";
+                    document.getElementById("studentYear").value = "";
+                    document.getElementById("studentPosition").value = "";
+
+                    alert("Student enrolled successfully!");
+
+                    loadStudents();
+
+                }else{
+
+                    alert("Enrollment failed.");
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        /* ================= LOAD STUDENTS ================= */
+
+        async function loadStudents(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/student-accounts"
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    renderStudents([]);
+
+                    return;
+
+                }
+
+                students =
+                    data.students;
+
+                renderStudents(students);
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= RENDER STUDENTS ================= */
+
+        function renderStudents(list){
+
+            const table =
+                document.getElementById("studentTableBody");
+
+            table.innerHTML = "";
+
+            if(list.length === 0){
+
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            No students found.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(student => {
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${student.user_id}</td>
+                    <td>${student.fullname}</td>
+                    <td>${student.program || "Not Set"}</td>
+                    <td>${student.year_level || "Not Set"}</td>
+                    <td>${student.student_position || "Not Assigned"}</td>
+                    <td>${student.password}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button
+                                class="table-edit-btn"
+                                onclick="openEditModal(
+                                    '${student.id}',
+                                    '${escapeText(student.fullname)}',
+                                    '${student.program || ""}',
+                                    '${student.year_level || ""}',
+                                    '${student.student_position || "Not Assigned"}',
+                                    '${student.password || ""}'
+                                )"
+                            >
+                                <i class="fa-solid fa-pen"></i>
+                                Edit
+                            </button>
+
+                            <button
+                                class="table-delete-btn"
+                                onclick="deleteStudent('${student.id}')"
+                            >
+                                <i class="fa-solid fa-trash"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                table.appendChild(row);
+
+            });
+
+        }
+
+        /* ================= SEARCH STUDENTS ================= */
+
+        function filterStudents(){
+
+            const keyword =
+                document.getElementById("searchStudent")
+                .value
+                .toLowerCase();
+
+            const filtered =
+                students.filter(student =>
+                    String(student.user_id || "").toLowerCase().includes(keyword)
+                    ||
+                    String(student.fullname || "").toLowerCase().includes(keyword)
+                    ||
+                    String(student.program || "").toLowerCase().includes(keyword)
+                    ||
+                    String(student.year_level || "").toLowerCase().includes(keyword)
+                    ||
+                    String(student.student_position || "").toLowerCase().includes(keyword)
+                );
+
+            renderStudents(filtered);
+
+        }
+
+        /* ================= ESCAPE TEXT ================= */
+
+        function escapeText(text){
+
+            return String(text || "")
+                .replace(/\\/g, "\\\\")
+                .replace(/'/g, "\\'")
+                .replace(/"/g, "&quot;");
+
+        }
+
+        /* ================= DELETE STUDENT ================= */
+
+        async function deleteStudent(id){
+
+            const confirmDelete =
+                confirm("Delete this student account?");
+
+            if(!confirmDelete){
+                return;
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/delete-student/${id}?requestorRole=admin&requestorUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`,
+                        {
+                            method:"DELETE"
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    alert("Student deleted successfully!");
+
+                    loadStudents();
+
+                }else{
+
+                    alert("Delete failed.");
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= OPEN MODAL ================= */
+
+        function openEditModal(
+            id,
+            fullname,
+            program,
+            year_level,
+            position,
+            password
+        ){
+
+            selectedStudentId =
+                id;
+
+            document.getElementById("editFullname").value =
+                fullname;
+
+            document.getElementById("editProgram").value =
+                program || "BSIT";
+
+            document.getElementById("editYear").value =
+                year_level || "1st Year";
+
+            document.getElementById("editPosition").value =
+                position || "Not Assigned";
+
+            document.getElementById("editPassword").value =
+                password;
+
+            document.getElementById("editModal").style.display =
+                "flex";
+
+        }
+
+        /* ================= CLOSE MODAL ================= */
+
+        function closeEditModal(){
+
+            document.getElementById("editModal").style.display =
+                "none";
+
+        }
+
+        /* ================= SAVE EDIT ================= */
+
+        async function saveStudentEdit(){
+
+            const fullname =
+                document.getElementById("editFullname").value.trim();
+
+            const program =
+                document.getElementById("editProgram").value;
+
+            const year_level =
+                document.getElementById("editYear").value;
+
+            const student_position =
+                document.getElementById("editPosition").value;
+
+            const password =
+                document.getElementById("editPassword").value.trim();
+
+            if(!fullname || !program || !year_level || !password){
+
+                alert("Please complete all fields.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/edit-student",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                id:selectedStudentId,
+                                fullname,
+                                program,
+                                year_level,
+                                student_position,
+                                password,
+                                requestorRole:"admin",
+                                requestorUserId:
+                                    localStorage.getItem("userId") || ""
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    alert("Student updated successfully!");
+
+                    closeEditModal();
+
+                    loadStudents();
+
+                }else{
+
+                    alert("Update failed.");
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= LOGOUT ================= */
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        /* ================= INITIAL LOAD ================= */
+
+        loadStudents();
+
+        /* ================= MODE TOGGLE ================= */
+
+        function setEnrollMode(mode){
+            const manualWrap = document.getElementById("manualEnrollWrap");
+            const bulkWrap = document.getElementById("bulkEnrollWrap");
+            const manualBtn = document.getElementById("modeManualBtn");
+            const bulkBtn = document.getElementById("modeBulkBtn");
+
+            if(mode === "bulk"){
+                manualWrap.classList.add("is-hidden");
+                bulkWrap.classList.remove("is-hidden");
+                manualBtn.classList.remove("is-active");
+                bulkBtn.classList.add("is-active");
+            }else{
+                bulkWrap.classList.add("is-hidden");
+                manualWrap.classList.remove("is-hidden");
+                bulkBtn.classList.remove("is-active");
+                manualBtn.classList.add("is-active");
+            }
+        }
+
+        /* ================= BULK ENROLL (CSV) ================= */
+
+        let lastBulkResults = [];
+
+        function downloadCsvTemplate(){
+            const template =
+                "fullname,program,year_level,student_position\n" +
+                "\"Juan Dela Cruz\",BSIT,\"3rd Year\",\"System Developer\"\n" +
+                "\"Maria Clara\",BSIS,\"4th Year\",\"Project Manager\"\n";
+
+            downloadTextFile("bulk_enrollment_template.csv", template);
+        }
+
+        function downloadTextFile(filename, content){
+            const blob = new Blob([content], { type:"text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function parseCsvLine(line){
+            const out = [];
+            let cur = "";
+            let inQuotes = false;
+
+            for(let i = 0; i < line.length; i++){
+                const ch = line[i];
+                if(ch === '"'){
+                    if(inQuotes && line[i + 1] === '"'){
+                        cur += '"';
+                        i++;
+                    }else{
+                        inQuotes = !inQuotes;
+                    }
+                }else if(ch === "," && !inQuotes){
+                    out.push(cur);
+                    cur = "";
+                }else{
+                    cur += ch;
+                }
+            }
+            out.push(cur);
+            return out.map(v => String(v || "").trim());
+        }
+
+        function normalizeHeaderKey(key){
+            return String(key || "")
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, "_");
+        }
+
+        function buildRowObject(headers, values){
+            const obj = {};
+            headers.forEach((h, idx) => {
+                obj[h] = values[idx] ?? "";
+            });
+            return obj;
+        }
+
+        function mapCsvRowToStudent(row){
+            const fullname =
+                row.fullname || row.name || row.full_name || "";
+
+            const program =
+                row.program || "";
+
+            const year_level =
+                row.year_level || row.year || "";
+
+            const student_position =
+                row.student_position || row.position || "";
+
+            return {
+                fullname:String(fullname).trim(),
+                program:String(program).trim(),
+                year_level:String(year_level).trim(),
+                student_position:String(student_position).trim()
+            };
+        }
+
+        async function bulkEnrollFromCsv(){
+            const fileInput = document.getElementById("bulkCsvFile");
+            const file = fileInput.files && fileInput.files[0];
+
+            if(!file){
+                alert("Please choose a CSV file first.");
+                return;
+            }
+
+            const text = await file.text();
+            const lines =
+                text
+                    .split(/\r?\n/)
+                    .map(l => l.trim())
+                    .filter(l => l.length > 0);
+
+            if(lines.length < 2){
+                alert("CSV must have a header row and at least one data row.");
+                return;
+            }
+
+            const rawHeaders = parseCsvLine(lines[0]);
+            const headers = rawHeaders.map(normalizeHeaderKey);
+
+            const studentsToEnroll = [];
+
+            for(let i = 1; i < lines.length; i++){
+                const values = parseCsvLine(lines[i]);
+                const rowObj = buildRowObject(headers, values);
+                studentsToEnroll.push(mapCsvRowToStudent(rowObj));
+            }
+
+            try{
+                const response = await fetch(
+                    "http://localhost:3005/bulk-enroll-students",
+                    {
+                        method:"POST",
+                        headers:{ "Content-Type":"application/json" },
+                        body:JSON.stringify({
+                            students:studentsToEnroll,
+                            enrolledByUserId: localStorage.getItem("userId") || ""
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if(!data.success){
+                    alert(data.message || "Bulk enrollment failed.");
+                    return;
+                }
+
+                lastBulkResults = data.results || [];
+                renderBulkResults(lastBulkResults);
+                loadStudents();
+
+            }catch(error){
+                console.log(error);
+                alert("Cannot connect to server.");
+            }
+        }
+
+        function renderBulkResults(results){
+            const wrap = document.getElementById("bulkResult");
+            const summary = document.getElementById("bulkResultSummary");
+            const body = document.getElementById("bulkResultBody");
+
+            const ok = results.filter(r => r.success).length;
+            const fail = results.length - ok;
+
+            wrap.style.display = "block";
+            summary.innerText = `${ok} success, ${fail} failed.`;
+
+            body.innerHTML = "";
+
+            results.forEach(r => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${r.rowIndex}</td>
+                    <td>${escapeText(r.fullname)}</td>
+                    <td>${r.studentId ? r.studentId : "-"}</td>
+                    <td>${r.tempPassword ? r.tempPassword : "-"}</td>
+                    <td>${r.success ? "Enrolled" : "Failed"}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        function csvEscape(value){
+            const s = String(value ?? "");
+            if(/[",\n]/.test(s)){
+                return `"${s.replace(/"/g, '""')}"`;
+            }
+            return s;
+        }
+
+        function downloadBulkResultCsv(){
+            if(!lastBulkResults || lastBulkResults.length === 0){
+                alert("No bulk results to download yet.");
+                return;
+            }
+
+            const header = ["rowIndex","fullname","studentId","tempPassword","success","error"];
+            const rows = lastBulkResults.map(r => ([
+                r.rowIndex,
+                r.fullname || "",
+                r.studentId || "",
+                r.tempPassword || "",
+                r.success ? "1" : "0",
+                r.error || ""
+            ]));
+
+            const csv =
+                header.join(",") + "\n" +
+                rows.map(row => row.map(csvEscape).join(",")).join("\n") +
+                "\n";
+
+            downloadTextFile("bulk_enrollment_results.csv", csv);
+        }
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

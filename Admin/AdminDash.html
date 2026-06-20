@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        CMS Admin Dashboard
+    </title>
+
+    <link rel="icon" type="image/png" href="../Images/CapstoneXicon.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="AdminDash.css">
+    <link rel="stylesheet" href="AdminTheme.css">
+
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        if (userRole !== "admin") {
+
+            alert("You do not have permission to access the Admin Portal.");
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Admin Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">Main</div>
+                <div class="menu-item active" id="nav-home" onclick="window.location.href='AdminDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Management</div>
+                <div class="menu-item" id="nav-faculty" onclick="window.location.href='FAC_Enroll.html'">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Register Faculty</span>
+                </div>
+
+                <div class="menu-item" id="nav-student" onclick="window.location.href='STU_Enroll.html'">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Register Student</span>
+                </div>
+
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Repository</span>
+                </div>
+
+                <div class="menu-item" id="nav-document-review" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>Document Review</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" id="nav-announcements" onclick="window.location.href='Announcements.html'">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </div>
+
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">System</div>
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Admin Dashboard</h1>
+
+                <p id="adminSubtitle">
+                    Manage users, repository records, announcements, and system settings.
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input type="text" id="dashboardSearch" placeholder="Search dashboard..."
+                        onkeyup="renderDashboardData()">
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ROLE ACCESS -->
+        <section class="role-access-card">
+
+            <div class="role-header">
+
+                <div>
+                    <h2>
+                        Role Access
+                    </h2>
+
+                    <p>
+                        Switch admin and academic roles using one authorized account.
+                    </p>
+                </div>
+
+                <button class="role-toggle-btn" onclick="toggleRoleAccess()" type="button">
+                    <i class="fa-solid fa-layer-group"></i>
+                    Select Role
+                    <i class="fa-solid fa-chevron-down" id="roleArrow"></i>
+                </button>
+
+            </div>
+
+            <div class="role-dropdown show-roles" id="roleDropdown">
+
+                <button class="role-option active-role" type="button">
+                    <i class="fa-solid fa-house"></i>
+                    Home
+                </button>
+
+                <button class="role-option" onclick="openRole('adviser')" type="button">
+                    <i class="fa-solid fa-user-tie"></i>
+                    Adviser
+                </button>
+
+                <button class="role-option" onclick="openRole('panelist')" type="button">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    Panelist
+                </button>
+
+                <button class="role-option" onclick="openRole('instructor')" type="button">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    Instructor
+                </button>
+
+            </div>
+
+        </section>
+
+        <div class="dashboard-layout">
+
+            <div class="left-content">
+
+                <!-- STATS -->
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+
+                        <div>
+                            <h2 id="totalStudents">
+                                0
+                            </h2>
+
+                            <p>
+                                Total Students
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+
+                        <div>
+                            <h2 id="totalFaculty">
+                                0
+                            </h2>
+
+                            <p>
+                                Total Faculty
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fa-solid fa-book"></i>
+                        </div>
+
+                        <div>
+                            <h2 id="repositoryRecords">
+                                0
+                            </h2>
+
+                            <p>
+                                Repository Records
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">
+                            <i class="fa-solid fa-file-circle-check"></i>
+                        </div>
+
+                        <div>
+                            <h2 id="pendingReviews">
+                                0
+                            </h2>
+
+                            <p>
+                                Pending Reviews
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RESEARCH ARCHIVE -->
+                <section class="content-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                Research Archive
+                            </h2>
+
+                            <p>
+                                Latest repository records stored in the system.
+                            </p>
+                        </div>
+
+                        <button class="primary-btn" onclick="window.location.href='Repository.html'" type="button">
+                            <i class="fa-solid fa-plus"></i>
+                            Add Title
+                        </button>
+
+                    </div>
+
+                    <div class="table-wrapper">
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>
+                                        Title
+                                    </th>
+
+                                    <th>
+                                        Year
+                                    </th>
+
+                                    <th>
+                                        Category
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="repositoryTable">
+                                <tr>
+                                    <td colspan="4">
+                                        Loading repository records...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                </section>
+
+                <!-- RECENT ACTIVITY -->
+                <section class="content-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                Recent Activity
+                            </h2>
+
+                            <p>
+                                Latest account and announcement activity.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="activity-list" id="activityList">
+                        <div class="empty-card">
+                            Loading recent activity...
+                        </div>
+                    </div>
+
+                </section>
+
+            </div>
+
+            <div class="right-content">
+
+                <!-- QUICK ACTIONS -->
+                <section class="side-card">
+
+                    <h2>
+                        Quick Actions
+                    </h2>
+
+                    <div class="quick-grid">
+
+                        <button class="quick-btn" onclick="window.location.href='STU_Enroll.html'" type="button">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>
+                                Add Student
+                            </span>
+                        </button>
+
+                        <button class="quick-btn" onclick="window.location.href='FAC_Enroll.html'" type="button">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                            <span>
+                                Add Faculty
+                            </span>
+                        </button>
+
+                        <button class="quick-btn" onclick="window.location.href='Repository.html'" type="button">
+                            <i class="fa-solid fa-book-open"></i>
+                            <span>
+                                Add Research
+                            </span>
+                        </button>
+
+                        <button class="quick-btn" onclick="window.location.href='Announcements.html'" type="button">
+                            <i class="fa-solid fa-bullhorn"></i>
+                            <span>
+                                Create Announcement
+                            </span>
+                        </button>
+
+                    </div>
+
+                </section>
+
+                <!-- NOTIFICATIONS -->
+                <section class="side-card">
+
+                    <h2>
+                        Notifications
+                    </h2>
+
+                    <div class="notification-item">
+
+                        <span class="dot"></span>
+
+                        <div>
+                            <h4>
+                                Welcome to CMS
+                            </h4>
+
+                            <p>
+                                System notifications will appear here.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        const loggedInAdminId =
+            localStorage.getItem("userId");
+
+        let adminData = null;
+        let repositoryRecords = [];
+        let recentActivity = [];
+
+        async function loadAdminDashboard() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/admin-dashboard/${loggedInAdminId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!data.success) {
+
+                    alert(data.message || "Failed to load admin dashboard.");
+
+                    return;
+
+                }
+
+                adminData =
+                    data.admin;
+
+                repositoryRecords =
+                    data.repositoryRecords || [];
+
+                recentActivity =
+                    data.recentActivity || [];
+
+                localStorage.setItem(
+                    "adviser_access",
+                    String(adminData.adviser_access || 0)
+                );
+
+                localStorage.setItem(
+                    "panelist_access",
+                    String(adminData.panelist_access || 0)
+                );
+
+                localStorage.setItem(
+                    "instructor_access",
+                    String(adminData.instructor_access || 0)
+                );
+
+                document.getElementById("adminSubtitle").innerText =
+                    `${adminData.fullname || "Admin"} • ${adminData.user_id || "No ID"} • ${adminData.position || "Administrator"}`;
+
+                renderStats(data.stats);
+
+                renderDashboardData();
+
+            } catch (error) {
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function renderStats(stats) {
+
+            document.getElementById("totalStudents").innerText =
+                stats.totalStudents || 0;
+
+            document.getElementById("totalFaculty").innerText =
+                stats.totalFaculty || 0;
+
+            document.getElementById("repositoryRecords").innerText =
+                stats.repositoryRecords || 0;
+
+            document.getElementById("pendingReviews").innerText =
+                stats.pendingReviews || 0;
+
+        }
+
+        function renderDashboardData() {
+
+            renderRepositoryTable();
+
+            renderRecentActivity();
+
+        }
+
+        function renderRepositoryTable() {
+
+            const table =
+                document.getElementById("repositoryTable");
+
+            const keyword =
+                getKeyword();
+
+            const filtered =
+                repositoryRecords.filter(item => {
+
+                    const title =
+                        getRepositoryTitle(item);
+
+                    const year =
+                        item.year ||
+                        item.school_year ||
+                        item.academic_year ||
+                        "";
+
+                    const category =
+                        item.category ||
+                        item.project_category ||
+                        item.type ||
+                        "";
+
+                    const status =
+                        item.status ||
+                        item.repository_status ||
+                        item.approval_status ||
+                        "";
+
+                    return String(title).toLowerCase().includes(keyword)
+                        ||
+                        String(year).toLowerCase().includes(keyword)
+                        ||
+                        String(category).toLowerCase().includes(keyword)
+                        ||
+                        String(status).toLowerCase().includes(keyword);
+
+                });
+
+            table.innerHTML =
+                "";
+
+            if (filtered.length === 0) {
+
+                table.innerHTML =
+                    `
+                        <tr>
+                            <td colspan="4">
+                                No repository records found.
+                            </td>
+                        </tr>
+                    `;
+
+                return;
+
+            }
+
+            filtered.forEach(item => {
+
+                const title =
+                    getRepositoryTitle(item);
+
+                const year =
+                    item.year ||
+                    item.school_year ||
+                    item.academic_year ||
+                    "N/A";
+
+                const category =
+                    item.category ||
+                    item.project_category ||
+                    item.type ||
+                    "N/A";
+
+                const status =
+                    item.status ||
+                    item.repository_status ||
+                    item.approval_status ||
+                    "Recorded";
+
+                table.innerHTML +=
+                    `
+                        <tr>
+                            <td>
+                                ${title}
+                            </td>
+
+                            <td>
+                                ${year}
+                            </td>
+
+                            <td>
+                                ${category}
+                            </td>
+
+                            <td>
+                                <span class="status-pill">
+                                    ${status}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+
+            });
+
+        }
+
+        function renderRecentActivity() {
+
+            const container =
+                document.getElementById("activityList");
+
+            const keyword =
+                getKeyword();
+
+            const filtered =
+                recentActivity.filter(item =>
+                    String(item.activity_type || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.activity_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.activity_subtitle || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.activity_tag || "").toLowerCase().includes(keyword)
+                );
+
+            container.innerHTML =
+                "";
+
+            if (filtered.length === 0) {
+
+                container.innerHTML =
+                    `<div class="empty-card">No recent activity found.</div>`;
+
+                return;
+
+            }
+
+            filtered.forEach(item => {
+
+                container.innerHTML +=
+                    `
+                        <div class="activity-item">
+
+                            <div class="activity-icon">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+
+                            <div>
+                                <h4>
+                                    ${item.activity_type || "Activity"}
+                                </h4>
+
+                                <p>
+                                    ${item.activity_title || "No details"} • ${item.activity_subtitle || ""}
+                                </p>
+
+                                <small>
+                                    ${formatDate(item.activity_date)}
+                                </small>
+                            </div>
+
+                        </div>
+                    `;
+
+            });
+
+        }
+
+        function getRepositoryTitle(item) {
+
+            return item.title ||
+                item.project_title ||
+                item.capstone_title ||
+                item.research_title ||
+                item.name ||
+                "Untitled Research";
+
+        }
+
+        function getKeyword() {
+
+            return document
+                .getElementById("dashboardSearch")
+                .value
+                .toLowerCase();
+
+        }
+
+        function toggleRoleAccess() {
+
+            document
+                .getElementById("roleDropdown")
+                .classList
+                .toggle("show-roles");
+
+            document
+                .getElementById("roleArrow")
+                .classList
+                .toggle("rotate-arrow");
+
+        }
+
+        function openRole(role) {
+
+            if (role === "adviser") {
+
+                if (localStorage.getItem("adviser_access") === "1") {
+
+                    window.location.href =
+                        "../Faculty/Adviser/AdviserDash.html";
+
+                } else {
+
+                    alert("Your Adviser access is disabled. Enable it in Admin Settings first.");
+
+                }
+
+            }
+
+            if (role === "panelist") {
+
+                if (localStorage.getItem("panelist_access") === "1") {
+
+                    window.location.href =
+                        "../Faculty/Panelist/PanelistDash.html";
+
+                } else {
+
+                    alert("Your Panelist access is disabled. Enable it in Admin Settings first.");
+
+                }
+
+            }
+
+            if (role === "instructor") {
+
+                if (localStorage.getItem("instructor_access") === "1") {
+
+                    window.location.href =
+                        "../Faculty/Instructor/InstructorDash.html";
+
+                } else {
+
+                    alert("Your Instructor access is disabled. Enable it in Admin Settings first.");
+
+                }
+
+            }
+
+        }
+
+        function formatDate(dateValue) {
+
+            if (!dateValue) {
+                return "N/A";
+            }
+
+            const date =
+                new Date(dateValue);
+
+            return date.toLocaleDateString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                }
+            );
+
+        }
+
+        function logout() {
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        loadAdminDashboard();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

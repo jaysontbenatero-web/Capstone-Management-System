@@ -1,0 +1,1926 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Document Review | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Documents.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        const adviserAccess =
+            localStorage.getItem("adviser_access");
+
+        if(userRole === "admin" && adviserAccess !== "1"){
+
+            alert("Your Adviser access is disabled. Enable it in Admin Settings first.");
+
+            window.location.href =
+                "../../Admin/AdminDash.html";
+
+        }else if(userRole !== "admin" && adviserAccess !== "1"){
+
+            alert("You do not have permission to access this role.");
+
+            window.location.href =
+                "../FacultyDash.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Adviser Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='AdviserDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>
+                        Dashboard
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Capstone_Group.html'"
+                >
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>
+                        Capstone Groups
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Adviser_Request.html'"
+                >
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>
+                        Adviser Request
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item active"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>
+                        Document Review
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>
+                        Consultation
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Documents</h1>
+
+                <p id="adviserSubtitle">
+                    Review student documents and send files to selected users.
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="primary-btn"
+                    onclick="openSendModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Send Document
+                </button>
+</div>
+
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-inbox"></i>
+                </div>
+
+                <div>
+                    <h2 id="receivedCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Received
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </div>
+
+                <div>
+                    <h2 id="sentCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Sent
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+
+                <div>
+                    <h2 id="pendingCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Pending Review
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="approvedCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Approved
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <section class="filter-card">
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search documents..."
+                    onkeyup="renderCurrentTab()"
+                >
+            </div>
+
+            <div class="tab-buttons">
+
+                <button
+                    class="tab-btn active"
+                    id="tab-received"
+                    onclick="setTab('received')"
+                    type="button"
+                >
+                    Received Documents
+                </button>
+
+                <button
+                    class="tab-btn"
+                    id="tab-signing"
+                    onclick="setTab('signing')"
+                    type="button"
+                >
+                    <i class="fa-solid fa-file-signature" style="margin-right:5px;"></i>
+                    Signing Requests
+                </button>
+
+                <button
+                    class="tab-btn"
+                    id="tab-sent"
+                    onclick="setTab('sent')"
+                    type="button"
+                >
+                    Sent Documents
+                </button>
+
+            </div>
+
+        </section>
+
+        <section class="content-card">
+
+            <div class="section-header">
+
+                <div>
+                    <h2 id="sectionTitle">
+                        Received Documents
+                    </h2>
+
+                    <p id="sectionDescription">
+                        Documents sent by students for adviser review.
+                    </p>
+                </div>
+
+                <select
+                    id="statusFilter"
+                    onchange="renderCurrentTab()"
+                >
+                    <option value="All">All Status</option>
+                    <option value="Pending Review">Pending Review</option>
+                    <option value="Subject to Change">Subject to Change</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Other">Other</option>
+                </select>
+
+            </div>
+
+            <div
+                class="document-grid"
+                id="documentGrid"
+            >
+                <div class="empty-card">
+                    Loading documents...
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- SEND DOCUMENT MODAL -->
+    <div
+        class="modal-overlay"
+        id="sendModal"
+    >
+
+        <div class="modal-box large-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2>
+                        Send Document
+                    </h2>
+
+                    <p>
+                        Upload a document and send it to selected users.
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeSendModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="input-group">
+                    <label>
+                        Document Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="sendDocumentTitle"
+                        placeholder="Enter document title"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Document Type
+                    </label>
+
+                    <select id="sendDocumentType">
+                        <option value="Instruction">Instruction</option>
+                        <option value="Review File">Review File</option>
+                        <option value="Template">Template</option>
+                        <option value="Adviser Signing">Adviser Signing</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Attach File
+                </label>
+
+                <input
+                    type="file"
+                    id="sendDocumentFile"
+                >
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Message / Comment
+                </label>
+
+                <textarea
+                    id="sendMessage"
+                    placeholder="Write a message for the selected recipients..."
+                ></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Search Recipients
+                </label>
+
+                <input
+                    type="text"
+                    id="recipientSearch"
+                    placeholder="Search name, ID, role, or program..."
+                    onkeyup="renderRecipients()"
+                >
+            </div>
+
+            <div
+                class="recipient-list"
+                id="recipientList"
+            >
+                Loading recipients...
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeSendModal()"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="sendAdviserDocument()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Send Document
+                </button>
+
+            </div>
+            </div>
+    </div>
+
+    <!-- REVIEW MODAL -->
+    <div
+        class="modal-overlay"
+        id="reviewModal"
+    >
+
+        <div class="modal-box large-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="reviewTitle">
+                        Document Review
+                    </h2>
+
+                    <p id="reviewSubtitle">
+                        Submission details
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeReviewModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="details-grid">
+
+                <div class="detail-card">
+                    <span>
+                        Sender
+                    </span>
+
+                    <h3 id="reviewSender">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Group
+                    </span>
+
+                    <h3 id="reviewGroup">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Document Type
+                    </span>
+
+                    <h3 id="reviewType">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Current Status
+                    </span>
+
+                    <h3 id="reviewCurrentStatus">
+                        Pending Review
+                    </h3>
+                </div>
+
+            </div>
+
+            <div class="section-box">
+                <h3>
+                    Student Message
+                </h3>
+
+                <p id="reviewStudentMessage">
+                    No message.
+                </p>
+            </div>
+
+            <div class="file-preview">
+                <i class="fa-solid fa-file-lines"></i>
+
+                <div>
+                    <h3 id="reviewFileName">
+                        File name
+                    </h3>
+
+                    <a
+                        id="reviewFileLink"
+                        href="#"
+                        target="_blank"
+                    >
+                        Open Attached File
+                    </a>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Review Comment
+                </label>
+
+                <textarea
+                    id="reviewComment"
+                    placeholder="Write your review comment or required changes..."
+                ></textarea>
+            </div>
+
+            <div class="modal-actions review-action-buttons">
+
+                <button
+                    class="review-action-btn revise-btn"
+                    type="button"
+                    onclick="submitDocumentReview('Subject to Change')"
+                >
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Request Revision
+                </button>
+
+                <button
+                    class="review-action-btn reject-btn"
+                    type="button"
+                    onclick="submitDocumentReview('Rejected')"
+                >
+                    <i class="fa-solid fa-ban"></i>
+                    Reject
+                </button>
+
+                <button
+                    class="review-action-btn approve-btn"
+                    type="button"
+                    onclick="submitDocumentReview('Approved')"
+                >
+                    <i class="fa-solid fa-check"></i>
+                    Approve
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================== SIGNING REQUESTS MODAL (E-SIGNATURE) ===================== -->
+    <div class="modal-overlay" id="eSignModal">
+        <div class="modal-box large-modal">
+
+            <div class="modal-header">
+                <div>
+                    <h2 id="eSignDocTitle">Document Title</h2>
+                    <p id="eSignDocSubtitle">Draw your signature below to complete signing this document.</p>
+                </div>
+                <button class="close-modal-btn" onclick="closeESignModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Document Info -->
+            <div class="details-grid" style="margin-bottom:18px;">
+                <div class="detail-card">
+                    <span>Requested By</span>
+                    <h3 id="eSignRequester">Adviser Name</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Document Type</span>
+                    <h3 id="eSignDocType">Adviser Signing</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Date Requested</span>
+                    <h3 id="eSignDate">—</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Status</span>
+                    <h3 id="eSignStatus" style="color:#b45309;">Awaiting Signature</h3>
+                </div>
+            </div>
+
+            <!-- File Preview -->
+            <div class="file-preview" style="margin-bottom:18px;">
+                <i class="fa-solid fa-file-contract"></i>
+                <div>
+                    <h3 id="eSignFileName">Document File</h3>
+                    <a id="eSignFileLink" href="#" target="_blank">Open Document to Review</a>
+                </div>
+            </div>
+
+            <!-- Adviser Message -->
+            <div class="section-box" style="margin-bottom:18px;">
+                <h3>Adviser Message</h3>
+                <p id="eSignAdviserMsg">Please review and sign this document at your earliest convenience.</p>
+            </div>
+
+            <!-- E-Signature Canvas -->
+            <div class="esign-canvas-wrapper">
+                <div class="esign-canvas-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div class="esign-icon-badge">
+                            <i class="fa-solid fa-pen-nib"></i>
+                        </div>
+                        <div>
+                            <h3>Attach E-Signature</h3>
+                            <p>Draw your signature in the box below using your mouse or touch screen.</p>
+                        </div>
+                    </div>
+                    <button class="esign-clear-btn" onclick="clearSignature()" type="button">
+                        <i class="fa-solid fa-eraser"></i> Clear
+                    </button>
+                </div>
+                <canvas
+                    id="signatureCanvas"
+                    class="signature-canvas"
+                    width="760"
+                    height="180"
+                ></canvas>
+                <div class="esign-canvas-footer">
+                    <i class="fa-solid fa-shield-halved" style="color:#7c3aed;"></i>
+                    <span>Your e-signature is legally binding and securely stored.</span>
+                </div>
+            </div>
+
+            <!-- Request Revision -->
+            <div class="revision-request-box" id="revisionBox" style="display:none;">
+                <div class="revision-request-header">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <h4>Request Revision</h4>
+                </div>
+                <textarea
+                    id="revisionComment"
+                    class="revision-textarea"
+                    placeholder="Describe what needs to be revised or corrected in this document..."
+                ></textarea>
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions" style="flex-wrap:wrap;gap:12px;margin-top:20px;">
+                <button class="cancel-btn" onclick="closeESignModal()" type="button">Cancel</button>
+                <button
+                    class="esign-revision-toggle-btn"
+                    onclick="toggleRevisionBox()"
+                    type="button"
+                    id="revisionToggleBtn"
+                >
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Request Revision
+                </button>
+                <button class="save-btn" onclick="submitESignature()" type="button" id="eSignSubmitBtn">
+                    <i class="fa-solid fa-signature"></i>
+                    Submit Signature
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===================== PROGRESS TRACKER MODAL ===================== -->
+    <div class="modal-overlay" id="progressModal">
+        <div class="modal-box" style="width:700px;">
+
+            <div class="modal-header">
+                <div>
+                    <h2>Student Progress Tracker</h2>
+                    <p id="progressStudentName">Loading student progress...</p>
+                </div>
+                <button class="close-modal-btn" onclick="closeProgressModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Overall Progress Bar -->
+            <div class="progress-overview-card">
+                <div class="progress-overview-header">
+                    <div>
+                        <h3>Overall Completion</h3>
+                        <p id="progressOverallLabel">3 of 6 milestones completed</p>
+                    </div>
+                    <span class="progress-percent-badge" id="progressPercent">50%</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progressBarFill" style="width:50%;"></div>
+                </div>
+            </div>
+
+            <!-- Milestone List -->
+            <div class="milestone-list" id="milestoneList">
+
+                <!-- Milestone Item: Done -->
+                <div class="milestone-item done">
+                    <div class="milestone-icon done"><i class="fa-solid fa-check"></i></div>
+                    <div class="milestone-body">
+                        <div class="milestone-top">
+                            <h4>Concept Paper Submission</h4>
+                            <span class="ms-badge done">Approved</span>
+                        </div>
+                        <p>3 of 3 submissions approved &bull; Completed May 10, 2026</p>
+                        <div class="milestone-sub-progress">
+                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:100%;"></div></div>
+                            <span>3/3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Milestone Item: Done -->
+                <div class="milestone-item done">
+                    <div class="milestone-icon done"><i class="fa-solid fa-check"></i></div>
+                    <div class="milestone-body">
+                        <div class="milestone-top">
+                            <h4>Chapter 1 Submission</h4>
+                            <span class="ms-badge done">Approved</span>
+                        </div>
+                        <p>Submitted and approved &bull; May 18, 2026</p>
+                        <div class="milestone-sub-progress">
+                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:100%;"></div></div>
+                            <span>1/1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Milestone Item: In Progress -->
+                <div class="milestone-item inprogress">
+                    <div class="milestone-icon inprogress"><i class="fa-solid fa-spinner"></i></div>
+                    <div class="milestone-body">
+                        <div class="milestone-top">
+                            <h4>Chapter 2 Submission</h4>
+                            <span class="ms-badge inprogress">In Progress</span>
+                        </div>
+                        <p>1 of 2 revisions approved &bull; Awaiting final submission</p>
+                        <div class="milestone-sub-progress">
+                            <div class="ms-sub-bar"><div class="ms-sub-fill inprogress" style="width:50%;"></div></div>
+                            <span>1/2</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Milestone Item: Pending -->
+                <div class="milestone-item pending">
+                    <div class="milestone-icon pending"><i class="fa-solid fa-clock"></i></div>
+                    <div class="milestone-body">
+                        <div class="milestone-top">
+                            <h4>Chapter 3 Submission</h4>
+                            <span class="ms-badge pending">Pending</span>
+                        </div>
+                        <p>Not yet started</p>
+                        <div class="milestone-sub-progress">
+                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:0%;"></div></div>
+                            <span>0/1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Milestone Item: Pending -->
+                <div class="milestone-item pending">
+                    <div class="milestone-icon pending"><i class="fa-solid fa-clock"></i></div>
+                    <div class="milestone-body">
+                        <div class="milestone-top">
+                            <h4>Final Defense Document</h4>
+                            <span class="ms-badge pending">Pending</span>
+                        </div>
+                        <p>Requires adviser e-signature before submission</p>
+                        <div class="milestone-sub-progress">
+                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:0%;"></div></div>
+                            <span>0/1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Milestone Item: For Revision -->
+                <div class="milestone-item revision">
+                    <div class="milestone-icon revision"><i class="fa-solid fa-rotate-left"></i></div>
+                    <div class="milestone-body">
+                        <div class="milestone-top">
+                            <h4>Oral Defense Form</h4>
+                            <span class="ms-badge revision">For Revision</span>
+                        </div>
+                        <p>Returned for corrections &bull; Awaiting resubmission</p>
+                        <div class="milestone-sub-progress">
+                            <div class="ms-sub-bar"><div class="ms-sub-fill revision" style="width:30%;"></div></div>
+                            <span>0/1</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-actions" style="margin-top:20px;">
+                <button class="cancel-btn" onclick="closeProgressModal()" type="button">Close</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        const loggedInAdviserId =
+            localStorage.getItem("userId");
+
+        let adviserData = null;
+        let receivedDocuments = [];
+        let sentDocuments = [];
+        let recipients = [];
+        let currentTab = "received";
+        let selectedSubmissionId = null;
+
+
+        async function loadAdviserDocuments(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/adviser-documents/${loggedInAdviserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    alert(data.message || "Failed to load adviser documents.");
+
+                    return;
+
+                }
+
+                adviserData =
+                    data.adviser;
+
+                receivedDocuments =
+                    data.receivedDocuments || [];
+
+                sentDocuments =
+                    data.sentDocuments || [];
+
+                recipients =
+                    data.recipients || [];
+
+                document.getElementById("adviserSubtitle").innerText =
+                    `${adviserData.fullname} • ${adviserData.user_id} • ${adviserData.position || "Adviser"}`;
+
+                renderStats(data.stats);
+
+                renderRecipients();
+
+                renderCurrentTab();
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function renderStats(stats){
+
+            document.getElementById("receivedCount").innerText =
+                stats.receivedDocuments || 0;
+
+            document.getElementById("sentCount").innerText =
+                stats.sentDocuments || 0;
+
+            document.getElementById("pendingCount").innerText =
+                stats.pendingCount || 0;
+
+            document.getElementById("approvedCount").innerText =
+                stats.approvedCount || 0;
+
+        }
+
+        function setTab(tab){
+
+            currentTab =
+                tab;
+
+            document
+                .querySelectorAll(".tab-btn")
+                .forEach(button =>
+                    button.classList.remove("active")
+                );
+
+            document
+                .getElementById(`tab-${tab}`)
+                .classList.add("active");
+
+            renderCurrentTab();
+
+        }
+
+        /* ====== SIGNING TAB MOCK DATA ====== */
+        const mockSigningRequests = [
+            {
+                id: 1,
+                title: "Capstone Endorsement Form",
+                code: "DOC-2026-001",
+                type: "Adviser Signing",
+                requester: "Prof. Maria Santos",
+                date: "May 25, 2026",
+                status: "Awaiting Signature",
+                message: "Please review and e-sign this endorsement form for your group's capstone project before the final defense schedule.",
+                fileName: "Endorsement_Form_2026.pdf",
+                fileLink: "#"
+            },
+            {
+                id: 2,
+                title: "Oral Defense Clearance",
+                code: "DOC-2026-002",
+                type: "Adviser Signing",
+                requester: "Prof. Maria Santos",
+                date: "May 27, 2026",
+                status: "Awaiting Signature",
+                message: "This clearance form must be signed by your adviser before submission to the panel.",
+                fileName: "OralDefenseClearance.pdf",
+                fileLink: "#"
+            },
+            {
+                id: 3,
+                title: "Ethics Compliance Form",
+                code: "DOC-2026-003",
+                type: "Adviser Signing",
+                requester: "Prof. Maria Santos",
+                date: "May 20, 2026",
+                status: "Signed",
+                message: "Signed and completed.",
+                fileName: "EthicsForm_Final.pdf",
+                fileLink: "#"
+            }
+        ];
+        let activeSigningRequest = null;
+
+        function renderCurrentTab(){
+
+            if(currentTab === "received"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "Received Documents";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Documents sent by students for adviser review.";
+
+                document.getElementById("statusFilter").style.display =
+                    "block";
+
+                renderReceivedDocuments();
+
+            }else if(currentTab === "signing"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "Signing Requests";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Documents intended for you to e-sign. Students can request revisions and track their progress.";
+
+                document.getElementById("statusFilter").style.display =
+                    "none";
+
+                renderSigningRequests();
+
+            }else{
+
+                document.getElementById("sectionTitle").innerText =
+                    "Sent Documents";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Documents you uploaded and sent to selected users.";
+
+                document.getElementById("statusFilter").style.display =
+                    "none";
+
+                renderSentDocuments();
+
+            }
+
+        }
+
+        /* ====== RENDER SIGNING REQUESTS ====== */
+        function renderSigningRequests(){
+            const grid = document.getElementById("documentGrid");
+            grid.classList.remove("grouped-view");
+            grid.innerHTML = "";
+
+            if(mockSigningRequests.length === 0){
+                grid.innerHTML = `<div class="empty-card">No signing requests at the moment.</div>`;
+                return;
+            }
+
+            mockSigningRequests.forEach(req => {
+                const isSigned = req.status === "Signed";
+                const statusClass = isSigned ? "approved" : "pending";
+                const card = document.createElement("div");
+                card.className = "document-card signing-request-card";
+                card.innerHTML = `
+                    <div class="signing-card-badge ${isSigned ? 'signed' : 'pending-sign'}">
+                        <i class="fa-solid fa-${isSigned ? 'circle-check' : 'pen-nib'}"></i>
+                        ${isSigned ? 'Signed' : 'Needs Your Signature'}
+                    </div>
+
+                    <div class="document-top">
+                        <div class="document-icon" style="background:${isSigned ? '#dcfce7' : '#f3e8ff'};color:${isSigned ? '#15803d' : '#7c3aed'}">
+                            <i class="fa-solid fa-file-contract"></i>
+                        </div>
+                        <div>
+                            <h3>${req.title}</h3>
+                            <p>${req.code}</p>
+                        </div>
+                    </div>
+
+                    <div class="document-meta">
+                        <span>${req.type}</span>
+                        <span class="${statusClass}">${req.status}</span>
+                    </div>
+
+                    <div class="document-info">
+                        <p><strong>From:</strong> ${req.requester}</p>
+                        <p><strong>Requested:</strong> ${req.date}</p>
+                    </div>
+
+                    <div class="signing-card-msg">
+                        <i class="fa-solid fa-comment-dots"></i>
+                        <span>${req.message.length > 80 ? req.message.substring(0,80)+'...' : req.message}</span>
+                    </div>
+
+                    <div class="card-actions" style="flex-wrap:wrap;">
+                        <button class="view-file-btn" onclick="openProgressModal()" type="button">
+                            <i class="fa-solid fa-chart-line"></i> Progress
+                        </button>
+                        <button
+                            class="review-btn sign-doc-btn"
+                            onclick="openESignModal(${req.id})"
+                            type="button"
+                            ${isSigned ? 'style="background:linear-gradient(135deg,#16a34a,#4ade80);"' : ''}
+                        >
+                            <i class="fa-solid fa-${isSigned ? 'eye' : 'signature'}"></i>
+                            ${isSigned ? 'View Signed' : 'Sign Document'}
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        /* ====== E-SIGN MODAL ====== */
+        function openESignModal(reqId){
+            activeSigningRequest = mockSigningRequests.find(r => r.id === reqId);
+            if(!activeSigningRequest) return;
+
+            document.getElementById("eSignDocTitle").innerText = activeSigningRequest.title;
+            document.getElementById("eSignDocSubtitle").innerText = `Draw your signature below to complete signing — ${activeSigningRequest.code}`;
+            document.getElementById("eSignRequester").innerText = activeSigningRequest.requester;
+            document.getElementById("eSignDocType").innerText = activeSigningRequest.type;
+            document.getElementById("eSignDate").innerText = activeSigningRequest.date;
+            document.getElementById("eSignStatus").innerText = activeSigningRequest.status;
+            document.getElementById("eSignAdviserMsg").innerText = activeSigningRequest.message;
+            document.getElementById("eSignFileName").innerText = activeSigningRequest.fileName;
+            document.getElementById("eSignFileLink").href = activeSigningRequest.fileLink;
+
+            // Reset revision box
+            document.getElementById("revisionBox").style.display = "none";
+            document.getElementById("revisionComment").value = "";
+            document.getElementById("revisionToggleBtn").classList.remove("active-revision");
+
+            clearSignature();
+            document.getElementById("eSignModal").style.display = "flex";
+            initSignatureCanvas();
+        }
+
+        function closeESignModal(){
+            document.getElementById("eSignModal").style.display = "none";
+            activeSigningRequest = null;
+        }
+
+        function toggleRevisionBox(){
+            const box = document.getElementById("revisionBox");
+            const btn = document.getElementById("revisionToggleBtn");
+            const isVisible = box.style.display !== "none";
+            box.style.display = isVisible ? "none" : "block";
+            btn.classList.toggle("active-revision", !isVisible);
+        }
+
+        function submitESignature(){
+            const canvas = document.getElementById("signatureCanvas");
+            const ctx = canvas.getContext("2d");
+            const pixels = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+            const hasSignature = Array.from(pixels).some((val,i) => i % 4 === 3 && val > 0);
+
+            const revisionBox = document.getElementById("revisionBox");
+            const revisionVisible = revisionBox.style.display !== "none";
+            const revisionText = document.getElementById("revisionComment").value.trim();
+
+            if(revisionVisible){
+                if(!revisionText){
+                    alert("Please write a revision comment before submitting.");
+                    return;
+                }
+                // UI-only: pretend to submit revision request
+                alert("✅ Revision request submitted! The requester will be notified.");
+                closeESignModal();
+                return;
+            }
+
+            if(!hasSignature){
+                alert("Please draw your signature before submitting.");
+                return;
+            }
+
+            // UI-only: pretend to sign
+            if(activeSigningRequest){
+                activeSigningRequest.status = "Signed";
+            }
+            alert("✅ Document signed successfully!");
+            closeESignModal();
+            renderCurrentTab();
+        }
+
+        /* ====== SIGNATURE CANVAS ====== */
+        let isDrawing = false;
+        let canvasInitialized = false;
+
+        function initSignatureCanvas(){
+            const canvas = document.getElementById("signatureCanvas");
+            const ctx = canvas.getContext("2d");
+
+            // Resize canvas to wrapper width
+            const wrapper = canvas.parentElement;
+            canvas.width = wrapper.clientWidth - 4;
+            canvas.height = 180;
+
+            ctx.strokeStyle = "#2e1065";
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            if(canvasInitialized) return;
+            canvasInitialized = true;
+
+            canvas.addEventListener("mousedown", e => { isDrawing = true; ctx.beginPath(); ctx.moveTo(getPos(e, canvas).x, getPos(e, canvas).y); });
+            canvas.addEventListener("mousemove", e => { if(!isDrawing) return; const p = getPos(e,canvas); ctx.lineTo(p.x,p.y); ctx.stroke(); });
+            canvas.addEventListener("mouseup", () => { isDrawing = false; });
+            canvas.addEventListener("mouseleave", () => { isDrawing = false; });
+
+            canvas.addEventListener("touchstart", e => { e.preventDefault(); isDrawing = true; ctx.beginPath(); const p = getPos(e.touches[0],canvas); ctx.moveTo(p.x,p.y); }, {passive:false});
+            canvas.addEventListener("touchmove", e => { e.preventDefault(); if(!isDrawing) return; const p = getPos(e.touches[0],canvas); ctx.lineTo(p.x,p.y); ctx.stroke(); }, {passive:false});
+            canvas.addEventListener("touchend", () => { isDrawing = false; });
+        }
+
+        function getPos(e, canvas){
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX || e.pageX) - rect.left,
+                y: (e.clientY || e.pageY) - rect.top
+            };
+        }
+
+        function clearSignature(){
+            const canvas = document.getElementById("signatureCanvas");
+            if(!canvas) return;
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        /* ====== PROGRESS MODAL ====== */
+        function openProgressModal(){
+            document.getElementById("progressStudentName").innerText =
+                "Group Alpha — Juan dela Cruz, Maria Reyes, Carlo Santos";
+            document.getElementById("progressModal").style.display = "flex";
+        }
+
+        function closeProgressModal(){
+            document.getElementById("progressModal").style.display = "none";
+        }
+
+        function isNewDocument(item){
+            return item.review_status === "Pending Review";
+        }
+
+        function groupKeyToDomId(key){
+            return String(key).replace(/[^a-zA-Z0-9_-]/g, "_");
+        }
+
+        function groupReceivedByCapstoneGroup(list){
+            const grouped = {};
+
+            list.forEach(item => {
+                const key =
+                    item.group_name
+                    || item.group_id
+                    || `no-group-${item.sender_name || "unknown"}`;
+
+                if(!grouped[key]){
+                    grouped[key] = {
+                        group_name: item.group_name || "No Group",
+                        group_program: item.group_program || item.sender_program || "N/A",
+                        project_title: item.project_title || "",
+                        docs: []
+                    };
+                }
+
+                grouped[key].docs.push(item);
+            });
+
+            return Object.entries(grouped)
+                .map(([key, group]) => ({
+                    key,
+                    ...group,
+                    hasNew: group.docs.some(isNewDocument),
+                    latestSent: Math.max(
+                        ...group.docs.map(doc => new Date(doc.sent_at || 0).getTime())
+                    )
+                }))
+                .sort((a, b) => {
+                    if(a.hasNew !== b.hasNew){
+                        return b.hasNew - a.hasNew;
+                    }
+
+                    return b.latestSent - a.latestSent;
+                });
+        }
+
+        function buildGroupedDocRowHtml(item){
+            const statusClass = getStatusClass(item.review_status);
+            const isNew = isNewDocument(item);
+
+            return `
+                <div class="group-doc-row ${isNew ? "is-new" : ""}" data-submission-id="${item.submission_id}">
+                    <div class="group-doc-main">
+                        <h4>
+                            ${item.document_title || "Untitled Document"}
+                            ${isNew ? `<span class="new-doc-pill">New</span>` : ""}
+                        </h4>
+                        <div class="group-doc-meta">
+                            <span>${item.document_code || "No Code"}</span>
+                            <span>&bull;</span>
+                            <span>${item.document_type || "Document"}</span>
+                            <span>&bull;</span>
+                            <span>From ${item.sender_name || "Unknown Student"}</span>
+                            <span>&bull;</span>
+                            <span>Sent ${formatDate(item.sent_at)}</span>
+                        </div>
+                    </div>
+                    <div class="group-doc-actions">
+                        <div class="document-meta" style="margin:0;">
+                            <span class="${statusClass}">
+                                ${item.review_status || "Pending Review"}
+                            </span>
+                        </div>
+                        <a class="view-file-btn" href="http://localhost:3005${item.file_path}" target="_blank">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                        <button class="review-btn" type="button" data-submission-id="${item.submission_id}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleReceivedGroup(domId){
+            const body = document.getElementById(`received-group-${domId}`);
+            const chevron = document.getElementById(`received-chevron-${domId}`);
+
+            if(!body || !chevron){
+                return;
+            }
+
+            const isHidden = body.style.display === "none";
+
+            body.style.display = isHidden ? "block" : "none";
+            chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+        }
+
+        function renderReceivedDocuments(){
+
+            const keyword =
+                getKeyword();
+
+            const status =
+                document.getElementById("statusFilter").value;
+
+            const filtered =
+                receivedDocuments.filter(item => {
+
+                    const matchesKeyword =
+                        String(item.document_code || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.document_title || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.document_type || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.sender_name || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.group_name || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.review_status || "").toLowerCase().includes(keyword);
+
+                    const matchesStatus =
+                        status === "All"
+                        ||
+                        item.review_status === status;
+
+                    return matchesKeyword && matchesStatus;
+
+                });
+
+            renderReceivedCards(filtered);
+
+        }
+
+        function renderReceivedCards(list){
+
+            const grid =
+                document.getElementById("documentGrid");
+
+            grid.classList.add("grouped-view");
+            grid.innerHTML = "";
+
+            if(list.length === 0){
+
+                grid.innerHTML =
+                    `<div class="empty-card">No received documents found.</div>`;
+
+                return;
+
+            }
+
+            const groups = groupReceivedByCapstoneGroup(list);
+
+            groups.forEach((group, index) => {
+                const domId = groupKeyToDomId(group.key);
+                const isOpen = index === 0;
+                const newCount = group.docs.filter(isNewDocument).length;
+
+                const bundle = document.createElement("div");
+                bundle.className =
+                    "group-bundle-card" + (group.hasNew ? " has-new-submissions" : "");
+
+                bundle.innerHTML = `
+                    <div class="group-bundle-header" onclick="toggleReceivedGroup('${domId}')">
+                        <div class="group-bundle-title" style="display:flex;align-items:center;gap:12px;">
+                            <div style="background:rgba(255,255,255,0.2);width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <h3>${group.group_name}</h3>
+                                <p>${group.group_program}${group.project_title ? ` &bull; ${group.project_title}` : ""}</p>
+                            </div>
+                        </div>
+                        <div class="group-bundle-badges">
+                            ${group.hasNew ? `<span class="group-new-badge"><i class="fa-solid fa-sparkles"></i> ${newCount} New</span>` : ""}
+                            <span class="group-count-badge">${group.docs.length} File${group.docs.length !== 1 ? "s" : ""}</span>
+                            <i class="fa-solid fa-chevron-down" id="received-chevron-${domId}" style="transition:transform 0.3s;transform:${isOpen ? "rotate(180deg)" : "rotate(0deg)"};"></i>
+                        </div>
+                    </div>
+                    <div class="group-bundle-body" id="received-group-${domId}" style="display:${isOpen ? "block" : "none"};">
+                        ${group.docs.map(buildGroupedDocRowHtml).join("")}
+                    </div>
+                `;
+
+                bundle.querySelectorAll(".review-btn").forEach(btn => {
+                    btn.addEventListener("click", (event) => {
+                        event.stopPropagation();
+                        openReviewModal(Number(btn.dataset.submissionId));
+                    });
+                });
+
+                grid.appendChild(bundle);
+            });
+
+        }
+
+        function renderSentDocuments(){
+
+            const grid =
+                document.getElementById("documentGrid");
+
+            grid.classList.remove("grouped-view");
+
+            const keyword =
+                getKeyword();
+
+            const filtered =
+                sentDocuments.filter(item =>
+                    String(item.document_code || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.document_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.document_type || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.receiver_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.receiver_role || "").toLowerCase().includes(keyword)
+                );
+
+            grid.innerHTML = "";
+
+            if(filtered.length === 0){
+
+                grid.innerHTML =
+                    `<div class="empty-card">No sent documents found.</div>`;
+
+                return;
+
+            }
+
+            filtered.forEach(item => {
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    "document-card";
+
+                card.innerHTML =
+                    `
+                        <div class="document-top">
+
+                            <div class="document-icon sent-icon">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </div>
+
+                            <div>
+                                <h3>
+                                    ${item.document_title || "Untitled Document"}
+                                </h3>
+
+                                <p>
+                                    ${item.document_code || "No Code"}
+                                </p>
+                            </div>
+
+                        </div>
+
+                        <div class="document-meta">
+
+                            <span>
+                                ${item.document_type || "Document"}
+                            </span>
+
+                            <span class="approved">
+                                Sent
+                            </span>
+
+                        </div>
+
+                        <div class="document-info">
+
+                            <p>
+                                <strong>To:</strong>
+                                ${item.receiver_name || "Unknown User"} (${item.receiver_role || "User"})
+                            </p>
+
+                            <p>
+                                <strong>Sent:</strong>
+                                ${formatDate(item.sent_at)}
+                            </p>
+
+                        </div>
+
+                        <a
+                            class="view-file-btn full"
+                            href="http://localhost:3005${item.file_path}"
+                            target="_blank"
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                            View Sent File
+                        </a>
+                    `;
+
+                grid.appendChild(card);
+
+            });
+
+        }
+
+        function openReviewModal(submissionId){
+
+            const item =
+                receivedDocuments.find(doc =>
+                    Number(doc.submission_id) === Number(submissionId)
+                );
+
+            if(!item){
+
+                alert("Document submission not found.");
+
+                return;
+
+            }
+
+            selectedSubmissionId =
+                submissionId;
+
+            document.getElementById("reviewTitle").innerText =
+                item.document_title || "Document Review";
+
+            document.getElementById("reviewSubtitle").innerText =
+                item.document_code || "No Document Code";
+
+            document.getElementById("reviewSender").innerText =
+                `${item.sender_name || "Unknown"} (${item.sender_user_id || "No ID"})`;
+
+            document.getElementById("reviewGroup").innerText =
+                item.group_name || "No Group";
+
+            document.getElementById("reviewType").innerText =
+                item.document_type || "Document";
+
+            document.getElementById("reviewCurrentStatus").innerText =
+                item.review_status || "Pending Review";
+
+            document.getElementById("reviewStudentMessage").innerText =
+                item.submission_message || "No message provided.";
+
+            document.getElementById("reviewFileName").innerText =
+                item.file_name || "Attached File";
+
+            document.getElementById("reviewFileLink").href =
+                `http://localhost:3005${item.file_path}`;
+
+            document.getElementById("reviewComment").value =
+                item.review_comment || "";
+
+            document.getElementById("reviewModal").style.display =
+                "flex";
+
+        }
+
+        function closeReviewModal(){
+
+            selectedSubmissionId =
+                null;
+
+            document.getElementById("reviewModal").style.display =
+                "none";
+
+        }
+
+        function openSendModal(){
+
+            clearSendForm();
+
+            renderRecipients();
+
+            document.getElementById("sendModal").style.display =
+                "flex";
+
+        }
+
+        function closeSendModal(){
+
+            document.getElementById("sendModal").style.display =
+                "none";
+
+        }
+
+        function clearSendForm(){
+
+            document.getElementById("sendDocumentTitle").value =
+                "";
+
+            document.getElementById("sendDocumentType").value =
+                "Instruction";
+
+            document.getElementById("sendDocumentFile").value =
+                "";
+
+            document.getElementById("sendMessage").value =
+                "";
+
+            document.getElementById("recipientSearch").value =
+                "";
+
+        }
+
+        function renderRecipients(){
+
+            const container =
+                document.getElementById("recipientList");
+
+            if(!container){
+                return;
+            }
+
+            const keyword =
+                document.getElementById("recipientSearch")
+                ? document.getElementById("recipientSearch").value.toLowerCase()
+                : "";
+
+            const filtered =
+                recipients.filter(user =>
+                    String(user.fullname || "").toLowerCase().includes(keyword)
+                    ||
+                    String(user.user_id || "").toLowerCase().includes(keyword)
+                    ||
+                    String(user.role || "").toLowerCase().includes(keyword)
+                    ||
+                    String(user.program || "").toLowerCase().includes(keyword)
+                );
+
+            container.innerHTML =
+                "";
+
+            if(filtered.length === 0){
+
+                container.innerHTML =
+                    `<div class="empty-card">No recipients found.</div>`;
+
+                return;
+
+            }
+
+            filtered.forEach(user => {
+
+                const roleText =
+                    user.role === "admin"
+                    ? "Admin"
+                    : user.role === "faculty"
+                    ? "Faculty"
+                    : "Student";
+
+                container.innerHTML +=
+                    `
+                        <label class="recipient-row">
+
+                            <input
+                                type="checkbox"
+                                class="recipient-checkbox"
+                                value="${user.id}"
+                            >
+
+                            <div class="recipient-avatar">
+                                ${user.fullname ? user.fullname.charAt(0).toUpperCase() : "U"}
+                            </div>
+
+                            <div>
+                                <h4>
+                                    ${user.fullname || "User"}
+                                </h4>
+
+                                <p>
+                                    ${user.user_id || "No ID"} • ${roleText} • ${user.program || user.position || "No Program"}
+                                </p>
+                            </div>
+
+                        </label>
+                    `;
+
+            });
+
+        }
+
+        async function sendAdviserDocument(){
+
+            const documentTitle =
+                document.getElementById("sendDocumentTitle").value.trim();
+
+            const documentType =
+                document.getElementById("sendDocumentType").value;
+
+            const documentFile =
+                document.getElementById("sendDocumentFile").files[0];
+
+            const message =
+                document.getElementById("sendMessage").value.trim();
+
+            const selectedRecipients =
+                Array.from(
+                    document.querySelectorAll(".recipient-checkbox:checked")
+                ).map(input =>
+                    input.value
+                );
+
+            if(
+                !documentTitle ||
+                !documentType ||
+                !documentFile ||
+                selectedRecipients.length === 0
+            ){
+
+                alert("Please complete the document details, attach a file, and select at least one recipient.");
+
+                return;
+
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append("adviserUserId", loggedInAdviserId);
+            formData.append("documentTitle", documentTitle);
+            formData.append("documentType", documentType);
+            formData.append("documentFile", documentFile);
+            formData.append("recipientIds", JSON.stringify(selectedRecipients));
+            formData.append("message", message);
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/adviser-send-document",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(data.message || "Document processed.");
+
+                if(data.success){
+
+                    closeSendModal();
+
+                    loadAdviserDocuments();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot send document.");
+
+            }
+
+        }
+
+        async function submitDocumentReview(reviewStatus){
+
+            if(!selectedSubmissionId){
+
+                alert("No selected document submission.");
+
+                return;
+
+            }
+
+            const reviewComment =
+                document.getElementById("reviewComment").value.trim();
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/adviser-review-student-document/${selectedSubmissionId}`,
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                adviserUserId:loggedInAdviserId,
+                                reviewStatus,
+                                otherStatus:"",
+                                reviewComment
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(data.message || "Review submitted.");
+
+                if(data.success){
+
+                    closeReviewModal();
+
+                    loadAdviserDocuments();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot submit document review.");
+
+            }
+
+        }
+
+        function isDefaultReviewStatus(status){
+
+            const statuses = [
+                "Pending Review",
+                "Subject to Change",
+                "Approved",
+                "Rejected"
+            ];
+
+            return statuses.includes(status);
+
+        }
+
+        function getStatusClass(status){
+
+            if(status === "Approved"){
+                return "approved";
+            }
+
+            if(status === "Subject to Change"){
+                return "subject";
+            }
+
+            if(status === "Rejected"){
+                return "rejected";
+            }
+
+            if(status === "Pending Review"){
+                return "pending";
+            }
+
+            return "other";
+        }
+
+        function getKeyword(){
+
+            return document
+                .getElementById("searchInput")
+                .value
+                .toLowerCase();
+
+        }
+
+        function formatDate(dateValue){
+
+            if(!dateValue){
+                return "N/A";
+            }
+
+            const date =
+                new Date(dateValue);
+
+            return date.toLocaleDateString(
+                "en-US",
+                {
+                    year:"numeric",
+                    month:"short",
+                    day:"numeric"
+                }
+            );
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+        loadAdviserDocuments();
+
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

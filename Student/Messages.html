@@ -1,0 +1,556 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Messages | CapstoneX Student
+    </title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="../Images/CapstoneXicon.png"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="../Admin/Messages.css">
+    <link rel="stylesheet" href="student-portal.css">
+
+</head>
+
+<body class="admin-portal student-messages-page">
+
+    <script>
+        const currentUserId = localStorage.getItem("userId");
+        const userRole = localStorage.getItem("role");
+
+        if (!currentUserId || userRole !== "student") {
+            alert("You do not have permission to access the Student Portal.");
+            window.location.href = "../Log-in.html";
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='StudentDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Capstone</div>
+                <div class="menu-item" id="nav-titles" onclick="window.location.href='Capstone_Titles.html'">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+
+                <div class="menu-item" id="nav-members" onclick="window.location.href='Members.html'">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+
+                <div class="menu-item" id="nav-adviser" onclick="window.location.href='Req_Adviser.html'">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+
+                <div class="menu-item" id="nav-documents" onclick="window.location.href='Documents.html'">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+
+                <div class="menu-item" id="nav-consultation" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item active" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">Updates</div>
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Messages</h1>
+
+                <p>
+                    Submit drafts, ask consultation questions, and chat with your adviser and panel members.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <div class="messages-container card">
+
+            <!-- CONTACTS PANEL -->
+            <div class="contacts-panel">
+
+                <div class="contacts-header">
+                    <h3>Chats</h3>
+                    <div class="contacts-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input
+                            type="text"
+                            id="userSearchInput"
+                            placeholder="Search accounts..."
+                            oninput="handleUserSearch()"
+                        >
+                    </div>
+
+                    <div class="role-filters">
+                        <div
+                            class="filter-chip active"
+                            id="filter-all"
+                            onclick="setRoleFilter('all')"
+                        >All</div>
+                        <div
+                            class="filter-chip"
+                            id="filter-admin"
+                            onclick="setRoleFilter('admin')"
+                        >Admin</div>
+                        <div
+                            class="filter-chip"
+                            id="filter-faculty"
+                            onclick="setRoleFilter('faculty')"
+                        >Faculty</div>
+                        <div
+                            class="filter-chip"
+                            id="filter-student"
+                            onclick="setRoleFilter('student')"
+                        >Student</div>
+                    </div>
+                </div>
+
+                <div class="contacts-list" id="contactsList">
+                    <!-- Loaded dynamically -->
+                </div>
+
+            </div>
+
+            <!-- CHAT PANEL -->
+            <div class="chat-panel" id="chatPanel">
+
+                <div class="no-chat-selected" id="noChatSelected">
+                    <i class="fa-regular fa-comments"></i>
+                    <h3>No Chat Selected</h3>
+                    <p>Select your adviser, panel member, or team member to start a chat session and upload drafts.</p>
+                </div>
+
+                <div
+                    class="chat-window-content"
+                    id="chatWindowContent"
+                    style="display: none; flex: 1; flex-direction: column; height: 100%; overflow: hidden;"
+                >
+
+                    <div class="chat-header">
+                        <div class="active-chat-user">
+                            <div class="active-chat-avatar" id="activeChatAvatar">?</div>
+                            <div>
+                                <div class="active-chat-name" id="activeChatName">Loading...</div>
+                                <div class="active-chat-meta" id="activeChatMeta">Role • Details</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Loaded dynamically -->
+                    </div>
+
+                    <div class="chat-footer">
+
+                        <div class="file-preview-area" id="filePreviewArea" style="display: none;">
+                            <div class="file-preview-pill">
+                                <i class="fa-solid fa-file-lines"></i>
+                                <span id="filePreviewName">File.pdf</span>
+                                <i
+                                    class="fa-solid fa-circle-xmark"
+                                    onclick="clearSelectedFile()"
+                                    style="margin-left: 5px; cursor: pointer;"
+                                ></i>
+                            </div>
+                        </div>
+
+                        <form
+                            class="chat-input-form"
+                            id="chatInputForm"
+                            onsubmit="handleSendMessage(event)"
+                        >
+                            <input
+                                type="file"
+                                id="chatFileInput"
+                                style="display: none;"
+                                onchange="handleFileSelected(event)"
+                            >
+                            <button
+                                type="button"
+                                class="attachment-trigger"
+                                onclick="triggerFileInput()"
+                            >
+                                <i class="fa-solid fa-paperclip"></i>
+                            </button>
+                            <input
+                                type="text"
+                                class="chat-input-field"
+                                id="chatInputField"
+                                placeholder="Type a message or attach academic papers..."
+                                autocomplete="off"
+                            >
+                            <button
+                                type="submit"
+                                class="send-message-btn"
+                            >
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        const API_URL = "http://localhost:3005";
+        let activeReceiverId = null;
+        let activeReceiverData = null;
+        let roleFilter = "all";
+        let searchTimeout = null;
+        let pollInterval = null;
+        let allUsers = [];
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../Log-in.html";
+        }
+
+        async function fetchUsers() {
+            try {
+                const search = document.getElementById("userSearchInput").value.trim();
+                const response = await fetch(`${API_URL}/chat-users?userId=${currentUserId}&search=${encodeURIComponent(search)}`);
+                const data = await response.json();
+                if (data.success) {
+                    allUsers = data.users;
+                    renderContacts();
+                }
+            } catch (err) {
+                console.error("Error fetching users:", err);
+            }
+        }
+
+        function setRoleFilter(role) {
+            roleFilter = role;
+            document.querySelectorAll(".filter-chip").forEach(chip => chip.classList.remove("active"));
+            document.getElementById(`filter-${role}`).classList.add("active");
+            renderContacts();
+        }
+
+        function handleUserSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchUsers();
+            }, 300);
+        }
+
+        function renderContacts() {
+            const list = document.getElementById("contactsList");
+            list.innerHTML = "";
+
+            const filtered = allUsers.filter(u => {
+                if (roleFilter === "all") return true;
+                return u.role.toLowerCase() === roleFilter.toLowerCase();
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: #7c3aed; padding: 20px; font-size: 13px;">No contacts found</div>`;
+                return;
+            }
+
+            filtered.forEach(u => {
+                const initials = u.fullname ? u.fullname.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "?";
+                const isSelected = activeReceiverId === u.user_id;
+
+                const item = document.createElement("div");
+                item.className = `contact-item ${isSelected ? 'active' : ''}`;
+                item.onclick = () => selectContact(u);
+
+                const subinfo = u.role === "student"
+                    ? (u.program || "Student")
+                    : (u.position || u.role);
+
+                item.innerHTML = `
+                    <div class="contact-avatar">${initials}</div>
+                    <div class="contact-details">
+                        <div class="contact-name-row">
+                            <span class="contact-name">${u.fullname}</span>
+                            <span class="contact-role-badge ${u.role}">${u.role}</span>
+                        </div>
+                        <div class="contact-subinfo">${subinfo} (${u.user_id})</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function selectContact(user) {
+            activeReceiverId = user.user_id;
+            activeReceiverData = user;
+
+            document.querySelectorAll(".contact-item").forEach(item => item.classList.remove("active"));
+            renderContacts();
+
+            document.getElementById("noChatSelected").style.display = "none";
+            document.getElementById("chatWindowContent").style.display = "flex";
+
+            const initials = user.fullname ? user.fullname.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "?";
+            document.getElementById("activeChatAvatar").innerText = initials;
+            document.getElementById("activeChatName").innerText = user.fullname;
+
+            const detailLabel = user.role === "student"
+                ? `${user.program || "Student"} • Year ${user.year_level || "N/A"}`
+                : `${user.position || "Faculty"} • Department ${user.program || "N/A"}`;
+            document.getElementById("activeChatMeta").innerText = `${user.role.toUpperCase()} • ${detailLabel}`;
+
+            loadChatHistory(true);
+
+            document.getElementById("chatInputField").value = "";
+            clearSelectedFile();
+
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(() => loadChatHistory(false), 3000);
+        }
+
+        async function loadChatHistory(isFirstLoad = false) {
+            if (!activeReceiverId) return;
+            try {
+                const response = await fetch(`${API_URL}/chat-messages?senderId=${currentUserId}&receiverId=${activeReceiverId}`);
+                const data = await response.json();
+                if (data.success) {
+                    renderMessages(data.messages, isFirstLoad);
+                }
+            } catch (err) {
+                console.error("Error loading messages:", err);
+            }
+        }
+
+        function renderMessages(messages, isFirstLoad) {
+            const container = document.getElementById("chatMessages");
+            const wasScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100;
+
+            container.innerHTML = "";
+
+            if (messages.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #9ca3af; padding: 40px; font-size: 13.5px; font-style: italic;">No messages yet. Send a message to start the consultation.</div>`;
+                return;
+            }
+
+            messages.forEach(msg => {
+                const isSent = msg.sender_id === currentUserId;
+                const bubble = document.createElement("div");
+                bubble.className = "message-group";
+
+                const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                let contentHTML = `<div>${escapeHTML(msg.message_text)}</div>`;
+                if (msg.file_path) {
+                    const downloadUrl = `${API_URL}/${msg.file_path}`;
+                    const fileIcon = getFileIconClass(msg.file_name);
+                    contentHTML += `
+                        <a href="${downloadUrl}" target="_blank" download="${msg.file_name}" class="attachment-card">
+                            <div class="attachment-icon">
+                                <i class="${fileIcon}"></i>
+                            </div>
+                            <div class="attachment-info">
+                                <div class="attachment-name">${escapeHTML(msg.file_name)}</div>
+                                <div class="attachment-action">Click to download/view</div>
+                            </div>
+                            <div class="attachment-download-btn">
+                                <i class="fa-solid fa-download"></i>
+                            </div>
+                        </a>
+                    `;
+                }
+
+                bubble.innerHTML = `
+                    <div class="message-bubble ${isSent ? 'sent' : 'received'}">
+                        ${contentHTML}
+                        <span class="message-time">${timeStr}</span>
+                    </div>
+                `;
+                container.appendChild(bubble);
+            });
+
+            if (wasScrolledToBottom || isFirstLoad) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function getFileIconClass(filename) {
+            if (!filename) return "fa-solid fa-file";
+            const ext = filename.split('.').pop().toLowerCase();
+            switch (ext) {
+                case 'pdf': return "fa-solid fa-file-pdf";
+                case 'doc':
+                case 'docx': return "fa-solid fa-file-word";
+                case 'ppt':
+                case 'pptx': return "fa-solid fa-file-powerpoint";
+                case 'xls':
+                case 'xlsx': return "fa-solid fa-file-excel";
+                case 'png':
+                case 'jpg':
+                case 'jpeg':
+                case 'webp': return "fa-solid fa-file-image";
+                default: return "fa-solid fa-file";
+            }
+        }
+
+        function escapeHTML(str) {
+            if (!str) return "";
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function triggerFileInput() {
+            document.getElementById("chatFileInput").click();
+        }
+
+        function handleFileSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 25 * 1024 * 1024) {
+                alert("File size exceeds 25MB limit.");
+                clearSelectedFile();
+                return;
+            }
+
+            document.getElementById("filePreviewName").innerText = file.name;
+            document.getElementById("filePreviewArea").style.display = "flex";
+        }
+
+        function clearSelectedFile() {
+            document.getElementById("chatFileInput").value = "";
+            document.getElementById("filePreviewArea").style.display = "none";
+        }
+
+        async function handleSendMessage(event) {
+            event.preventDefault();
+            if (!activeReceiverId) return;
+
+            const textInput = document.getElementById("chatInputField");
+            const fileInput = document.getElementById("chatFileInput");
+
+            const text = textInput.value.trim();
+            const file = fileInput.files[0];
+
+            if (!text && !file) return;
+
+            const formData = new FormData();
+            formData.append("senderId", currentUserId);
+            formData.append("receiverId", activeReceiverId);
+            formData.append("messageText", text);
+            if (file) {
+                formData.append("file", file);
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/send-chat-message`, {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    textInput.value = "";
+                    clearSelectedFile();
+                    loadChatHistory(true);
+                } else {
+                    alert(data.message || "Failed to send message.");
+                }
+            } catch (err) {
+                console.error("Error sending message:", err);
+                alert("Server error sending message.");
+            }
+        }
+
+        // Init
+        fetchUsers();
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

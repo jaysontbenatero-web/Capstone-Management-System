@@ -1,0 +1,159 @@
+/* Group-required overlay — covers main content only (sidebar stays usable) */
+.student-group-gate {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 272px;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(76, 29, 149, 0.78);
+    backdrop-filter: blur(3px);
+    pointer-events: auto;
+}
+
+.student-group-gate[hidden] {
+    display: none !important;
+}
+
+.student-group-gate-panel {
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    padding: 36px 32px;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #5b21b6 0%, #4c1d95 55%, #3b0764 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 24px 60px rgba(30, 0, 80, 0.45);
+    color: #fff;
+}
+
+.student-group-gate-panel i {
+    font-size: 42px;
+    margin-bottom: 16px;
+    opacity: 0.95;
+}
+
+.student-group-gate-panel h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+    line-height: 1.35;
+}
+
+.student-group-gate-panel p {
+    font-size: 0.95rem;
+    margin: 0 0 24px;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.55;
+}
+
+.student-group-gate-panel .gate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    color: #5b21b6;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.student-group-gate-panel .gate-btn:hover {
+    background: #f3e8ff;
+}
+
+@media (max-width: 900px) {
+    .student-group-gate {
+        left: 0;
+    }
+}
+
+/* Student topbar — bell + actions aligned */
+.admin-portal .admin-main .topbar {
+    align-items: center;
+}
+
+.admin-portal .admin-main .topbar .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.admin-portal .admin-main .topbar .top-actions .portal-notif-wrap {
+    flex: 0 0 auto;
+}
+
+.admin-portal .admin-main .topbar .top-actions .search-box {
+    min-width: 240px;
+    width: auto;
+    max-width: 320px;
+}
+
+.admin-portal .admin-main .topbar .top-actions .edit-btn {
+    white-space: nowrap;
+}
+
+/* Student Messages — match AdminTheme sidebar + full-height chat grid */
+.student-messages-page .sidebar,
+.student-messages-page .admin-sidebar {
+    width: 272px !important;
+}
+
+.student-messages-page .main,
+.student-messages-page .admin-main {
+    left: 272px !important;
+    width: calc(100vw - 272px) !important;
+    margin-left: 0 !important;
+}
+
+.student-messages-page .admin-main .topbar {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    flex-wrap: nowrap !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.student-messages-page .admin-main .topbar .welcome {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.student-messages-page .admin-main .topbar .top-actions {
+    flex: 0 0 auto;
+    align-self: center;
+    margin-left: 0;
+}
+
+.student-messages-page .messages-container {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    align-items: stretch;
+}
+
+.student-messages-page .contacts-panel,
+.student-messages-page .chat-panel {
+    height: 100%;
+    min-height: 0;
+}
+
+@media (max-width: 900px) {
+    .student-messages-page .main,
+    .student-messages-page .admin-main {
+        left: 0 !important;
+        width: 100% !important;
+    }
+}

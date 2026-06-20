@@ -1,0 +1,1220 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Faculty Announcements | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Announcements.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        if(userRole !== "faculty" && userRole !== "admin"){
+
+            alert("You do not have permission to access the Faculty Portal.");
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Faculty Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="goFacultyHome()"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>
+                        Home
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Academic
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Repository.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>
+                        Capstone Repository
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item active"
+                    onclick="window.location.href='Announcements.html'"
+                >
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>
+                        Announcements
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>
+                        Messages
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    System
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>
+                        Notifications
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>
+                        Settings
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Announcements</h1>
+
+                <p>
+                    Create and manage announcements for all students or selected programs.
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="primary-btn"
+                    onclick="openCreateModal()"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Create Announcement
+                </button>
+</div>
+
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalAnnouncements">
+                        0
+                    </h2>
+
+                    <p>
+                        Total Announcements
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="publishedAnnouncements">
+                        0
+                    </h2>
+
+                    <p>
+                        Published
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+
+                <div>
+                    <h2 id="studentAudienceAnnouncements">
+                        0
+                    </h2>
+
+                    <p>
+                        For Students
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ANNOUNCEMENTS CARD -->
+        <section class="card">
+
+            <div class="card-header">
+
+                <div>
+                    <h2>
+                        Announcement Records
+                    </h2>
+
+                    <p>
+                        View, edit, or delete announcements that you created.
+                    </p>
+                </div>
+
+                <div class="toolbar">
+
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+
+                        <input
+                            type="text"
+                            id="searchAnnouncement"
+                            placeholder="Search announcement..."
+                            onkeyup="filterAnnouncements()"
+                        >
+                    </div>
+
+                    <select
+                        id="audienceFilter"
+                        onchange="filterAnnouncements()"
+                    >
+                        <option value="All">
+                            All Audience
+                        </option>
+
+                        <option value="Students">
+                            All Students
+                        </option>
+
+                        <option value="Program">
+                            Specific Program
+                        </option>
+                    </select>
+
+                </div>
+
+            </div>
+
+            <div
+                class="announcement-grid"
+                id="announcementGrid"
+            >
+                <div class="empty-card">
+                    Loading announcements...
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- CREATE / EDIT MODAL -->
+    <div
+        class="modal-overlay"
+        id="announcementModal"
+    >
+
+        <div class="modal-box announcement-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="modalTitle">
+                        Create Announcement
+                    </h2>
+
+                    <p id="modalSubtitle">
+                        Publish an announcement for all students or a specific program.
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeAnnouncementModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Announcement Title
+                </label>
+
+                <input
+                    type="text"
+                    id="announcementTitle"
+                    placeholder="Enter announcement title"
+                >
+            </div>
+
+            <div class="form-grid">
+
+                <div class="input-group">
+                    <label>
+                        Announcement Type
+                    </label>
+
+                    <select id="announcementType">
+                        <option value="">
+                            Select type
+                        </option>
+
+                        <option value="General">
+                            General
+                        </option>
+
+                        <option value="Reminder">
+                            Reminder
+                        </option>
+
+                        <option value="Deadline">
+                            Deadline
+                        </option>
+
+                        <option value="Defense Schedule">
+                            Defense Schedule
+                        </option>
+
+                        <option value="Document Submission">
+                            Document Submission
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Audience
+                    </label>
+
+                    <select
+                        id="announcementAudience"
+                        onchange="toggleProgramField()"
+                    >
+                        <option value="">
+                            Select audience
+                        </option>
+
+                        <option value="Students">
+                            All Students
+                        </option>
+
+                        <option value="Program">
+                            Specific Program
+                        </option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div
+                class="input-group"
+                id="programField"
+                style="display:none;"
+            >
+                <label>
+                    Target Program
+                </label>
+
+                <select id="targetProgram">
+                    <option value="">
+                        Select program
+                    </option>
+
+                    <option value="BSIS">
+                        BSIS
+                    </option>
+
+                    <option value="BSIT">
+                        BSIT
+                    </option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Announcement Message
+                </label>
+
+                <textarea
+                    id="announcementContent"
+                    placeholder="Write the announcement details here..."
+                ></textarea>
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeAnnouncementModal()"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="saveAnnouncement()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Save Announcement
+                </button>
+
+            </div>
+            </div>
+    </div>
+
+    <!-- VIEW MODAL -->
+    <div
+        class="modal-overlay"
+        id="viewModal"
+    >
+
+        <div class="modal-box view-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="viewTitle">
+                        Announcement Title
+                    </h2>
+
+                    <p id="viewCode">
+                        ANN2026-0000
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeViewModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="view-meta">
+                <span id="viewType">General</span>
+                <span id="viewAudience">All Students</span>
+                <span id="viewStatus">Published</span>
+            </div>
+
+            <div class="view-content">
+                <p id="viewContent">
+                    Announcement content will appear here.
+                </p>
+            </div>
+
+            <div class="view-footer">
+                <p id="viewAuthor">
+                    Posted by Faculty
+                </p>
+
+                <p id="viewDate">
+                    Date
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const loggedInFacultyId =
+            localStorage.getItem("userId");
+
+        let announcements = [];
+        let selectedAnnouncementId = null;
+        let modalMode = "create";
+
+        async function loadFacultyAnnouncements(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/faculty-announcements/${loggedInFacultyId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    alert(
+                        data.message || "Failed to load announcements."
+                    );
+
+                    renderAnnouncements([]);
+
+                    return;
+
+                }
+
+                announcements =
+                    data.announcements;
+
+                updateStats();
+
+                filterAnnouncements();
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function updateStats(){
+
+            const total =
+                announcements.length;
+
+            const published =
+                announcements.filter(item =>
+                    item.announcement_status === "Published"
+                ).length;
+
+            const students =
+                announcements.filter(item =>
+                    item.audience === "Students"
+                ).length;
+
+            document.getElementById("totalAnnouncements").innerText =
+                total;
+
+            document.getElementById("publishedAnnouncements").innerText =
+                published;
+
+            document.getElementById("studentAudienceAnnouncements").innerText =
+                students;
+
+        }
+
+        function renderAnnouncements(list){
+
+            const grid =
+                document.getElementById("announcementGrid");
+
+            grid.innerHTML = "";
+
+            if(list.length === 0){
+
+                grid.innerHTML = `
+                    <div class="empty-card">
+                        No announcements found.
+                    </div>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(item => {
+
+                const programText =
+                    item.target_program
+                    ? ` • ${item.target_program}`
+                    : "";
+
+                const audienceText =
+                    item.audience === "Students"
+                    ? "All Students"
+                    : `Specific Program${programText}`;
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    "announcement-card";
+
+                card.innerHTML = `
+                    <div class="announcement-top">
+
+                        <div class="announcement-icon">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </div>
+
+                        <div>
+                            <h3>
+                                ${item.announcement_title}
+                            </h3>
+
+                            <p>
+                                ${item.announcement_code}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="announcement-meta">
+
+                        <span>
+                            ${item.announcement_type}
+                        </span>
+
+                        <span>
+                            ${audienceText}
+                        </span>
+
+                        <span class="published">
+                            Published
+                        </span>
+
+                    </div>
+
+                    <p class="announcement-preview">
+                        ${shortenText(item.announcement_content, 120)}
+                    </p>
+
+                    <div class="announcement-footer">
+                        <small>
+                            Posted by ${item.created_by_name || "Faculty"}
+                        </small>
+
+                        <small>
+                            ${formatDate(item.created_at)}
+                        </small>
+                    </div>
+
+                    <div class="announcement-actions">
+
+                        <button
+                            class="view-btn"
+                            onclick="openViewModal('${item.id}')"
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                            View
+                        </button>
+
+                        <button
+                            class="edit-btn"
+                            onclick="openEditModal('${item.id}')"
+                        >
+                            <i class="fa-solid fa-pen"></i>
+                            Edit
+                        </button>
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteAnnouncement('${item.id}')"
+                        >
+                            <i class="fa-solid fa-trash"></i>
+                            Delete
+                        </button>
+
+                    </div>
+                `;
+
+                grid.appendChild(card);
+
+            });
+
+        }
+
+        function filterAnnouncements(){
+
+            const keyword =
+                document.getElementById("searchAnnouncement")
+                .value
+                .toLowerCase();
+
+            const audience =
+                document.getElementById("audienceFilter").value;
+
+            const filtered =
+                announcements.filter(item => {
+
+                    const matchesKeyword =
+                        String(item.announcement_code || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.announcement_title || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.announcement_type || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.audience || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.target_program || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.announcement_content || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.created_by_name || "").toLowerCase().includes(keyword);
+
+                    const matchesAudience =
+                        audience === "All"
+                        ||
+                        item.audience === audience;
+
+                    return matchesKeyword && matchesAudience;
+
+                });
+
+            renderAnnouncements(filtered);
+
+        }
+
+        function openCreateModal(){
+
+            modalMode =
+                "create";
+
+            selectedAnnouncementId =
+                null;
+
+            document.getElementById("modalTitle").innerText =
+                "Create Announcement";
+
+            document.getElementById("modalSubtitle").innerText =
+                "Publish an announcement for all students or a specific program.";
+
+            clearForm();
+
+            document.getElementById("announcementModal").style.display =
+                "flex";
+
+        }
+
+        function openEditModal(id){
+
+            const item =
+                announcements.find(announcement =>
+                    String(announcement.id) === String(id)
+                );
+
+            if(!item){
+                return;
+            }
+
+            modalMode =
+                "edit";
+
+            selectedAnnouncementId =
+                item.id;
+
+            document.getElementById("modalTitle").innerText =
+                "Edit Announcement";
+
+            document.getElementById("modalSubtitle").innerText =
+                "Update announcement details.";
+
+            document.getElementById("announcementTitle").value =
+                item.announcement_title;
+
+            document.getElementById("announcementType").value =
+                item.announcement_type;
+
+            document.getElementById("announcementAudience").value =
+                item.audience;
+
+            document.getElementById("targetProgram").value =
+                item.target_program || "";
+
+            document.getElementById("announcementContent").value =
+                item.announcement_content;
+
+            toggleProgramField();
+
+            document.getElementById("announcementModal").style.display =
+                "flex";
+
+        }
+
+        function closeAnnouncementModal(){
+
+            document.getElementById("announcementModal").style.display =
+                "none";
+
+        }
+
+        function clearForm(){
+
+            document.getElementById("announcementTitle").value =
+                "";
+
+            document.getElementById("announcementType").value =
+                "";
+
+            document.getElementById("announcementAudience").value =
+                "";
+
+            document.getElementById("targetProgram").value =
+                "";
+
+            document.getElementById("announcementContent").value =
+                "";
+
+            document.getElementById("programField").style.display =
+                "none";
+
+        }
+
+        function toggleProgramField(){
+
+            const audience =
+                document.getElementById("announcementAudience").value;
+
+            const programField =
+                document.getElementById("programField");
+
+            if(audience === "Program"){
+
+                programField.style.display =
+                    "block";
+
+            }else{
+
+                programField.style.display =
+                    "none";
+
+                document.getElementById("targetProgram").value =
+                    "";
+
+            }
+
+        }
+
+        async function saveAnnouncement(){
+
+            const announcementTitle =
+                document.getElementById("announcementTitle").value.trim();
+
+            const announcementType =
+                document.getElementById("announcementType").value;
+
+            const audience =
+                document.getElementById("announcementAudience").value;
+
+            const targetProgram =
+                document.getElementById("targetProgram").value;
+
+            const announcementContent =
+                document.getElementById("announcementContent").value.trim();
+
+            if(
+                !announcementTitle ||
+                !announcementType ||
+                !audience ||
+                !announcementContent
+            ){
+
+                alert("Please complete all required announcement fields.");
+
+                return;
+
+            }
+
+            if(audience === "Program" && !targetProgram){
+
+                alert("Please select a target program.");
+
+                return;
+
+            }
+
+            if(modalMode === "create"){
+
+                await createAnnouncement(
+                    announcementTitle,
+                    announcementType,
+                    audience,
+                    targetProgram,
+                    announcementContent
+                );
+
+            }else{
+
+                await updateAnnouncement(
+                    announcementTitle,
+                    announcementType,
+                    audience,
+                    targetProgram,
+                    announcementContent
+                );
+
+            }
+
+        }
+
+        async function createAnnouncement(
+            announcementTitle,
+            announcementType,
+            audience,
+            targetProgram,
+            announcementContent
+        ){
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/faculty-create-announcement",
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                facultyUserId:loggedInFacultyId,
+                                announcementTitle,
+                                announcementType,
+                                audience,
+                                targetProgram,
+                                announcementContent
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Announcement processed."
+                );
+
+                if(data.success){
+
+                    closeAnnouncementModal();
+
+                    loadFacultyAnnouncements();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot create announcement.");
+
+            }
+
+        }
+
+        async function updateAnnouncement(
+            announcementTitle,
+            announcementType,
+            audience,
+            targetProgram,
+            announcementContent
+        ){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/faculty-update-announcement/${selectedAnnouncementId}`,
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                facultyUserId:loggedInFacultyId,
+                                announcementTitle,
+                                announcementType,
+                                audience,
+                                targetProgram,
+                                announcementContent
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Announcement updated."
+                );
+
+                if(data.success){
+
+                    closeAnnouncementModal();
+
+                    loadFacultyAnnouncements();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot update announcement.");
+
+            }
+
+        }
+
+        async function deleteAnnouncement(id){
+
+            const confirmed =
+                confirm(
+                    "Delete this announcement? This action cannot be undone."
+                );
+
+            if(!confirmed){
+                return;
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/faculty-delete-announcement/${id}`,
+                        {
+                            method:"DELETE",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                facultyUserId:loggedInFacultyId
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Announcement deleted."
+                );
+
+                if(data.success){
+
+                    loadFacultyAnnouncements();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot delete announcement.");
+
+            }
+
+        }
+
+        function openViewModal(id){
+
+            const item =
+                announcements.find(announcement =>
+                    String(announcement.id) === String(id)
+                );
+
+            if(!item){
+                return;
+            }
+
+            const audienceText =
+                item.audience === "Students"
+                ? "All Students"
+                : `Specific Program • ${item.target_program || "Not Set"}`;
+
+            document.getElementById("viewTitle").innerText =
+                item.announcement_title;
+
+            document.getElementById("viewCode").innerText =
+                item.announcement_code;
+
+            document.getElementById("viewType").innerText =
+                item.announcement_type;
+
+            document.getElementById("viewAudience").innerText =
+                audienceText;
+
+            document.getElementById("viewStatus").innerText =
+                "Published";
+
+            document.getElementById("viewContent").innerText =
+                item.announcement_content;
+
+            document.getElementById("viewAuthor").innerText =
+                `Posted by ${item.created_by_name || "Faculty"}`;
+
+            document.getElementById("viewDate").innerText =
+                `Created on ${formatDate(item.created_at)}`;
+
+            document.getElementById("viewModal").style.display =
+                "flex";
+
+        }
+
+        function closeViewModal(){
+
+            document.getElementById("viewModal").style.display =
+                "none";
+
+        }
+
+        function shortenText(text, maxLength){
+
+            if(!text){
+                return "";
+            }
+
+            if(text.length <= maxLength){
+                return text;
+            }
+
+            return text.substring(0, maxLength) + "...";
+
+        }
+
+        function formatDate(dateValue){
+
+            if(!dateValue){
+                return "N/A";
+            }
+
+            const date =
+                new Date(dateValue);
+
+            return date.toLocaleDateString(
+                "en-US",
+                {
+                    year:"numeric",
+                    month:"short",
+                    day:"numeric"
+                }
+            );
+
+        }
+
+        function goFacultyHome(){
+
+            const role =
+                localStorage.getItem("role");
+
+            if(role === "admin"){
+
+                window.location.href =
+                    "../Admin/AdminDash.html";
+
+            }else{
+
+                window.location.href =
+                    "FacultyDash.html";
+
+            }
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        loadFacultyAnnouncements();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,744 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Faculty Enrollment | CMS</title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="../Images/CapstoneXicon.png"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="FAC_Enroll.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="AdminTheme.css"
+    >
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole = localStorage.getItem("role");
+
+        if (userRole !== "admin") {
+            alert("You do not have permission to access the Admin Portal.");
+            window.location.href = "../Log-in.html";
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+
+                <div>
+                    <h1>CMS</h1>
+                    <p>Admin Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">Main</div>
+
+                <div class="menu-item" id="nav-home" onclick="window.location.href='AdminDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Management</div>
+
+                <div class="menu-item active" id="nav-faculty" onclick="window.location.href='FAC_Enroll.html'">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Register Faculty</span>
+                </div>
+
+                <div class="menu-item" id="nav-student" onclick="window.location.href='STU_Enroll.html'">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Register Student</span>
+                </div>
+
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Repository</span>
+                </div>
+
+                <div class="menu-item" id="nav-document-review" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>Document Review</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+
+                <div class="menu-item" id="nav-announcements" onclick="window.location.href='Announcements.html'">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </div>
+
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">System</div>
+
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Faculty Registration</h1>
+
+                <p>
+                    Register faculty accounts, assign academic roles, and manage faculty login credentials.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="content-grid">
+
+            <section class="form-card">
+
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+
+                    <div>
+                        <h2>Register Faculty</h2>
+                        <p>Fill in the faculty details to generate a login account.</p>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="facultyName">Faculty Full Name</label>
+
+                    <input
+                        type="text"
+                        id="facultyName"
+                        placeholder="Enter faculty full name"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="facultyPosition">Faculty Position</label>
+
+                    <select id="facultyPosition">
+                        <option value="">Select Position</option>
+                        <option value="Instructor 1">Instructor 1</option>
+                        <option value="Instructor 2">Instructor 2</option>
+                        <option value="Instructor 3">Instructor 3</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Faculty Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="facultyEmail"
+                        placeholder="Enter faculty email"
+                    >
+                </div>
+
+                <button
+                    class="enroll-btn"
+                    onclick="enrollFaculty()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Generate Faculty Account
+                </button>
+
+            </section>
+
+            <aside class="preview-card">
+
+                <div class="preview-box">
+                    <div class="preview-icon">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+
+                    <div class="credential-top">
+                        <h3>FACULTY ID</h3>
+
+                        <button
+                            class="copy-btn"
+                            onclick="copyText('facultyId')"
+                            type="button"
+                        >
+                            Copy
+                        </button>
+                    </div>
+
+                    <p id="facultyId">Not Generated Yet</p>
+                </div>
+
+                <div class="preview-box">
+                    <div class="preview-icon">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+
+                    <div class="credential-top">
+                        <h3>TEMP PASSWORD</h3>
+
+                        <button
+                            class="copy-btn"
+                            onclick="copyText('tempPassword')"
+                            type="button"
+                        >
+                            Copy
+                        </button>
+                    </div>
+
+                    <p id="tempPassword">Not Generated Yet</p>
+                </div>
+
+                <div class="preview-box">
+                    <div class="preview-icon">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+
+                    <h3>ACCOUNT ROLE</h3>
+                    <p>Faculty</p>
+                </div>
+
+            </aside>
+
+        </div>
+
+        <section class="table-card">
+
+            <div class="table-header">
+
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+
+                    <div>
+                        <h2>Registered Faculty</h2>
+                        <p>View, edit, remove, and manage faculty role access.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="table-wrapper">
+
+                <table class="faculty-table">
+
+                    <thead>
+                        <tr>
+                            <th>Faculty ID</th>
+                            <th>Full Name</th>
+                            <th>Position</th>
+                            <th>Password</th>
+                            <th>Roles</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="facultyTableBody">
+                        <tr>
+                            <td colspan="6">Loading faculty accounts...</td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- EDIT MODAL -->
+    <div
+        class="modal-overlay"
+        id="editModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <h2>Edit Faculty</h2>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeEditModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="input-group">
+                <label for="editPosition">Faculty Position</label>
+
+                <select id="editPosition">
+                    <option value="Instructor 1">Instructor 1</option>
+                    <option value="Instructor 2">Instructor 2</option>
+                    <option value="Instructor 3">Instructor 3</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="editPassword">Password</label>
+
+                <input
+                    type="text"
+                    id="editPassword"
+                    placeholder="Enter new password"
+                >
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeEditModal()"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="saveFacultyEdit()"
+                    type="button"
+                >
+                    Save Changes
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        let selectedFacultyId = null;
+        let facultyAccounts = [];
+
+        async function enrollFaculty() {
+            const fullname = document.getElementById("facultyName").value.trim();
+            const position = document.getElementById("facultyPosition").value;
+
+            if (!fullname || !position) {
+                alert("Complete all fields.");
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:3005/enroll-faculty", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        fullname,
+                        position
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById("facultyId").innerText = data.facultyId;
+                    document.getElementById("tempPassword").innerText = data.tempPassword;
+
+                    document.getElementById("facultyName").value = "";
+                    document.getElementById("facultyPosition").value = "";
+
+                    alert("Faculty enrolled successfully!");
+
+                    loadFaculty();
+                } else {
+                    alert(data.message || "Faculty enrollment failed.");
+                }
+            } catch (error) {
+                console.log(error);
+                alert("Cannot connect to server.");
+            }
+        }
+
+        function copyText(id) {
+            const text = document.getElementById(id).innerText;
+
+            navigator.clipboard.writeText(text);
+
+            alert("Copied successfully!");
+        }
+
+        async function loadFaculty() {
+            try {
+                const response = await fetch("http://localhost:3005/faculty-accounts");
+                const data = await response.json();
+
+                if (!data.success) {
+                    facultyAccounts = [];
+                    renderFaculty([]);
+                    return;
+                }
+
+                facultyAccounts = data.faculty || [];
+                renderFaculty(facultyAccounts);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        function renderFaculty(list) {
+            const table = document.getElementById("facultyTableBody");
+
+            table.innerHTML = "";
+
+            if (!list || list.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="6">No faculty accounts found.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            list.forEach((faculty) => {
+                const row = document.createElement("tr");
+
+                const facultyDbId = faculty.id;
+                const facultyId = faculty.user_id || "N/A";
+                const fullname = faculty.fullname || "N/A";
+                const position = faculty.position || "N/A";
+                const password = faculty.password || "";
+
+                const facultyIdCell = document.createElement("td");
+                facultyIdCell.textContent = facultyId;
+
+                const fullnameCell = document.createElement("td");
+                fullnameCell.textContent = fullname;
+
+                const positionCell = document.createElement("td");
+                positionCell.textContent = position;
+
+                const passwordCell = document.createElement("td");
+                passwordCell.textContent = password;
+
+                const rolesCell = document.createElement("td");
+                rolesCell.appendChild(createSwitchGroup(faculty));
+
+                const actionCell = document.createElement("td");
+
+                const actionButtons = document.createElement("div");
+                actionButtons.className = "action-buttons";
+
+                const editButton = document.createElement("button");
+                editButton.className = "table-edit-btn";
+                editButton.type = "button";
+                editButton.innerHTML = `
+                    <i class="fa-solid fa-pen"></i>
+                    Edit
+                `;
+
+                editButton.addEventListener("click", function () {
+                    openEditModal(
+                        facultyDbId,
+                        position === "N/A" ? "" : position,
+                        password
+                    );
+                });
+
+                const deleteButton = document.createElement("button");
+                deleteButton.className = "table-delete-btn";
+                deleteButton.type = "button";
+                deleteButton.innerHTML = `
+                    <i class="fa-solid fa-trash"></i>
+                    Delete
+                `;
+
+                deleteButton.addEventListener("click", function () {
+                    deleteFaculty(facultyDbId);
+                });
+
+                actionButtons.appendChild(editButton);
+                actionButtons.appendChild(deleteButton);
+                actionCell.appendChild(actionButtons);
+
+                row.appendChild(facultyIdCell);
+                row.appendChild(fullnameCell);
+                row.appendChild(positionCell);
+                row.appendChild(passwordCell);
+                row.appendChild(rolesCell);
+                row.appendChild(actionCell);
+
+                table.appendChild(row);
+            });
+        }
+
+        function createSwitchGroup(faculty) {
+            const group = document.createElement("div");
+            group.className = "switch-group";
+
+            const roleItems = [
+                {
+                    label: "Adviser",
+                    field: "adviser_access",
+                    checked: faculty.adviser_access
+                },
+                {
+                    label: "Panelist",
+                    field: "panelist_access",
+                    checked: faculty.panelist_access
+                },
+                {
+                    label: "Instructor",
+                    field: "instructor_access",
+                    checked: faculty.instructor_access
+                }
+            ];
+
+            roleItems.forEach((role) => {
+                const item = document.createElement("div");
+                item.className = "switch-item";
+
+                const labelText = document.createElement("span");
+                labelText.textContent = role.label;
+
+                const switchLabel = document.createElement("label");
+                switchLabel.className = "switch";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = Number(role.checked) === 1 || role.checked === true;
+
+                checkbox.addEventListener("change", function () {
+                    updateRole(
+                        faculty.id,
+                        role.field,
+                        this.checked
+                    );
+                });
+
+                const slider = document.createElement("span");
+                slider.className = "slider";
+
+                switchLabel.appendChild(checkbox);
+                switchLabel.appendChild(slider);
+
+                item.appendChild(labelText);
+                item.appendChild(switchLabel);
+
+                group.appendChild(item);
+            });
+
+            return group;
+        }
+
+        async function updateRole(id, roleField, value) {
+            if (!id) {
+                alert("Unable to update role. Faculty database ID is missing.");
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:3005/update-role", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id,
+                        roleField,
+                        value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.message || "Role update failed.");
+                }
+            } catch (error) {
+                console.log(error);
+                alert("Cannot update role.");
+            }
+        }
+
+        function openEditModal(id, position, password) {
+            if (!id) {
+                alert("Cannot edit this faculty account. Faculty database ID is missing.");
+                return;
+            }
+
+            selectedFacultyId = id;
+
+            document.getElementById("editPosition").value = position || "Instructor 1";
+            document.getElementById("editPassword").value = password || "";
+
+            document.getElementById("editModal").classList.add("show");
+            document.body.classList.add("modal-open");
+        }
+
+        function closeEditModal() {
+            document.getElementById("editModal").classList.remove("show");
+            document.body.classList.remove("modal-open");
+        }
+
+        async function saveFacultyEdit() {
+            const position = document.getElementById("editPosition").value;
+            const password = document.getElementById("editPassword").value.trim();
+
+            if (!selectedFacultyId) {
+                alert("No faculty account selected.");
+                return;
+            }
+
+            if (!position || !password) {
+                alert("Please complete faculty position and password.");
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:3005/edit-faculty", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: selectedFacultyId,
+                        position,
+                        password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeEditModal();
+                    loadFaculty();
+                } else {
+                    alert(data.message || "Faculty update failed.");
+                }
+            } catch (error) {
+                console.log(error);
+                alert("Cannot update faculty account.");
+            }
+        }
+
+        async function deleteFaculty(id) {
+            if (!id) {
+                alert("Cannot delete this faculty account. Faculty database ID is missing.");
+                return;
+            }
+
+            const confirmDelete = confirm("Delete this faculty account?");
+
+            if (!confirmDelete) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3005/delete-faculty/${id}`, {
+                    method: "DELETE"
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert("Faculty deleted successfully!");
+                    loadFaculty();
+                } else {
+                    alert(data.message || "Delete failed.");
+                }
+            } catch (error) {
+                console.log(error);
+                alert("Cannot delete faculty account.");
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../Log-in.html";
+        }
+
+        window.addEventListener("click", function (event) {
+            const modal = document.getElementById("editModal");
+
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closeEditModal();
+            }
+        });
+
+        loadFaculty();
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

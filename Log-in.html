@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capstone Management System Login</title>
+
+    <link rel="icon" type="image/png" href="Images/CapstoneXicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #090714;
+            --card-dark: #120d24;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-glow: rgba(167, 139, 250, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Abstract Flowing Background Gradients */
+        .ambient-mesh {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 60%);
+            z-index: 0;
+        }
+
+        /* Moving decorative glass elements */
+        .abstract-glass-blob-1 {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+            filter: blur(60px);
+            border-radius: 50%;
+            top: -50px;
+            right: 15%;
+            animation: drift 15s ease-in-out infinite alternate;
+            z-index: 1;
+        }
+
+        .abstract-glass-blob-2 {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(99, 102, 241, 0.15));
+            filter: blur(50px);
+            border-radius: 50%;
+            bottom: -50px;
+            left: 10%;
+            animation: drift 12s ease-in-out infinite alternate-reverse;
+            z-index: 1;
+        }
+
+        @keyframes drift {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(30px) scale(1.1); }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            width: 1040px;
+            max-width: 95%;
+            min-height: 620px;
+            background: rgba(18, 13, 36, 0.75);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            overflow: hidden;
+            animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* BRAND SIDE (Left) */
+        .brand-side {
+            background: linear-gradient(135deg, rgba(15, 10, 30, 0.9) 0%, rgba(30, 20, 60, 0.9) 100%);
+            padding: 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            border-right: 1px solid rgba(167, 139, 250, 0.1);
+        }
+
+        /* Decorative glowing ring visual on the brand side */
+        .brand-visual {
+            position: relative;
+            height: 240px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .visual-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3)) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: destination-out;
+            mask-composite: exclude;
+        }
+
+        .visual-ring-1 {
+            width: 180px;
+            height: 180px;
+            animation: rotate 10s linear infinite;
+        }
+
+        .visual-ring-2 {
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.5), rgba(99, 102, 241, 0.2)) border-box;
+            animation: rotate 6s linear infinite reverse;
+        }
+
+        .visual-logo {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.6));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-header-text h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #ffffff, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-header-text p {
+            color: var(--text-muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .brand-content h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+
+        .brand-content p {
+            color: var(--text-muted);
+            font-size: 13.5px;
+            line-height: 1.6;
+        }
+
+        .brand-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 20px;
+        }
+
+        .brand-footer p {
+            color: rgba(167, 139, 250, 0.7);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* FORM SIDE (Right) */
+        .form-side {
+            padding: 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: rgba(10, 6, 22, 0.4);
+        }
+
+        .form-header {
+            margin-bottom: 28px;
+        }
+
+        .form-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .form-header p {
+            color: var(--text-muted);
+            font-size: 13.5px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap i.field-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        .input-wrap input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-wrap input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .input-wrap input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .input-wrap:focus-within i.field-icon {
+            color: var(--primary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+        }
+
+        .password-toggle:hover {
+            color: #ffffff;
+        }
+
+        .login-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            font-size: 12.5px;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .remember input {
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .forgot-link {
+            color: var(--primary);
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover {
+            color: #ffffff;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 13px 24px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13.5px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #ffffff;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
+        }
+
+        .login-btn:disabled {
+            background: #475569;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* RESPONSIVE */
+        @media(max-width: 900px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .brand-side {
+                padding: 32px;
+                border-right: none;
+                border-bottom: 1px solid rgba(167, 139, 250, 0.1);
+            }
+
+            .brand-visual {
+                height: 120px;
+            }
+
+            .form-side {
+                padding: 32px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Abstract Ambient Layers -->
+    <div class="ambient-mesh"></div>
+    <div class="abstract-glass-blob-1"></div>
+    <div class="abstract-glass-blob-2"></div>
+
+    <div class="login-container">
+        <!-- Left Brand Side (Dynamic visuals) -->
+        <div class="brand-side">
+            <div class="brand-header">
+                <div class="brand-header-text">
+                    <h2>CMS</h2>
+                    <p>Capstone Management System</p>
+                </div>
+            </div>
+
+            <!-- Dynamic abstract visual animation -->
+            <div class="brand-visual">
+                <div class="visual-ring visual-ring-1"></div>
+                <div class="visual-ring visual-ring-2"></div>
+                <img src="Images/cms new.png" alt="CMS Logo" class="visual-logo">
+            </div>
+
+            <div class="brand-content">
+                <h1>Manage Capstones. Effortlessly.</h1>
+                <p>An integrated, professional pipeline supporting project registrations, panel evaluations, schedule matching, and student workflows.</p>
+            </div>
+
+            <div class="brand-footer">
+                <p>Institute of Computing</p>
+            </div>
+        </div>
+
+        <!-- Right Form Side -->
+        <div class="form-side">
+            <div class="form-header">
+                <h3>Welcome Back</h3>
+                <p>Please login to access your portal workspace.</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="userId">User ID</label>
+                    <div class="input-wrap">
+                        <input type="text" id="userId" placeholder="Enter your User ID" required>
+                        <i class="fa-solid fa-user field-icon"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrap">
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                        <i class="fa-solid fa-lock field-icon"></i>
+                        <span class="password-toggle" onclick="togglePassword()">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="login-options">
+                    <label class="remember">
+                        <input type="checkbox" id="rememberMe">
+                        Remember me
+                    </label>
+                    <span class="forgot-link">Forgot password?</span>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">LOGIN</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById("loginForm");
+        const loginBtn = document.getElementById("loginBtn");
+
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const userId = document.getElementById("userId").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            if (!userId || !password) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.innerText = "LOGGING IN...";
+
+            try {
+                const response = await fetch("http://localhost:3005/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.message || "Invalid login credentials.");
+                    resetLoginButton();
+                    return;
+                }
+
+                localStorage.clear();
+                localStorage.setItem("fullname", data.fullname || "");
+                localStorage.setItem("userId", data.userId || "");
+                localStorage.setItem("role", data.role || "");
+                localStorage.setItem("student_position", data.student_position || "");
+                localStorage.setItem("adviser_access", String(data.adviser_access || 0));
+                localStorage.setItem("panelist_access", String(data.panelist_access || 0));
+                localStorage.setItem("instructor_access", String(data.instructor_access || 0));
+                localStorage.setItem("forcePasswordChange", String(data.forcePasswordChange || 0));
+
+                if (Number(data.forcePasswordChange) === 1 && data.role !== "admin") {
+                    window.location.href = "Force_Pass.html";
+                    return;
+                }
+
+                redirectToDashboard(data.role);
+            } catch (error) {
+                console.log(error);
+                alert("Unable to connect to server.");
+                resetLoginButton();
+            }
+        });
+
+        function redirectToDashboard(role) {
+            if (role === "student") {
+                window.location.href = "Student/StudentDash.html";
+            } else if (role === "faculty") {
+                window.location.href = "Faculty/FacultyDash.html";
+            } else if (role === "admin") {
+                window.location.href = "Admin/AdminDash.html";
+            } else {
+                alert("Unknown role.");
+                resetLoginButton();
+            }
+        }
+
+        function resetLoginButton() {
+            loginBtn.disabled = false;
+            loginBtn.innerText = "LOGIN";
+        }
+
+        function togglePassword() {
+            const passwordInput = document.getElementById("password");
+            const eyeIcon = document.getElementById("eyeIcon");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                eyeIcon.classList.remove("fa-eye");
+                eyeIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                eyeIcon.classList.remove("fa-eye-slash");
+                eyeIcon.classList.add("fa-eye");
+            }
+        }
+    </script>
+</body>
+
+</html>

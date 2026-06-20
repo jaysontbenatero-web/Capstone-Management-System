@@ -1,0 +1,1145 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Settings | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Settings.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='StudentDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-titles"
+                    onclick="window.location.href='Capstone_Titles.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-members"
+                    onclick="window.location.href='Members.html'"
+                >
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-adviser"
+                    onclick="window.location.href='Req_Adviser.html'"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-messages"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">
+                    Updates
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-notifications"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div
+                    class="menu-item active"
+                    id="nav-settings"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Settings</h1>
+
+                <p>
+                    Manage your student profile, profile picture, and account password.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <!-- PROFILE SUMMARY -->
+        <section class="profile-summary-card">
+
+            <div class="profile-left">
+
+                <div
+                    class="profile-avatar"
+                    id="profileAvatar"
+                >
+                    S
+                </div>
+
+                <div>
+                    <h2 id="summaryName">
+                        Loading...
+                    </h2>
+
+                    <p id="summaryDetails">
+                        Student information is loading.
+                    </p>
+
+                    <span
+                        class="profile-badge"
+                        id="summaryPosition"
+                    >
+                        Student
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="profile-upload-box">
+
+                <input
+                    type="file"
+                    id="profileImageInput"
+                    accept=".jpg,.jpeg,.png,.webp"
+                    hidden
+                    onchange="previewProfileImage()"
+                >
+
+                <button
+                    class="upload-image-btn"
+                    onclick="document.getElementById('profileImageInput').click()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-image"></i>
+                    Choose Photo
+                </button>
+
+                <button
+                    class="save-image-btn"
+                    onclick="uploadProfileImage()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-upload"></i>
+                    Save Photo
+                </button>
+
+            </div>
+
+        </section>
+
+        <div class="settings-grid">
+
+            <!-- PROFILE INFO -->
+            <section class="settings-card">
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>
+                            Student Information
+                        </h2>
+
+                        <p>
+                            Update your academic profile details.
+                        </p>
+                    </div>
+
+                    <div class="section-icon">
+                        <i class="fa-solid fa-user-pen"></i>
+                    </div>
+
+                </div>
+
+                <div class="form-grid">
+
+                    <div class="input-group">
+                        <label>
+                            Student ID
+                        </label>
+
+                        <input
+                            type="text"
+                            id="studentId"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Full Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="fullname"
+                            placeholder="Enter full name"
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Program
+                        </label>
+
+                        <select id="program">
+                            <option value="">
+                                Select Program
+                            </option>
+
+                            <option value="BSIS">
+                                BSIS
+                            </option>
+
+                            <option value="BSIT">
+                                BSIT
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Year Level
+                        </label>
+
+                        <select id="yearLevel">
+                            <option value="">
+                                Select Year Level
+                            </option>
+
+                            <option value="1st Year">
+                                1st Year
+                            </option>
+
+                            <option value="2nd Year">
+                                2nd Year
+                            </option>
+
+                            <option value="3rd Year">
+                                3rd Year
+                            </option>
+
+                            <option value="4th Year">
+                                4th Year
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label>
+                            Student Position
+                        </label>
+
+                        <select id="studentPosition">
+                            <option value="">
+                                Select Position
+                            </option>
+
+                            <option value="Project Manager">
+                                Project Manager
+                            </option>
+
+                            <option value="System Analyst">
+                                System Analyst
+                            </option>
+
+                            <option value="System Developer">
+                                System Developer
+                            </option>
+
+                            <option value="Not Assigned">
+                                Not Assigned
+                            </option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="note-box">
+                    <i class="fa-solid fa-circle-info"></i>
+
+                    <p>
+                        Changes here update your official student account information and will also reflect in Admin, Faculty, Members, and document-related pages.
+                    </p>
+                </div>
+
+                <div class="card-actions">
+
+                    <button
+                        class="save-btn"
+                        onclick="updateStudentProfile()"
+                    >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Profile Changes
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- ACCOUNT INFO -->
+            <aside class="side-column">
+
+                <section class="settings-card small-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                Group Information
+                            </h2>
+
+                            <p>
+                                Your current capstone group details.
+                            </p>
+                        </div>
+
+                        <div class="section-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+
+                    </div>
+
+                    <div class="info-list">
+
+                        <div class="info-row">
+                            <span>
+                                Group ID
+                            </span>
+
+                            <strong id="groupId">
+                                Not Set
+                            </strong>
+                        </div>
+
+                        <div class="info-row">
+                            <span>
+                                Group Name
+                            </span>
+
+                            <strong id="groupName">
+                                Not Set
+                            </strong>
+                        </div>
+
+                        <div class="info-row">
+                            <span>
+                                Project Title
+                            </span>
+
+                            <strong id="projectTitle">
+                                Not Set
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section class="settings-card small-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                E-Signature
+                            </h2>
+
+                            <p>
+                                Upload your digital signature for document signing.
+                            </p>
+                        </div>
+
+                        <div class="section-icon">
+                            <i class="fa-solid fa-signature"></i>
+                        </div>
+
+                    </div>
+
+                    <div class="signature-upload-container">
+                        <div 
+                            class="signature-preview-area" 
+                            id="signaturePreviewArea"
+                            onclick="triggerSignatureUpload()"
+                            ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event)"
+                        >
+                            <div class="signature-placeholder" id="signaturePlaceholder">
+                                <i class="fa-solid fa-file-signature"></i>
+                                <p>No signature uploaded</p>
+                                <span>Drag & drop or click here to upload</span>
+                            </div>
+                            <img id="signatureImage" src="" alt="Signature Preview" style="display: none;">
+                        </div>
+                        <input 
+                            type="file" 
+                            id="signatureFileInput" 
+                            accept=".png,.jpg,.jpeg,.webp" 
+                            hidden
+                            onchange="handleSignatureSelect(event)"
+                        >
+                        <div class="signature-actions">
+                            <button 
+                                type="button" 
+                                class="sig-btn secondary-btn" 
+                                onclick="triggerSignatureUpload()"
+                            >
+                                <i class="fa-solid fa-file-image"></i> Choose File
+                            </button>
+                            <button 
+                                type="button" 
+                                class="sig-btn primary-btn" 
+                                onclick="saveSignatureUI()"
+                            >
+                                <i class="fa-solid fa-floppy-disk"></i> Save
+                            </button>
+                            <button 
+                                type="button" 
+                                class="sig-btn clear-btn" 
+                                onclick="clearSignaturePreview()" 
+                                id="clearSigBtn" 
+                                style="display: none;"
+                            >
+                                <i class="fa-solid fa-trash-can"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+
+                </section>
+
+                <section class="settings-card small-card">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h2>
+                                Change Password
+                            </h2>
+
+                            <p>
+                                Keep your account secure.
+                            </p>
+                        </div>
+
+                        <div class="section-icon">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Current Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="currentPassword"
+                            placeholder="Enter current password"
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            New Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="newPassword"
+                            placeholder="Enter new password"
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Confirm New Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            placeholder="Confirm new password"
+                        >
+                    </div>
+
+                    <button
+                        class="password-btn"
+                        onclick="changePassword()"
+                    >
+                        <i class="fa-solid fa-key"></i>
+                        Change Password
+                    </button>
+
+                </section>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let selectedProfileFile = null;
+
+        async function loadStudentSettings(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/student-settings/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    alert(
+                        data.message || "Failed to load settings."
+                    );
+
+                    return;
+
+                }
+
+                const student =
+                    data.student;
+
+                document.getElementById("studentId").value =
+                    student.user_id || "";
+
+                document.getElementById("fullname").value =
+                    student.fullname || "";
+
+                document.getElementById("program").value =
+                    student.program || "";
+
+                document.getElementById("yearLevel").value =
+                    student.year_level || "";
+
+                document.getElementById("studentPosition").value =
+                    student.student_position || "Not Assigned";
+
+                document.getElementById("summaryName").innerText =
+                    student.fullname || "Student";
+
+                document.getElementById("summaryDetails").innerText =
+                    `${student.user_id || "No ID"} • ${student.program || "No Program"} • ${student.year_level || "No Year Level"}`;
+
+                document.getElementById("summaryPosition").innerText =
+                    student.student_position || "Not Assigned";
+
+                document.getElementById("groupId").innerText =
+                    student.group_id || "Not Set";
+
+                document.getElementById("groupName").innerText =
+                    student.group_name || "Not Set";
+
+                document.getElementById("projectTitle").innerText =
+                    student.project_title || "Not Set";
+
+                const avatar =
+                    document.getElementById("profileAvatar");
+
+                if(student.profile_image){
+
+                    avatar.innerHTML =
+                        `<img src="http://localhost:3005${student.profile_image}" alt="Profile Photo">`;
+
+                }else{
+
+                    avatar.innerText =
+                        student.fullname
+                        ? student.fullname.charAt(0).toUpperCase()
+                        : "S";
+
+                }
+
+                if(student.digital_signature){
+
+                    applySavedSignatureImage(student.digital_signature);
+
+                }else{
+
+                    clearSignaturePreview();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        async function updateStudentProfile(){
+
+            const fullname =
+                document.getElementById("fullname").value.trim();
+
+            const program =
+                document.getElementById("program").value;
+
+            const yearLevel =
+                document.getElementById("yearLevel").value;
+
+            const studentPosition =
+                document.getElementById("studentPosition").value;
+
+            if(
+                !fullname ||
+                !program ||
+                !yearLevel ||
+                !studentPosition
+            ){
+
+                alert("Please complete all student information fields.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/update-student-profile",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                studentUserId:loggedInUserId,
+                                fullname,
+                                program,
+                                yearLevel,
+                                studentPosition
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Profile update processed."
+                );
+
+                if(data.success){
+
+                    localStorage.setItem("fullname", fullname);
+
+                    loadStudentSettings();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot update profile.");
+
+            }
+
+        }
+
+        function previewProfileImage(){
+
+            const input =
+                document.getElementById("profileImageInput");
+
+            if(!input.files[0]){
+                return;
+            }
+
+            selectedProfileFile =
+                input.files[0];
+
+            const allowedExtensions =
+                ["jpg", "jpeg", "png", "webp"];
+
+            const fileExtension =
+                selectedProfileFile.name
+                .split(".")
+                .pop()
+                .toLowerCase();
+
+            if(!allowedExtensions.includes(fileExtension)){
+
+                alert("Only JPG, PNG, and WEBP images are allowed.");
+
+                input.value =
+                    "";
+
+                selectedProfileFile =
+                    null;
+
+                return;
+
+            }
+
+            const reader =
+                new FileReader();
+
+            reader.onload = function(event){
+
+                document.getElementById("profileAvatar").innerHTML =
+                    `<img src="${event.target.result}" alt="Preview">`;
+
+            };
+
+            reader.readAsDataURL(selectedProfileFile);
+
+        }
+
+        async function uploadProfileImage(){
+
+            if(!selectedProfileFile){
+
+                alert("Please choose a profile image first.");
+
+                return;
+
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append("studentUserId", loggedInUserId);
+            formData.append("profileImage", selectedProfileFile);
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/update-student-profile-image",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Profile image update processed."
+                );
+
+                if(data.success){
+
+                    selectedProfileFile =
+                        null;
+
+                    document.getElementById("profileImageInput").value =
+                        "";
+
+                    loadStudentSettings();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot upload profile image.");
+
+            }
+
+        }
+
+        async function changePassword(){
+
+            const currentPassword =
+                document.getElementById("currentPassword").value;
+
+            const newPassword =
+                document.getElementById("newPassword").value;
+
+            const confirmPassword =
+                document.getElementById("confirmPassword").value;
+
+            if(
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword
+            ){
+
+                alert("Please complete all password fields.");
+
+                return;
+
+            }
+
+            if(newPassword !== confirmPassword){
+
+                alert("New password and confirm password do not match.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/change-student-password",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                studentUserId:loggedInUserId,
+                                currentPassword,
+                                newPassword
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Password change processed."
+                );
+
+                if(data.success){
+
+                    document.getElementById("currentPassword").value =
+                        "";
+
+                    document.getElementById("newPassword").value =
+                        "";
+
+                    document.getElementById("confirmPassword").value =
+                        "";
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot change password.");
+
+            }
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        let selectedSignatureFile = null;
+
+        function triggerSignatureUpload(){
+            document.getElementById('signatureFileInput').click();
+        }
+
+        function handleSignatureSelect(event){
+            const file = event.target.files[0];
+            if(file){
+                previewSignature(file);
+            }
+        }
+
+        function previewSignature(file){
+            const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
+            const fileExtension = file.name.split(".").pop().toLowerCase();
+
+            if(!allowedExtensions.includes(fileExtension)){
+                alert("Only JPG, PNG, and WEBP images are allowed.");
+                return;
+            }
+
+            selectedSignatureFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e){
+                document.getElementById('signatureImage').src = e.target.result;
+                document.getElementById('signatureImage').style.display = 'block';
+                document.getElementById('signaturePlaceholder').style.display = 'none';
+                document.getElementById('clearSigBtn').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleDragOver(event){
+            event.preventDefault();
+            document.getElementById('signaturePreviewArea').classList.add('dragover');
+        }
+
+        function handleDragOverArea(event) {
+            // redundant check/handler just in case, but handleDragOver(event) is already bound
+            event.preventDefault();
+        }
+
+        function handleDragLeave(event){
+            event.preventDefault();
+            document.getElementById('signaturePreviewArea').classList.remove('dragover');
+        }
+
+        function handleDrop(event){
+            event.preventDefault();
+            document.getElementById('signaturePreviewArea').classList.remove('dragover');
+            const file = event.dataTransfer.files[0];
+            if(file){
+                previewSignature(file);
+            }
+        }
+
+        function clearSignaturePreview(){
+            selectedSignatureFile = null;
+            document.getElementById('signatureFileInput').value = '';
+            document.getElementById('signatureImage').src = '';
+            document.getElementById('signatureImage').style.display = 'none';
+            document.getElementById('signaturePlaceholder').style.display = 'flex';
+            document.getElementById('clearSigBtn').style.display = 'none';
+        }
+
+        function applySavedSignatureImage(path){
+
+            selectedSignatureFile = null;
+            document.getElementById("signatureFileInput").value = "";
+
+            document.getElementById("signatureImage").src =
+                `http://localhost:3005${path}`;
+
+            document.getElementById("signatureImage").style.display =
+                "block";
+
+            document.getElementById("signaturePlaceholder").style.display =
+                "none";
+
+            document.getElementById("clearSigBtn").style.display =
+                "flex";
+
+        }
+
+        async function saveSignatureUI(){
+
+            if(!selectedSignatureFile){
+
+                alert("Please select or drag a signature image first.");
+
+                return;
+
+            }
+
+            if(!loggedInUserId){
+
+                alert("You are not logged in. Please log in again.");
+
+                return;
+
+            }
+
+            const formData =
+                new FormData();
+
+            formData.append("studentUserId", loggedInUserId);
+            formData.append("signatureImage", selectedSignatureFile);
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/update-user-digital-signature",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+                const rawText =
+                    await response.text();
+
+                let data;
+
+                try{
+
+                    data = JSON.parse(rawText);
+
+                }catch(parseError){
+
+                    console.error(parseError, rawText);
+
+                    alert(
+                        "The server did not respond correctly. Stop Node, run \"node Server.js\" in the project folder, then try again."
+                    );
+
+                    return;
+
+                }
+
+                if(!data.success){
+
+                    alert(
+                        data.message || "Failed to save digital signature."
+                    );
+
+                    return;
+
+                }
+
+                alert(data.message);
+
+                selectedSignatureFile = null;
+                document.getElementById("signatureFileInput").value = "";
+                loadStudentSettings();
+
+            }catch(error){
+
+                console.error(error);
+
+                alert(
+                    "Network error while saving signature. Make sure the server is running on port 3005."
+                );
+
+            }
+
+        }
+
+        loadStudentSettings();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

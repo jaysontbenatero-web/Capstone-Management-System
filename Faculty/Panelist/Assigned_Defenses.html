@@ -1,0 +1,3436 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Assigned Defenses | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Assigned_Defenses.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        const panelistAccess =
+            localStorage.getItem("panelist_access");
+
+        if(userRole === "admin" && panelistAccess !== "1"){
+
+            alert("Your Panelist access is disabled. Enable it in Admin Settings first.");
+
+            window.location.href =
+                "../../Admin/AdminDash.html";
+
+        }else if(userRole !== "admin" && panelistAccess !== "1"){
+
+            alert("You do not have permission to access this role.");
+
+            window.location.href =
+                "../FacultyDash.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Panelist Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='PanelistDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>
+                        Dashboard
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Panelist Tasks
+                </div>
+
+                <div
+                    class="menu-item active"
+                    onclick="window.location.href='Assigned_Defenses.html'"
+                >
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>
+                        Assigned Defenses
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Defense_Document.html'"
+                >
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>
+                        Defense Documents
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Assigned Defenses</h1>
+
+                <p id="panelistSubtitle">
+                    Review schedules assigned to you, record comments, recommendations, and defense results.
+                </p>
+
+                
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="assignedDefenses">
+                        0
+                    </h2>
+
+                    <p>
+                        Assigned Defenses
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+
+                <div>
+                    <h2 id="upcomingDefenses">
+                        0
+                    </h2>
+
+                    <p>
+                        Upcoming
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="completedDefenses">
+                        0
+                    </h2>
+
+                    <p>
+                        Evaluated
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </div>
+
+                <div>
+                    <h2 id="redefenseDefenses">
+                        0
+                    </h2>
+
+                    <p>
+                        For Re-Defense
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <section class="filter-card">
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="searchDefense"
+                    placeholder="Search group, title, room, schedule code..."
+                    onkeyup="filterDefenses()"
+                >
+            </div>
+
+            <select
+                id="statusFilter"
+                onchange="filterDefenses()"
+            >
+                <option value="All">
+                    All Schedule Status
+                </option>
+
+                <option value="Scheduled">
+                    Scheduled
+                </option>
+
+                <option value="Completed">
+                    Completed
+                </option>
+
+                <option value="Cancelled">
+                    Cancelled
+                </option>
+            </select>
+
+            <select
+                id="typeFilter"
+                onchange="filterDefenses()"
+            >
+                <option value="All">
+                    All Defense Types
+                </option>
+
+                <option value="Proposed Capstone Title">
+                    Proposed Capstone Title
+                </option>
+
+                <option value="Concept Presentation">
+                    Concept Presentation
+                </option>
+
+                <option value="Outline Defense">
+                    Outline Defense
+                </option>
+
+                <option value="Pre-Final Defense">
+                    Pre-Final Defense
+                </option>
+
+                <option value="Final Defense">
+                    Final Defense
+                </option>
+            </select>
+
+            <select
+                id="outcomeFilter"
+                onchange="filterDefenses()"
+            >
+                <option value="All">
+                    All Panel Results
+                </option>
+
+                <option value="Pending">
+                    Pending Evaluation
+                </option>
+
+                <option value="Passed">
+                    Passed
+                </option>
+
+                <option value="Passed with Revisions">
+                    Passed with Revisions
+                </option>
+
+                <option value="Conditional Passed">
+                    Conditional Passed
+                </option>
+
+                <option value="For Re-Defense">
+                    For Re-Defense
+                </option>
+
+                <option value="Failed">
+                    Failed
+                </option>
+            </select>
+
+        </section>
+
+        <section class="content-card">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>
+                        My Assigned Defense Schedules
+                    </h2>
+
+                    <p>
+                        Each card shows the defense type, schedule details, and your evaluation status. Open <strong>Evaluate</strong> to submit comments, recommendations, and results.
+                    </p>
+                </div>
+
+                <div class="section-icon">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+
+            </div>
+
+            <!-- DEFENSE TABS -->
+            <div class="defense-tabs">
+                <button class="tab-btn active" data-tab="concept" type="button">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <span>Concept Presentation</span>
+                    <span class="tab-count" id="count-concept">0</span>
+                </button>
+                <button class="tab-btn" data-tab="outline" type="button">
+                    <i class="fa-solid fa-file-shield"></i>
+                    <span>Outline Defense</span>
+                    <span class="tab-count" id="count-outline">0</span>
+                </button>
+                <button class="tab-btn" data-tab="pre-final" type="button">
+                    <i class="fa-solid fa-circle-half-stroke"></i>
+                    <span>Pre-Final Defense</span>
+                    <span class="tab-count" id="count-pre-final">0</span>
+                </button>
+                <button class="tab-btn" data-tab="final" type="button">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Final Defense</span>
+                    <span class="tab-count" id="count-final">0</span>
+                </button>
+                <button class="tab-btn history-tab" data-tab="history" type="button">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>History / Completed</span>
+                    <span class="tab-count" id="count-history">0</span>
+                </button>
+            </div>
+
+            <div
+                class="defense-grid"
+                id="defenseGrid"
+            >
+                <div class="empty-card">
+                    Loading assigned defenses...
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- VIEW DETAILS MODAL -->
+    <div
+        class="modal-overlay"
+        id="defenseModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <span
+                        class="defense-type-pill"
+                        id="modalTypePill"
+                    >
+                        Defense Type
+                    </span>
+
+                    <h2 id="modalGroupName">
+                        Group Name
+                    </h2>
+
+                    <p id="modalScheduleCode">
+                        DEF2026-0000
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeDefenseModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="details-grid">
+
+                <div class="detail-card">
+                    <span>
+                        Defense Type
+                    </span>
+
+                    <h3 id="modalDefenseType">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Schedule Status
+                    </span>
+
+                    <h3 id="modalStatus">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Date
+                    </span>
+
+                    <h3 id="modalDate">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Time
+                    </span>
+
+                    <h3 id="modalTime">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Room
+                    </span>
+
+                    <h3 id="modalRoom">
+                        N/A
+                    </h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>
+                        Program
+                    </span>
+
+                    <h3 id="modalProgram">
+                        N/A
+                    </h3>
+                </div>
+
+            </div>
+
+            <div class="section-box">
+                <h3>
+                    Project / Group Title
+                </h3>
+
+                <p id="modalProjectTitle">
+                    Not Set
+                </p>
+            </div>
+
+            <div
+                class="section-box"
+                id="modalTitleProposalsBox"
+                style="display:none;"
+            >
+                <h3>
+                    Proposed Titles Submitted (3)
+                </h3>
+
+                <p class="section-hint">
+                    Title proposals submitted by the group for this defense.
+                </p>
+
+                <div
+                    class="title-proposal-list"
+                    id="modalTitleProposals"
+                ></div>
+            </div>
+
+            <div
+                class="section-box"
+                id="modalDefenseDocumentsBox"
+                style="display:none;"
+            >
+                <h3>
+                    <i class="fa-solid fa-folder-open"></i>
+                    Consultation Documents
+                </h3>
+
+                <p class="section-hint">
+                    Approved files for this defense phase.
+                </p>
+
+                <div
+                    class="document-link-list"
+                    id="modalDefenseDocuments"
+                ></div>
+            </div>
+
+            <div class="section-box">
+                <h3>
+                    Panelists
+                </h3>
+
+                <div
+                    class="person-list"
+                    id="modalPanelists"
+                >
+                    No panelists found.
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h3>
+                    Group Members
+                </h3>
+
+                <div
+                    class="person-list"
+                    id="modalMembers"
+                >
+                    No members found.
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h3>
+                    Schedule Notes
+                </h3>
+
+                <p id="modalNotes">
+                    No notes provided.
+                </p>
+            </div>
+
+            <div
+                class="section-box"
+                id="modalAllPanelEvaluationsBox"
+                style="display:none;"
+            >
+                <h3>
+                    All Panel Evaluations
+                </h3>
+                <p class="section-hint">
+                    Each assigned panelist submits their own evaluation. Progress: <strong id="modalPanelEvalProgress">0/0</strong>
+                </p>
+                <div id="modalAllPanelEvaluations"></div>
+            </div>
+
+            <div
+                class="section-box"
+                id="modalEvaluationSummary"
+                style="display:none;"
+            >
+                <h3>
+                    Your Evaluation Summary
+                </h3>
+
+                <div id="modalEvaluationContent"></div>
+            </div>
+
+            <div class="modal-actions defense-modal-actions">
+                <button
+                    class="view-btn"
+                    type="button"
+                    id="modalPrintReceiptBtn"
+                    style="display:none;"
+                    onclick="printPanelEvaluationsReceipt()"
+                >
+                    <i class="fa-solid fa-print"></i>
+                    Print Panel Receipts
+                </button>
+
+                <button
+                    class="evaluate-btn full-width"
+                    type="button"
+                    id="modalEvaluateBtn"
+                >
+                    <i class="fa-solid fa-file-signature"></i>
+                    Open Evaluation Form
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="panelReceiptPrintHost" class="panel-receipt-print-host" aria-hidden="true"></div>
+
+    <!-- EVALUATION MODAL -->
+    <div
+        class="modal-overlay"
+        id="evaluationModal"
+    >
+
+        <div class="modal-box evaluation-modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <span
+                        class="defense-type-pill"
+                        id="evalTypePill"
+                    >
+                        Defense Type
+                    </span>
+
+                    <h2 id="evalGroupName">
+                        Group Evaluation
+                    </h2>
+
+                    <p id="evalScheduleCode">
+                        DEF2026-0000
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeEvaluationModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <form
+                id="evaluationForm"
+                onsubmit="submitEvaluationUI(event)"
+            >
+
+                <div
+                    class="section-box title-approval-box"
+                    id="titleApprovalSection"
+                    style="display:none;"
+                >
+                    <div class="section-box-header">
+                        <h3 id="titleApprovalHeading">
+                            <i class="fa-solid fa-list-check"></i>
+                            Approve One Proposed Title
+                        </h3>
+
+                        <p class="section-hint" id="titleApprovalHint">
+                            View all three submitted titles. You may approve <strong>only one</strong> title for this group.
+                        </p>
+                    </div>
+
+                    <div
+                        class="title-proposal-list selectable"
+                        id="titleApprovalList"
+                    ></div>
+
+                    <p
+                        class="field-error"
+                        id="titleApprovalError"
+                        style="display:none;"
+                    >
+                        Please select exactly one title to approve.
+                    </p>
+                </div>
+
+                <div
+                    class="section-box"
+                    id="defenseDocumentsSection"
+                >
+                    <h3>
+                        <i class="fa-solid fa-folder-open"></i>
+                        Defense Documents
+                    </h3>
+
+                    <p class="section-hint">
+                        View files submitted for this defense.
+                    </p>
+
+                    <div
+                        class="document-link-list"
+                        id="defenseDocumentList"
+                    ></div>
+                </div>
+
+
+                <!-- CONCEPT PRESENTATION GRADING SECTION -->
+                <div id="conceptGradingSection" style="display: none; margin-bottom: 25px; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; background: var(--bg-card); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                    <div class="section-box-header" style="margin-bottom: 18px;">
+                        <h3 style="color: var(--primary); font-size: 1.2rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            Concept Presentation Evaluation Sheet
+                        </h3>
+                        <p class="section-hint" style="color: var(--text-muted); font-size: 0.85rem;">
+                            Evaluate individual student disposition and delivery, and grade the concept paper as a group.
+                        </p>
+                    </div>
+                    
+                    <!-- Presenters Lineup -->
+                    <div class="presenters-info-card" id="presentersInfoCard" style="background: rgba(88, 80, 236, 0.06); border: 1px solid rgba(88, 80, 236, 0.15); border-radius: 8px; padding: 12px; margin-bottom: 18px;">
+                        <p style="font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-users"></i> Presenters lineup (Group Presenters):
+                        </p>
+                        <div id="presentersListContainer" style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--text-muted);">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Individual Presentations -->
+                    <div style="background: rgba(0,0,0,0.01); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+                        <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-user"></i> Individual Grade (Disposition 20%, Delivery &amp; Presentation 80%)
+                        </h4>
+                        
+                        <details style="margin-bottom: 15px; background: var(--bg-card); padding: 10px; border-radius: 6px; font-size: 0.8rem; border: 1px dashed var(--border-color);">
+                            <summary style="cursor: pointer; font-weight: 500; color: var(--primary);">View Criteria Details</summary>
+                            <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.4; color: var(--text-muted);">
+                                <div>
+                                    <strong>I. Disposition (20%):</strong>
+                                    <ul style="padding-left: 15px; margin: 4px 0; list-style-type: disc;">
+                                        <li>a. Generally neat in appearance</li>
+                                        <li>b. Projects an aura of confidence</li>
+                                        <li>c. Preparedness and teamwork</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong>II. Delivery and Presentation (80%):</strong>
+                                    <ul style="padding-left: 15px; margin: 4px 0; list-style-type: disc;">
+                                        <li>a. Organization of Content</li>
+                                        <li>b. Manner of Presentation</li>
+                                        <li>c. Ability to Defend Ideas</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div id="presenterGradingInputs">
+                            <!-- Populated dynamically for each presenter -->
+                        </div>
+                    </div>
+
+                    <!-- Group Concept Papers -->
+                    <div style="background: rgba(0,0,0,0.01); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+                        <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-file-invoice"></i> Group Grade (Concept Papers 100%)
+                        </h4>
+                        <p class="section-hint" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Includes Mechanics (Spelling/Grammar), Completeness, and Content (correct and consistent).
+                        </p>
+                        
+                        <div class="form-grid two-col" style="margin-bottom: 0;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.85rem; font-weight: 500;">Concept Papers Score (1-100)</label>
+                                <input type="number" id="groupPaperScore" min="0" max="100" placeholder="e.g. 90" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
+                            </div>
+                            <div style="display: flex; flex-direction: column; justify-content: center; padding-top: 15px;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Group GPA Equivalent:</span>
+                                <strong id="groupPaperGpa" style="font-size: 1.1rem; color: var(--primary);">--</strong>
+                            </div>
+            </div>
+                    </div>
+
+                    <!-- Live Grade Summary -->
+                    <div class="grading-summary-card" style="background: linear-gradient(135deg, rgba(88, 80, 236, 0.08), rgba(139, 92, 246, 0.08)); border: 1px solid rgba(88, 80, 236, 0.2); border-radius: 8px; padding: 15px;">
+                        <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-square-poll-vertical"></i> Real-time Grading Matrix
+                        </h4>
+                        <div id="calcBreakdownContainer" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(88, 80, 236, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: var(--text-main); font-size: 0.95rem;">Overall Team GPA Grade:</strong>
+                            <span id="overallCalculatedScoreBadge" style="font-size: 1.25rem; font-weight: 700; color: var(--primary); background: var(--bg-card); padding: 4px 14px; border-radius: 6px; border: 1px solid rgba(88, 80, 236, 0.3); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OUTLINE DEFENSE GRADING SECTION -->
+                <div id="outlineGradingSection" style="display: none; margin-bottom: 25px; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; background: var(--bg-card); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                    <div class="section-box-header" style="margin-bottom: 18px;">
+                        <h3 style="color: var(--primary); font-size: 1.2rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <i class="fa-solid fa-file-shield"></i>
+                            Outline Defense Evaluation Sheet
+                        </h3>
+                        <p class="section-hint" style="color: var(--text-muted); font-size: 0.85rem;">
+                            Evaluate individual student disposition and delivery, and grade the group system and documentation.
+                        </p>
+                    </div>
+
+                    <!-- Presenters Lineup -->
+                    <div style="background: rgba(88, 80, 236, 0.06); border: 1px solid rgba(88, 80, 236, 0.15); border-radius: 8px; padding: 12px; margin-bottom: 18px;">
+                        <p style="font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-users"></i> Presenters Lineup:
+                        </p>
+                        <div id="outlinePresentersListContainer" style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--text-muted);">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Individual Grade -->
+                    <div style="background: rgba(0,0,0,0.01); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+                        <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-user"></i> Individual Grade (Disposition 20%, Delivery &amp; Presentation 80%)
+                        </h4>
+                        <details style="margin-bottom: 15px; background: var(--bg-card); padding: 10px; border-radius: 6px; font-size: 0.8rem; border: 1px dashed var(--border-color);">
+                            <summary style="cursor: pointer; font-weight: 500; color: var(--primary);">View Criteria Details</summary>
+                            <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.5; color: var(--text-muted);">
+                                <div>
+                                    <strong>I. Disposition (20%):</strong>
+                                    <ul style="padding-left: 15px; margin: 4px 0; list-style-type: disc;">
+                                        <li>a. Generally neat in appearance</li>
+                                        <li>b. Projects an aura of confidence</li>
+                                        <li>c. Preparedness and teamwork</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong>II. Delivery and Presentation (80%):</strong>
+                                    <ul style="padding-left: 15px; margin: 4px 0; list-style-type: disc;">
+                                        <li>a. Organization of Content</li>
+                                        <li>b. Manner of Presentation</li>
+                                        <li>c. Ability to Defend Ideas &amp; Technical Output</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </details>
+                        <div id="outlinePresenterGradingInputs">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Group Grade -->
+                    <div style="background: rgba(0,0,0,0.01); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+                        <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-layer-group"></i> Group Grade (System 50%, Documentation 50%)
+                        </h4>
+                        <details style="margin-bottom: 14px; background: var(--bg-card); padding: 10px; border-radius: 6px; font-size: 0.8rem; border: 1px dashed var(--border-color);">
+                            <summary style="cursor: pointer; font-weight: 500; color: var(--primary);">View Criteria Details</summary>
+                            <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.5; color: var(--text-muted);">
+                                <div>
+                                    <strong>System (50%):</strong>
+                                    <ul style="padding-left: 15px; margin: 4px 0; list-style-type: disc;">
+                                        <li>Design based on objectives</li>
+                                        <li>Technical output as proof of concept</li>
+                                        <li>Degree of impact on panelist</li>
+                                        <li>Ease of use and user-friendliness</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong>Documentation (50%):</strong>
+                                    <ul style="padding-left: 15px; margin: 4px 0; list-style-type: disc;">
+                                        <li>Mechanics (Spelling/Grammar/Structure)</li>
+                                        <li>Completeness</li>
+                                        <li>Content (correct and consistent)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </details>
+                        <div class="form-grid two-col" style="margin-bottom: 0;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.85rem; font-weight: 500;">System Score (1-100)</label>
+                                <input type="number" id="outlineSystemScore" min="0" max="100" placeholder="e.g. 88" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.85rem; font-weight: 500;">Documentation Score (1-100)</label>
+                                <input type="number" id="outlineDocScore" min="0" max="100" placeholder="e.g. 85" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-muted);">
+                            <span>Group GPA Equivalent:</span>
+                            <strong id="outlineGroupGpa" style="font-size: 1.1rem; color: var(--primary);">--</strong>
+                        </div>
+                    </div>
+
+                    <!-- Live Grade Summary -->
+                    <div style="background: linear-gradient(135deg, rgba(88, 80, 236, 0.08), rgba(139, 92, 246, 0.08)); border: 1px solid rgba(88, 80, 236, 0.2); border-radius: 8px; padding: 15px;">
+                        <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-square-poll-vertical"></i> Real-time Grading Matrix
+                        </h4>
+                        <div id="outlineBreakdownContainer" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(88, 80, 236, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: var(--text-main); font-size: 0.95rem;">Overall Team GPA Grade:</strong>
+                            <span id="outlineOverallScoreBadge" style="font-size: 1.25rem; font-weight: 700; color: var(--primary); background: var(--bg-card); padding: 4px 14px; border-radius: 6px; border: 1px solid rgba(88, 80, 236, 0.3); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">--</span>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="form-grid two-col">
+
+                    <div class="input-group" id="evalScoreInputGroup">
+                        <label id="evalScoreLabel">
+                            Score / Grade
+                        </label>
+
+                        <input
+                            type="text"
+                            id="evalScore"
+                            placeholder="e.g. 1.25 or 92"
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            Panel Result
+                        </label>
+
+                        <select
+                            id="evalStatus"
+                            required
+                        >
+                            <option value="">
+                                Select result
+                            </option>
+
+                            <option value="Passed">
+                                Passed
+                            </option>
+
+                            <option value="Passed with Revisions">
+                                Passed with Revisions
+                            </option>
+
+                            <option value="Conditional Passed">
+                                Conditional Passed
+                            </option>
+
+                            <option value="For Re-Defense">
+                                For Re-Defense
+                            </option>
+
+                            <option value="Failed">
+                                Failed
+                            </option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="outcome-hints">
+                    <div class="outcome-hint passed">
+                        <strong>Passed</strong> — defense successful, no re-defense required.
+                    </div>
+                    <div class="outcome-hint revision">
+                        <strong>Passed with Revisions</strong> — approved pending minor document revisions.
+                    </div>
+                    <div class="outcome-hint conditional">
+                        <strong>Conditional Passed</strong> — passed subject to meeting certain requirements, comments are required.
+                    </div>
+                    <div class="outcome-hint redefense">
+                        <strong>For Re-Defense</strong> — must defend again after major revisions.
+                    </div>
+                    <div class="outcome-hint failed">
+                        <strong>Failed</strong> — did not meet defense requirements.
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Comments
+                    </label>
+
+                    <textarea
+                        id="evalComments"
+                        placeholder="Enter your comments on the presentation, Q&amp;A, and overall defense performance..."
+                    ></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Recommendations
+                    </label>
+
+                    <textarea
+                        id="evalRecommendations"
+                        placeholder="Enter recommendations for the group (methodology, scope, documentation, next steps)..."
+                    ></textarea>
+                </div>
+
+                <!-- SIGNATURE SECTION -->
+                <div class="signature-section" style="margin-top: 15px; margin-bottom: 25px; padding: 16px; border: 1px dashed var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.015);">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i>
+                            Panelist E-Signature
+                        </label>
+                        <span id="signatureStatus" style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">
+                            No signature attached.
+                        </span>
+                    </div>
+                    <button type="button" id="attachSigBtn" class="view-btn" style="padding: 8px 14px; font-size: 0.85rem; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onclick="toggleESignature()">
+                        <i class="fa-solid fa-pen-nib"></i>
+                        <span>Attach E-Signature</span>
+                    </button>
+                </div>
+
+                <div class="modal-actions">
+                    <button
+                        class="cancel-btn"
+                        onclick="closeEvaluationModal()"
+                        type="button"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        class="save-btn"
+                        type="submit"
+                    >
+                        <i class="fa-solid fa-check"></i>
+                        Save Evaluation
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let panelistInfo = null;
+        let defenseSchedules = [];
+        let activeEvaluationId = null;
+        let activeDefenseScheduleId = null;
+
+        window.savedPanelistSignature = null;
+        window.attachedSignaturePath = null;
+
+        async function loadPanelistSignature(){
+
+            if(!loggedInUserId){
+                return;
+            }
+
+            const role =
+                localStorage.getItem("role");
+
+            const settingsUrl =
+                role === "admin"
+                ? `http://localhost:3005/admin-settings/${loggedInUserId}`
+                : `http://localhost:3005/faculty-settings/${loggedInUserId}`;
+
+            try{
+
+                const response =
+                    await fetch(settingsUrl);
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+                    return;
+                }
+
+                const account =
+                    data.admin || data.faculty;
+
+                window.savedPanelistSignature =
+                    account?.digital_signature || null;
+
+            }catch(error){
+                console.error("Failed to load panelist signature:", error);
+            }
+
+        }
+
+        async function loadAssignedDefenses(){
+
+            if (!loggedInUserId) {
+                alert("Please log in first.");
+                window.location.href = "../../Log-in.html";
+                return;
+            }
+
+            // Attach tab listeners once
+            if(!window.tabListenersAttached){
+                document.querySelectorAll(".tab-btn").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                        btn.classList.add("active");
+                        filterDefenses();
+                    });
+                });
+                window.tabListenersAttached = true;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3005/panelist-assigned-defenses/${loggedInUserId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.message || "Failed to load assigned defenses.");
+                    return;
+                }
+
+                panelistInfo = data.panelist || {
+                    fullname: localStorage.getItem("fullname") || "Panelist User",
+                    user_id: loggedInUserId,
+                    position: "Panelist",
+                    adviser_access: 0,
+                    panelist_access: 1,
+                    instructor_access: 0
+                };
+
+                defenseSchedules = data.schedules || [];
+
+                renderPanelistInfo();
+                renderStats();
+                filterDefenses();
+
+            } catch (error) {
+                console.log(error);
+                alert("Cannot connect to server to load assigned defenses.");
+            }
+
+        }
+
+        function renderPanelistInfo(){
+
+            if(!panelistInfo){
+                return;
+            }
+
+            document.getElementById("panelistSubtitle").innerText =
+                `${panelistInfo.fullname} • ${panelistInfo.user_id} • Assigned defense schedules and panel evaluations`;
+
+        }
+
+        function renderStats(){
+
+            const assigned =
+                defenseSchedules.length;
+
+            const today =
+                new Date();
+
+            today.setHours(0, 0, 0, 0);
+
+            const upcoming =
+                defenseSchedules.filter(schedule => {
+
+                    if(schedule.defense_status !== "Scheduled"){
+                        return false;
+                    }
+
+                    const scheduleDate =
+                        new Date(schedule.defense_date);
+
+                    scheduleDate.setHours(0, 0, 0, 0);
+
+                    return scheduleDate >= today;
+
+                }).length;
+
+            const evaluated =
+                defenseSchedules.filter(schedule =>
+                    schedule.my_evaluation
+                ).length;
+
+            const redefense =
+                defenseSchedules.filter(schedule =>
+                    schedule.my_evaluation
+                    && (
+                        schedule.my_evaluation.panel_result === "For Re-Defense"
+                        || schedule.my_evaluation.panel_result === "Passed with Revisions"
+                    )
+                ).length;
+
+            document.getElementById("assignedDefenses").innerText =
+                assigned;
+
+            document.getElementById("upcomingDefenses").innerText =
+                upcoming;
+
+            document.getElementById("completedDefenses").innerText =
+                evaluated;
+
+            document.getElementById("redefenseDefenses").innerText =
+                redefense;
+
+        }
+
+        function hasMyEvaluation(schedule){
+            return !!(schedule && schedule.my_evaluation);
+        }
+
+        function getPanelProgressLabel(schedule){
+            const submitted =
+                Number(schedule.evaluations_submitted || 0);
+
+            const required =
+                Number(schedule.evaluations_required || 0);
+
+            if(required <= 0){
+                return "";
+            }
+
+            return `${submitted}/${required} panel evaluations`;
+        }
+
+        function isHistoryForPanelist(schedule){
+            return schedule.defense_status === "Cancelled"
+                || hasMyEvaluation(schedule);
+        }
+
+        function filterDefenses(){
+
+            const keyword =
+                document.getElementById("searchDefense")
+                .value
+                .toLowerCase();
+
+            const status =
+                document.getElementById("statusFilter").value;
+
+            const defenseType =
+                document.getElementById("typeFilter").value;
+
+            const outcome =
+                document.getElementById("outcomeFilter").value;
+
+            const activeTabBtn = document.querySelector(".tab-btn.active");
+            const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : "concept";
+
+            const filtered =
+                defenseSchedules.filter(schedule => {
+
+                    const panelistNames =
+                        (schedule.panelists || [])
+                        .map(panelist => panelist.fullname)
+                        .join(" ");
+
+                    const memberNames =
+                        (schedule.members || [])
+                        .map(member => member.fullname)
+                        .join(" ");
+
+                    const matchesKeyword =
+                        String(schedule.schedule_code || "").toLowerCase().includes(keyword)
+                        || String(schedule.group_id || "").toLowerCase().includes(keyword)
+                        || String(schedule.group_name || "").toLowerCase().includes(keyword)
+                        || String(schedule.project_title || "").toLowerCase().includes(keyword)
+                        || String(schedule.room_name || "").toLowerCase().includes(keyword)
+                        || String(schedule.defense_type || "").toLowerCase().includes(keyword)
+                        || String(schedule.defense_status || "").toLowerCase().includes(keyword)
+                        || String(schedule.panel_result || "").toLowerCase().includes(keyword)
+                        || panelistNames.toLowerCase().includes(keyword)
+                        || memberNames.toLowerCase().includes(keyword);
+
+                    const matchesStatus =
+                        status === "All"
+                        || schedule.defense_status === status;
+
+                    const matchesType =
+                        defenseType === "All"
+                        || schedule.defense_type === defenseType;
+
+                    const matchesOutcome =
+                        outcome === "All"
+                        || schedule.panel_result === outcome;
+
+                    // Tab matching
+                    let matchesTab = false;
+                    const type = String(schedule.defense_type || "").toLowerCase();
+                    const isHistory =
+                        isHistoryForPanelist(schedule);
+
+                    if (activeTab === "concept") {
+                        matchesTab = (type.includes("concept") || type.includes("proposed") || type.includes("title")) && !isHistory;
+                    } else if (activeTab === "outline") {
+                        matchesTab = type.includes("outline") && !isHistory;
+                    } else if (activeTab === "pre-final") {
+                        matchesTab = (type.includes("pre-final") || type.includes("prefinal")) && !isHistory;
+                    } else if (activeTab === "final") {
+                        matchesTab = type.includes("final") && !type.includes("pre") && !isHistory;
+                    } else if (activeTab === "history") {
+                        matchesTab = isHistory;
+                    }
+
+                    return matchesKeyword
+                        && matchesStatus
+                        && matchesType
+                        && matchesOutcome
+                        && matchesTab;
+
+                });
+
+            // Sort filtered list by deadline priority
+            if (activeTab === "history") {
+                // Descending order of date and time (most recent completed first)
+                filtered.sort((a, b) => {
+                    const dateA = new Date((a.defense_date || "2000-01-01") + 'T' + (a.start_time || '00:00:00'));
+                    const dateB = new Date((b.defense_date || "2000-01-01") + 'T' + (b.start_time || '00:00:00'));
+                    return dateB - dateA;
+                });
+            } else {
+                // Ascending order of date and time (closest deadline first)
+                filtered.sort((a, b) => {
+                    const dateA = new Date((a.defense_date || "9999-12-31") + 'T' + (a.start_time || '00:00:00'));
+                    const dateB = new Date((b.defense_date || "9999-12-31") + 'T' + (b.start_time || '00:00:00'));
+                    return dateA - dateB;
+                });
+            }
+
+            updateTabCounts();
+            renderDefenses(filtered);
+
+        }
+
+        function updateTabCounts(){
+            let conceptCount = 0;
+            let outlineCount = 0;
+            let preFinalCount = 0;
+            let finalCount = 0;
+            let historyCount = 0;
+
+            defenseSchedules.forEach(schedule => {
+
+                if(isHistoryForPanelist(schedule)){
+                    historyCount++;
+                } else {
+                    const type = String(schedule.defense_type || "").toLowerCase();
+                    if (type.includes("concept") || type.includes("proposed") || type.includes("title")) {
+                        conceptCount++;
+                    } else if (type.includes("outline")) {
+                        outlineCount++;
+                    } else if (type.includes("pre-final") || type.includes("prefinal")) {
+                        preFinalCount++;
+                    } else if (type.includes("final")) {
+                        finalCount++;
+                    }
+                }
+            });
+
+            const conceptEl = document.getElementById("count-concept");
+            const outlineEl = document.getElementById("count-outline");
+            const preFinalEl = document.getElementById("count-pre-final");
+            const finalEl = document.getElementById("count-final");
+            const historyEl = document.getElementById("count-history");
+
+            if (conceptEl) conceptEl.textContent = conceptCount;
+            if (outlineEl) outlineEl.textContent = outlineCount;
+            if (preFinalEl) preFinalEl.textContent = preFinalCount;
+            if (finalEl) finalEl.textContent = finalCount;
+            if (historyEl) historyEl.textContent = historyCount;
+        }
+
+        function getDefenseTypeClass(defenseType){
+
+            const value =
+                String(defenseType || "").toLowerCase();
+
+            if(value.includes("proposed") || value.includes("title")){
+                return "type-title";
+            }
+
+            if(value.includes("concept")){
+                return "type-concept";
+            }
+
+            if(value.includes("outline")){
+                return "type-outline";
+            }
+
+            if(value.includes("pre-final")){
+                return "type-prefinal";
+            }
+
+            if(value.includes("final")){
+                return "type-final";
+            }
+
+            return "type-default";
+
+        }
+
+        function getOutcomeClass(outcome){
+
+            const value =
+                String(outcome || "").trim();
+
+            if(value === "Passed"){
+                return "outcome-passed";
+            }
+
+            if(value === "Passed with Revisions"){
+                return "outcome-revision";
+            }
+
+            if(value === "Conditional Passed" || value === "Conditional Pass"){
+                return "outcome-conditional";
+            }
+
+            if(value === "For Re-Defense"){
+                return "outcome-redefense";
+            }
+
+            if(value === "Failed"){
+                return "outcome-failed";
+            }
+
+            return "outcome-pending";
+
+        }
+
+        function renderDefenses(list){
+
+            const grid =
+                document.getElementById("defenseGrid");
+
+            grid.innerHTML = "";
+
+            if(list.length === 0){
+
+                grid.innerHTML =
+                    `
+                        <div class="empty-card">
+                            No assigned defenses match your filters.
+                        </div>
+                    `;
+
+                return;
+
+            }
+
+            const activeTabBtn = document.querySelector(".tab-btn.active");
+            const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : "concept";
+
+            list.forEach((schedule, index) => {
+
+                const programText =
+                    schedule.group_program === "IS"
+                    ? "BSIS"
+                    : schedule.group_program === "IT"
+                    ? "BSIT"
+                    : "Not Set";
+
+                const statusClass =
+                    String(schedule.defense_status || "Scheduled").toLowerCase();
+
+                const typeClass =
+                    getDefenseTypeClass(schedule.defense_type);
+
+                const myOutcome =
+                    hasMyEvaluation(schedule)
+                    ? schedule.my_evaluation.panel_result
+                    : "Pending";
+
+                const outcomeClass =
+                    getOutcomeClass(myOutcome);
+
+                const panelProgress =
+                    getPanelProgressLabel(schedule);
+
+                // Identify Panel Chair vs Panel Members
+                const chair = (schedule.panelists || []).find(p => Number(p.id) === Number(schedule.panelist_id));
+                const chairName = chair ? chair.fullname : "Not assigned";
+
+                const panelMembers = (schedule.panelists || []).filter(p => Number(p.id) !== Number(schedule.panelist_id));
+                const panelMemberNames = panelMembers.map(p => p.fullname).join(", ") || "None";
+
+                // Group members string
+                const memberNames = (schedule.members || [])
+                    .map(m => `${m.fullname} (${m.student_position || m.member_position || 'Member'})`)
+                    .join(", ") || "No members listed";
+
+                const isClosest = (activeTab !== "history" && index === 0);
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    isClosest ? "defense-card closest-deadline" : "defense-card";
+
+                const priorityBadgeHtml = isClosest 
+                    ? `<div class="priority-badge">
+                        <i class="fa-solid fa-circle-exclamation"></i> Next Up / Closest Deadline
+                       </div>` 
+                    : "";
+
+                const isHistory =
+                    isHistoryForPanelist(schedule)
+                    || activeTab === "history";
+
+                const canEvaluate =
+                    !hasMyEvaluation(schedule)
+                    && schedule.defense_status !== "Cancelled";
+
+                const evaluateButtonHtml = canEvaluate
+                    ? `<button class="evaluate-btn" type="button">
+                        <i class="fa-solid fa-file-signature"></i>
+                        Evaluate
+                       </button>`
+                    : "";
+
+                card.innerHTML =
+                    `
+                        ${priorityBadgeHtml}
+                        <div class="defense-top">
+                            <div class="defense-icon ${typeClass}">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <h3>${schedule.group_name || "Unnamed Group"}</h3>
+                                <p>${schedule.schedule_code || "No Schedule Code"}</p>
+                            </div>
+                        </div>
+
+                        <div class="defense-type-banner ${typeClass}">
+                            <i class="fa-solid fa-tag"></i>
+                            ${schedule.defense_type || "Defense"}
+                        </div>
+
+                        <div class="defense-meta">
+                            <span>${programText}</span>
+                            <span class="${statusClass}">
+                                ${statusClass === "ongoing" ? '<span class="pulse-dot"></span>' : ''}
+                                ${schedule.defense_status || "Scheduled"}
+                            </span>
+                            <span class="${outcomeClass}">${hasMyEvaluation(schedule) ? myOutcome : "Your evaluation pending"}</span>
+                            ${panelProgress ? `<span>${panelProgress}</span>` : ""}
+                            ${schedule.evaluations_complete ? `<span class="outcome-passed">Final: ${schedule.panel_result}</span>` : ""}
+                        </div>
+
+                        <div class="defense-info">
+                            <p><strong>Project:</strong> ${schedule.project_title || "Not Set"}</p>
+                            <p><strong>Group Members:</strong> ${memberNames}</p>
+                            <p><strong>Panel Chair:</strong> ${chairName}</p>
+                            <p><strong>Panel Members:</strong> ${panelMemberNames}</p>
+                            <p><strong>Date:</strong> ${formatDate(schedule.defense_date)}</p>
+                            <p><strong>Time:</strong> ${formatTime(schedule.start_time)} – ${formatTime(schedule.end_time)}</p>
+                            <p><strong>Room:</strong> ${schedule.room_name || "Not Set"}</p>
+                            <p><strong>Notes:</strong> ${schedule.notes || "No notes provided."}</p>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="view-btn" type="button">
+                                <i class="fa-solid fa-eye"></i>
+                                View Details
+                            </button>
+                            ${evaluateButtonHtml}
+                        </div>
+                    `;
+
+                card.querySelector(".view-btn").addEventListener("click", () => {
+                    openDefenseModal(schedule.id);
+                });
+
+                const evalBtn = card.querySelector(".evaluate-btn");
+                if (evalBtn) {
+                    evalBtn.addEventListener("click", () => {
+                        openEvaluationModal(schedule.id);
+                    });
+                }
+
+                grid.appendChild(card);
+
+            });
+
+        }
+
+        function isConceptDefense(defenseType){
+            return String(defenseType || "").toLowerCase().includes("concept");
+        }
+
+        function isProposedTitleDefense(defenseType){
+            const value = String(defenseType || "").toLowerCase();
+            return value.includes("proposed")
+                || (value.includes("title") && !value.includes("concept"));
+        }
+
+        function showsTitleProposals(defenseType){
+            return isProposedTitleDefense(defenseType) || isConceptDefense(defenseType);
+        }
+
+        function renderTitleProposals(container, proposals, selectable){
+
+            container.innerHTML = "";
+
+            if(!proposals || proposals.length === 0){
+
+                container.innerHTML =
+                    `<p class="empty-text">No title proposals attached.</p>`;
+
+                return;
+
+            }
+
+            proposals.forEach((proposal, index) => {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    selectable
+                    ? "title-proposal-card selectable"
+                    : "title-proposal-card";
+
+                row.innerHTML =
+                    `
+                        ${selectable ? `
+                            <label class="title-select-row">
+                                <input
+                                    type="radio"
+                                    name="approvedTitle"
+                                    value="${proposal.id}"
+                                >
+                                <span class="radio-mark"></span>
+                            </label>
+                        ` : ""}
+                        <div class="title-proposal-body">
+                            <span class="title-index">Proposal ${index + 1}</span>
+                            <h4>${escapeHtml(proposal.title || proposal.proposed_title || "Untitled proposal")}</h4>
+                            <p>${proposal.summary || "No summary provided."}</p>
+                            <div class="title-proposal-actions">
+                                <button
+                                    class="doc-view-btn"
+                                    type="button"
+                                    data-file="${proposal.file_name}"
+                                >
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                    View ${proposal.file_name}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                row.querySelector(".doc-view-btn").addEventListener("click", () => {
+                    if (proposal.file_path) {
+                        window.open(`http://localhost:3005${proposal.file_path}`, "_blank");
+                    } else {
+                        alert(`File path not available for "${proposal.file_name}"`);
+                    }
+                });
+
+                container.appendChild(row);
+
+            });
+
+        }
+
+        function getConsultationPhaseForDefenseType(defenseType){
+
+            const value =
+                String(defenseType || "").toLowerCase().trim();
+
+            if(value.includes("pre-final") || value.includes("prefinal")){
+                return "Pre-Final Defense";
+            }
+
+            if(value.includes("outline")){
+                return "Outline Defense";
+            }
+
+            if(value.includes("final") && !value.includes("pre")){
+                return "Final Defense";
+            }
+
+            if(
+                value.includes("concept")
+                || value.includes("proposed")
+                || value.includes("title")
+            ){
+                return "Concept Presentation";
+            }
+
+            return null;
+
+        }
+
+        function filterDocumentsForDefenseType(documents, defenseType){
+
+            const phaseCategory =
+                getConsultationPhaseForDefenseType(defenseType);
+
+            if(!phaseCategory){
+                return documents || [];
+            }
+
+            const prefix =
+                `${phaseCategory} •`;
+
+            return (documents || []).filter(doc =>
+                String(doc.document_type || "").trim().startsWith(prefix)
+            );
+
+        }
+
+        function renderDefenseDocuments(container, documents, defenseType){
+
+            container.innerHTML = "";
+
+            const phaseDocuments =
+                filterDocumentsForDefenseType(documents, defenseType);
+
+            if(phaseDocuments.length === 0){
+
+                const phaseLabel =
+                    getConsultationPhaseForDefenseType(defenseType)
+                    || "this defense";
+
+                container.innerHTML =
+                    `<p class="empty-text">No approved documents for ${escapeHtml(phaseLabel)} yet.</p>`;
+
+                return;
+
+            }
+
+            phaseDocuments.forEach(doc => {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "document-link-row";
+
+                row.innerHTML =
+                    `
+                        <div>
+                            <strong>${doc.label}</strong>
+                            <p>${doc.file_name}</p>
+                        </div>
+                        <button
+                            class="doc-view-btn"
+                            type="button"
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                            View
+                        </button>
+                    `;
+
+                row.querySelector("button").addEventListener("click", () => {
+                    if (doc.file_path) {
+                        window.open(`http://localhost:3005${doc.file_path}`, "_blank");
+                    } else {
+                        alert(`File path not available for "${doc.file_name}"`);
+                    }
+                });
+
+                container.appendChild(row);
+
+            });
+
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function findTitleProposal(proposals, titleId) {
+            if (titleId === null || titleId === undefined || titleId === "") {
+                return null;
+            }
+
+            return (proposals || []).find(item =>
+                String(item.id) === String(titleId)
+            ) || null;
+        }
+
+        function getApprovedTitleLabel(proposals, titleId) {
+            const match = findTitleProposal(proposals, titleId);
+            return match
+                ? (match.title || match.proposed_title || "Untitled proposal")
+                : "No title selected";
+        }
+
+        function parseConceptDetails(raw) {
+            if (!raw) {
+                return null;
+            }
+
+            try {
+                return typeof raw === "string" ? JSON.parse(raw) : raw;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function isOutlineDefense(defenseType) {
+            const value =
+                String(defenseType || "").toLowerCase().trim();
+
+            if(
+                value.includes("concept")
+                && !value.includes("outline")
+            ){
+                return false;
+            }
+
+            if(
+                value.includes("pre-final")
+                || value.includes("prefinal")
+            ){
+                return true;
+            }
+
+            if(value.includes("outline")){
+                return true;
+            }
+
+            if(
+                value.includes("final")
+                && !value.includes("pre")
+            ){
+                return true;
+            }
+
+            return false;
+        }
+
+        function getSystemDocSheetTitle(defenseType) {
+            const value =
+                String(defenseType || "").toLowerCase().trim();
+
+            if(
+                value.includes("pre-final")
+                || value.includes("prefinal")
+            ){
+                return "Pre-Final Defense Evaluation Sheet";
+            }
+
+            if(
+                value.includes("final")
+                && !value.includes("pre")
+            ){
+                return "Final Defense Evaluation Sheet";
+            }
+
+            return "Outline Defense Evaluation Sheet";
+        }
+
+        function getSystemDocSheetShortLabel(defenseType) {
+            const value =
+                String(defenseType || "").toLowerCase().trim();
+
+            if(
+                value.includes("pre-final")
+                || value.includes("prefinal")
+            ){
+                return "Pre-Final defense";
+            }
+
+            if(
+                value.includes("final")
+                && !value.includes("pre")
+            ){
+                return "Final defense";
+            }
+
+            return "Outline defense";
+        }
+
+        function updateOutlineGradingSheetLabels(defenseType) {
+            const section =
+                document.getElementById("outlineGradingSection");
+
+            if(!section){
+                return;
+            }
+
+            const titleEl =
+                section.querySelector(".section-box-header h3");
+
+            if(titleEl){
+                titleEl.innerHTML =
+                    `<i class="fa-solid fa-file-shield"></i> ${getSystemDocSheetTitle(defenseType)}`;
+            }
+        }
+
+        function parseOutlineDetails(raw) {
+            if(!raw){
+                return null;
+            }
+
+            try {
+                return typeof raw === "string"
+                    ? JSON.parse(raw)
+                    : raw;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function buildOutlineDetailsHtml(panelEval, defenseType) {
+            const details =
+                parseOutlineDetails(panelEval.outline_evaluation_details);
+
+            if(!details){
+                return "";
+            }
+
+            const sheetLabel =
+                getSystemDocSheetShortLabel(defenseType);
+
+            let presentersHtml = "";
+
+            (details.presenters || []).forEach((presenter, idx) => {
+                const weighted =
+                    (Number(presenter.disposition_score) * 0.2
+                    + Number(presenter.delivery_score) * 0.8).toFixed(1);
+
+                presentersHtml += `
+                    <p class="panel-receipt-line">
+                        Student ${idx + 1} (${escapeHtml(presenter.fullname)}):
+                        Disposition ${escapeHtml(presenter.disposition_score)},
+                        Delivery ${escapeHtml(presenter.delivery_score)}
+                        &mdash; Weighted ${escapeHtml(weighted)}
+                    </p>
+                `;
+            });
+
+            const groupTotal =
+                (
+                    (Number(details.system_score) + Number(details.documentation_score))
+                    / 2
+                ).toFixed(1);
+
+            return `
+                <div class="panel-outline-details">
+                    <p class="panel-receipt-line" style="font-weight:700;color:var(--primary);margin-top:10px;">
+                        <i class="fa-solid fa-file-shield"></i>
+                        ${escapeHtml(sheetLabel)} evaluation sheet
+                    </p>
+                    ${presentersHtml}
+                    <p class="panel-receipt-line">
+                        <strong>System (50%):</strong>
+                        ${escapeHtml(details.system_score)}
+                    </p>
+                    <p class="panel-receipt-line">
+                        <strong>Documentation (50%):</strong>
+                        ${escapeHtml(details.documentation_score)}
+                    </p>
+                    <p class="panel-receipt-line">
+                        <strong>Group average:</strong>
+                        ${escapeHtml(groupTotal)}
+                        (GPA: ${escapeHtml(convert100ToGpa(groupTotal))})
+                    </p>
+                </div>
+            `;
+        }
+
+        function requiresTitleSelection(defenseType) {
+            return isProposedTitleDefense(defenseType) || isConceptDefense(defenseType);
+        }
+
+        function getPanelEvalSignatureDetails(panelEval) {
+
+            const conceptDetails =
+                parseConceptDetails(panelEval.concept_evaluation_details);
+
+            if(conceptDetails?.signature_attached){
+                if (!conceptDetails.signature_image_path && panelEval.panelist_signature) {
+                    conceptDetails.signature_image_path = panelEval.panelist_signature;
+                }
+                return conceptDetails;
+            }
+
+            const outlineDetails =
+                parseOutlineDetails(panelEval.outline_evaluation_details);
+
+            if(outlineDetails?.signature_attached){
+                if (!outlineDetails.signature_image_path && panelEval.panelist_signature) {
+                    outlineDetails.signature_image_path = panelEval.panelist_signature;
+                }
+                return outlineDetails;
+            }
+
+            return null;
+
+        }
+
+        function buildPanelSignatureHtml(details) {
+
+            if(!details || !details.signature_attached){
+                return `<p class="panel-receipt-line" style="color:var(--text-muted);font-style:italic;">No e-signature attached</p>`;
+            }
+
+            const name =
+                escapeHtml(details.evaluated_by || "Panelist");
+
+            const imageHtml =
+                details.signature_image_path
+                ? `<img src="http://localhost:3005${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:8px 0;background:transparent;">`
+                : "";
+
+            return `
+                <p class="panel-receipt-line" style="color:#10B981;font-weight:600;">
+                    <i class="fa-solid fa-circle-check"></i> E-Signed: ${name}
+                </p>
+                ${imageHtml}
+            `;
+
+        }
+
+        function buildConceptDetailsHtml(panelEval, proposals) {
+            const details = parseConceptDetails(panelEval.concept_evaluation_details);
+
+            if (!details) {
+                return "";
+            }
+
+            let presentersHtml = "";
+
+            (details.presenters || []).forEach((presenter, idx) => {
+                const weighted =
+                    (Number(presenter.disposition_score) * 0.2
+                    + Number(presenter.delivery_score) * 0.8).toFixed(1);
+
+                presentersHtml += `
+                    <p class="panel-receipt-line">
+                        Student ${idx + 1} (${escapeHtml(presenter.fullname)}):
+                        Disposition ${escapeHtml(presenter.disposition_score)},
+                        Delivery ${escapeHtml(presenter.delivery_score)}
+                        (Weighted: ${escapeHtml(weighted)})
+                    </p>
+                `;
+            });
+
+            return `
+                <div class="panel-receipt-block">
+                    <p class="panel-receipt-label">Concept presentation sheet</p>
+                    ${presentersHtml}
+                    <p class="panel-receipt-line">
+                        <strong>Group concept papers:</strong>
+                        ${escapeHtml(details.group_score)}
+                        (GPA: ${escapeHtml(convert100ToGpa(details.group_score))})
+                    </p>
+                </div>
+            `;
+        }
+
+        function getPanelChosenTitleLabel(schedule, panelEval) {
+            const proposals = schedule.title_proposals || [];
+            if (isConceptDefense(schedule.defense_type)) {
+                const details = parseConceptDetails(panelEval.concept_evaluation_details);
+                if (details?.selected_title_text) {
+                    return details.selected_title_text;
+                }
+            }
+            return getApprovedTitleLabel(proposals, panelEval.approved_title_id);
+        }
+
+        function buildPanelReceiptCardHtml(schedule, panelEval, index) {
+            const proposals = schedule.title_proposals || [];
+            const chosenTitle = getPanelChosenTitleLabel(schedule, panelEval);
+            const showTitle =
+                isConceptDefense(schedule.defense_type) || panelEval.approved_title_id;
+
+            const titleBlock = showTitle && chosenTitle
+                ? `<p class="panel-receipt-line"><strong>Title selected:</strong> ${escapeHtml(chosenTitle)}</p>`
+                : "";
+
+            const conceptBlock = isConceptDefense(schedule.defense_type)
+                ? buildConceptDetailsHtml(panelEval, proposals)
+                : "";
+
+            const outlineBlock = isOutlineDefense(schedule.defense_type)
+                ? buildOutlineDetailsHtml(panelEval, schedule.defense_type)
+                : "";
+
+            const signatureDetails =
+                getPanelEvalSignatureDetails(panelEval);
+
+            const signatureHtml =
+                buildPanelSignatureHtml(signatureDetails);
+
+            return `
+                <div class="panel-receipt-card">
+                    <div class="panel-receipt-card-head">
+                        <span class="panel-receipt-index">Panelist ${index + 1}</span>
+                        <span class="panel-outcome-badge ${getOutcomeClass(panelEval.panel_result)}">${escapeHtml(panelEval.panel_result)}</span>
+                    </div>
+                    <h4 class="panel-receipt-name">${escapeHtml(panelEval.panelist_name)}</h4>
+                    <p class="panel-receipt-meta">${escapeHtml(panelEval.panelist_position || "Panelist")}</p>
+                    ${titleBlock}
+                    <p class="panel-receipt-line"><strong>Score:</strong> ${escapeHtml(String(panelEval.score ?? "N/A"))}</p>
+                    <p class="panel-receipt-line"><strong>Comments:</strong> ${escapeHtml(panelEval.comments || "None")}</p>
+                    <p class="panel-receipt-line"><strong>Recommendations:</strong> ${escapeHtml(panelEval.recommendations || "None")}</p>
+                    ${conceptBlock}
+                    ${outlineBlock}
+                    <div class="panel-receipt-signature-block">
+                        ${signatureHtml}
+                        <div class="panel-receipt-signature-line"></div>
+                        <p class="panel-receipt-signature-caption">Signature over Printed Name of Panelist</p>
+                        <p class="panel-receipt-signature-name">${escapeHtml(panelEval.panelist_name)}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderModalPanelEvaluations(schedule, panelEvals) {
+            const panelEvalBox = document.getElementById("modalAllPanelEvaluationsBox");
+            const panelEvalSummary = document.getElementById("modalAllPanelEvaluations");
+            const panelEvalProgress = document.getElementById("modalPanelEvalProgress");
+            const printBtn = document.getElementById("modalPrintReceiptBtn");
+
+            const evalRequired =
+                Number(schedule.evaluations_required || panelEvals.length || 0);
+
+            const evalSubmitted =
+                Number(schedule.evaluations_submitted || panelEvals.length || 0);
+
+            if (panelEvalProgress) {
+                panelEvalProgress.innerText = `${evalSubmitted}/${evalRequired}`;
+            }
+
+            if (!panelEvalBox || !panelEvalSummary) {
+                return;
+            }
+
+            if (panelEvals.length === 0) {
+                panelEvalBox.style.display = "none";
+                panelEvalSummary.innerHTML = "";
+                if (printBtn) {
+                    printBtn.style.display = "none";
+                }
+                return;
+            }
+
+            panelEvalBox.style.display = "block";
+            panelEvalSummary.innerHTML = panelEvals.map((item, index) =>
+                buildPanelReceiptCardHtml(schedule, item, index)
+            ).join("");
+
+            if (printBtn) {
+                printBtn.style.display = "inline-flex";
+            }
+        }
+
+        function buildPanelPrintDocumentHtml(schedule, panelEvals) {
+            const programText =
+                schedule.group_program === "IS"
+                ? "BSIS"
+                : schedule.group_program === "IT"
+                ? "BSIT"
+                : (schedule.group_program || "N/A");
+
+            const cardsHtml = panelEvals.map((item, index) =>
+                buildPanelReceiptCardHtml(schedule, item, index)
+            ).join("");
+
+            return `
+                <div class="panel-print-document">
+                    <div class="panel-print-header">
+                        <h1>Institute of Computing</h1>
+                        <h2>Panel Evaluation Receipts</h2>
+                        <p>${escapeHtml(schedule.group_name)} • ${escapeHtml(schedule.defense_type || "Defense")}</p>
+                    </div>
+                    <div class="panel-print-meta">
+                        <p><strong>Schedule:</strong> ${escapeHtml(schedule.schedule_code)}</p>
+                        <p><strong>Date:</strong> ${escapeHtml(formatDate(schedule.defense_date))}</p>
+                        <p><strong>Program:</strong> ${escapeHtml(programText)}</p>
+                        <p><strong>Panel evaluations:</strong> ${escapeHtml(String(schedule.evaluations_submitted || panelEvals.length))}/${escapeHtml(String(schedule.evaluations_required || panelEvals.length))}</p>
+                    </div>
+                    ${isConceptDefense(schedule.defense_type)
+                        ? `<p class="panel-print-note">Concept presentation — each panelist selects one preferred title (of three). Individual choices are shown on each receipt below.</p>`
+                        : ""}
+                    ${cardsHtml}
+                </div>
+            `;
+        }
+
+        function printPanelEvaluationsReceipt() {
+            const schedule = defenseSchedules.find(item =>
+                Number(item.id) === Number(activeDefenseScheduleId)
+            );
+
+            if (!schedule) {
+                return;
+            }
+
+            const panelEvals = schedule.panel_evaluations || [];
+
+            if (panelEvals.length === 0) {
+                alert("No panel evaluations to print yet.");
+                return;
+            }
+
+            const host = document.getElementById("panelReceiptPrintHost");
+            host.innerHTML = buildPanelPrintDocumentHtml(schedule, panelEvals);
+            host.setAttribute("aria-hidden", "false");
+            window.print();
+
+            setTimeout(() => {
+                host.innerHTML = "";
+                host.setAttribute("aria-hidden", "true");
+            }, 500);
+        }
+
+        async function openDefenseModal(scheduleId){
+
+            const schedule =
+                defenseSchedules.find(item =>
+                    Number(item.id) === Number(scheduleId)
+                );
+
+            if(!schedule){
+                return;
+            }
+
+            activeDefenseScheduleId = scheduleId;
+
+            const programText =
+                schedule.group_program === "IS"
+                ? "BSIS"
+                : schedule.group_program === "IT"
+                ? "BSIT"
+                : "Not Set";
+
+            const typePill =
+                document.getElementById("modalTypePill");
+
+            typePill.textContent =
+                schedule.defense_type || "Defense";
+
+            typePill.className =
+                `defense-type-pill ${getDefenseTypeClass(schedule.defense_type)}`;
+
+            document.getElementById("modalGroupName").innerText =
+                schedule.group_name || "Group Details";
+
+            document.getElementById("modalScheduleCode").innerText =
+                schedule.schedule_code || "No Schedule Code";
+
+            document.getElementById("modalDefenseType").innerText =
+                schedule.defense_type || "Defense";
+
+            document.getElementById("modalStatus").innerText =
+                schedule.defense_status || "Scheduled";
+
+            document.getElementById("modalDate").innerText =
+                formatDate(schedule.defense_date);
+
+            document.getElementById("modalTime").innerText =
+                `${formatTime(schedule.start_time)} – ${formatTime(schedule.end_time)}`;
+
+            document.getElementById("modalRoom").innerText =
+                schedule.room_name || "Not Set";
+
+            document.getElementById("modalProgram").innerText =
+                programText;
+
+            document.getElementById("modalProjectTitle").innerText =
+                schedule.project_title || "Not Set";
+
+            document.getElementById("modalNotes").innerText =
+                schedule.notes || "No notes provided.";
+
+            renderModalPanelists(schedule.panelists || []);
+            renderModalMembers(schedule.members || []);
+
+            const titleBox =
+                document.getElementById("modalTitleProposalsBox");
+
+            if(showsTitleProposals(schedule.defense_type)){
+
+                titleBox.style.display =
+                    "block";
+
+                renderTitleProposals(
+                    document.getElementById("modalTitleProposals"),
+                    schedule.title_proposals || [],
+                    false
+                );
+
+            }else{
+
+                titleBox.style.display =
+                    "none";
+
+            }
+
+            const modalDocumentsBox =
+                document.getElementById("modalDefenseDocumentsBox");
+
+            const hideViewDocuments =
+                isProposedTitleDefense(schedule.defense_type)
+                && !isConceptDefense(schedule.defense_type);
+
+            if(hideViewDocuments){
+
+                modalDocumentsBox.style.display = "none";
+
+            }else{
+
+                modalDocumentsBox.style.display = "block";
+
+                renderDefenseDocuments(
+                    document.getElementById("modalDefenseDocuments"),
+                    schedule.documents || [],
+                    schedule.defense_type
+                );
+
+            }
+
+            try {
+                const panelRes = await fetch(
+                    `http://localhost:3005/defense-panel-evaluations/${scheduleId}`
+                );
+                const panelData = await panelRes.json();
+
+                if (panelData.success) {
+                    schedule.panel_evaluations = panelData.panel_evaluations || [];
+                    schedule.evaluations_required = panelData.evaluations_required;
+                    schedule.evaluations_submitted = panelData.evaluations_submitted;
+                    schedule.evaluations_complete = panelData.evaluations_complete;
+
+                    if (panelData.panel_result) {
+                        schedule.panel_result = panelData.panel_result;
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to refresh panel evaluations:", error);
+            }
+
+            renderModalPanelEvaluations(
+                schedule,
+                schedule.panel_evaluations || []
+            );
+
+            const evalSummary =
+                document.getElementById("modalEvaluationSummary");
+
+            const evalContent =
+                document.getElementById("modalEvaluationContent");
+
+            if(schedule.evaluation){
+
+                evalSummary.style.display =
+                    "block";
+
+                let approvedTitleHtml =
+                    "";
+
+                if(schedule.evaluation.approved_title_id){
+
+                    approvedTitleHtml =
+                        `<p><strong>Your chosen title:</strong> ${escapeHtml(getApprovedTitleLabel(schedule.title_proposals, schedule.evaluation.approved_title_id))}</p>`;
+
+                }
+
+                let conceptDetailsHtml = "";
+                if (schedule.evaluation.concept_evaluation_details) {
+                    try {
+                        let details = typeof schedule.evaluation.concept_evaluation_details === 'string'
+                            ? JSON.parse(schedule.evaluation.concept_evaluation_details)
+                            : schedule.evaluation.concept_evaluation_details;
+                        
+                        let presentersHtml = "";
+                        (details.presenters || []).forEach((p, idx) => {
+                            let dispGpa = convert100ToGpa(p.disposition_score);
+                            let delGpa = convert100ToGpa(p.delivery_score);
+                            let indScore = (p.disposition_score * 0.2 + p.delivery_score * 0.8).toFixed(2);
+                            let indGpa = convert100ToGpa(indScore);
+                            presentersHtml += `
+                                <div style="padding: 10px; border-bottom: 1px dashed var(--border-color); font-size: 0.85rem; line-height: 1.5; color: var(--text-main);">
+                                    <strong style="color: var(--primary);">Student ${idx + 1}: ${p.fullname} (${p.role})</strong><br/>
+                                    • Disposition (20%): <strong>${p.disposition_score}</strong> (GPA: ${dispGpa})<br/>
+                                    • Delivery &amp; Presentation (80%): <strong>${p.delivery_score}</strong> (GPA: ${delGpa})<br/>
+                                    • Individual Weighted Grade: <strong style="color: var(--primary);">${indScore}</strong> (GPA: ${indGpa})
+                                </div>
+                            `;
+                        });
+                        
+                        const chosenTitleLine = details.selected_title_text
+                            ? `<p style="font-size:0.85rem;margin-bottom:10px;"><strong>Your chosen title:</strong> ${escapeHtml(details.selected_title_text)}</p>`
+                            : "";
+
+                        conceptDetailsHtml = `
+                            <div style="margin-top: 15px; border: 1px solid rgba(88, 80, 236, 0.2); border-radius: 8px; padding: 16px; background: linear-gradient(135deg, rgba(88, 80, 236, 0.03), rgba(139, 92, 246, 0.03)); box-shadow: inset 0 0 10px rgba(0,0,0,0.01);">
+                                <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+                                    <i class="fa-solid fa-square-poll-horizontal"></i> Concept presentation grading sheet breakdown
+                                </h4>
+                                ${chosenTitleLine}
+                                ${presentersHtml}
+                                <div style="padding: 10px 10px 5px 10px; font-size: 0.85rem; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); color: var(--text-main);">
+                                    <strong>Group Concept Papers Grade (100%):</strong>
+                                    <strong>${details.group_score} (GPA: ${convert100ToGpa(details.group_score)})</strong>
+                                </div>
+                                <div style="padding: 10px 10px 0 10px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="color: var(--text-main);">Signature Status:</strong>
+                                    ${details.signature_attached ? '<span style="color: #10B981; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-circle-check"></i> E-Signed ✓</span>' : '<span style="color: var(--warning); font-weight: 600;">Not Signed</span>'}
+                                </div>
+                            </div>
+                        `;
+                    } catch(e) {
+                        console.error("Error rendering evaluation receipt:", e);
+                    }
+                }
+
+                evalContent.innerHTML =
+                    `
+                        <p><strong>Result:</strong> <span class="outcome-pill ${getOutcomeClass(schedule.panel_result)}">${schedule.panel_result}</span></p>
+                        <p><strong>Score:</strong> ${schedule.evaluation.score || "N/A"}</p>
+                        ${approvedTitleHtml}
+                        <p><strong>Comments:</strong> ${schedule.evaluation.comments}</p>
+                        <p><strong>Recommendations:</strong> ${schedule.evaluation.recommendations}</p>
+                        ${conceptDetailsHtml}
+                    `;
+
+            }else{
+
+                evalSummary.style.display =
+                    "none";
+
+                evalContent.innerHTML =
+                    "";
+
+            }
+
+            const evaluateModalBtn = document.getElementById("modalEvaluateBtn");
+            if (schedule.defense_status === "Completed" || schedule.defense_status === "Cancelled") {
+                evaluateModalBtn.style.display = "none";
+            } else {
+                evaluateModalBtn.style.display = "block";
+                evaluateModalBtn.onclick = () => {
+                    closeDefenseModal();
+                    openEvaluationModal(schedule.id);
+                };
+            }
+
+            document.getElementById("defenseModal").style.display =
+                "flex";
+
+        }
+
+        function renderModalPanelists(panelistList){
+
+            const container =
+                document.getElementById("modalPanelists");
+
+            container.innerHTML = "";
+
+            if(panelistList.length === 0){
+
+                container.innerHTML =
+                    `<p class="empty-text">No panelists found.</p>`;
+
+                return;
+
+            }
+
+            panelistList.forEach(panelist => {
+
+                container.innerHTML +=
+                    `
+                        <div class="person-row">
+                            <div class="person-avatar">
+                                ${(panelist.fullname || "P").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h4>${panelist.fullname || "Panelist"}</h4>
+                                <p>${panelist.user_id || "No ID"} • ${panelist.position || "Panelist"}</p>
+                            </div>
+                        </div>
+                    `;
+
+            });
+
+        }
+
+        function renderModalMembers(memberList){
+
+            const container =
+                document.getElementById("modalMembers");
+
+            container.innerHTML = "";
+
+            if(memberList.length === 0){
+
+                container.innerHTML =
+                    `<p class="empty-text">No members found.</p>`;
+
+                return;
+
+            }
+
+            memberList.forEach(member => {
+
+                container.innerHTML +=
+                    `
+                        <div class="person-row">
+                            <div class="person-avatar student-avatar">
+                                ${(member.fullname || "S").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h4>${member.fullname || "Student"}</h4>
+                                <p>${member.user_id || "No ID"} • ${member.member_position || "Member"}</p>
+                            </div>
+                        </div>
+                    `;
+
+            });
+
+        }
+
+        function convert100ToGpa(score) {
+            score = parseFloat(score);
+            if (isNaN(score) || score < 0) return "--";
+            if (score >= 97) return "1.00";
+            if (score >= 94) return "1.25";
+            if (score >= 91) return "1.50";
+            if (score >= 88) return "1.75";
+            if (score >= 85) return "2.00";
+            if (score >= 82) return "2.25";
+            if (score >= 79) return "2.50";
+            if (score >= 76) return "2.75";
+            if (score === 75) return "3.00";
+            return "5.00"; // Failed
+        }
+
+        window.isSignatureAttached = false;
+
+        function toggleESignature() {
+
+            if(!window.isSignatureAttached){
+
+                if(!window.savedPanelistSignature){
+
+                    alert(
+                        "Please upload your digital signature in Settings first, then attach it here."
+                    );
+
+                    return;
+
+                }
+
+                window.isSignatureAttached = true;
+                window.attachedSignaturePath =
+                    window.savedPanelistSignature;
+
+            }else{
+
+                window.isSignatureAttached = false;
+                window.attachedSignaturePath = null;
+
+            }
+
+            updateSignatureUI();
+
+        }
+
+        function updateSignatureUI() {
+
+            const statusEl = document.getElementById("signatureStatus");
+            const btnEl = document.getElementById("attachSigBtn");
+
+            if(!statusEl || !btnEl){
+                return;
+            }
+
+            if(window.isSignatureAttached && window.attachedSignaturePath){
+
+                statusEl.innerHTML = `
+                    <span style="color: #10B981; font-weight: 600; display: flex; flex-direction: column; gap: 6px;">
+                        <span><i class="fa-solid fa-circle-check"></i> E-Signature Attached ✓</span>
+                        <img src="http://localhost:3005${window.attachedSignaturePath}" alt="Attached signature" style="max-height: 48px; max-width: 180px; object-fit: contain; background: transparent;">
+                    </span>
+                `;
+
+                btnEl.innerHTML = '<i class="fa-solid fa-signature"></i> <span>Remove Signature</span>';
+                btnEl.style.background = "rgba(16, 185, 129, 0.15)";
+                btnEl.style.color = "#10B981";
+                btnEl.style.border = "1px solid #10B981";
+
+            }else{
+
+                statusEl.innerHTML = 'No signature attached.';
+                btnEl.innerHTML = '<i class="fa-solid fa-pen-nib"></i> <span>Attach E-Signature</span>';
+                btnEl.style.background = "";
+                btnEl.style.color = "";
+                btnEl.style.border = "";
+
+            }
+
+        }
+
+        function buildEvaluationSignaturePayload(){
+
+            return {
+                signature_attached: window.isSignatureAttached || false,
+                signature_image_path: window.isSignatureAttached
+                    ? (window.attachedSignaturePath || null)
+                    : null,
+                evaluated_by: localStorage.getItem("fullname") || "Panelist"
+            };
+
+        }
+
+        function calculateConceptFinalScore() {
+            const inputContainer = document.getElementById("presenterGradingInputs");
+            const breakdownContainer = document.getElementById("calcBreakdownContainer");
+            const overallBadge = document.getElementById("overallCalculatedScoreBadge");
+            const mainScoreInput = document.getElementById("evalScore");
+
+            if (!inputContainer || !breakdownContainer || !overallBadge) return;
+
+            const disps = Array.from(document.querySelectorAll(".presenter-disposition"));
+            const dels = Array.from(document.querySelectorAll(".presenter-delivery"));
+
+            let presentersResults = [];
+            let totalCombinedScore = 0;
+            let count = 0;
+
+            const groupScoreVal = parseFloat(document.getElementById("groupPaperScore").value);
+            const groupGpa = isNaN(groupScoreVal) ? "--" : convert100ToGpa(groupScoreVal);
+            document.getElementById("groupPaperGpa").textContent = isNaN(groupScoreVal) ? "--" : `GPA: ${groupGpa}`;
+
+            disps.forEach((dispInput, idx) => {
+                const delInput = dels[idx];
+                if (!delInput) return;
+
+                const fullname = dispInput.dataset.name;
+                const role = dispInput.dataset.role;
+
+                const dispVal = parseFloat(dispInput.value);
+                const delVal = parseFloat(delInput.value);
+
+                if (isNaN(dispVal) || isNaN(delVal)) {
+                    presentersResults.push({
+                        fullname,
+                        role,
+                        individualScore: null,
+                        combinedScore: null
+                    });
+                    return;
+                }
+
+                const individualScore = dispVal * 0.20 + delVal * 0.80;
+                let combinedScore = individualScore;
+
+                if (!isNaN(groupScoreVal)) {
+                    combinedScore = individualScore * 0.50 + groupScoreVal * 0.50;
+                }
+
+                totalCombinedScore += combinedScore;
+                count++;
+
+                presentersResults.push({
+                    fullname,
+                    role,
+                    individualScore,
+                    combinedScore
+                });
+            });
+
+            breakdownContainer.innerHTML = "";
+            presentersResults.forEach((p, idx) => {
+                if (p.individualScore === null) {
+                    breakdownContainer.innerHTML += `
+                        <div style="display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.8rem; padding: 4px 0;">
+                            <span>Student ${idx + 1}: ${p.fullname} (${p.role})</span>
+                            <span>Pending scores</span>
+                        </div>
+                    `;
+                } else {
+                    const indGpa = convert100ToGpa(p.individualScore);
+                    const combGpa = convert100ToGpa(p.combinedScore);
+                    breakdownContainer.innerHTML += `
+                        <div style="padding: 6px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; line-height: 1.4; margin-bottom: 6px;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 500; color: var(--text-main);">
+                                <span>Student ${idx + 1}: ${p.fullname} (${p.role})</span>
+                                <span style="color: var(--primary);">Final GPA: ${combGpa}</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 12px; margin-top: 2px;">
+                                <span>Individual Weighted: ${p.individualScore.toFixed(1)} (${indGpa})</span>
+                                <span>Combined (Ind 50% + Group 50%): ${p.combinedScore.toFixed(1)}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (count > 0 && count === disps.length && !isNaN(groupScoreVal)) {
+                const averageScore = totalCombinedScore / count;
+                const finalGpa = convert100ToGpa(averageScore);
+                overallBadge.textContent = finalGpa;
+                mainScoreInput.value = finalGpa;
+            } else {
+                overallBadge.textContent = "--";
+                mainScoreInput.value = "";
+            }
+        }
+
+        function calculateOutlineFinalScore() {
+            const breakdownContainer = document.getElementById("outlineBreakdownContainer");
+            const overallBadge = document.getElementById("outlineOverallScoreBadge");
+            const mainScoreInput = document.getElementById("evalScore");
+
+            if (!breakdownContainer || !overallBadge) return;
+
+            const disps = Array.from(document.querySelectorAll(".outline-presenter-disposition"));
+            const dels = Array.from(document.querySelectorAll(".outline-presenter-delivery"));
+
+            const systemScoreVal = parseFloat(document.getElementById("outlineSystemScore").value);
+            const docScoreVal = parseFloat(document.getElementById("outlineDocScore").value);
+
+            const groupTotal = (!isNaN(systemScoreVal) && !isNaN(docScoreVal))
+                ? (systemScoreVal + docScoreVal) / 2
+                : NaN;
+
+            const groupGpa = isNaN(groupTotal) ? "--" : convert100ToGpa(groupTotal);
+            document.getElementById("outlineGroupGpa").textContent = isNaN(groupTotal) ? "--" : `GPA: ${groupGpa}`;
+
+            let presentersResults = [];
+            let totalCombinedScore = 0;
+            let count = 0;
+
+            disps.forEach((dispInput, idx) => {
+                const delInput = dels[idx];
+                if (!delInput) return;
+
+                const fullname = dispInput.dataset.name;
+                const role = dispInput.dataset.role;
+                const dispVal = parseFloat(dispInput.value);
+                const delVal = parseFloat(delInput.value);
+
+                if (isNaN(dispVal) || isNaN(delVal)) {
+                    presentersResults.push({ fullname, role, individualScore: null, combinedScore: null });
+                    return;
+                }
+
+                const individualScore = dispVal * 0.20 + delVal * 0.80;
+                let combinedScore = individualScore;
+
+                if (!isNaN(groupTotal)) {
+                    combinedScore = individualScore * 0.50 + groupTotal * 0.50;
+                }
+
+                totalCombinedScore += combinedScore;
+                count++;
+
+                presentersResults.push({ fullname, role, individualScore, combinedScore });
+            });
+
+            breakdownContainer.innerHTML = "";
+            presentersResults.forEach((p, idx) => {
+                if (p.individualScore === null) {
+                    breakdownContainer.innerHTML += `
+                        <div style="display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.8rem; padding: 4px 0;">
+                            <span>Student ${idx + 1}: ${p.fullname} (${p.role})</span>
+                            <span>Pending scores</span>
+                        </div>
+                    `;
+                } else {
+                    const indGpa = convert100ToGpa(p.individualScore);
+                    const combGpa = convert100ToGpa(p.combinedScore);
+                    breakdownContainer.innerHTML += `
+                        <div style="padding: 6px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; line-height: 1.4; margin-bottom: 6px;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 500; color: var(--text-main);">
+                                <span>Student ${idx + 1}: ${p.fullname} (${p.role})</span>
+                                <span style="color: var(--primary);">Final GPA: ${combGpa}</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 12px; margin-top: 2px;">
+                                <span>Individual Weighted: ${p.individualScore.toFixed(1)} (${indGpa})</span>
+                                <span>Combined (Ind 50% + Group 50%): ${p.combinedScore.toFixed(1)}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (count > 0 && count === disps.length && !isNaN(groupTotal)) {
+                const averageScore = totalCombinedScore / count;
+                const finalGpa = convert100ToGpa(averageScore);
+                overallBadge.textContent = finalGpa;
+                mainScoreInput.value = finalGpa;
+            } else {
+                overallBadge.textContent = "--";
+                mainScoreInput.value = "";
+            }
+        }
+
+        function closeDefenseModal(){
+
+            document.getElementById("defenseModal").style.display =
+                "none";
+
+        }
+
+        function openEvaluationModal(scheduleId){
+
+            const schedule =
+                defenseSchedules.find(item =>
+                    Number(item.id) === Number(scheduleId)
+                );
+
+            if(!schedule){
+                return;
+            }
+
+            activeEvaluationId =
+                schedule.id;
+
+            const typePill =
+                document.getElementById("evalTypePill");
+
+            typePill.textContent =
+                schedule.defense_type || "Defense";
+
+            typePill.className =
+                `defense-type-pill ${getDefenseTypeClass(schedule.defense_type)}`;
+
+            document.getElementById("evalGroupName").innerText =
+                `Evaluate: ${schedule.group_name || "Group"}`;
+
+            document.getElementById("evalScheduleCode").innerText =
+                `${schedule.schedule_code || "DEF"} • ${schedule.defense_type || "Defense"}`;
+
+            const titleSection =
+                document.getElementById("titleApprovalSection");
+
+            const titleError =
+                document.getElementById("titleApprovalError");
+
+            titleError.style.display =
+                "none";
+
+            const titleHeading =
+                document.getElementById("titleApprovalHeading");
+
+            const titleHint =
+                document.getElementById("titleApprovalHint");
+
+            if(requiresTitleSelection(schedule.defense_type)){
+
+                titleSection.style.display = "block";
+
+                if(isConceptDefense(schedule.defense_type)){
+                    titleHeading.innerHTML =
+                        `<i class="fa-solid fa-list-check"></i> Preferred Capstone Title (choose 1 of 3)`;
+                    titleHint.innerHTML =
+                        `After the concept presentation, select the <strong>one title</strong> you recommend. Each panelist may choose differently; your choice is saved on your evaluation and panel receipt.`;
+                }else{
+                    titleHeading.innerHTML =
+                        `<i class="fa-solid fa-list-check"></i> Approve One Proposed Title`;
+                    titleHint.innerHTML =
+                        `View all three submitted titles. You may approve <strong>only one</strong> title for this group.`;
+                }
+
+                renderTitleProposals(
+                    document.getElementById("titleApprovalList"),
+                    schedule.title_proposals || [],
+                    true
+                );
+
+                const savedId =
+                    schedule.evaluation
+                    ? schedule.evaluation.approved_title_id
+                    : null;
+
+                if(savedId){
+                    const radio =
+                        document.querySelector(`input[name="approvedTitle"][value="${savedId}"]`);
+
+                    if(radio){
+                        radio.checked = true;
+                    }
+                }
+
+            }else{
+
+                titleSection.style.display = "none";
+
+            }
+
+            const defenseDocumentsSection =
+                document.getElementById("defenseDocumentsSection");
+
+            const hideDocumentsOnly =
+                isProposedTitleDefense(schedule.defense_type)
+                && !isConceptDefense(schedule.defense_type);
+
+            if(hideDocumentsOnly){
+
+                defenseDocumentsSection.style.display = "none";
+
+            }else{
+
+                defenseDocumentsSection.style.display = "block";
+
+                renderDefenseDocuments(
+                    document.getElementById("defenseDocumentList"),
+                    schedule.documents || [],
+                    schedule.defense_type
+                );
+
+            }
+
+            // E-Signature Initial State
+            window.isSignatureAttached = false;
+            window.attachedSignaturePath = null;
+            updateSignatureUI();
+
+            const isConcept = String(schedule.defense_type || "").toLowerCase().includes("concept");
+            const isOutline = isOutlineDefense(schedule.defense_type);
+            const conceptSection = document.getElementById("conceptGradingSection");
+            const outlineSection = document.getElementById("outlineGradingSection");
+            const scoreInputGroup = document.getElementById("evalScoreInputGroup");
+            const scoreLabel = document.getElementById("evalScoreLabel");
+            const scoreInput = document.getElementById("evalScore");
+
+            if(isConcept){
+                conceptSection.style.display = "block";
+                outlineSection.style.display = "none";
+                scoreLabel.textContent = "Calculated Team GPA Grade";
+                scoreInput.readOnly = true;
+
+                // Load Presenters Lineup
+                const lineupContainer = document.getElementById("presentersListContainer");
+                const inputsContainer = document.getElementById("presenterGradingInputs");
+
+                lineupContainer.innerHTML = "";
+                inputsContainer.innerHTML = "";
+
+                const members = schedule.members || [];
+                if(members.length === 0){
+                    lineupContainer.innerHTML = `<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> No group members listed for this defense schedule.</span>`;
+                } else {
+                    // Sort members: Leader first, then others
+                    const sortedMembers = [...members].sort((a, b) => {
+                        const aPos = String(a.student_position || a.member_position || "").toLowerCase();
+                        const bPos = String(b.student_position || b.member_position || "").toLowerCase();
+                        if(aPos.includes("leader") || aPos.includes("manager")) return -1;
+                        if(bPos.includes("leader") || bPos.includes("manager")) return 1;
+                        return 0;
+                    });
+
+                    sortedMembers.forEach((member, idx) => {
+                        const isLeader = idx === 0;
+                        const roleLabel = isLeader ? "Project Manager / Leader" : `Member ${idx}`;
+                        
+                        // Lineup visual list
+                        lineupContainer.innerHTML += `
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);">
+                                <span style="font-weight: 500; color: var(--text-main);">Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                <span style="font-size: 0.75rem; background: rgba(88, 80, 236, 0.15); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: 600;">${roleLabel}</span>
+                            </div>
+                        `;
+
+                        // Form Inputs for this student
+                        inputsContainer.innerHTML += `
+                            <div style="margin-bottom: 12px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); box-shadow: inset 0 0 5px rgba(0,0,0,0.02);">
+                                <p style="font-weight: 600; font-size: 0.88rem; margin-bottom: 8px; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 4px;">
+                                    <span>Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${roleLabel}</span>
+                                </p>
+                                <div class="form-grid two-col" style="margin-bottom: 0;">
+                                    <div class="input-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">I. Disposition Score (1-100)</label>
+                                        <input type="number" class="presenter-disposition" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 90" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
+                                    </div>
+                                    <div class="input-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">II. Delivery &amp; Presentation Score (1-100)</label>
+                                        <input type="number" class="presenter-delivery" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 88" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Populate stored concept grading details if available
+                if(schedule.evaluation && schedule.evaluation.concept_evaluation_details){
+                    try {
+                        const details = typeof schedule.evaluation.concept_evaluation_details === 'string'
+                            ? JSON.parse(schedule.evaluation.concept_evaluation_details)
+                            : schedule.evaluation.concept_evaluation_details;
+
+                        (details.presenters || []).forEach(p => {
+                            const dispInput = document.querySelector(`.presenter-disposition[data-id="${p.student_id}"]`);
+                            const delInput = document.querySelector(`.presenter-delivery[data-id="${p.student_id}"]`);
+                            if(dispInput) dispInput.value = p.disposition_score;
+                            if(delInput) delInput.value = p.delivery_score;
+                        });
+
+                        document.getElementById("groupPaperScore").value = details.group_score || "";
+
+                        if(details.signature_attached){
+                            window.isSignatureAttached = true;
+                            window.attachedSignaturePath =
+                                details.signature_image_path
+                                || window.savedPanelistSignature;
+                            updateSignatureUI();
+                        }
+                    } catch(e) {
+                        console.error("Error populating concept grades:", e);
+                    }
+                } else {
+                    document.getElementById("groupPaperScore").value = "";
+                }
+
+                calculateConceptFinalScore();
+
+            } else if(isOutline) {
+                conceptSection.style.display = "none";
+                outlineSection.style.display = "block";
+                updateOutlineGradingSheetLabels(schedule.defense_type);
+                scoreLabel.textContent = "Calculated Team GPA Grade";
+                scoreInput.readOnly = true;
+
+                // Load Presenters Lineup for Outline
+                const outlineLineup = document.getElementById("outlinePresentersListContainer");
+                const outlineInputs = document.getElementById("outlinePresenterGradingInputs");
+
+                outlineLineup.innerHTML = "";
+                outlineInputs.innerHTML = "";
+
+                const members = schedule.members || [];
+                if(members.length === 0){
+                    outlineLineup.innerHTML = `<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> No group members listed.</span>`;
+                } else {
+                    const sortedMembers = [...members].sort((a, b) => {
+                        const aPos = String(a.student_position || a.member_position || "").toLowerCase();
+                        const bPos = String(b.student_position || b.member_position || "").toLowerCase();
+                        if(aPos.includes("leader") || aPos.includes("manager")) return -1;
+                        if(bPos.includes("leader") || bPos.includes("manager")) return 1;
+                        return 0;
+                    });
+
+                    sortedMembers.forEach((member, idx) => {
+                        const roleLabel = idx === 0 ? "Project Manager / Leader" : `Member ${idx}`;
+
+                        outlineLineup.innerHTML += `
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);">
+                                <span style="font-weight: 500; color: var(--text-main);">Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                <span style="font-size: 0.75rem; background: rgba(88, 80, 236, 0.15); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: 600;">${roleLabel}</span>
+                            </div>
+                        `;
+
+                        outlineInputs.innerHTML += `
+                            <div style="margin-bottom: 12px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card);">
+                                <p style="font-weight: 600; font-size: 0.88rem; margin-bottom: 8px; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 4px;">
+                                    <span>Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${roleLabel}</span>
+                                </p>
+                                <div class="form-grid two-col" style="margin-bottom: 0;">
+                                    <div class="input-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">I. Disposition Score (1-100)</label>
+                                        <input type="number" class="outline-presenter-disposition" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 90" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
+                                    </div>
+                                    <div class="input-group" style="margin-bottom: 0;">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">II. Delivery &amp; Presentation Score (1-100)</label>
+                                        <input type="number" class="outline-presenter-delivery" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 88" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Populate stored outline grading details if available
+                document.getElementById("outlineSystemScore").value = "";
+                document.getElementById("outlineDocScore").value = "";
+                if(schedule.evaluation && schedule.evaluation.outline_evaluation_details){
+                    try {
+                        const details = typeof schedule.evaluation.outline_evaluation_details === 'string'
+                            ? JSON.parse(schedule.evaluation.outline_evaluation_details)
+                            : schedule.evaluation.outline_evaluation_details;
+
+                        (details.presenters || []).forEach(p => {
+                            const dispInput = document.querySelector(`.outline-presenter-disposition[data-id="${p.student_id}"]`);
+                            const delInput = document.querySelector(`.outline-presenter-delivery[data-id="${p.student_id}"]`);
+                            if(dispInput) dispInput.value = p.disposition_score;
+                            if(delInput) delInput.value = p.delivery_score;
+                        });
+
+                        document.getElementById("outlineSystemScore").value = details.system_score || "";
+                        document.getElementById("outlineDocScore").value = details.documentation_score || "";
+
+                        if(details.signature_attached){
+                            window.isSignatureAttached = true;
+                            window.attachedSignaturePath =
+                                details.signature_image_path
+                                || window.savedPanelistSignature;
+                            updateSignatureUI();
+                        }
+                    } catch(e) {
+                        console.error("Error populating outline grades:", e);
+                    }
+                }
+
+                calculateOutlineFinalScore();
+
+            } else {
+                conceptSection.style.display = "none";
+                outlineSection.style.display = "none";
+                scoreLabel.textContent = "Score / Grade";
+                scoreInput.readOnly = false;
+                scoreInput.value = schedule.evaluation ? schedule.evaluation.score || "" : "";
+            }
+
+            document.getElementById("evalStatus").value =
+                schedule.panel_result && schedule.panel_result !== "Pending"
+                ? schedule.panel_result
+                : "";
+
+            document.getElementById("evalComments").value =
+                schedule.evaluation
+                ? schedule.evaluation.comments || ""
+                : "";
+
+            document.getElementById("evalRecommendations").value =
+                schedule.evaluation
+                ? schedule.evaluation.recommendations || ""
+                : "";
+
+            document.getElementById("evaluationModal").style.display =
+                "flex";
+
+        }
+
+        function closeEvaluationModal(){
+
+            document.getElementById("evaluationModal").style.display =
+                "none";
+
+            activeEvaluationId =
+                null;
+
+        }
+
+        async function submitEvaluationUI(event){
+
+            event.preventDefault();
+
+            const schedule =
+                defenseSchedules.find(item =>
+                    Number(item.id) === Number(activeEvaluationId)
+                );
+
+            if(!schedule){
+                return;
+            }
+
+            const status =
+                document.getElementById("evalStatus").value;
+            const isScoreOptional = status === "Conditional Passed" || status === "Conditional Pass" || status === "For Re-Defense";
+
+            if(!isScoreOptional && !window.isSignatureAttached){
+                alert("Please attach your e-signature before submitting the evaluation.");
+                return;
+            }
+
+            const isConcept = String(schedule.defense_type || "").toLowerCase().includes("concept");
+            const isOutline = isOutlineDefense(schedule.defense_type);
+            let conceptDetails = null;
+            let outlineDetails = null;
+
+            if (isConcept) {
+                const disps = Array.from(document.querySelectorAll(".presenter-disposition"));
+                const dels = Array.from(document.querySelectorAll(".presenter-delivery"));
+                const groupScoreVal = parseFloat(document.getElementById("groupPaperScore").value);
+
+                if (!isScoreOptional && isNaN(groupScoreVal)) {
+                    alert("Please enter the group Concept Papers score.");
+                    return;
+                }
+
+                let presenters = [];
+                let hasIncomplete = false;
+
+                disps.forEach((dispInput, idx) => {
+                    const delInput = dels[idx];
+                    const dispVal = parseFloat(dispInput.value);
+                    const delVal = parseFloat(delInput.value);
+
+                    if (isNaN(dispVal) || isNaN(delVal)) {
+                        hasIncomplete = true;
+                    }
+
+                    presenters.push({
+                        student_id: dispInput.dataset.id,
+                        fullname: dispInput.dataset.name,
+                        role: dispInput.dataset.role,
+                        disposition_score: isNaN(dispVal) ? null : dispVal,
+                        delivery_score: isNaN(delVal) ? null : delVal
+                    });
+                });
+
+                if (!isScoreOptional && hasIncomplete) {
+                    alert("Please fill in the disposition and delivery scores for all student presenters.");
+                    return;
+                }
+
+                const conceptSig =
+                    buildEvaluationSignaturePayload();
+
+                conceptDetails = {
+                    presenters,
+                    group_score: isNaN(groupScoreVal) ? null : groupScoreVal,
+                    signature_attached: conceptSig.signature_attached,
+                    signature_image_path: conceptSig.signature_image_path,
+                    evaluated_by: conceptSig.evaluated_by
+                };
+
+            } else if (isOutline) {
+                const disps = Array.from(document.querySelectorAll(".outline-presenter-disposition"));
+                const dels = Array.from(document.querySelectorAll(".outline-presenter-delivery"));
+                const systemScoreVal = parseFloat(document.getElementById("outlineSystemScore").value);
+                const docScoreVal = parseFloat(document.getElementById("outlineDocScore").value);
+
+                if (!isScoreOptional && (isNaN(systemScoreVal) || isNaN(docScoreVal))) {
+                    alert("Please enter both the System score and Documentation score for the group.");
+                    return;
+                }
+
+                let presenters = [];
+                let hasIncomplete = false;
+
+                disps.forEach((dispInput, idx) => {
+                    const delInput = dels[idx];
+                    const dispVal = parseFloat(dispInput.value);
+                    const delVal = parseFloat(delInput.value);
+
+                    if (isNaN(dispVal) || isNaN(delVal)) {
+                        hasIncomplete = true;
+                    }
+
+                    presenters.push({
+                        student_id: dispInput.dataset.id,
+                        fullname: dispInput.dataset.name,
+                        role: dispInput.dataset.role,
+                        disposition_score: isNaN(dispVal) ? null : dispVal,
+                        delivery_score: isNaN(delVal) ? null : delVal
+                    });
+                });
+
+                if (!isScoreOptional && hasIncomplete) {
+                    alert("Please fill in the disposition and delivery scores for all student presenters.");
+                    return;
+                }
+
+                const outlineSig =
+                    buildEvaluationSignaturePayload();
+
+                outlineDetails = {
+                    defense_type: schedule.defense_type,
+                    presenters,
+                    system_score: isNaN(systemScoreVal) ? null : systemScoreVal,
+                    documentation_score: isNaN(docScoreVal) ? null : docScoreVal,
+                    group_score: (isNaN(systemScoreVal) || isNaN(docScoreVal)) ? null : ((systemScoreVal + docScoreVal) / 2).toFixed(2),
+                    signature_attached: outlineSig.signature_attached,
+                    signature_image_path: outlineSig.signature_image_path,
+                    evaluated_by: outlineSig.evaluated_by
+                };
+            }
+
+            const score =
+                document.getElementById("evalScore").value.trim();
+
+            if(!isScoreOptional && (isConcept || isOutline) && (!score || score === "--")){
+
+                alert("Please complete the grading sheet. The team GPA grade is calculated automatically from your scores.");
+
+                return;
+
+            }
+
+            const comments =
+                document.getElementById("evalComments").value.trim();
+
+            if ((status === "Conditional Passed" || status === "Conditional Pass" || status === "For Re-Defense") && !comments) {
+                alert(`Comments and feedback are required when the result is "${status}".`);
+                return;
+            }
+
+            const recommendations =
+                document.getElementById("evalRecommendations").value.trim();
+
+            let approvedTitleId =
+                null;
+
+            if(!isScoreOptional && requiresTitleSelection(schedule.defense_type)){
+
+                const selected =
+                    document.querySelector('input[name="approvedTitle"]:checked');
+
+                if(!selected){
+
+                    document.getElementById("titleApprovalError").style.display =
+                        "block";
+
+                    alert(
+                        isConceptDefense(schedule.defense_type)
+                        ? "Please select one preferred title before submitting your concept evaluation."
+                        : "Please select exactly one title to approve."
+                    );
+
+                    return;
+
+                }
+
+                approvedTitleId =
+                    selected.value;
+
+                if(isConcept && conceptDetails){
+                    const chosenProposal =
+                        findTitleProposal(schedule.title_proposals, approvedTitleId);
+
+                    conceptDetails.selected_title_id = approvedTitleId;
+                    conceptDetails.selected_title_text = chosenProposal
+                        ? (chosenProposal.title || chosenProposal.proposed_title)
+                        : "";
+                }
+
+            }
+
+            const payload = {
+                panelistUserId: loggedInUserId,
+                score,
+                panel_result: status,
+                comments,
+                recommendations,
+                approved_title_id: approvedTitleId,
+                concept_evaluation_details: conceptDetails ? JSON.stringify(conceptDetails) : null,
+                outline_evaluation_details: outlineDetails ? JSON.stringify(outlineDetails) : null
+            };
+
+            try {
+                const response = await fetch(`http://localhost:3005/submit-defense-evaluation/${schedule.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const rawText = await response.text();
+
+                let data;
+
+                try {
+                    data = JSON.parse(rawText);
+                } catch (parseError) {
+                    console.error(parseError, rawText);
+                    alert(
+                        "The server did not respond correctly. Restart the server with \"node Server.js\" and try again."
+                    );
+                    return;
+                }
+
+                if (!data.success) {
+                    alert(data.message || "Failed to submit evaluation.");
+                    return;
+                }
+
+                alert(
+                    data.message
+                    || "Evaluation saved successfully."
+                );
+                closeEvaluationModal();
+                await loadAssignedDefenses();
+
+            } catch (error) {
+                console.error(error);
+                alert(
+                    "Network error while submitting evaluation. Make sure the server is running on port 3005."
+                );
+            }
+
+        }
+
+        function formatDate(dateValue){
+
+            if(!dateValue){
+                return "N/A";
+            }
+
+            return new Date(dateValue).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            });
+
+        }
+
+        function formatTime(timeValue){
+
+            if(!timeValue){
+                return "N/A";
+            }
+
+            return String(timeValue).slice(0, 5);
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+        loadPanelistSignature();
+        loadAssignedDefenses();
+
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

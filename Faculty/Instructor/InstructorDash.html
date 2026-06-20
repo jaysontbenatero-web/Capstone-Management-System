@@ -1,0 +1,788 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Instructor Dashboard | CMS
+    </title>
+
+    <!-- GOOGLE FONT -->
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <!-- CSS -->
+
+    <link
+        rel="stylesheet"
+        href="InstructorDash.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <!-- BACKGROUND -->
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    
+
+            <!-- SIDEBAR -->
+<aside class="sidebar admin-sidebar">
+
+    <div>
+
+        <!-- LOGO -->
+        <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Instructor Portal</p>
+                </div>
+            </div>
+
+        <!-- MENU -->
+        <div class="menu">
+
+            <!-- MAIN -->
+            <div class="menu-title">
+                Main
+            </div>
+
+            <div
+                class="menu-item active"
+                id="nav-home"
+                onclick="window.location.href='InstructorDash.html'"
+            >
+                <i class="fa-solid fa-house"></i>
+                <span>
+                    Dashboard
+                </span>
+            </div>
+
+            <!-- MANAGEMENT -->
+            <div class="menu-title">
+                Management
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-enroll"
+                onclick="window.location.href='STU_Enroll.html'"
+            >
+                <i class="fa-solid fa-user-plus"></i>
+                <span>
+                    Register Students
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-adviser"
+                onclick="window.location.href='Manage_Adviser.html'"
+            >
+                <i class="fa-solid fa-user-tie"></i>
+                <span>
+                    Manage Adviser
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-groups"
+                onclick="window.location.href='Capstone_Group.html'"
+            >
+                <i class="fa-solid fa-users-gear"></i>
+                <span>
+                    Capstone Groups
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-document"
+                onclick="window.location.href='Document_Review.html'"
+            >
+                <i class="fa-solid fa-file-circle-check"></i>
+                <span>
+                    Document Review
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-defense"
+                onclick="window.location.href='Defense_Schedule.html'"
+            >
+                <i class="fa-solid fa-calendar-alt"></i>
+                <span>
+                    Schedule Defense
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-consultation"
+                onclick="window.location.href='Consultation.html'"
+            >
+                <i class="fa-solid fa-comments"></i>
+                <span>
+                    Consultation
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-panel-evaluation"
+                onclick="window.location.href='Panel_Evaluation.html'"
+            >
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>
+                    Panel Evaluation
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="menu-item logout-btn" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </div>
+    </div>
+
+    </aside>
+
+    <!-- MAIN -->
+
+    <main class="main admin-main">
+
+        <!-- TOPBAR -->
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Instructor Dashboard</h1>
+
+                <p id="instructorSubtitle">
+                    Loading your instructor dashboard information...
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="dashboardSearch"
+                        placeholder="Search dashboard..."
+                    >
+                </div>
+            </div>
+
+        </div>
+
+       <!-- ROLE ACCESS -->
+
+<div class="role-access-card">
+
+    <!-- TOP -->
+
+    <div class="role-header">
+
+        <div>
+            <h2>
+                Role Access
+            </h2>
+
+            <p>
+                Switch faculty roles and access different functionalities.
+            </p>
+        </div>
+
+        <button
+            class="role-toggle-btn"
+            onclick="toggleRoleGrid()"
+            type="button"
+        >
+            <i class="fa-solid fa-layer-group"></i>
+            Select Role
+            <i
+                class="fa-solid fa-chevron-down"
+                id="roleArrow"
+            ></i>
+        </button>
+
+    </div>
+
+    <!-- ROLE GRID -->
+
+    <div
+    class="role-grid show-role-grid"
+    id="roleGrid"
+>
+
+        <!-- HOME -->
+
+        <div
+            class="role-card"
+            onclick="goHome()"
+        >
+
+            <i class="fa-solid fa-house"></i>
+
+            <span>
+                Home
+            </span>
+
+        </div>
+
+        <!-- ADVISER -->
+
+        <div
+            class="role-card"
+            onclick="openRole('adviser')"
+        >
+
+            <i class="fa-solid fa-user-tie"></i>
+
+            <span>
+                Adviser
+            </span>
+
+        </div>
+
+        <!-- PANELIST -->
+
+        <div
+            class="role-card"
+            onclick="openRole('panelist')"
+        >
+
+            <i class="fa-solid fa-clipboard-check"></i>
+
+            <span>
+                Panelist
+            </span>
+
+        </div>
+
+        <!-- INSTRUCTOR -->
+
+        <div class="role-card active-role-card">
+
+            <i class="fa-solid fa-chalkboard-user"></i>
+
+            <span>
+                Instructor
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+        <!-- DASHBOARD GRID -->
+
+        <div class="dashboard-grid">
+
+            <!-- LEFT -->
+
+            <section class="left-section">
+
+                <!-- STATS -->
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-users"></i>
+
+                        <h2 id="totalStudentsCount">
+                            0
+                        </h2>
+
+                        <p>
+                            Total Students
+                        </p>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-folder-open"></i>
+
+                        <h2 id="pendingReviewsCount">
+                            0
+                        </h2>
+
+                        <p>
+                            Pending Reviews
+                        </p>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-check"></i>
+
+                        <h2 id="approvedDocsCount">
+                            0
+                        </h2>
+
+                        <p>
+                            Approved Documents
+                        </p>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <i class="fa-solid fa-calendar-days"></i>
+
+                        <h2 id="scheduledDefensesCount">
+                            0
+                        </h2>
+
+                        <p>
+                            Scheduled Defenses
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- DOCUMENT REVIEW -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Recent Document Reviews
+                        </h2>
+
+                        <a href="Document_Review.html" class="view-all-btn">View All</a>
+
+                    </div>
+
+                    <div id="recentReviewsContainer">
+                        <!-- Loaded dynamically -->
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- RIGHT -->
+
+            <aside class="right-section">
+
+                <!-- QUICK ACTIONS -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Quick Actions
+                        </h2>
+
+                    </div>
+
+                    <div class="quick-grid">
+
+                        <div class="quick-btn" onclick="window.location.href='STU_Enroll.html'">
+
+                            <i class="fa-solid fa-user-plus"></i>
+
+                            <p>
+                                Add Student
+                            </p>
+
+                        </div>
+
+                        <div class="quick-btn" onclick="window.location.href='Document_Review.html'">
+
+                            <i class="fa-solid fa-file-circle-check"></i>
+
+                            <p>
+                                Review Files
+                            </p>
+
+                        </div>
+
+                        <div class="quick-btn" onclick="window.location.href='#'">
+
+                            <i class="fa-solid fa-bullhorn"></i>
+
+                            <p>
+                                Announcement
+                            </p>
+
+                        </div>
+
+                        <div class="quick-btn" onclick="window.location.href='Defense_Schedule.html'">
+
+                            <i class="fa-solid fa-calendar-days"></i>
+
+                            <p>
+                                Schedule
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- NOTIFICATIONS -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>
+                            Notifications
+                        </h2>
+
+                    </div>
+
+                    <div id="recentNotificationsContainer">
+                        <!-- Loaded dynamically -->
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        function escapeHtml(text) {
+            return String(text || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        async function loadInstructorDashboard() {
+            const userId = localStorage.getItem("userId");
+            if (!userId) {
+                window.location.href = "../../Log-in.html";
+                return;
+            }
+
+            // 1. Fetch Faculty Dashboard Stats and Reviews
+            try {
+                const response = await fetch(`http://localhost:3005/faculty-dashboard/${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const faculty = data.faculty;
+                    document.getElementById("instructorSubtitle").innerText =
+                        `${faculty.fullname || "Faculty"} • ${faculty.user_id || "No ID"} • ${faculty.position || "Faculty"}`;
+
+                    localStorage.setItem("fullname", faculty.fullname || "");
+                    localStorage.setItem("adviser_access", String(faculty.adviser_access || 0));
+                    localStorage.setItem("panelist_access", String(faculty.panelist_access || 0));
+                    localStorage.setItem("instructor_access", String(faculty.instructor_access || 0));
+
+                    // Populate Stats Cards
+                    if (data.stats) {
+                        document.getElementById("totalStudentsCount").innerText = data.stats.totalStudents || 0;
+                        document.getElementById("pendingReviewsCount").innerText = data.stats.pendingReviews || 0;
+                        document.getElementById("approvedDocsCount").innerText = data.stats.repositoryRecords || 0;
+                        document.getElementById("scheduledDefensesCount").innerText = data.stats.scheduledDefenses || 0;
+                    }
+
+                    // Populate Recent Document Reviews
+                    const reviewsContainer = document.getElementById("recentReviewsContainer");
+                    if (reviewsContainer && data.recentDocuments) {
+                        if (data.recentDocuments.length === 0) {
+                            reviewsContainer.innerHTML = `<div class="notification"><p style="color: #7b6f96; padding: 10px;">No document reviews yet.</p></div>`;
+                        } else {
+                            reviewsContainer.innerHTML = data.recentDocuments.map(doc => {
+                                const statusClass = String(doc.review_status || "").toLowerCase().includes("approved") ? "approved" : "pending";
+                                return `
+                                    <div class="review-item" style="cursor: pointer;" onclick="window.location.href='Document_Review.html'">
+                                        <div class="review-icon">
+                                            <i class="fa-solid fa-file-lines"></i>
+                                        </div>
+                                        <div class="review-info">
+                                            <h3>${escapeHtml(doc.document_title)}</h3>
+                                            <p>Submitted by ${escapeHtml(doc.group_name || doc.sender_name)}</p>
+                                        </div>
+                                        <span class="review-status ${statusClass}">
+                                            ${escapeHtml(doc.review_status || "Pending")}
+                                        </span>
+                                    </div>
+                                `;
+                            }).join("");
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading faculty dashboard data:", error);
+            }
+
+            // 2. Fetch Notifications (limit to 5 to match reviews)
+            try {
+                const response = await fetch(`http://localhost:3005/portal-notifications/${encodeURIComponent(userId)}?limit=5`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const notificationsContainer = document.getElementById("recentNotificationsContainer");
+                    if (notificationsContainer && data.notifications) {
+                        if (data.notifications.length === 0) {
+                            notificationsContainer.innerHTML = `<div class="notification"><p style="color: #7b6f96; padding: 10px;">No new notifications.</p></div>`;
+                        } else {
+                            notificationsContainer.innerHTML = data.notifications.map(notif => {
+                                const isWarning = ["Warning", "Alert"].includes(notif.notification_type);
+                                const dotClass = isWarning ? "notif-dot yellow" : "notif-dot";
+                                return `
+                                    <div class="notification" style="cursor: pointer;" onclick="window.location.href='Document_Review.html'">
+                                        <div class="${dotClass}"></div>
+                                        <div>
+                                            <h3>${escapeHtml(notif.notification_title)}</h3>
+                                            <p>${escapeHtml(notif.notification_message)}</p>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join("");
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading notifications:", error);
+            }
+        }
+
+        loadInstructorDashboard();
+
+        /* ================= ROLE DROPDOWN ================= */
+
+function toggleRoles(){
+
+    const dropdown =
+        document.getElementById(
+            "roleDropdown"
+        );
+
+    const arrow =
+        document.getElementById(
+            "roleArrow"
+        );
+
+    dropdown.classList.toggle(
+        "show-roles"
+    );
+
+    arrow.classList.toggle(
+        "rotate-arrow"
+    );
+
+}
+
+/* HOME */
+
+function goHome(){
+
+    const userRole =
+        localStorage.getItem("role");
+
+    if(userRole === "admin"){
+
+        window.location.href =
+            "../../Admin/AdminDash.html";
+
+    }else{
+
+        window.location.href =
+            "../FacultyDash.html";
+
+    }
+
+}
+/* OPEN ROLE */
+
+function openRole(role){
+
+    /* ADVISER */
+
+    if(role === "adviser"){
+
+    const userRole =
+        localStorage.getItem("role");
+
+    const access =
+        localStorage.getItem("adviser_access");
+
+    if(userRole === "admin" || access === "1"){
+
+        window.location.href =
+            "../Adviser/AdviserDash.html";
+
+    }else{
+
+        alert(
+            "No permission for Adviser role."
+        );
+
+    }
+
+}
+
+    /* PANELIST */
+
+    else if(role === "panelist"){
+
+    const userRole =
+        localStorage.getItem("role");
+
+    const access =
+        localStorage.getItem("panelist_access");
+
+    if(userRole === "admin" || access === "1"){
+
+        window.location.href =
+            "../Panelist/PanelistDash.html";
+
+    }else{
+
+        alert(
+            "No permission for Panelist role."
+        );
+
+    }
+
+}
+
+    /* INSTRUCTOR */
+
+    else if(role === "instructor"){
+
+        const access =
+            localStorage.getItem(
+                "instructor_access"
+            );
+
+        if(access === "1"){
+
+            window.location.href =
+                "../Instructor/InstructorDash.html";
+
+        }else{
+
+            alert(
+                "No permission for Instructor role."
+            );
+
+        }
+
+    }
+
+    /* HOME */
+
+    else if(role === "home"){
+
+        window.location.href =
+            "../FacultyDash.html";
+
+    }
+
+}
+
+        /* ================= TOGGLE ROLE GRID ================= */
+
+function toggleRoleGrid(){
+
+    const roleGrid =
+        document.getElementById(
+            "roleGrid"
+        );
+
+    roleGrid.classList.toggle(
+        "show-role-grid"
+    );
+
+}
+
+        /* LOGOUT */
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+    </script>
+
+ <script>
+    const userRole =
+        localStorage.getItem("role");
+
+    const instructorAccess =
+        localStorage.getItem("instructor_access");
+
+    if(userRole !== "admin" && instructorAccess !== "1"){
+
+        alert(
+            "You do not have permission to access this role."
+        );
+
+        if(userRole === "admin"){
+
+            window.location.href =
+                "../../Admin/AdminDash.html";
+
+        }else{
+
+            window.location.href =
+                "../FacultyDash.html";
+
+        }
+
+    }
+</script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>
+

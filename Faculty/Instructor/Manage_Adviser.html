@@ -1,0 +1,960 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Manage Adviser | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Manage_Adviser.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+<aside class="sidebar admin-sidebar">
+
+    <div>
+
+        <!-- LOGO -->
+        <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Instructor Portal</p>
+                </div>
+            </div>
+
+        <!-- MENU -->
+        <div class="menu">
+
+            <!-- MAIN -->
+            <div class="menu-title">
+                Main
+            </div>
+
+            <div
+                class="menu-item    "
+                id="nav-home"
+                onclick="window.location.href='InstructorDash.html'"
+            >
+                <i class="fa-solid fa-house"></i>
+                <span>
+                    Dashboard
+                </span>
+            </div>
+
+            <!-- MANAGEMENT -->
+            <div class="menu-title">
+                Management
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-enroll"
+                onclick="window.location.href='STU_Enroll.html'"
+            >
+                <i class="fa-solid fa-user-plus"></i>
+                <span>
+                    Register Students
+                </span>
+            </div>
+
+            <div
+                class="menu-item active"
+                id="nav-adviser"
+                onclick="window.location.href='Manage_Adviser.html'"
+            >
+                <i class="fa-solid fa-user-tie"></i>
+                <span>
+                    Manage Adviser
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-groups"
+                onclick="window.location.href='Capstone_Group.html'"
+            >
+                <i class="fa-solid fa-users-gear"></i>
+                <span>
+                    Capstone Groups
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-document"
+                onclick="window.location.href='Document_Review.html'"
+            >
+                <i class="fa-solid fa-file-circle-check"></i>
+                <span>
+                    Document Review
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-defense"
+                onclick="window.location.href='Defense_Schedule.html'"
+            >
+                <i class="fa-solid fa-calendar-alt"></i>
+                <span>
+                    Schedule Defense
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-consultation"
+                onclick="window.location.href='Consultation.html'"
+            >
+                <i class="fa-solid fa-comments"></i>
+                <span>
+                    Consultation
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-panel-evaluation"
+                onclick="window.location.href='Panel_Evaluation.html'"
+            >
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>
+                    Panel Evaluation
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="menu-item logout-btn" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </div>
+    </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Manage Advisers</h1>
+
+                <p>
+                    View faculty advisers and configure their group capacity,
+                    assigned program, and year level coverage.
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="searchAdviser"
+                        placeholder="Search adviser..."
+                        onkeyup="filterAdvisers()"
+                    >
+                </div>
+
+                <button
+                    class="primary-btn"
+                    onclick="loadAdvisers()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-rotate"></i>
+                    Refresh
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalAdvisers">
+                        0
+                    </h2>
+
+                    <p>
+                        Total Advisers
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalGroups">
+                        0
+                    </h2>
+
+                    <p>
+                        Total Groups
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="availableAdvisers">
+                        0
+                    </h2>
+
+                    <p>
+                        Available Advisers
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="content-grid">
+
+            <!-- ADVISER LIST -->
+            <section class="card adviser-list-card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h2>
+                            Adviser Accounts
+                        </h2>
+
+                        <p>
+                            Faculty accounts with adviser role access will appear here.
+                        </p>
+                    </div>
+
+                    <span class="section-badge">
+                        Adviser Access
+                    </span>
+
+                </div>
+
+                <div class="table-wrapper">
+
+                    <table class="adviser-table">
+
+                        <thead>
+                            <tr>
+                                <th>Faculty ID</th>
+                                <th>Full Name</th>
+                                <th>Position</th>
+                                <th>Program</th>
+                                <th>Year Level</th>
+                                <th>Capacity</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="adviserTableBody">
+
+                            <tr>
+                                <td colspan="8">
+                                    Loading advisers...
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- SIDE PANEL -->
+            <aside class="side-panel">
+
+                <div class="card info-card">
+
+                    <div class="info-icon">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+
+                    <h2>
+                        Adviser Setup Guide
+                    </h2>
+
+                    <p>
+                        Use this page to define how many capstone groups an adviser can handle and which students they can cater based on program and year level.
+                    </p>
+
+                    <div class="guide-list">
+
+                        <div class="guide-item">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Set group capacity per adviser</span>
+                        </div>
+
+                        <div class="guide-item">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Assign BSIS, BSIT, or both programs</span>
+                        </div>
+
+                        <div class="guide-item">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Limit adviser coverage by year level</span>
+                        </div>
+
+                        <div class="guide-item">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Monitor adviser availability</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card note-card">
+
+                    <h3>
+                        Suggested Rule
+                    </h3>
+
+                    <p>
+                        An adviser should only accept groups within their assigned program, year level, and available group capacity.
+                    </p>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <!-- MANAGE MODAL -->
+    <div
+        class="modal-overlay"
+        id="manageModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2>
+                        Manage Adviser
+                    </h2>
+
+                    <p id="modalFacultySubtext">
+                        Configure adviser assignment settings.
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeManageModal()"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="selected-faculty">
+
+                <div
+                    class="selected-avatar"
+                    id="modalAvatar"
+                >
+                    A
+                </div>
+
+                <div>
+                    <h3 id="modalFacultyName">
+                        Faculty Name
+                    </h3>
+
+                    <p id="modalFacultyId">
+                        FAC2026-0000
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="input-group">
+                    <label>
+                        Group Capacity
+                    </label>
+
+                    <input
+                        type="number"
+                        id="groupCapacity"
+                        min="1"
+                        max="20"
+                        placeholder="Example: 4"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Program to Cater
+                    </label>
+
+                    <select id="programCater">
+                        <option value="">
+                            Select Program
+                        </option>
+
+                        <option value="BSIS">
+                            BSIS
+                        </option>
+
+                        <option value="BSIT">
+                            BSIT
+                        </option>
+
+                        <option value="Both">
+                            Both
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Year Level to Cater
+                    </label>
+
+                    <select id="yearLevelCater">
+                        <option value="">
+                            Select Year Level
+                        </option>
+
+                        <option value="3rd Year">
+                            3rd Year
+                        </option>
+
+                        <option value="4th Year">
+                            4th Year
+                        </option>
+
+                        <option value="Both">
+                            Both
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Adviser Status
+                    </label>
+
+                    <select id="adviserStatus">
+                        <option value="Available">
+                            Available
+                        </option>
+
+                        <option value="Full">
+                            Full
+                        </option>
+
+                        <option value="Inactive">
+                            Inactive
+                        </option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Remarks
+                </label>
+
+                <textarea
+                    id="remarks"
+                    placeholder="Optional remarks or adviser instructions..."
+                ></textarea>
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeManageModal()"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="saveAdviserSettings()"
+                >
+                    Save Settings
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        let advisers = [];
+        let selectedFacultyId = null;
+
+        /* ================= LOAD ADVISERS ================= */
+
+        async function loadAdvisers(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/adviser-management"
+                    );
+
+                const data =
+                    await response.json();
+
+                const tableBody =
+                    document.getElementById(
+                        "adviserTableBody"
+                    );
+
+                tableBody.innerHTML = "";
+
+                if(!data.success){
+
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8">
+                                Failed to load adviser accounts.
+                            </td>
+                        </tr>
+                    `;
+
+                    return;
+
+                }
+
+                advisers =
+                    data.advisers;
+
+                document.getElementById(
+                    "totalAdvisers"
+                ).innerText =
+                    data.stats.totalAdvisers;
+
+                document.getElementById(
+                    "totalGroups"
+                ).innerText =
+                    data.stats.totalGroups;
+
+                document.getElementById(
+                    "availableAdvisers"
+                ).innerText =
+                    data.stats.availableAdvisers;
+
+                renderAdvisers(advisers);
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= RENDER ADVISERS ================= */
+
+        function renderAdvisers(list){
+
+            const tableBody =
+                document.getElementById(
+                    "adviserTableBody"
+                );
+
+            tableBody.innerHTML = "";
+
+            if(list.length === 0){
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8">
+                            No faculty adviser accounts found.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(adviser => {
+
+                const initial =
+                    adviser.fullname
+                    .charAt(0)
+                    .toUpperCase();
+
+                const programClass =
+                    adviser.program_cater === "BSIS"
+                    ? "bsis"
+                    : adviser.program_cater === "BSIT"
+                    ? "bsit"
+                    : adviser.program_cater === "Both"
+                    ? "both"
+                    : "not-set";
+
+                const statusClass =
+                    adviser.adviser_status === "Available"
+                    ? "available"
+                    : adviser.adviser_status === "Full"
+                    ? "full"
+                    : adviser.adviser_status === "Inactive"
+                    ? "inactive"
+                    : "not-configured";
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>
+                            ${adviser.user_id}
+                        </td>
+
+                        <td>
+                            <div class="faculty-cell">
+
+                                <div class="avatar">
+                                    ${initial}
+                                </div>
+
+                                <div>
+                                    <h4>
+                                        ${adviser.fullname}
+                                    </h4>
+
+                                    <p>
+                                        Adviser
+                                    </p>
+                                </div>
+
+                            </div>
+                        </td>
+
+                        <td>
+                            ${adviser.position || "Not Set"}
+                        </td>
+
+                        <td>
+                            <span class="program-badge ${programClass}">
+                                ${adviser.program_cater}
+                            </span>
+                        </td>
+
+                        <td>
+                            ${adviser.year_level_cater}
+                        </td>
+
+                        <td>
+                            ${adviser.group_capacity} Groups
+                        </td>
+
+                        <td>
+                            <span class="status ${statusClass}">
+                                ${adviser.adviser_status}
+                            </span>
+                        </td>
+
+                        <td>
+                            <button
+                                class="manage-btn"
+                                onclick="openManageModal('${adviser.user_id}')"
+                            >
+                                Manage
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+            });
+
+        }
+
+        /* ================= SEARCH ================= */
+
+        function filterAdvisers(){
+
+            const keyword =
+                document.getElementById(
+                    "searchAdviser"
+                ).value.toLowerCase();
+
+            const filtered =
+                advisers.filter(adviser =>
+                    adviser.fullname.toLowerCase().includes(keyword)
+                    ||
+                    adviser.user_id.toLowerCase().includes(keyword)
+                    ||
+                    String(adviser.position || "")
+                    .toLowerCase()
+                    .includes(keyword)
+                );
+
+            renderAdvisers(filtered);
+
+        }
+
+        /* ================= OPEN MODAL ================= */
+
+        function openManageModal(facultyId){
+
+            const adviser =
+                advisers.find(item =>
+                    item.user_id === facultyId
+                );
+
+            if(!adviser){
+                return;
+            }
+
+            selectedFacultyId =
+                adviser.user_id;
+
+            document.getElementById(
+                "modalFacultyName"
+            ).innerText =
+                adviser.fullname;
+
+            document.getElementById(
+                "modalFacultyId"
+            ).innerText =
+                adviser.user_id;
+
+            document.getElementById(
+                "modalFacultySubtext"
+            ).innerText =
+                adviser.position || "Faculty Adviser";
+
+            document.getElementById(
+                "modalAvatar"
+            ).innerText =
+                adviser.fullname
+                .charAt(0)
+                .toUpperCase();
+
+            document.getElementById(
+                "groupCapacity"
+            ).value =
+                adviser.group_capacity || "";
+
+            document.getElementById(
+                "programCater"
+            ).value =
+                adviser.program_cater !== "Not Set"
+                ? adviser.program_cater
+                : "";
+
+            document.getElementById(
+                "yearLevelCater"
+            ).value =
+                adviser.year_level_cater !== "Not Set"
+                ? adviser.year_level_cater
+                : "";
+
+            document.getElementById(
+                "adviserStatus"
+            ).value =
+                adviser.adviser_status !== "Not Configured"
+                ? adviser.adviser_status
+                : "Available";
+
+            document.getElementById(
+                "remarks"
+            ).value =
+                adviser.remarks || "";
+
+            document.getElementById(
+                "manageModal"
+            ).style.display =
+                "flex";
+
+        }
+
+        /* ================= CLOSE MODAL ================= */
+
+        function closeManageModal(){
+
+            document.getElementById(
+                "manageModal"
+            ).style.display =
+                "none";
+
+        }
+
+        /* ================= SAVE SETTINGS ================= */
+
+        async function saveAdviserSettings(){
+
+            const groupCapacity =
+                document.getElementById(
+                    "groupCapacity"
+                ).value;
+
+            const programCater =
+                document.getElementById(
+                    "programCater"
+                ).value;
+
+            const yearLevelCater =
+                document.getElementById(
+                    "yearLevelCater"
+                ).value;
+
+            const adviserStatus =
+                document.getElementById(
+                    "adviserStatus"
+                ).value;
+
+            const remarks =
+                document.getElementById(
+                    "remarks"
+                ).value;
+
+            if(
+                !selectedFacultyId ||
+                !groupCapacity ||
+                !programCater ||
+                !yearLevelCater ||
+                !adviserStatus
+            ){
+
+                alert(
+                    "Please complete all required adviser settings."
+                );
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/save-adviser-settings",
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                facultyId:selectedFacultyId,
+                                groupCapacity,
+                                programCater,
+                                yearLevelCater,
+                                adviserStatus,
+                                remarks
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    alert(
+                        data.message || "Adviser settings saved successfully."
+                    );
+
+                    closeManageModal();
+
+                    loadAdvisers();
+
+                }else{
+
+                    alert(
+                        data.message || "Failed to save adviser settings."
+                    );
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        /* ================= LOGOUT ================= */
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+        /* ================= INITIAL LOAD ================= */
+
+        loadAdvisers();
+
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Request Adviser | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Req_Adviser.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="student-portal.css">
+</head>
+
+<body class="admin-portal">
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='StudentDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-titles"
+                    onclick="window.location.href='Capstone_Titles.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-members"
+                    onclick="window.location.href='Members.html'"
+                >
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-adviser"
+                    onclick="window.location.href='Req_Adviser.html'"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-messages"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">
+                    Updates
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-notifications"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-settings"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Request Adviser</h1>
+
+                <p>
+                    Enter your 3 proposed titles first, then browse and request an adviser. Upload PDFs in Records Management.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <!-- GROUP INFO -->
+        <section class="group-card">
+
+            <div class="group-info">
+
+                <div class="group-icon">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+
+                <div>
+                    <h2 id="groupName">
+                        Loading group...
+                    </h2>
+
+                    <p id="groupDetails">
+                        Please wait while your group information is loaded.
+                    </p>
+                </div>
+
+            </div>
+
+            <span
+                class="group-program"
+                id="groupProgramBadge"
+            >
+                N/A
+            </span>
+
+        </section>
+
+        <!-- TITLE PROPOSAL SECTION -->
+        <section class="proposal-section">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>
+                        Proposed Capstone Titles
+                    </h2>
+
+                    <p>
+                        Enter your 3 proposed capstone titles and attach the PDF concept paper for each one. Both are required before you can save a title proposal.
+                    </p>
+                </div>
+
+                <span
+                    class="proposal-status"
+                    id="proposalCounter"
+                >
+                    0/3 Titles saved
+                </span>
+
+            </div>
+
+            <div class="proposal-grid">
+
+                <div class="proposal-card">
+                    <div class="proposal-icon">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+
+                    <h3>
+                        Title Proposal 1
+                    </h3>
+
+                    <input
+                        type="text"
+                        id="proposalTitle1"
+                        placeholder="Enter proposed title 1"
+                    >
+
+                    <!-- PDF picker -->
+                    <input
+                        type="file"
+                        id="pdfInput1"
+                        accept=".pdf"
+                        style="display:none;"
+                        onchange="updatePdfLabel(1)"
+                    >
+                    <label
+                        class="pdf-pick-label"
+                        for="pdfInput1"
+                        id="pdfPickLabel1"
+                    >
+                        <i class="fa-solid fa-paperclip"></i>
+                        <span id="pdfFileName1">Attach PDF (required)</span>
+                    </label>
+
+                    <button
+                        class="upload-proposal-btn"
+                        onclick="saveTitleProposal(1)"
+                    >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Title 1
+                    </button>
+
+                    <div
+                        class="uploaded-proposal"
+                        id="uploadedProposal1"
+                    >
+                        No title saved yet.
+                    </div>
+                </div>
+
+                <div class="proposal-card">
+                    <div class="proposal-icon">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+
+                    <h3>
+                        Title Proposal 2
+                    </h3>
+
+                    <input
+                        type="text"
+                        id="proposalTitle2"
+                        placeholder="Enter proposed title 2"
+                    >
+
+                    <!-- PDF picker -->
+                    <input
+                        type="file"
+                        id="pdfInput2"
+                        accept=".pdf"
+                        style="display:none;"
+                        onchange="updatePdfLabel(2)"
+                    >
+                    <label
+                        class="pdf-pick-label"
+                        for="pdfInput2"
+                        id="pdfPickLabel2"
+                    >
+                        <i class="fa-solid fa-paperclip"></i>
+                        <span id="pdfFileName2">Attach PDF (required)</span>
+                    </label>
+
+                    <button
+                        class="upload-proposal-btn"
+                        onclick="saveTitleProposal(2)"
+                    >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Title 2
+                    </button>
+
+                    <div
+                        class="uploaded-proposal"
+                        id="uploadedProposal2"
+                    >
+                        No title saved yet.
+                    </div>
+                </div>
+
+                <div class="proposal-card">
+                    <div class="proposal-icon">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+
+                    <h3>
+                        Title Proposal 3
+                    </h3>
+
+                    <input
+                        type="text"
+                        id="proposalTitle3"
+                        placeholder="Enter proposed title 3"
+                    >
+
+                    <!-- PDF picker -->
+                    <input
+                        type="file"
+                        id="pdfInput3"
+                        accept=".pdf"
+                        style="display:none;"
+                        onchange="updatePdfLabel(3)"
+                    >
+                    <label
+                        class="pdf-pick-label"
+                        for="pdfInput3"
+                        id="pdfPickLabel3"
+                    >
+                        <i class="fa-solid fa-paperclip"></i>
+                        <span id="pdfFileName3">Attach PDF (required)</span>
+                    </label>
+
+                    <button
+                        class="upload-proposal-btn"
+                        onclick="saveTitleProposal(3)"
+                    >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Title 3
+                    </button>
+
+                    <div
+                        class="uploaded-proposal"
+                        id="uploadedProposal3"
+                    >
+                        No title saved yet.
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ADVISER TOOLBAR -->
+        <div class="toolbar">
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="searchAdviser"
+                    placeholder="Search adviser..."
+                    onkeyup="filterAdvisers()"
+                >
+            </div>
+
+        </div>
+
+        <section
+            class="adviser-grid"
+            id="adviserGrid"
+        >
+
+            <div class="empty-card">
+                Loading advisers...
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- VIEW MODAL -->
+    <div
+        class="modal-overlay"
+        id="viewModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="modalAdviserName">
+                        Adviser Name
+                    </h2>
+
+                    <p id="modalAdviserId">
+                        FAC2026-0000
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeViewModal()"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="modal-profile">
+
+                <div
+                    class="modal-avatar"
+                    id="modalAvatar"
+                >
+                    A
+                </div>
+
+                <div>
+                    <h3 id="modalPosition">
+                        Faculty Position
+                    </h3>
+
+                    <p id="modalStatus">
+                        Adviser Status
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="details-grid">
+
+                <div class="detail-card">
+                    <span>Program Catered</span>
+                    <h3 id="modalProgram">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Year Level Catered</span>
+                    <h3 id="modalYearLevel">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Group Capacity</span>
+                    <h3 id="modalCapacity">0</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Assigned Groups</span>
+                    <h3 id="modalAssignedGroups">0</h3>
+                </div>
+
+            </div>
+
+            <div class="remarks-box">
+                <h3>Remarks</h3>
+                <p id="modalRemarks">
+                    No remarks provided.
+                </p>
+            </div>
+
+            <div class="request-box">
+
+                <label>
+                    Request Message
+                </label>
+
+                <textarea
+                    id="requestMessage"
+                    placeholder="Optional message to adviser..."
+                ></textarea>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeViewModal()"
+                >
+                    Close
+                </button>
+
+                <button
+                    class="send-btn"
+                    id="sendRequestBtn"
+                    onclick="sendAdviserRequest()"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Send Request
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- COMPARISON MODAL -->
+    <div class="modal-overlay" id="compareModal" style="display: none; align-items: flex-start; padding-top: 20px; overflow-y: auto;">
+        <div class="modal-box" style="width: 1500px; max-width: 98vw; height: 92vh; display: flex; flex-direction: column; overflow: hidden; padding: 28px 30px 20px; border-radius: 24px;">
+            <!-- Header Row -->
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 16px;">
+                <div>
+                    <h2 style="margin: 0 0 4px; font-size: 1.3rem;">Side-by-Side Similarity Comparison</h2>
+                    <p id="compareModalSubtitle" style="margin: 0; color: #6d5f85; font-size: 13px;">Comparing Proposal 1 against Matched Repository Record</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span id="compareModalBadge" style="font-size: 13px; padding: 7px 16px; border-radius: 20px; font-weight: 700; white-space: nowrap;"></span>
+                    <button class="close-modal-btn" onclick="closeCompareModal()" style="flex-shrink:0;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info bar -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: #faf8ff; border: 1px solid #ece3ff; padding: 10px 16px; border-radius: 14px; flex-wrap: wrap;">
+                <i class="fa-solid fa-circle-info" style="color: #7c3aed;"></i>
+                <span style="color: #6d5f85; font-size: 12.5px;">The left panel shows your proposal text extracted from the PDF with highlighted matches. The right panel shows the matched archived study with highlighted matches.</span>
+            </div>
+
+            <!-- Colour Legend (both panels) -->
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding: 9px 14px; background: #f5f3ff; border: 1px solid #ece3ff; border-radius: 12px; align-items: center;">
+                <span style="font-size: 12px; font-weight: 700; color: #4b5563; margin-right: 4px;">Highlight Key (Both Panels):</span>
+                <span style="background: #fde68a; color: #b45309; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Title Match</span>
+                <span style="background: #bfdbfe; color: #1d4ed8; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Abstract Match</span>
+                <span style="background: #bbf7d0; color: #15803d; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Objectives Match</span>
+                <span style="background: #e9d5ff; color: #7c3aed; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Synonym / Related</span>
+            </div>
+
+            <!-- Two-column comparison area -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; overflow: hidden; min-height: 0;">
+
+                <!-- LEFT: Student Proposal — Rendered text with highlights -->
+                <div style="display: flex; flex-direction: column; background: #faf8ff; border: 2px solid #ddd6fe; border-radius: 20px; overflow: hidden;">
+                    <div style="padding: 14px 18px 10px; border-bottom: 1px solid #ece3ff; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <h3 style="margin: 0 0 2px; color: #7c3aed; font-size: 15px;">
+                                <i class="fa-solid fa-graduation-cap"></i> Your Proposal Content
+                            </h3>
+                            <p id="comparePdfLabel" style="margin: 0; font-size: 12px; color: #9ca3af;"></p>
+                        </div>
+                        <div id="comparePdfLinkWrapper">
+                            <a id="comparePdfLink" href="#" target="_blank" style="color: #7c3aed; font-size: 12px; font-weight: 600; text-decoration: underline;" title="Download/View Original PDF">
+                                <i class="fa-solid fa-file-pdf"></i> View Original PDF
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div id="compareProposedContainer" style="flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 18px; background: white;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #7c3aed; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">PROPOSED TITLE</span>
+                            </div>
+                            <div id="compareProposedTitle" style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 14.5px; font-weight: 600; color: #2e1065; line-height: 1.65;"></div>
+                        </div>
+
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #6d28d9; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">PROPOSAL BODY / OBJECTIVES</span>
+                            </div>
+                            <div id="compareProposedBody" style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 12px; padding: 18px; font-size: 13.5px; color: #2e1065; line-height: 1.8; font-family: 'Consolas', 'Courier New', Courier, monospace; white-space: pre-wrap; word-break: break-word; overflow-x: auto;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="compareProposedFallback" style="display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; background: #faf8ff; color: #6d28d9; padding: 30px; text-align: center;">
+                        <i class="fa-solid fa-file-lines" style="font-size: 52px; color: #9ca3af; margin-bottom: 14px;"></i>
+                        <p style="font-weight: 600; margin: 0 0 6px; font-size: 15px;">No proposal content available.</p>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Archived Study text with highlights -->
+                <div style="display: flex; flex-direction: column; background: #faf8ff; border: 2px solid #ddd6fe; border-radius: 20px; overflow: hidden;">
+                    <div style="padding: 14px 18px 10px; border-bottom: 1px solid #ece3ff; flex-shrink: 0;">
+                        <h3 style="margin: 0; color: #6d28d9; font-size: 15px;">
+                            <i class="fa-solid fa-box-archive"></i> Archived Study Match
+                        </h3>
+                    </div>
+                    <div style="flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 18px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #7c3aed; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">TITLE</span>
+                            </div>
+                            <div id="compareMatchedTitle" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 14.5px; font-weight: 600; color: #2e1065; line-height: 1.65;"></div>
+                        </div>
+
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #1d4ed8; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">ABSTRACT</span>
+                            </div>
+                            <div id="compareMatchedAbstract" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word;"></div>
+                        </div>
+
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #15803d; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">OBJECTIVES</span>
+                            </div>
+                            <div id="compareMatchedObjectives" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word;"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; flex-shrink: 0;">
+                <button class="cancel-btn" onclick="closeCompareModal()"><i class="fa-solid fa-xmark" style="margin-right:6px;"></i>Close Comparison</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="student-portal.js"></script>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let currentGroup = null;
+        let advisers = [];
+        let selectedAdviser = null;
+        let titleProposals = [];
+
+        async function loadPageData(){
+            await loadAdvisers();
+            await loadTitleProposals();
+        }
+
+        async function loadAdvisers(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/student-advisers/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                const adviserGrid =
+                    document.getElementById("adviserGrid");
+
+                if(!data.success){
+
+                    document.getElementById("groupName").innerText =
+                        "No group found";
+
+                    document.getElementById("groupDetails").innerText =
+                        data.message || "Please create a group first.";
+
+                    document.getElementById("groupProgramBadge").innerText =
+                        "N/A";
+
+                    adviserGrid.innerHTML = `
+                        <div class="empty-card">
+                            ${data.message || "Unable to load advisers."}
+                        </div>
+                    `;
+
+                    return;
+
+                }
+
+                currentGroup =
+                    data.group;
+
+                advisers =
+                    data.advisers;
+
+                const groupProgramText =
+                    currentGroup.program === "IS"
+                    ? "BSIS"
+                    : currentGroup.program === "IT"
+                    ? "BSIT"
+                    : "Not Set";
+
+                document.getElementById("groupName").innerText =
+                    currentGroup.group_name;
+
+                document.getElementById("groupDetails").innerText =
+                    currentGroup.project_title || "No project title yet.";
+
+                document.getElementById("groupProgramBadge").innerText =
+                    groupProgramText;
+
+                renderAdvisers(advisers);
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        async function loadTitleProposals(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/title-proposals/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+                    return;
+                }
+
+                titleProposals =
+                    data.proposals;
+
+                renderTitleProposals();
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        function renderTitleProposals(){
+
+            const savedCount =
+                titleProposals.filter(item =>
+                    String(item.proposed_title || "").trim()
+                ).length;
+
+            document.getElementById("proposalCounter").innerText =
+                `${savedCount}/3 Titles saved`;
+
+            for(let number = 1; number <= 3; number++){
+
+                const foundProposal =
+                    titleProposals.find(item =>
+                        Number(item.title_number) === number
+                    );
+
+                const display =
+                    document.getElementById(`uploadedProposal${number}`);
+
+                if(foundProposal){
+
+                    document.getElementById(`proposalTitle${number}`).value =
+                        foundProposal.proposed_title;
+
+
+                    const hasPdf =
+                        foundProposal.file_path
+                        && String(foundProposal.file_path).trim();
+
+                    // Generate similarity HTML block if similarity percentage is present
+                    let similarityHtml = "";
+                    if (foundProposal.similarity_percentage !== null && foundProposal.similarity_percentage !== undefined) {
+                        const simLevel = foundProposal.similarity_level || "Low Similarity";
+                        const simPercent = foundProposal.similarity_percentage;
+                        const matchedTitle = foundProposal.matched_title;
+                        const badgeStyle = getBadgeStyle(simLevel);
+
+                        similarityHtml = `
+                            <div class="similarity-section" style="margin-top: 14px; border-top: 1px dashed #ece3ff; padding-top: 12px; text-align: left;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <small style="font-weight: 600; color: #6d5f85;">Similarity Checker:</small>
+                                    <span class="similarity-badge" style="font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: 700; ${badgeStyle}">
+                                        ${simPercent}% - ${simLevel}
+                                    </span>
+                                </div>
+                                ${matchedTitle ? `
+                                    <div class="matched-info" style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 12px; padding: 10px; margin-bottom: 10px;">
+                                        <small style="display: block; font-weight: 600; color: #7c3aed; margin-bottom: 2px;">Matched Study:</small>
+                                        <span style="font-size: 12px; font-weight: 500; color: #2e1065; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(matchedTitle)}">
+                                            ${escapeHtml(matchedTitle)}
+                                        </span>
+                                    </div>
+                                    <button class="action-upload-pdf-btn" style="width: 100%; margin: 0; background: linear-gradient(135deg, #7c3aed, #a855f7);" onclick="openCompareModal(${number})">
+                                        <i class="fa-solid fa-eye"></i> Compare Side-by-Side
+                                    </button>
+                                ` : `
+                                    <small style="color: #6d5f85;">No similar studies found in repository.</small>
+                                `}
+                            </div>
+                        `;
+                    }
+
+                    display.innerHTML = `
+                        <div class="proposal-file-ready">
+                            <i class="fa-solid fa-circle-check"></i>
+
+                            <div style="flex: 1;">
+                                <strong>
+                                    ${escapeHtml(foundProposal.proposed_title)}
+                                </strong>
+
+                                ${
+                                    hasPdf
+                                    ? `
+                                      <div class="pdf-file-info">
+                                          <i class="fa-solid fa-file-pdf pdf-icon-small"></i>
+                                          <a href="http://localhost:3005${foundProposal.file_path}" target="_blank" class="view-pdf-link">
+                                              View PDF
+                                          </a>
+                                      </div>
+                                      `
+                                    : `<small class="no-pdf-warn">No PDF uploaded yet.</small>`
+                                }
+
+                                <div class="proposal-card-actions">
+                                    <button class="action-upload-pdf-btn" onclick="triggerPdfUpload(${number})">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        ${hasPdf ? 'Replace PDF' : 'Upload PDF'}
+                                    </button>
+                                </div>
+
+                                <small class="status-label">
+                                    Status: ${foundProposal.status || "Pending Review"}
+                                </small>
+
+                                ${similarityHtml}
+                            </div>
+                        </div>
+                    `;
+
+                }else{
+
+                    display.innerHTML = `
+                        <div class="no-proposal-yet">
+                            <p>No title saved yet.</p>
+                            <button class="action-upload-pdf-btn" onclick="triggerPdfUpload(${number})">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                Upload PDF
+                            </button>
+                        </div>
+                    `;
+
+                }
+
+            }
+
+        }
+
+        /* Update the PDF label when a file is chosen via the picker */
+        function updatePdfLabel(number){
+            const fileInput = document.getElementById(`pdfInput${number}`);
+            const file = fileInput.files && fileInput.files[0];
+            const nameSpan = document.getElementById(`pdfFileName${number}`);
+            const label = document.getElementById(`pdfPickLabel${number}`);
+
+            if(file){
+                nameSpan.textContent = file.name;
+                label.classList.add("pdf-attached");
+            } else {
+                nameSpan.textContent = "Attach PDF (required)";
+                label.classList.remove("pdf-attached");
+            }
+        }
+
+        /* Triggered from the "Upload PDF" / "Replace PDF" button on an ALREADY saved card */
+        function triggerPdfUpload(number){
+            document.getElementById(`pdfInput${number}`).click();
+        }
+
+        /* Upload a new/replacement PDF for an already-saved proposal */
+        async function handlePdfUpload(number){
+            const fileInput = document.getElementById(`pdfInput${number}`);
+            const file = fileInput.files && fileInput.files[0];
+
+            if(!file){ return; }
+
+            const proposedTitle =
+                document.getElementById(`proposalTitle${number}`)
+                .value
+                .trim();
+
+            if(!proposedTitle){
+                alert(`Please enter proposed title ${number}.`);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("studentUserId", loggedInUserId);
+            formData.append("titleNumber", number);
+            formData.append("proposedTitle", proposedTitle);
+            formData.append("proposalFile", file);
+
+            try{
+                const response = await fetch(
+                    "http://localhost:3005/upload-title-proposal",
+                    { method:"POST", body:formData }
+                );
+                const data = await response.json();
+                alert(data.message || "Upload processed.");
+                if(data.success){ loadTitleProposals(); }
+            }catch(error){
+                console.log(error);
+                alert("Cannot upload PDF.");
+            }finally{
+                fileInput.value = "";
+            }
+        }
+
+        /* Save a new proposal — requires BOTH a title AND a PDF */
+        async function saveTitleProposal(number){
+
+            const proposedTitle =
+                document.getElementById(`proposalTitle${number}`)
+                .value
+                .trim();
+
+            if(!proposedTitle){
+                alert(`Please enter the proposed title ${number}.`);
+                return;
+            }
+
+            const fileInput = document.getElementById(`pdfInput${number}`);
+            const file = fileInput.files && fileInput.files[0];
+
+            if(!file){
+                alert(`Please attach a PDF for Title Proposal ${number} before saving.`);
+                document.getElementById(`pdfInput${number}`).click(); // open picker for convenience
+                return;
+            }
+
+            // Upload title + PDF together
+            const formData = new FormData();
+            formData.append("studentUserId", loggedInUserId);
+            formData.append("titleNumber", number);
+            formData.append("proposedTitle", proposedTitle);
+            formData.append("proposalFile", file);
+
+            try{
+                const response = await fetch(
+                    "http://localhost:3005/upload-title-proposal",
+                    { method:"POST", body:formData }
+                );
+
+                const data = await response.json();
+                alert(data.message || "Saved.");
+
+                if(data.success){
+                    // Reset the picker label
+                    document.getElementById(`pdfFileName${number}`).textContent = "Attach PDF (required)";
+                    document.getElementById(`pdfPickLabel${number}`).classList.remove("pdf-attached");
+                    fileInput.value = "";
+                    loadTitleProposals();
+                }
+
+            }catch(error){
+                console.log(error);
+                alert("Cannot save title.");
+            }
+
+        }
+
+        /* ================= SIDE-BY-SIDE MODAL HELPERS ================= */
+
+        const SYNONYMS = {
+            'monitoring': ['tracking', 'surveillance', 'observation', 'checking', 'record', 'recording'],
+            'tracking': ['monitoring', 'surveillance', 'observation', 'checking', 'record', 'recording', 'tracing'],
+            'attendance': ['presence', 'roll call', 'tardy', 'absent', 'log'],
+            'qr': ['qr code', 'quick response', 'barcode', 'scan'],
+            'code': ['qr', 'barcode', 'scan'],
+            'class': ['student', 'classroom', 'course', 'school', 'academic'],
+            'student': ['class', 'learner', 'pupil', 'academic', 'classroom'],
+            'system': ['application', 'software', 'platform', 'app', 'tool', 'portal'],
+            'application': ['system', 'software', 'platform', 'app', 'tool', 'portal'],
+            'app': ['system', 'software', 'platform', 'application', 'tool', 'portal'],
+            'web': ['online', 'website', 'internet', 'portal', 'cloud'],
+            'mobile': ['android', 'ios', 'phone', 'smartphone', 'handheld'],
+            'automated': ['automatic', 'smart', 'intelligent', 'computerized'],
+            'smart': ['automated', 'automatic', 'intelligent', 'cognitive'],
+            'sms': ['text message', 'notification', 'alert', 'message'],
+            'alert': ['notification', 'sms', 'warning', 'alarm'],
+            'notification': ['alert', 'sms', 'warning', 'message']
+        };
+
+        function getBadgeStyle(level) {
+            if (level === "Low Similarity") {
+                return "background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;";
+            }
+            if (level === "Moderate Similarity") {
+                return "background: #fef3c7; color: #b45309; border: 1px solid #fde68a;";
+            }
+            if (level === "High Similarity") {
+                return "background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;";
+            }
+            return "background: #fca5a5; color: #991b1b; border: 1px solid #f87171;";
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        /* 
+         * HIGHLIGHT COLOUR SCHEME
+         * orange  (#fde68a / #b45309) = direct title keyword match
+         * blue    (#bfdbfe / #1d4ed8) = abstract / definition match
+         * green   (#bbf7d0 / #15803d) = objectives match
+         * purple  (#e9d5ff / #7c3aed) = synonym / related concept match
+         */
+        const HIGHLIGHT_STYLES = {
+            title:      'background:#fde68a; color:#b45309;',
+            abstract:   'background:#bfdbfe; color:#1d4ed8;',
+            objectives: 'background:#bbf7d0; color:#15803d;',
+            synonym:    'background:#e9d5ff; color:#7c3aed;'
+        };
+
+        /**
+         * Merge adjacent <mark> tags that have the same inline style so that
+         * "<mark>word1</mark> <mark>word2</mark>" becomes one continuous span.
+         * This removes the fragmented look when consecutive words are all matched.
+         */
+        function mergeAdjacentMarks(html) {
+            // Keep running replacements until nothing changes
+            let prev;
+            do {
+                prev = html;
+                // Match </mark> then optional whitespace then <mark style="X"> — if the
+                // PRECEDING mark has the same style X, collapse them into one.
+                // We detect the preceding mark's style by looking for the closest
+                // opening <mark style="X"> before the </mark>.
+                html = html.replace(
+                    /<mark style="([^"]+)">([\s\S]*?)<\/mark>([ \t\n]?)<mark style="\1">/g,
+                    '<mark style="$1">$2$3'
+                );
+            } while (html !== prev);
+            return html;
+        }
+
+        function applyHighlight(text, words, type) {
+            if (!text || !words || words.length === 0) return text;
+            const style = HIGHLIGHT_STYLES[type] || HIGHLIGHT_STYLES.title;
+            const sorted = [...words].sort((a, b) => b.length - a.length);
+            sorted.forEach(kw => {
+                if (!kw || kw.trim().length < 3) return;
+                const escaped = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                const re = new RegExp(`\\b(${escaped})\\b`, 'gi');
+                text = text.replace(re, `<mark style="${style} padding:2px 5px; border-radius:5px; font-weight:600;">$1</mark>`);
+            });
+            // Merge adjacent marks of the same colour produced by this pass
+            return mergeAdjacentMarks(text);
+        }
+
+        /* Highlight multiple word-lists with their respective colours on the same text */
+        function highlightMulti(rawText, layers) {
+            if (!rawText) return '';
+            let text = escapeHtml(rawText);
+            for (const { words, type } of layers) {
+                text = applyHighlight(text, words, type);
+            }
+            // Final global merge in case different layers left adjacent same-colour marks
+            return mergeAdjacentMarks(text);
+        }
+
+        /* Legacy wrapper — orange only */
+        function highlightKeywords(text, keywords) {
+            if (!text || !keywords || keywords.length === 0) return escapeHtml(text);
+            return applyHighlight(escapeHtml(text), keywords, 'title');
+        }
+
+        /* Highlight the RIGHT panel (repository text) using synonym expansion + colours */
+        function highlightRight(text, exactWords, synonymWords, type) {
+            if (!text) return '';
+            const allSynExpanded = [];
+            (exactWords || []).forEach(kw => {
+                allSynExpanded.push(kw);
+                (SYNONYMS[kw] || []).forEach(s => allSynExpanded.push(s));
+            });
+            let out = escapeHtml(text);
+            out = applyHighlight(out, synonymWords || [], 'synonym');
+            out = applyHighlight(out, allSynExpanded, type || 'title');
+            return mergeAdjacentMarks(out);
+        }
+
+        /* ════════════════ DYNAMIC TABLE FORMATTER ════════════════ */
+
+        // Format plain text for right panel (archived study) — no table parsing, just clean text with line breaks
+        function formatPlainText(text) {
+            if (!text) return '';
+            // Escape HTML then preserve line breaks
+            const escaped = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            return escaped;
+        }
+
+        function openCompareModal(proposalNumber) {
+            const proposal = titleProposals.find(item => Number(item.title_number) === proposalNumber);
+            if (!proposal) return;
+
+            document.getElementById("compareModalSubtitle").innerText =
+                `Title Proposal ${proposalNumber} — Matched Against Archived Study`;
+
+            const badge = document.getElementById("compareModalBadge");
+            badge.innerText = `${proposal.similarity_percentage}% Similarity — ${proposal.similarity_level}`;
+            badge.style.cssText = `font-size: 13px; padding: 7px 16px; border-radius: 20px; font-weight: 700; ${getBadgeStyle(proposal.similarity_level)}`;
+
+            // ── LEFT PANEL: Render text with highlights ──────────────────────────
+            const proposedContainer = document.getElementById('compareProposedContainer');
+            const proposedFallback = document.getElementById('compareProposedFallback');
+            const pdfLabel = document.getElementById('comparePdfLabel');
+            const pdfLinkWrapper = document.getElementById('comparePdfLinkWrapper');
+
+            // Parse matching sections first so we can use `mw` for both sides
+            let mw = {
+                matchedTitleWords: [],
+                matchedObjAbstractWords: [],
+                matchedObjObjectivesWords: [],
+                synonymTitleWords: [],
+                synonymAbstractWords: [],
+                synonymObjectivesWords: []
+            };
+            try {
+                if (proposal.matching_sections) {
+                    const parsed = JSON.parse(proposal.matching_sections);
+                    mw = { ...mw, ...parsed };
+                }
+            } catch(e) {
+                console.error('Error parsing matching sections:', e);
+            }
+
+            const rawBody = proposal.proposed_objectives || '';
+            const rawTitle = proposal.proposed_title || '';
+            
+            if (rawBody.trim() || rawTitle.trim()) {
+                proposedContainer.style.display = 'flex';
+                proposedFallback.style.display = 'none';
+                
+                if (proposal.file_path && String(proposal.file_path).trim()) {
+                    const pdfUrl = `http://localhost:3005${proposal.file_path}`;
+                    pdfLabel.innerText = proposal.file_name || 'Uploaded PDF';
+                    pdfLinkWrapper.style.display = 'block';
+                    document.getElementById('comparePdfLink').href = pdfUrl;
+                } else {
+                    pdfLabel.innerText = 'No PDF File';
+                    pdfLinkWrapper.style.display = 'none';
+                }
+
+                // Apply highlights to Proposed Title
+                document.getElementById('compareProposedTitle').innerHTML = highlightMulti(
+                    rawTitle,
+                    [
+                        { words: mw.synonymTitleWords, type: 'synonym' },
+                        { words: mw.matchedTitleWords, type: 'title' }
+                    ]
+                );
+
+                // Highlight the body text using highlightMulti
+                const highlightedBodyHtml = highlightMulti(
+                    rawBody,
+                    [
+                        { words: mw.synonymAbstractWords, type: 'synonym' },
+                        { words: mw.synonymObjectivesWords, type: 'synonym' },
+                        { words: mw.matchedObjAbstractWords, type: 'abstract' },
+                        { words: mw.matchedObjObjectivesWords, type: 'objectives' }
+                    ]
+                );
+
+                document.getElementById('compareProposedBody').innerHTML = highlightedBodyHtml;
+            } else {
+                proposedContainer.style.display = 'none';
+                proposedFallback.style.display = 'flex';
+                pdfLabel.innerText = '';
+                pdfLinkWrapper.style.display = 'none';
+            }
+
+            // ── RIGHT PANEL: Archived study text with keyword highlights ─────────
+            document.getElementById('compareMatchedTitle').innerHTML = highlightRight(
+                proposal.matched_title,
+                mw.matchedTitleWords,
+                mw.synonymTitleWords,
+                'title'
+            );
+
+            document.getElementById('compareMatchedAbstract').innerHTML = highlightRight(
+                proposal.matched_abstract,
+                mw.matchedObjAbstractWords,
+                mw.synonymAbstractWords,
+                'abstract'
+            );
+
+            document.getElementById('compareMatchedObjectives').innerHTML = highlightRight(
+                proposal.matched_objectives,
+                mw.matchedObjObjectivesWords,
+                mw.synonymObjectivesWords,
+                'objectives'
+            );
+
+            document.getElementById('compareModal').style.display = 'flex';
+        }
+
+        function closeCompareModal() {
+            document.getElementById('compareModal').style.display = 'none';
+        }
+
+        function renderAdvisers(list){
+
+            const adviserGrid =
+                document.getElementById("adviserGrid");
+
+            adviserGrid.innerHTML = "";
+
+            if(list.length === 0){
+
+                adviserGrid.innerHTML = `
+                    <div class="empty-card">
+                        No adviser accounts found.
+                    </div>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(adviser => {
+
+                const isNotConfigured = adviser.adviser_status === 'Not Configured';
+
+                const initial =
+                    adviser.fullname
+                    .charAt(0)
+                    .toUpperCase();
+
+                const remaining =
+                    adviser.group_capacity - adviser.assigned_groups;
+
+                const adviserCard =
+                    document.createElement("div");
+
+                adviserCard.className =
+                    isNotConfigured ? "adviser-card not-configured" : "adviser-card";
+
+                let capacityHtml = "";
+                if (isNotConfigured) {
+                    capacityHtml = `
+                        <div class="not-configured-alert">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Advising settings are not configured.</span>
+                        </div>
+                    `;
+                } else {
+                    capacityHtml = `
+                        <div class="capacity-box">
+                            <div>
+                                <small>Program</small>
+                                <strong>${adviser.program_cater}</strong>
+                            </div>
+                            <div>
+                                <small>Capacity</small>
+                                <strong>${adviser.assigned_groups}/${adviser.group_capacity}</strong>
+                            </div>
+                            <div>
+                                <small>Remaining</small>
+                                <strong>${remaining < 0 ? 0 : remaining}</strong>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let buttonHtml = "";
+                if (isNotConfigured) {
+                    buttonHtml = `
+                        <button
+                            class="disabled-view-btn"
+                            disabled
+                        >
+                            <i class="fa-solid fa-ban"></i>
+                            Unavailable
+                        </button>
+                    `;
+                } else {
+                    buttonHtml = `
+                        <button
+                            class="view-btn"
+                            onclick="openViewModal('${adviser.user_id}')"
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                            View Adviser
+                        </button>
+                    `;
+                }
+
+                adviserCard.innerHTML = `
+                    <div class="adviser-top">
+
+                        <div class="adviser-avatar">
+                            ${initial}
+                        </div>
+
+                        <div>
+                            <h3>
+                                ${adviser.fullname}
+                            </h3>
+
+                            <p>
+                                ${adviser.user_id}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="adviser-meta">
+
+                        <span>
+                            ${adviser.position || "Faculty"}
+                        </span>
+
+                        <span>
+                            ${adviser.adviser_status}
+                        </span>
+
+                    </div>
+
+                    ${capacityHtml}
+
+                    ${buttonHtml}
+                `;
+
+                adviserGrid.appendChild(adviserCard);
+
+            });
+
+        }
+
+        function filterAdvisers(){
+
+            const keyword =
+                document.getElementById("searchAdviser")
+                .value
+                .toLowerCase();
+
+            const filtered =
+                advisers.filter(adviser =>
+                    adviser.fullname.toLowerCase().includes(keyword)
+                    ||
+                    adviser.user_id.toLowerCase().includes(keyword)
+                    ||
+                    String(adviser.position || "")
+                    .toLowerCase()
+                    .includes(keyword)
+                );
+
+            renderAdvisers(filtered);
+
+        }
+
+        function openViewModal(adviserUserId){
+
+            selectedAdviser =
+                advisers.find(item =>
+                    item.user_id === adviserUserId
+                );
+
+            if(!selectedAdviser){
+                return;
+            }
+
+            const initial =
+                selectedAdviser.fullname
+                .charAt(0)
+                .toUpperCase();
+
+            document.getElementById("modalAvatar").innerText =
+                initial;
+
+            document.getElementById("modalAdviserName").innerText =
+                selectedAdviser.fullname;
+
+            document.getElementById("modalAdviserId").innerText =
+                selectedAdviser.user_id;
+
+            document.getElementById("modalPosition").innerText =
+                selectedAdviser.position || "Faculty Adviser";
+
+            document.getElementById("modalStatus").innerText =
+                selectedAdviser.adviser_status;
+
+            document.getElementById("modalProgram").innerText =
+                selectedAdviser.program_cater;
+
+            document.getElementById("modalYearLevel").innerText =
+                selectedAdviser.year_level_cater;
+
+            document.getElementById("modalCapacity").innerText =
+                selectedAdviser.group_capacity;
+
+            document.getElementById("modalAssignedGroups").innerText =
+                selectedAdviser.assigned_groups;
+
+            document.getElementById("modalRemarks").innerText =
+                selectedAdviser.remarks || "No remarks provided.";
+
+            document.getElementById("requestMessage").value =
+                "";
+
+            document.getElementById("viewModal").style.display =
+                "flex";
+
+        }
+
+        function closeViewModal(){
+
+            document.getElementById("viewModal").style.display =
+                "none";
+
+        }
+
+        async function sendAdviserRequest(){
+
+            if(!selectedAdviser){
+                return;
+            }
+
+            if(titleProposals.length < 3){
+
+                alert(
+                    "Please enter and save all 3 proposed titles before requesting an adviser."
+                );
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/request-adviser",
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                studentUserId:loggedInUserId,
+                                adviserUserId:selectedAdviser.user_id,
+                                message:document.getElementById("requestMessage").value
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Request processed."
+                );
+
+                if(data.success){
+
+                    closeViewModal();
+
+                    loadPageData();
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        async function initAdviserPage(){
+            await loadPageData();
+            await initStudentGroupGate({
+                requireGroup:true,
+                activeNav:"nav-adviser"
+            });
+        }
+
+        initAdviserPage();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

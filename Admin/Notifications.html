@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Notifications | CMS</title>
+
+    <link rel="icon" type="image/png" href="../Images/CapstoneXicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="AdminTheme.css">
+
+</head>
+
+<body class="admin-portal notifications-full-page">
+
+    <script>
+        const userRole = localStorage.getItem("role");
+
+        if (userRole !== "admin") {
+            alert("You do not have permission to access the Admin Portal.");
+            window.location.href = "../Log-in.html";
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Admin Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='AdminDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Management</div>
+                <div class="menu-item" id="nav-faculty" onclick="window.location.href='FAC_Enroll.html'">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Register Faculty</span>
+                </div>
+
+                <div class="menu-item" id="nav-student" onclick="window.location.href='STU_Enroll.html'">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Register Student</span>
+                </div>
+
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Repository</span>
+                </div>
+
+                <div class="menu-item" id="nav-document-review" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>Document Review</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" id="nav-announcements" onclick="window.location.href='Announcements.html'">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </div>
+
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">System</div>
+                <div class="menu-item active" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Notifications</h1>
+                <p>System updates, announcements, and account activity.</p>
+            </div>
+
+            <div class="top-actions">
+                <button class="secondary-btn" type="button" onclick="markAllPortalNotificationsRead()">
+                    <i class="fa-solid fa-check-double"></i>
+                    Mark all read
+                </button>
+            </div>
+
+        </div>
+
+        <section class="content-card notifications-panel">
+            <div class="portal-notif-page-list" id="portalNotificationsPageList">
+                <div class="portal-notif-empty">Loading notifications...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const loggedInUserId = localStorage.getItem("userId");
+        const API_BASE = "http://localhost:3005";
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../Log-in.html";
+        }
+
+        function formatPageTime(value) {
+            if (!value) {
+                return "";
+            }
+
+            const date = new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return "";
+            }
+
+            return date.toLocaleString();
+        }
+
+        function escapeHtml(text) {
+            return String(text || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        async function loadPortalNotificationsPage(isSilent = false) {
+            const list = document.getElementById("portalNotificationsPageList");
+            if (!isSilent) {
+                list.innerHTML = `<div class="portal-notif-empty">Loading notifications...</div>`;
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/portal-notifications/${encodeURIComponent(loggedInUserId)}`
+                );
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    list.innerHTML = `<div class="portal-notif-empty">${escapeHtml(data.message || "Failed to load notifications.")}</div>`;
+                    return;
+                }
+
+                const items = data.notifications || [];
+
+                if (!items.length) {
+                    list.innerHTML = `<div class="portal-notif-empty">No notifications yet.</div>`;
+                    return;
+                }
+
+                list.innerHTML = items.map((item) => {
+                    const unread = Number(item.is_read) === 0;
+
+                    return `
+                        <article class="portal-notif-page-item${unread ? " unread" : ""}">
+                            <div class="portal-notif-page-head">
+                                <h3>${escapeHtml(item.notification_title)}</h3>
+                                <span class="portal-notif-page-meta">${formatPageTime(item.created_at)}</span>
+                            </div>
+                            <span class="portal-notif-item-type">${escapeHtml(item.notification_type || "System")}</span>
+                            <p class="portal-notif-page-body">${escapeHtml(item.notification_message)}</p>
+                        </article>
+                    `;
+                }).join("");
+
+                if (window.PortalNotifications) {
+                    window.PortalNotifications.refresh(false);
+                }
+            } catch (error) {
+                console.log(error);
+                if (!isSilent) {
+                    list.innerHTML = `<div class="portal-notif-empty">Cannot connect to server.</div>`;
+                }
+            }
+        }
+
+        async function markAllPortalNotificationsRead() {
+            try {
+                const response = await fetch(`${API_BASE}/portal-notifications-read-all`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: loggedInUserId })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.message || "Failed to mark notifications as read.");
+                    return;
+                }
+
+                loadPortalNotificationsPage();
+            } catch (error) {
+                console.log(error);
+                alert("Cannot connect to server.");
+            }
+        }
+
+        loadPortalNotificationsPage();
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+
+</body>
+
+</html>

@@ -1,0 +1,1104 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Capstone Groups | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Capstone_Group.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+    const userRole =
+        localStorage.getItem("role");
+
+    const instructorAccess =
+        localStorage.getItem("instructor_access");
+
+    if(userRole !== "admin" && instructorAccess !== "1"){
+
+        alert(
+            "You do not have permission to access this role."
+        );
+
+        if(userRole === "admin"){
+
+            window.location.href =
+                "../../Admin/AdminDash.html";
+
+        }else{
+
+            window.location.href =
+                "../FacultyDash.html";
+
+        }
+
+    }
+</script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Instructor Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='InstructorDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>
+                        Dashboard
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Management
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-enroll"
+                    onclick="window.location.href='STU_Enroll.html'"
+                >
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>
+                        Register Students
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-adviser"
+                    onclick="window.location.href='Manage_Adviser.html'"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>
+                        Manage Adviser
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item active"
+                    id="nav-groups"
+                    onclick="window.location.href='Capstone_Group.html'"
+                >
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>
+                        Capstone Groups
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-document"
+                    onclick="window.location.href='Document_Review.html'"
+                >
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>
+                        Document Review
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-defense"
+                    onclick="window.location.href='Defense_Schedule.html'"
+                >
+                    <i class="fa-solid fa-calendar-alt"></i>
+                    <span>
+                        Schedule Defense
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>
+                        Consultation
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-panel-evaluation"
+                    onclick="window.location.href='Panel_Evaluation.html'"
+                >
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span>
+                        Panel Evaluation
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Capstone Groups</h1>
+
+                <p>
+                    Monitor group progress, view members, and assign advisers with limited instructor access.
+                </p>
+            </div>
+
+            <div class="top-actions"></div>
+
+        </div>
+
+        <!-- ACCESS NOTICE -->
+        <div class="notice-card">
+            <i class="fa-solid fa-circle-info"></i>
+
+            <p>
+                Instructor access allows viewing groups, monitoring progress, updating stage/status, and assigning advisers. Group deletion and member editing are restricted to Admin.
+            </p>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+
+                <div>
+                    <h2 id="totalGroups">
+                        0
+                    </h2>
+
+                    <p>
+                        Total Groups
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+
+                <div>
+                    <h2 id="withAdviser">
+                        0
+                    </h2>
+
+                    <p>
+                        With Adviser
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+
+                <div>
+                    <h2 id="withoutAdviser">
+                        0
+                    </h2>
+
+                    <p>
+                        Without Adviser
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TABLE CARD -->
+        <section class="table-card">
+
+            <div class="table-header">
+
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+
+                    <div>
+                        <h2>
+                            Group Records
+                        </h2>
+
+                        <p>
+                            View student capstone groups and update monitoring details.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="searchGroup"
+                        placeholder="Search group..."
+                        onkeyup="filterGroups()"
+                    >
+                </div>
+
+            </div>
+
+            <div class="table-wrapper">
+
+                <table class="group-table">
+
+                    <thead>
+                        <tr>
+                            <th>Group ID</th>
+                            <th>Group Name</th>
+                            <th>Program</th>
+                            <th>Project Manager</th>
+                            <th>Members</th>
+                            <th>Adviser</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="groupTableBody">
+                        <tr>
+                            <td colspan="9">
+                                Loading capstone groups...
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- VIEW MODAL -->
+    <div
+        class="modal-overlay"
+        id="viewModal"
+    >
+
+        <div class="modal-box large-modal">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="viewGroupName">
+                        Group Details
+                    </h2>
+
+                    <p id="viewGroupId">
+                        Group ID
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeViewModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="details-grid">
+
+                <div class="detail-card">
+                    <span>Project Title</span>
+                    <h3 id="viewProjectTitle">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Program</span>
+                    <h3 id="viewProgram">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Stage</span>
+                    <h3 id="viewStage">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Progress</span>
+                    <h3 id="viewProgress">0%</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Status</span>
+                    <h3 id="viewStatus">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Adviser</span>
+                    <h3 id="viewAdviser">Not Assigned</h3>
+                </div>
+
+            </div>
+
+            <!-- WORKFLOW TRACKER -->
+            <div class="modal-section-tracker" style="margin-top: 25px; margin-bottom: 25px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
+                <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin-bottom: 15px;">Capstone Stage Progress</h3>
+                <div class="workflow-tracker">
+                    <div class="workflow-steps">
+                        <div class="step completed">
+                            <div class="step-icon-wrap">
+                                <div class="step-line"></div>
+                                <div class="step-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                            </div>
+                            <div class="step-content">
+                                <h4>Concept Presentation</h4>
+                                <span class="status-badge-tracker approved">Approved</span>
+                                <p class="step-remarks">Passed on April 15, 2026</p>
+                            </div>
+                        </div>
+                        <div class="step active">
+                            <div class="step-icon-wrap">
+                                <div class="step-line"></div>
+                                <div class="step-icon"><i class="fa-solid fa-book-open"></i></div>
+                            </div>
+                            <div class="step-content">
+                                <h4>Outline Defense</h4>
+                                <span class="status-badge-tracker scheduled">Scheduled</span>
+                                <p class="step-remarks">Scheduled for May 28, 2026</p>
+                            </div>
+                        </div>
+                        <div class="step pending">
+                            <div class="step-icon-wrap">
+                                <div class="step-line"></div>
+                                <div class="step-icon"><i class="fa-solid fa-file-shield"></i></div>
+                            </div>
+                            <div class="step-content">
+                                <h4>Pre-Final Defense</h4>
+                                <span class="status-badge-tracker not-started">Not Started</span>
+                                <p class="step-remarks">Pending Outline Defense</p>
+                            </div>
+                        </div>
+                        <div class="step pending">
+                            <div class="step-icon-wrap">
+                                <div class="step-line"></div>
+                                <div class="step-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+                            </div>
+                            <div class="step-content">
+                                <h4>Final Defense</h4>
+                                <span class="status-badge-tracker not-started">Not Started</span>
+                                <p class="step-remarks">Pending Pre-Final</p>
+                            </div>
+                        </div>
+                        <div class="step pending">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon"><i class="fa-solid fa-circle-check"></i></div>
+                            </div>
+                            <div class="step-content">
+                                <h4>Completed</h4>
+                                <span class="status-badge-tracker not-started">Not Started</span>
+                                <p class="step-remarks">Final Manuscript approval</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="member-section">
+                <h3>
+                    Group Members
+                </h3>
+
+                <div id="viewMembersList">
+                    Loading members...
+                </div>
+            </div>
+            </div>
+    </div>
+
+    <!-- UPDATE MODAL -->
+    <div
+        class="modal-overlay"
+        id="editModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2>
+                        Update Group Monitoring
+                    </h2>
+
+                    <p>
+                        Limited instructor access
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeEditModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div class="readonly-box">
+
+                <div>
+                    <span>Group ID</span>
+                    <strong id="readonlyGroupId">GRP2026-0000</strong>
+                </div>
+
+                <div>
+                    <span>Group Name</span>
+                    <strong id="readonlyGroupName">Group Name</strong>
+                </div>
+
+                <div>
+                    <span>Project Title</span>
+                    <strong id="readonlyProjectTitle">Project Title</strong>
+                </div>
+
+                <div>
+                    <span>Program</span>
+                    <strong id="readonlyProgram">Program</strong>
+                </div>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="input-group">
+                    <label>
+                        Stage
+                    </label>
+
+                    <select id="editStage">
+                        <option value="Stage 1">
+                            Stage 1
+                        </option>
+
+                        <option value="Stage 2">
+                            Stage 2
+                        </option>
+
+                        <option value="Stage 3">
+                            Stage 3
+                        </option>
+
+                        <option value="Stage 4">
+                            Stage 4
+                        </option>
+
+                        <option value="Final">
+                            Final
+                        </option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>
+                        Progress
+                    </label>
+
+                    <input
+                        type="number"
+                        id="editProgress"
+                        min="0"
+                        max="100"
+                    >
+                </div>
+
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Status
+                </label>
+
+                <select id="editStatus">
+                    <option value="Active">
+                        Active
+                    </option>
+
+                    <option value="Pending">
+                        Pending
+                    </option>
+
+                    <option value="Completed">
+                        Completed
+                    </option>
+
+                    <option value="Inactive">
+                        Inactive
+                    </option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Adviser
+                </label>
+
+                <select id="editAdviser">
+                    <option value="">
+                        No Adviser Assigned
+                    </option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-btn"
+                    onclick="closeEditModal()"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    class="save-btn"
+                    onclick="saveGroupEdit()"
+                >
+                    Save Monitoring Update
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        let groups = [];
+        let advisers = [];
+        let selectedGroupId = null;
+
+        async function loadCapstoneGroups(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/instructor-capstone-groups"
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    renderGroups([]);
+
+                    alert(
+                        data.message || "Failed to load groups."
+                    );
+
+                    return;
+
+                }
+
+                groups =
+                    data.groups;
+
+                advisers =
+                    data.advisers;
+
+                updateStats();
+
+                renderGroups(groups);
+
+                loadAdviserOptions();
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function updateStats(){
+
+            const total =
+                groups.length;
+
+            const withAdv =
+                groups.filter(group =>
+                    group.adviser_user_id
+                ).length;
+
+            const withoutAdv =
+                total - withAdv;
+
+            document.getElementById("totalGroups").innerText =
+                total;
+
+            document.getElementById("withAdviser").innerText =
+                withAdv;
+
+            document.getElementById("withoutAdviser").innerText =
+                withoutAdv;
+
+        }
+
+        function renderGroups(list){
+
+            const table =
+                document.getElementById("groupTableBody");
+
+            table.innerHTML = "";
+
+            if(list.length === 0){
+
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            No capstone groups found.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+            list.forEach(group => {
+
+                const programText =
+                    group.program === "IS"
+                    ? "BSIS"
+                    : group.program === "IT"
+                    ? "BSIT"
+                    : "Not Set";
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${group.group_id}</td>
+
+                    <td>
+                        <strong>${group.group_name || "Not Set"}</strong>
+                        <small>${group.project_title || "No project title"}</small>
+                    </td>
+
+                    <td>
+                        <span class="program-badge">
+                            ${programText}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${group.project_manager_name || "Not Set"}
+                        <small>${group.project_manager_user_id || ""}</small>
+                    </td>
+
+                    <td>
+                        ${group.members.length}
+                    </td>
+
+                    <td>
+                        ${
+                            group.adviser_name
+                            ? `${group.adviser_name}<small>${group.adviser_user_id}</small>`
+                            : `<span class="empty-label">Not Assigned</span>`
+                        }
+                    </td>
+
+                    <td>
+                        ${group.progress || 0}%
+                    </td>
+
+                    <td>
+                        <span class="status-badge">
+                            ${group.status || "Active"}
+                        </span>
+                    </td>
+
+                    <td>
+    <div class="action-buttons">
+
+        <button
+            class="view-btn"
+            onclick="openViewModal('${group.group_id}')"
+            title="View group details"
+        >
+            <i class="fa-solid fa-eye"></i>
+        </button>
+
+    </div>
+</td>
+                `;
+
+                table.appendChild(row);
+
+            });
+
+        }
+
+        function filterGroups(){
+
+            const keyword =
+                document.getElementById("searchGroup")
+                .value
+                .toLowerCase();
+
+            const filtered =
+                groups.filter(group =>
+                    String(group.group_id || "").toLowerCase().includes(keyword)
+                    ||
+                    String(group.group_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(group.project_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(group.program || "").toLowerCase().includes(keyword)
+                    ||
+                    String(group.project_manager_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(group.adviser_name || "").toLowerCase().includes(keyword)
+                );
+
+            renderGroups(filtered);
+
+        }
+
+        function loadAdviserOptions(){
+
+            const adviserSelect =
+                document.getElementById("editAdviser");
+
+            adviserSelect.innerHTML = `
+                <option value="">
+                    No Adviser Assigned
+                </option>
+            `;
+
+            advisers.forEach(adviser => {
+
+                const option =
+                    document.createElement("option");
+
+                option.value =
+                    adviser.user_id;
+
+                option.textContent =
+                    `${adviser.fullname} (${adviser.program_cater}, ${adviser.assigned_groups}/${adviser.group_capacity})`;
+
+                adviserSelect.appendChild(option);
+
+            });
+
+        }
+
+        function openViewModal(groupId){
+
+            const group =
+                groups.find(item =>
+                    item.group_id === groupId
+                );
+
+            if(!group){
+                return;
+            }
+
+            const programText =
+                group.program === "IS"
+                ? "BSIS"
+                : group.program === "IT"
+                ? "BSIT"
+                : "Not Set";
+
+            document.getElementById("viewGroupName").innerText =
+                group.group_name || "Group Details";
+
+            document.getElementById("viewGroupId").innerText =
+                group.group_id;
+
+            document.getElementById("viewProjectTitle").innerText =
+                group.project_title || "Not Set";
+
+            document.getElementById("viewProgram").innerText =
+                programText;
+
+            document.getElementById("viewStage").innerText =
+                group.stage || "Stage 1";
+
+            document.getElementById("viewProgress").innerText =
+                `${group.progress || 0}%`;
+
+            document.getElementById("viewStatus").innerText =
+                group.status || "Active";
+
+            document.getElementById("viewAdviser").innerText =
+                group.adviser_name
+                ? `${group.adviser_name} (${group.adviser_user_id})`
+                : "Not Assigned";
+
+            const membersList =
+                document.getElementById("viewMembersList");
+
+            membersList.innerHTML = "";
+
+            if(group.members.length === 0){
+
+                membersList.innerHTML = `
+                    <p class="empty-text">
+                        No members found.
+                    </p>
+                `;
+
+            }else{
+
+                group.members.forEach(member => {
+
+                    membersList.innerHTML += `
+                        <div class="member-row">
+
+                            <div class="member-avatar">
+                                ${member.fullname.charAt(0).toUpperCase()}
+                            </div>
+
+                            <div>
+                                <h4>
+                                    ${member.fullname}
+                                </h4>
+
+                                <p>
+                                    ${member.user_id} • ${member.member_position}
+                                </p>
+                            </div>
+
+                        </div>
+                    `;
+
+                });
+
+            }
+
+            document.getElementById("viewModal").style.display =
+                "flex";
+
+        }
+
+        function closeViewModal(){
+
+            document.getElementById("viewModal").style.display =
+                "none";
+
+        }
+
+        function openEditModal(groupId){
+
+            const group =
+                groups.find(item =>
+                    item.group_id === groupId
+                );
+
+            if(!group){
+                return;
+            }
+
+            selectedGroupId =
+                group.group_id;
+
+            const programText =
+                group.program === "IS"
+                ? "BSIS"
+                : group.program === "IT"
+                ? "BSIT"
+                : "Not Set";
+
+            document.getElementById("readonlyGroupId").innerText =
+                group.group_id;
+
+            document.getElementById("readonlyGroupName").innerText =
+                group.group_name || "Not Set";
+
+            document.getElementById("readonlyProjectTitle").innerText =
+                group.project_title || "Not Set";
+
+            document.getElementById("readonlyProgram").innerText =
+                programText;
+
+            document.getElementById("editStage").value =
+                group.stage || "Stage 1";
+
+            document.getElementById("editProgress").value =
+                group.progress || 0;
+
+            document.getElementById("editStatus").value =
+                group.status || "Active";
+
+            document.getElementById("editAdviser").value =
+                group.adviser_user_id || "";
+
+            document.getElementById("editModal").style.display =
+                "flex";
+
+        }
+
+        function closeEditModal(){
+
+            document.getElementById("editModal").style.display =
+                "none";
+
+        }
+
+        async function saveGroupEdit(){
+
+            const progress =
+                document.getElementById("editProgress").value;
+
+            const stage =
+                document.getElementById("editStage").value;
+
+            const status =
+                document.getElementById("editStatus").value;
+
+            const adviserUserId =
+                document.getElementById("editAdviser").value;
+
+            if(progress < 0 || progress > 100){
+
+                alert("Progress must be between 0 and 100.");
+
+                return;
+
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/instructor-update-capstone-group",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                groupId:selectedGroupId,
+                                progress,
+                                stage,
+                                status,
+                                adviserUserId
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success){
+
+                    alert(
+                        data.message || "Group updated successfully."
+                    );
+
+                    closeEditModal();
+
+                    loadCapstoneGroups();
+
+                }else{
+
+                    alert(
+                        data.message || "Failed to update group."
+                    );
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+        loadCapstoneGroups();
+
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

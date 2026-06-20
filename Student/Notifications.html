@@ -1,0 +1,1564 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Announcements | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="Notifications.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal notifications-full-page">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        if(userRole !== "student"){
+
+            alert("You do not have permission to access the Student Portal.");
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-home"
+                    onclick="window.location.href='StudentDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-titles"
+                    onclick="window.location.href='Capstone_Titles.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-members"
+                    onclick="window.location.href='Members.html'"
+                >
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-adviser"
+                    onclick="window.location.href='Req_Adviser.html'"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-messages"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">
+                    Updates
+                </div>
+
+                <div
+                    class="menu-item active"
+                    id="nav-notifications"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-settings"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Announcements</h1>
+
+                <p id="studentSubtitle">
+                    View announcements, system notifications, and defense schedules related to your capstone group.
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="read-btn"
+                    onclick="markAllAsRead()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-check-double"></i>
+                    Mark System Read
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+
+                <div>
+                    <h2 id="announcementCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Announcements
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+
+                <div>
+                    <h2 id="defenseCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Defense Schedules
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+
+                <div>
+                    <h2 id="unreadCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Unread System Notifications
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+
+                <div>
+                    <h2 id="adviserNotifCount">
+                        0
+                    </h2>
+
+                    <p>
+                        Adviser Request Updates
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FILTERS -->
+        <section class="filter-card">
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search announcements or schedules..."
+                    onkeyup="renderCurrentTab()"
+                >
+            </div>
+
+            <div class="tab-buttons">
+
+                <button
+                    class="tab-btn active"
+                    id="tab-all"
+                    onclick="setTab('all')"
+                    type="button"
+                >
+                    All
+                </button>
+
+                <button
+                    class="tab-btn"
+                    id="tab-announcements"
+                    onclick="setTab('announcements')"
+                    type="button"
+                >
+                    Announcements
+                </button>
+
+                <button
+                    class="tab-btn"
+                    id="tab-defense"
+                    onclick="setTab('defense')"
+                    type="button"
+                >
+                    Defense Schedule
+                </button>
+
+                <button
+                    class="tab-btn"
+                    id="tab-system"
+                    onclick="setTab('system')"
+                    type="button"
+                >
+                    System
+                </button>
+
+                <button
+                    class="tab-btn"
+                    id="tab-adviser"
+                    onclick="setTab('adviser')"
+                    type="button"
+                >
+                    <i class="fa-solid fa-user-tie" style="margin-right:5px;"></i>
+                    Adviser
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- CONTENT -->
+        <section class="content-card">
+
+            <div class="section-header">
+
+                <div>
+                    <h2 id="sectionTitle">
+                        All Updates
+                    </h2>
+
+                    <p id="sectionDescription">
+                        Announcements, defense schedules, and system notifications.
+                    </p>
+                </div>
+
+                <div class="section-icon">
+                    <i class="fa-solid fa-list"></i>
+                </div>
+
+            </div>
+
+            <div
+                class="update-list"
+                id="updateList"
+            >
+                <div class="empty-card">
+                    Loading updates...
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- VIEW MODAL -->
+    <div
+        class="modal-overlay"
+        id="viewModal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="modalTitle">
+                        Update Title
+                    </h2>
+
+                    <p id="modalSubtitle">
+                        Update details
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    onclick="closeViewModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div
+                class="modal-tags"
+                id="modalTags"
+            ></div>
+
+            <div class="modal-content">
+                <p id="modalContent">
+                    Content here.
+                </p>
+            </div>
+
+            <div
+                class="modal-extra"
+                id="modalExtra"
+            ></div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let studentInfo = null;
+        let announcements = [];
+        let defenseSchedules = [];
+        let systemNotifications = [];
+        let currentTab = "all";
+
+        async function loadStudentNotifications(isSilent = false){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/student-notifications/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    if(!isSilent){
+                        alert(
+                            data.message || "Failed to load notifications."
+                        );
+
+                        renderEmpty("No updates found.");
+                    }
+
+                    return;
+
+                }
+
+                studentInfo =
+                    data.student;
+
+                announcements =
+                    data.announcements || [];
+
+                defenseSchedules =
+                    data.defenseSchedules || [];
+
+                systemNotifications =
+                    (data.notifications || []).filter(item =>
+                        item.notification_type !== "Announcement"
+                        && item.notification_type !== "Defense Schedule"
+                    );
+
+                document.getElementById("studentSubtitle").innerText =
+                    `${studentInfo.fullname} • ${studentInfo.program || "No Program"} • ${studentInfo.year_level || "No Year Level"}`;
+
+                updateStats();
+
+                renderCurrentTab();
+
+            }catch(error){
+
+                console.log(error);
+
+                if(!isSilent){
+                    alert("Cannot connect to server.");
+                }
+
+            }
+
+        }
+
+        function updateStats(){
+
+            document.getElementById("announcementCount").innerText =
+                announcements.length;
+
+            document.getElementById("defenseCount").innerText =
+                defenseSchedules.length;
+
+            const unread =
+                systemNotifications.filter(item =>
+                    Number(item.is_read) === 0
+                ).length;
+
+            document.getElementById("unreadCount").innerText =
+                unread;
+
+            // Count adviser-related notifications
+            const adviserCount =
+                systemNotifications.filter(item => {
+                    const combined = (
+                        (item.notification_title || "") +
+                        " " +
+                        (item.notification_message || "") +
+                        " " +
+                        (item.notification_type || "")
+                    ).toLowerCase();
+                    return combined.includes("adviser");
+                }).length;
+
+            document.getElementById("adviserNotifCount").innerText =
+                adviserCount;
+
+        }
+
+        function setTab(tab){
+
+            currentTab =
+                tab;
+
+            document
+                .querySelectorAll(".tab-btn")
+                .forEach(button =>
+                    button.classList.remove("active")
+                );
+
+            document
+                .getElementById(`tab-${tab}`)
+                .classList.add("active");
+
+            renderCurrentTab();
+
+        }
+
+        function renderCurrentTab(){
+
+            if(currentTab === "all"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "All Updates";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Announcements, defense schedules, and system notifications.";
+
+                renderAllUpdates();
+
+            }else if(currentTab === "announcements"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "Announcements";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Published announcements that match your account or program.";
+
+                renderAnnouncementList();
+
+            }else if(currentTab === "defense"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "Defense Schedule";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Defense schedules involving your capstone group.";
+
+                renderDefenseList();
+
+            }else if(currentTab === "system"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "System Notifications";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Direct notifications sent to your account.";
+
+                renderSystemList();
+
+            }else if(currentTab === "adviser"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "Adviser Request Updates";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Notifications about your group's adviser requests and feedback.";
+
+                renderAdviserList();
+
+            }
+
+        }
+
+        function formatPanelistNames(schedule){
+
+            if(
+                schedule.panelists &&
+                schedule.panelists.length > 0
+            ){
+
+                return schedule.panelists
+                    .map(panelist => panelist.fullname)
+                    .filter(Boolean)
+                    .join(", ");
+
+            }
+
+            return "No panelists listed";
+
+        }
+
+        function formatDefensePreview(schedule){
+
+            return `Date: ${formatDate(schedule.defense_date)} • Time: ${formatTime(schedule.start_time)}-${formatTime(schedule.end_time)} • Room: ${schedule.room_name || "N/A"} • Panel: ${formatPanelistNames(schedule)}`;
+
+        }
+
+        function isDefenseScheduleNotification(notification){
+
+            const type =
+                String(notification.notification_type || "").toLowerCase();
+
+            const title =
+                String(notification.notification_title || "").toLowerCase();
+
+            return type.includes("defense schedule")
+                || title.includes("defense schedule");
+
+        }
+
+        function findDefenseScheduleForNotification(notification){
+
+            const message =
+                String(notification.notification_message || "");
+
+            if(!message){
+                return null;
+            }
+
+            const matched =
+                defenseSchedules.find(schedule => {
+
+                    const dateStr =
+                        String(schedule.defense_date || "");
+
+                    const roomStr =
+                        String(schedule.room_name || "");
+
+                    return (
+                        dateStr &&
+                        message.includes(dateStr)
+                    )
+                    && (
+                        roomStr &&
+                        message.includes(roomStr)
+                    );
+
+                });
+
+            return matched || null;
+
+        }
+
+        function getSystemNotificationPreview(notification){
+
+            if(isDefenseScheduleNotification(notification)){
+
+                const schedule =
+                    findDefenseScheduleForNotification(notification);
+
+                if(schedule){
+                    return formatDefensePreview(schedule);
+                }
+
+            }
+
+            return notification.notification_message || "";
+
+        }
+
+        function renderAllUpdates(){
+
+            const keyword =
+                getKeyword();
+
+            const combined = [];
+
+            announcements.forEach(item => {
+
+                combined.push({
+                    type:"announcement",
+                    date:item.created_at,
+                    title:item.announcement_title,
+                    subtitle:`${item.announcement_type} • ${getAudienceText(item)}`,
+                    content:item.announcement_content,
+                    raw:item
+                });
+
+            });
+
+            defenseSchedules.forEach(item => {
+
+                combined.push({
+                    type:"defense",
+                    date:item.defense_date,
+                    title:`${item.defense_type} Schedule`,
+                    subtitle:`${item.group_name} • ${formatDate(item.defense_date)} • ${formatTime(item.start_time)}-${formatTime(item.end_time)}`,
+                    content:formatDefensePreview(item),
+                    raw:item
+                });
+
+            });
+
+            systemNotifications.forEach(item => {
+
+                combined.push({
+                    type:"system",
+                    date:item.created_at,
+                    title:item.notification_title,
+                    subtitle:`${item.notification_type} • ${Number(item.is_read) === 1 ? "Read" : "Unread"}`,
+                    content:getSystemNotificationPreview(item),
+                    raw:item
+                });
+
+            });
+
+            const filtered =
+                combined.filter(item =>
+                    matchesKeyword(item, keyword)
+                );
+
+            filtered.sort((a, b) =>
+                new Date(b.date) - new Date(a.date)
+            );
+
+            renderCombinedCards(filtered);
+
+        }
+
+        function renderAnnouncementList(){
+
+            const keyword =
+                getKeyword();
+
+            const filtered =
+                announcements.filter(item =>
+                    String(item.announcement_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.announcement_type || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.announcement_content || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.created_by_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.target_program || "").toLowerCase().includes(keyword)
+                );
+
+            const cards =
+                filtered.map(item => ({
+                    type:"announcement",
+                    date:item.created_at,
+                    title:item.announcement_title,
+                    subtitle:`${item.announcement_type} • ${getAudienceText(item)}`,
+                    content:item.announcement_content,
+                    raw:item
+                }));
+
+            renderCombinedCards(cards);
+
+        }
+
+        function renderDefenseList(){
+
+            const keyword =
+                getKeyword();
+
+            const filtered =
+                defenseSchedules.filter(item => {
+
+                    const panelistNames =
+                        item.panelists && item.panelists.length > 0
+                        ? item.panelists.map(panelist => panelist.fullname).join(" ")
+                        : "";
+
+                    return String(item.schedule_code || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.group_name || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.project_title || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.room_name || "").toLowerCase().includes(keyword)
+                        ||
+                        String(item.defense_type || "").toLowerCase().includes(keyword)
+                        ||
+                        String(panelistNames || "").toLowerCase().includes(keyword);
+
+                });
+
+            const cards =
+                filtered.map(item => ({
+                    type:"defense",
+                    date:item.defense_date,
+                    title:`${item.defense_type} Schedule`,
+                    subtitle:`${item.group_name} • ${formatDate(item.defense_date)} • ${formatTime(item.start_time)}-${formatTime(item.end_time)}`,
+                    content:formatDefensePreview(item),
+                    raw:item
+                }));
+
+            renderCombinedCards(cards);
+
+        }
+
+        function renderSystemList(){
+
+            const keyword =
+                getKeyword();
+
+            const filtered =
+                systemNotifications.filter(item =>
+                    String(item.notification_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.notification_message || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.notification_type || "").toLowerCase().includes(keyword)
+                );
+
+            const cards =
+                filtered.map(item => ({
+                    type:"system",
+                    date:item.created_at,
+                    title:item.notification_title,
+                    subtitle:`${item.notification_type} • ${Number(item.is_read) === 1 ? "Read" : "Unread"}`,
+                    content:getSystemNotificationPreview(item),
+                    raw:item
+                }));
+
+            renderCombinedCards(cards);
+
+        }
+
+        function renderAdviserList(){
+
+            const keyword =
+                getKeyword();
+
+            const adviserNotifications =
+                systemNotifications.filter(item => {
+                    const combined = (
+                        (item.notification_title || "") +
+                        " " +
+                        (item.notification_message || "") +
+                        " " +
+                        (item.notification_type || "")
+                    ).toLowerCase();
+                    return combined.includes("adviser");
+                });
+
+            const filtered =
+                adviserNotifications.filter(item =>
+                    String(item.notification_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(item.notification_message || "").toLowerCase().includes(keyword)
+                );
+
+            const cards =
+                filtered.map(item => ({
+                    type:"system",
+                    date:item.created_at,
+                    title:item.notification_title,
+                    subtitle:`${item.notification_type} • ${Number(item.is_read) === 1 ? "Read" : "Unread"}`,
+                    content:getSystemNotificationPreview(item),
+                    raw:item
+                }));
+
+            renderCombinedCards(cards);
+
+        }
+
+        function renderCombinedCards(list){
+
+            const container =
+                document.getElementById("updateList");
+
+            container.innerHTML =
+                "";
+
+            if(list.length === 0){
+
+                renderEmpty("No updates found.");
+
+                return;
+
+            }
+
+            list.forEach(item => {
+
+                let icon = "fa-bell";
+                let iconColor = "yellow";
+                let label = "System";
+
+                if(item.type === "announcement"){
+                    icon = "fa-bullhorn";
+                    iconColor = "purple";
+                    label = "Announcement";
+                }else if(item.type === "defense"){
+                    icon = "fa-calendar-days";
+                    iconColor = "blue";
+                    label = "Defense Schedule";
+                }else if(item.type === "system"){
+                    
+                    const combinedText = ((item.title || "") + " " + (item.subtitle || "") + " " + (item.content || "")).toLowerCase();
+
+                    if(combinedText.includes("adviser")){
+                        icon = "fa-user-tie";
+                        if(combinedText.includes("approved") || combinedText.includes("accepted")){
+                            iconColor = "green";
+                            label = "Adviser Approved";
+                        }else if(combinedText.includes("rejected") || combinedText.includes("declined")){
+                            iconColor = "red";
+                            label = "Adviser Rejected";
+                        }else{
+                            iconColor = "blue";
+                            label = "Adviser Request";
+                        }
+                    }else if(combinedText.includes("document") || combinedText.includes("revision")){
+                        if(combinedText.includes("approved") || combinedText.includes("accepted")){
+                            icon = "fa-file-circle-check";
+                            iconColor = "green";
+                            label = "Document Approved";
+                        }else if(combinedText.includes("revision") || combinedText.includes("returned")){
+                            icon = "fa-file-circle-exclamation";
+                            iconColor = "yellow";
+                            label = "For Revision";
+                        }else{
+                            icon = "fa-file-lines";
+                            iconColor = "blue";
+                            label = "Document Update";
+                        }
+                    }else if(combinedText.includes("defense")){
+                        icon = "fa-calendar-check";
+                        if(combinedText.includes("released") || combinedText.includes("result") || combinedText.includes("evaluate")){
+                            icon = "fa-square-poll-horizontal";
+                            iconColor = "green";
+                            label = "Defense Result";
+                        }else if(combinedText.includes("panel")){
+                            icon = "fa-users-gear";
+                            iconColor = "purple";
+                            label = "Panel Assigned";
+                        }else{
+                            iconColor = "blue";
+                            label = "Defense Update";
+                        }
+                    }else if(combinedText.includes("stage") && combinedText.includes("completed")){
+                        icon = "fa-award";
+                        iconColor = "purple";
+                        label = "Stage Completed";
+                    }
+
+                }
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    `update-card ${item.type}-card`;
+
+                card.innerHTML = `
+                    <div class="update-icon ${iconColor}">
+                        <i class="fa-solid ${icon}"></i>
+                    </div>
+
+                    <div class="update-body">
+
+                        <div class="update-top">
+                            <div>
+                                <h3>
+                                    ${item.title}
+                                </h3>
+
+                                <p>
+                                    ${item.subtitle}
+                                </p>
+                            </div>
+
+                            <span class="type-badge ${iconColor}">
+                                ${label}
+                            </span>
+                        </div>
+
+                        <p class="update-preview">
+                            ${shortenText(item.content, 150)}
+                        </p>
+
+                        <div class="update-footer">
+                            <span>
+                                ${formatDate(item.date)}
+                            </span>
+
+                            <div class="update-actions">
+
+                                <button
+                                    class="view-btn"
+                                    type="button"
+                                >
+                                    View
+                                </button>
+
+                                <button
+                                    class="hide-btn"
+                                    type="button"
+                                >
+                                    Delete
+                                </button>
+
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+
+                card
+                    .querySelector(".view-btn")
+                    .addEventListener("click", () => {
+
+                        if(item.type === "announcement"){
+
+                            openAnnouncementModal(item.raw);
+
+                        }else if(item.type === "defense"){
+
+                            openDefenseModal(item.raw);
+
+                        }else{
+
+                            openSystemModal(item.raw);
+
+                        }
+
+                    });
+
+                card
+                    .querySelector(".hide-btn")
+                    .addEventListener("click", () => {
+
+                        hideUpdate(
+                            item.type,
+                            getUpdateId(item)
+                        );
+
+                    });
+
+                container.appendChild(card);
+
+            });
+
+        }
+
+        function renderEmpty(message){
+
+            document.getElementById("updateList").innerHTML =
+                `
+                    <div class="empty-card">
+                        ${message}
+                    </div>
+                `;
+
+        }
+
+        function openAnnouncementModal(item){
+
+            document.getElementById("modalTitle").innerText =
+                item.announcement_title;
+
+            document.getElementById("modalSubtitle").innerText =
+                `${item.announcement_code} • Posted by ${item.created_by_name || "CapstoneX"}`;
+
+            document.getElementById("modalTags").innerHTML =
+                `
+                    <span>${item.announcement_type}</span>
+                    <span>${getAudienceText(item)}</span>
+                    <span>Published</span>
+                `;
+
+            document.getElementById("modalContent").innerText =
+                item.announcement_content;
+
+            document.getElementById("modalExtra").innerHTML =
+                `
+                    <p><strong>Date:</strong> ${formatDate(item.created_at)}</p>
+                    <p><strong>Posted By:</strong> ${item.created_by_name || "N/A"} (${item.created_by_role || "User"})</p>
+                `;
+
+            document.getElementById("viewModal").style.display =
+                "flex";
+
+        }
+
+        function openDefenseModal(item){
+
+            const panelistText =
+                item.panelists && item.panelists.length > 0
+                ? item.panelists
+                    .map(panelist => `${panelist.fullname} (${panelist.user_id})`)
+                    .join(", ")
+                : formatPanelistNames(item);
+
+            document.getElementById("modalTitle").innerText =
+                item.defense_type;
+
+            document.getElementById("modalSubtitle").innerText =
+                `${item.schedule_code} • ${item.group_name}`;
+
+            document.getElementById("modalTags").innerHTML =
+                `
+                    <span>${item.defense_status}</span>
+                    <span>${formatDate(item.defense_date)}</span>
+                    <span>${item.room_name}</span>
+                `;
+
+            document.getElementById("modalContent").innerText =
+                item.notes || "No notes provided.";
+
+            document.getElementById("modalExtra").innerHTML =
+                `
+                    <p><strong>Project Title:</strong> ${item.project_title || "Not Set"}</p>
+                    <p><strong>Date:</strong> ${formatDate(item.defense_date)}</p>
+                    <p><strong>Time:</strong> ${formatTime(item.start_time)} - ${formatTime(item.end_time)}</p>
+                    <p><strong>Room:</strong> ${item.room_name}</p>
+                    <p><strong>Panelists:</strong> ${panelistText}</p>
+                `;
+
+            document.getElementById("viewModal").style.display =
+                "flex";
+
+        }
+
+        async function openSystemModal(item){
+
+            if(isDefenseScheduleNotification(item)){
+
+                const matchedSchedule =
+                    findDefenseScheduleForNotification(item);
+
+                if(matchedSchedule){
+
+                    openDefenseModal(matchedSchedule);
+
+                    if(Number(item.is_read) === 0){
+
+                        await markNotificationRead(item.id);
+
+                    }
+
+                    return;
+
+                }
+
+            }
+
+            const message = item.notification_message || "";
+
+            // Parse out the main body and the adviser feedback (if any)
+            const feedbackSeparator = "\n\nAdviser Feedback:\n";
+            const feedbackIndex = message.indexOf(feedbackSeparator);
+            const mainMessage = feedbackIndex !== -1
+                ? message.substring(0, feedbackIndex)
+                : message;
+            const adviserFeedback = feedbackIndex !== -1
+                ? message.substring(feedbackIndex + feedbackSeparator.length)
+                : "";
+
+            const panelMatch =
+                mainMessage.match(/Panel:\s*(.+?)\.?\s*$/i);
+
+            const isAdviserNotification =
+                (item.notification_title || "").toLowerCase().includes("adviser") ||
+                (item.notification_type || "").toLowerCase().includes("adviser");
+
+            const isAccepted =
+                (item.notification_title || "").toLowerCase().includes("accepted");
+
+            const isDeclined =
+                (item.notification_title || "").toLowerCase().includes("declined");
+
+            document.getElementById("modalTitle").innerText =
+                item.notification_title;
+
+            document.getElementById("modalSubtitle").innerText =
+                `${item.notification_type} • ${Number(item.is_read) === 1 ? "Read" : "Unread"}`;
+
+            // Build tags — add a status tag for adviser notifications
+            let tagsHtml =
+                `<span>${item.notification_type}</span>
+                <span>${Number(item.is_read) === 1 ? "Read" : "Unread"}</span>`;
+
+            if(isAdviserNotification){
+                if(isAccepted){
+                    tagsHtml += `<span style="background:#dcfce7;color:#15803d;">Accepted ✓</span>`;
+                }else if(isDeclined){
+                    tagsHtml += `<span style="background:#fee2e2;color:#dc2626;">Declined ✗</span>`;
+                }
+            }
+
+            document.getElementById("modalTags").innerHTML = tagsHtml;
+
+            document.getElementById("modalContent").innerText = mainMessage;
+
+            // Build extra section — include adviser feedback block if present
+            let extraHtml =
+                `<p><strong>Date:</strong> ${formatDate(item.created_at)}</p>
+                ${panelMatch ? `<p><strong>Panel:</strong> ${panelMatch[1]}</p>` : ""}`;
+
+            if(isAdviserNotification && adviserFeedback){
+                const feedbackColor = isDeclined ? "#fee2e2" : "#f0fdf4";
+                const feedbackBorder = isDeclined ? "#fca5a5" : "#86efac";
+                const feedbackTitleColor = isDeclined ? "#dc2626" : "#15803d";
+                extraHtml += `
+                    <div style="
+                        margin-top:16px;
+                        background:${feedbackColor};
+                        border:1.5px solid ${feedbackBorder};
+                        border-radius:16px;
+                        padding:16px 18px;
+                    ">
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            gap:8px;
+                            margin-bottom:10px;
+                        ">
+                            <i class="fa-solid fa-comment-dots" style="color:${feedbackTitleColor};font-size:16px;"></i>
+                            <strong style="color:${feedbackTitleColor};font-size:14px;">Adviser Feedback</strong>
+                        </div>
+                        <p style="
+                            color:#374151;
+                            line-height:1.8;
+                            white-space:pre-wrap;
+                            font-size:14px;
+                        ">${adviserFeedback}</p>
+                    </div>
+                `;
+            }else if(isAdviserNotification && !adviserFeedback){
+                extraHtml += `
+                    <div style="
+                        margin-top:16px;
+                        background:#faf8ff;
+                        border:1.5px solid #ece3ff;
+                        border-radius:16px;
+                        padding:14px 16px;
+                        color:#9ca3af;
+                        font-size:13px;
+                        display:flex;
+                        align-items:center;
+                        gap:8px;
+                    ">
+                        <i class="fa-solid fa-comment-slash"></i>
+                        No feedback was provided by the adviser.
+                    </div>
+                `;
+            }
+
+            document.getElementById("modalExtra").innerHTML = extraHtml;
+
+            document.getElementById("viewModal").style.display =
+                "flex";
+
+            if(Number(item.is_read) === 0){
+
+                await markNotificationRead(item.id);
+
+            }
+
+        }
+
+        function closeViewModal(){
+
+            document.getElementById("viewModal").style.display =
+                "none";
+
+        }
+
+        async function markNotificationRead(notificationId){
+
+            try{
+
+                await fetch(
+                    `http://localhost:3005/mark-student-notification-read/${notificationId}`,
+                    {
+                        method:"PUT",
+
+                        headers:{
+                            "Content-Type":"application/json"
+                        },
+
+                        body:JSON.stringify({
+                            studentUserId:loggedInUserId
+                        })
+                    }
+                );
+
+                loadStudentNotifications();
+                if(window.PortalNotifications){
+                    window.PortalNotifications.refresh(false);
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+        async function markAllAsRead(){
+
+            const confirmed =
+                confirm("Mark all system notifications as read?");
+
+            if(!confirmed){
+                return;
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/mark-all-student-notifications-read",
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                studentUserId:loggedInUserId
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Notifications updated."
+                );
+
+                if(data.success){
+
+                    loadStudentNotifications();
+                    if(window.PortalNotifications){
+                        window.PortalNotifications.refresh(false);
+                    }
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot update notifications.");
+
+            }
+
+        }
+
+        function getUpdateId(item){
+
+            if(item.type === "announcement"){
+                return item.raw.id;
+            }
+
+            if(item.type === "defense"){
+                return item.raw.id;
+            }
+
+            if(item.type === "system"){
+                return item.raw.id;
+            }
+
+            return null;
+
+        }
+
+        async function hideUpdate(updateType, updateId){
+
+            if(!updateType || !updateId){
+
+                alert("Missing update information.");
+
+                return;
+
+            }
+
+            const confirmed =
+                confirm("Remove this update from your view?");
+
+            if(!confirmed){
+                return;
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/hide-student-update",
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                studentUserId:loggedInUserId,
+                                updateType:updateType,
+                                updateId:updateId
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(
+                    data.message || "Update removed."
+                );
+
+                if(data.success){
+
+                    loadStudentNotifications();
+                    if(window.PortalNotifications){
+                        window.PortalNotifications.refresh(false);
+                    }
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot remove update.");
+
+            }
+
+        }
+
+        function getKeyword(){
+
+            return document
+                .getElementById("searchInput")
+                .value
+                .toLowerCase();
+
+        }
+
+        function matchesKeyword(item, keyword){
+
+            return String(item.title || "").toLowerCase().includes(keyword)
+                ||
+                String(item.subtitle || "").toLowerCase().includes(keyword)
+                ||
+                String(item.content || "").toLowerCase().includes(keyword);
+
+        }
+
+        function getAudienceText(item){
+
+            if(item.audience === "Program"){
+
+                return `Program: ${item.target_program || "Not Set"}`;
+
+            }
+
+            if(item.audience === "Students"){
+
+                return "All Students";
+
+            }
+
+            if(item.audience === "All Users" || item.audience === "All"){
+
+                return "All Users";
+
+            }
+
+            return item.audience || "General";
+
+        }
+
+        function shortenText(text, maxLength){
+
+            if(!text){
+                return "";
+            }
+
+            if(text.length <= maxLength){
+                return text;
+            }
+
+            return text.substring(0, maxLength) + "...";
+
+        }
+
+        function formatDate(dateValue){
+
+            if(!dateValue){
+                return "N/A";
+            }
+
+            const date =
+                new Date(dateValue);
+
+            return date.toLocaleDateString(
+                "en-US",
+                {
+                    year:"numeric",
+                    month:"short",
+                    day:"numeric"
+                }
+            );
+
+        }
+
+        function formatTime(timeValue){
+
+            if(!timeValue){
+                return "N/A";
+            }
+
+            return String(timeValue).slice(0, 5);
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        loadStudentNotifications();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

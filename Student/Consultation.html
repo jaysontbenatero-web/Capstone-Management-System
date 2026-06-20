@@ -1,0 +1,299 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation | CMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="student-portal.css">
+    <link rel="stylesheet" href="Consultation.css">
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+</head>
+<body class="admin-portal">
+    <div class="bg1"></div><div class="bg2"></div>
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark"><img src="../Images/CapstoneXicon.png" alt="CMS"></div>
+                <div><h1>CMS</h1><p>Student Portal</p></div>
+            </div>
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='StudentDash.html'">
+                    <i class="fa-solid fa-house"></i><span>Dashboard</span>
+                </div>
+                <div class="menu-title">Capstone</div>
+                <div class="menu-item" id="nav-titles" onclick="window.location.href='Capstone_Titles.html'">
+                    <i class="fa-solid fa-book-open"></i><span>Capstone Titles</span>
+                </div>
+                <div class="menu-item" id="nav-members" onclick="window.location.href='Members.html'">
+                    <i class="fa-solid fa-users"></i><span>Members</span>
+                </div>
+                <div class="menu-item" id="nav-adviser" onclick="window.location.href='Req_Adviser.html'">
+                    <i class="fa-solid fa-user-tie"></i><span>Request Adviser</span>
+                </div>
+                <div class="menu-item" id="nav-documents" onclick="window.location.href='Documents.html'">
+                    <i class="fa-solid fa-file-arrow-up"></i><span>Records Management</span>
+                </div>
+                <div class="menu-item active" id="nav-consultation" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i><span>Consultation</span>
+                </div>
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i><span>Messages</span>
+                </div>
+                <div class="menu-title">Updates</div>
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i><span>Notifications</span>
+                </div>
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i><span>Settings</span>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer"><div class="menu-item logout-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></div></div>
+    </aside>
+
+    <main class="main admin-main">
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Consultation Requests</h1>
+                <p>Submit and track your consultation requests with your assigned adviser or instructor.</p>
+            </div>
+            <div class="top-actions">
+                <button class="history-toggle-btn" id="historyToggleBtn" onclick="toggleHistory()">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    History
+                </button>
+            </div>
+        </div>
+
+        <!-- NEW REQUEST FORM -->
+        <section class="card" id="formSection">
+            <h2>New Consultation Request</h2>
+            <p id="facultyHint">Loading assigned faculty...</p>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Send To</label>
+                    <select id="facultySelect"></select>
+                </div>
+                <div class="input-group">
+                    <label>Consultation Type</label>
+                    <select id="consultationType" onchange="toggleTopicField()">
+                        <option value="Document Consultation">Document Consultation</option>
+                        <option value="System Consultation">System Consultation</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group" id="topicGroup">
+                <label>Document / Topic</label>
+                <input type="text" id="consultationTopic" list="topicOptions" placeholder="Search or enter topic...">
+                <datalist id="topicOptions">
+                    <option value="Chapter 1"></option>
+                    <option value="Proposal Manuscript"></option>
+                    <option value="Defense Requirements"></option>
+                    <option value="Revision Notes"></option>
+                    <option value="Final Documentation"></option>
+                </datalist>
+            </div>
+            <div class="input-group">
+                <label>Concern / Message</label>
+                <textarea id="consultationMessage" placeholder="Explain your request or issue..."></textarea>
+            </div>
+            <button class="submit-btn" onclick="submitConsultation()">
+                <i class="fa-solid fa-paper-plane"></i> Submit Request
+            </button>
+        </section>
+
+        <!-- ACTIVE RECORDS -->
+        <section class="card" id="activeSection">
+            <div class="section-head">
+                <h2 class="history-title">
+                    <i class="fa-solid fa-list-check" style="color:#7c3aed;margin-right:8px;"></i>
+                    Active Consultations
+                </h2>
+            </div>
+            <div class="request-grid" id="consultationList">
+                <div class="request-card"><p>Loading consultation records...</p></div>
+            </div>
+        </section>
+
+        <!-- HISTORY -->
+        <section class="card" id="historySection" style="display:none;">
+            <div class="section-head">
+                <h2 class="history-title">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:#059669;margin-right:8px;"></i>
+                    Consultation History
+                </h2>
+            </div>
+            <div class="request-grid" id="historyList">
+                <div class="request-card"><p>Loading history...</p></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="student-portal.js"></script>
+    <script>
+        const userId = localStorage.getItem("userId");
+        let consultations = [];
+        let showingHistory = false;
+
+        function logout(){ localStorage.clear(); window.location.href = "../Log-in.html"; }
+
+        /* ── Compute status client-side ── */
+        function computeStatus(item){
+            if(!item.scheduled_date) return "Pending";
+            const endTime   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : null;
+            const startTime = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : null;
+            const dateStr   = String(item.scheduled_date).slice(0,10);
+            const now       = new Date();
+            if(endTime){
+                const endDt   = new Date(`${dateStr}T${endTime}`);
+                const startDt = startTime ? new Date(`${dateStr}T${startTime}`) : endDt;
+                if(now >= startDt && now <= endDt) return "Ongoing";
+                if(now > endDt) return "Completed";
+            }
+            return "Scheduled";
+        }
+
+        function statusClass(status){
+            const key = String(status||"").toLowerCase();
+            if(key==="scheduled")  return "b-scheduled";
+            if(key==="ongoing")    return "b-ongoing";
+            if(key==="completed")  return "b-completed";
+            if(key==="cancelled")  return "b-cancelled";
+            return "b-pending";
+        }
+
+        function toggleTopicField(){
+            const type = document.getElementById("consultationType").value;
+            document.getElementById("topicGroup").style.display = type === "Document Consultation" ? "block" : "none";
+        }
+
+        function toggleHistory(){
+            showingHistory = !showingHistory;
+            document.getElementById("formSection").style.display    = showingHistory ? "none" : "block";
+            document.getElementById("activeSection").style.display  = showingHistory ? "none" : "block";
+            document.getElementById("historySection").style.display = showingHistory ? "block" : "none";
+            const btn = document.getElementById("historyToggleBtn");
+            btn.innerHTML = showingHistory
+                ? '<i class="fa-solid fa-list"></i> Active Requests'
+                : '<i class="fa-solid fa-clock-rotate-left"></i> History';
+            if(showingHistory) renderHistory();
+        }
+
+        async function loadContext(){
+            const res = await fetch(`http://localhost:3005/consultation-context/${encodeURIComponent(userId)}`);
+            const data = await res.json();
+            const select = document.getElementById("facultySelect");
+            select.innerHTML = "";
+            if(!data.success || !data.context || !Array.isArray(data.context.availableFaculty) || data.context.availableFaculty.length === 0){
+                document.getElementById("facultyHint").innerText = "No assigned adviser/instructor found yet.";
+                select.innerHTML = `<option value="">No recipient available</option>`;
+                return;
+            }
+            document.getElementById("facultyHint").innerText = "You can send to your assigned adviser or instructor.";
+            data.context.availableFaculty.forEach(item => {
+                select.innerHTML += `<option value="${item.faculty_id}">${item.assigned_role}: ${item.faculty_name} (${item.faculty_user_id})</option>`;
+            });
+        }
+
+        function buildStudentCard(item, isHistory){
+            const status  = computeStatus(item);
+            const dateStr  = item.scheduled_date ? String(item.scheduled_date).slice(0,10) : "";
+            const startStr = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : "";
+            const endStr   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : "";
+
+            const schedBlock = dateStr ? `
+                <div class="sched-box">
+                    <h4>Schedule Details</h4>
+                    <p><strong>Date:</strong> ${dateStr}</p>
+                    <p><strong>Time:</strong> ${startStr}${endStr ? " – " + endStr : ""}</p>
+                    <p><strong>Mode:</strong> ${item.consultation_mode || "N/A"}</p>
+                    <p><strong>Location/Link:</strong> ${item.location_or_link || "N/A"}</p>
+                </div>
+            ` : "";
+
+            return `
+                <article class="request-card ${isHistory ? "history-card" : ""}">
+                    <h3>${item.consultation_code || "Consultation Request"}</h3>
+                    <div class="request-meta">
+                        <span class="badge ${statusClass(status)}">${status}</span>
+                        <span class="badge">${item.consultation_type}</span>
+                    </div>
+                    <p><strong>Topic:</strong> ${item.topic || "N/A"}</p>
+                    <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
+                    <p><strong>Faculty:</strong> ${item.faculty_name || "N/A"} (${item.assigned_role || "-"})</p>
+                    <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+                    ${schedBlock}
+                </article>
+            `;
+        }
+
+        function renderConsultations(){
+            const list   = document.getElementById("consultationList");
+            const active = consultations.filter(c => computeStatus(c) !== "Completed");
+            if(!active.length){
+                list.innerHTML = `<div class="request-card"><p>No active consultation requests.</p></div>`;
+                return;
+            }
+            list.innerHTML = active.map(item => buildStudentCard(item, false)).join("");
+        }
+
+        function renderHistory(){
+            const list = document.getElementById("historyList");
+            const done = consultations.filter(c => computeStatus(c) === "Completed");
+            if(!done.length){
+                list.innerHTML = `<div class="request-card"><p>No completed consultations yet.</p></div>`;
+                return;
+            }
+            list.innerHTML = done.map(item => buildStudentCard(item, true)).join("");
+        }
+
+        async function loadConsultations(){
+            const res = await fetch(`http://localhost:3005/student-consultations/${encodeURIComponent(userId)}`);
+            const data = await res.json();
+            consultations = data.success ? (data.consultations || []) : [];
+            renderConsultations();
+        }
+
+        async function submitConsultation(){
+            const assignedFacultyId  = document.getElementById("facultySelect").value;
+            const consultationType   = document.getElementById("consultationType").value;
+            const topic              = document.getElementById("consultationTopic").value.trim();
+            const concernMessage     = document.getElementById("consultationMessage").value.trim();
+
+            if(!assignedFacultyId){ alert("No assigned faculty available yet."); return; }
+            if(consultationType === "Document Consultation" && !topic){ alert("Please enter/select a topic."); return; }
+            if(!concernMessage){ alert("Please enter your concern/message."); return; }
+
+            const res = await fetch("http://localhost:3005/student-consultations", {
+                method:"POST",
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify({ studentUserId:userId, assignedFacultyId, consultationType, topic, concernMessage })
+            });
+            const data = await res.json();
+            alert(data.message || "Request processed.");
+            if(data.success){
+                document.getElementById("consultationTopic").value = "";
+                document.getElementById("consultationMessage").value = "";
+                await loadConsultations();
+                if(window.PortalNotifications){ window.PortalNotifications.refresh(false); }
+            }
+        }
+
+        async function loadAllData(){
+            await loadContext();
+            await loadConsultations();
+        }
+
+        (async function init(){
+            toggleTopicField();
+            await loadAllData();
+            await initStudentGroupGate({ requireGroup:true, activeNav:"nav-consultation" });
+        })();
+    </script>
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+</html>

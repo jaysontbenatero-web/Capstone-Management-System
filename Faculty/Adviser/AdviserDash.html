@@ -1,0 +1,796 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Adviser Dashboard | CMS
+    </title>
+
+    <!-- GOOGLE FONT -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="AdviserDash.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <!-- LOGO -->
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Adviser Portal</p>
+                </div>
+            </div>
+
+            <!-- MENU -->
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item active"
+                    id="nav-home"
+                    onclick="window.location.href='AdviserDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+
+                    <span>
+                        Dashboard
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-groups"
+                    onclick="window.location.href='Capstone_Group.html'"
+                >
+                    <i class="fa-solid fa-users-gear"></i>
+
+                    <span>
+                        Capstone Groups
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-requests"
+                    onclick="window.location.href='Adviser_Request.html'"
+                >
+                    <i class="fa-solid fa-user-check"></i>
+
+                    <span>
+                        Adviser Request
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-documents"
+                    onclick="window.location.href='Documents.html'"
+                >
+                    <i class="fa-solid fa-file-lines"></i>
+
+                    <span>
+                        Documents
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    id="nav-consultation"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+
+                    <span>
+                        Consultation
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Adviser Dashboard</h1>
+
+                <p id="adviserSubtitle">
+                    Loading your adviser dashboard information...
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="dashboardSearch"
+                        placeholder="Search dashboard..."
+                    >
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ROLE ACCESS -->
+<section class="role-access-card">
+
+    <div class="role-header">
+
+        <div>
+            <h2>
+                Role Access
+            </h2>
+
+            <p>
+                Switch faculty roles and access different functionalities.
+            </p>
+        </div>
+
+        <button
+            class="role-toggle-btn"
+            onclick="toggleRoleAccess()"
+            type="button"
+        >
+            <i class="fa-solid fa-layer-group"></i>
+            Select Role
+            <i
+                class="fa-solid fa-chevron-down"
+                id="roleArrow"
+            ></i>
+        </button>
+
+    </div>
+
+    <div
+        class="role-grid show-role-grid"
+        id="roleGrid"
+    >
+
+        <div
+            class="role-card"
+            onclick="goToFacultyHome()"
+        >
+            <i class="fa-solid fa-house"></i>
+            <span>
+                Home
+            </span>
+        </div>
+
+        <div
+            class="role-card active-role-card"
+            onclick="window.location.href='AdviserDash.html'"
+        >
+            <i class="fa-solid fa-user-tie"></i>
+            <span>
+                Adviser
+            </span>
+        </div>
+
+        <div
+            class="role-card"
+            onclick="goToPanelist()"
+        >
+            <i class="fa-solid fa-clipboard-check"></i>
+            <span>
+                Panelist
+            </span>
+        </div>
+
+        <div
+            class="role-card"
+            onclick="goToInstructor()"
+        >
+            <i class="fa-solid fa-chalkboard-user"></i>
+            <span>
+                Instructor
+            </span>
+        </div>
+
+    </div>
+
+</section>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+
+                <div>
+                    <h2 id="assignedGroups">
+                        0
+                    </h2>
+
+                    <p>
+                        Assigned Groups
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                </div>
+
+                <div>
+                    <h2 id="pendingRequests">
+                        0
+                    </h2>
+
+                    <p>
+                        Pending Requests
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="documentsForReview">
+                        0
+                    </h2>
+
+                    <p>
+                        Documents for Review
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="approvedDocuments">
+                        0
+                    </h2>
+
+                    <p>
+                        Approved Documents
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="content-grid">
+
+            <!-- LEFT CONTENT -->
+            <section class="left-section">
+
+                <!-- QUICK ACTIONS -->
+                <div class="card">
+
+                    <div class="card-header">
+                        <div>
+                            <h2>
+                                Quick Actions
+                            </h2>
+
+                            <p>
+                                Access important adviser tasks faster.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="quick-grid">
+
+                        <div
+                            class="quick-card"
+                            onclick="window.location.href='Adviser_Request.html'"
+                        >
+                            <div class="quick-icon purple-light">
+                                <i class="fa-solid fa-user-check"></i>
+                            </div>
+
+                            <h3>
+                                Review Adviser Requests
+                            </h3>
+
+                            <p>
+                                View groups requesting you as their capstone adviser.
+                            </p>
+                        </div>
+
+                        <div
+                            class="quick-card"
+                            onclick="window.location.href='Capstone_Group.html'"
+                        >
+                            <div class="quick-icon blue-light">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+
+                            <h3>
+                                View Assigned Groups
+                            </h3>
+
+                            <p>
+                                Monitor the capstone groups assigned to you.
+                            </p>
+                        </div>
+
+                        <div
+                            class="quick-card"
+                            onclick="window.location.href='Documents.html'"
+                        >
+                            <div class="quick-icon yellow-light">
+                                <i class="fa-solid fa-file-pen"></i>
+                            </div>
+
+                            <h3>
+                                Review Documents
+                            </h3>
+
+                            <p>
+                                Check manuscript chapters, title proposals, and revisions.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ASSIGNED GROUPS OVERVIEW -->
+                <div class="card">
+
+                    <div class="card-header">
+                        <div>
+                            <h2>
+                                Assigned Groups Overview
+                            </h2>
+
+                            <p>
+                                A quick view of groups currently under your supervision.
+                            </p>
+                        </div>
+
+                        <button
+                            class="small-btn"
+                            onclick="window.location.href='Capstone_Group.html'"
+                        >
+                            View All
+                        </button>
+                    </div>
+
+                    <div id="assignedGroupsOverviewContainer">
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fa-solid fa-users-gear"></i>
+                            </div>
+
+                            <h3>
+                                No assigned groups loaded yet
+                            </h3>
+
+                            <p>
+                                Once adviser request approval and group assignment are connected,
+                                your assigned groups will appear here.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- RIGHT CONTENT -->
+            <aside class="right-section">
+
+                <!-- ADVISER STATUS -->
+                <div class="card adviser-status-card">
+
+                    <div class="status-top">
+                        <div class="status-avatar">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+
+                        <div>
+                            <h2>
+                                Adviser Status
+                            </h2>
+
+                            <p>
+                                Current advising capacity summary
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="status-list">
+
+                        <div class="status-item">
+                            <span>
+                                Program Catered
+                            </span>
+
+                            <strong id="programCatered">
+                                Not Set
+                            </strong>
+                        </div>
+
+                        <div class="status-item">
+                            <span>
+                                Year Level
+                            </span>
+
+                            <strong id="yearLevelCatered">
+                                Not Set
+                            </strong>
+                        </div>
+
+                        <div class="status-item">
+                            <span>
+                                Capacity
+                            </span>
+
+                            <strong id="adviserCapacity">
+                                0 Groups
+                            </strong>
+                        </div>
+
+                        <div class="status-item">
+                            <span>
+                                Availability
+                            </span>
+
+                            <strong class="available-text" id="availability">
+                                Not Configured
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- REMINDERS -->
+                <div class="card reminder-card">
+
+                    <div class="card-header simple">
+                        <h2>
+                            Adviser Reminders
+                        </h2>
+                    </div>
+
+                    <div class="reminder-list">
+
+                        <div class="reminder-item">
+                            <i class="fa-solid fa-circle-info"></i>
+
+                            <p>
+                                Review title proposals before accepting a group request.
+                            </p>
+                        </div>
+
+                        <div class="reminder-item">
+                            <i class="fa-solid fa-circle-info"></i>
+
+                            <p>
+                                Use document comments to guide students before approval.
+                            </p>
+                        </div>
+
+                        <div class="reminder-item">
+                            <i class="fa-solid fa-circle-info"></i>
+
+                            <p>
+                                Approved documents may later require e-signature support.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+        document.getElementById("nav-home").classList.add("active");
+
+        async function loadAdviserDashboardHeader(){
+
+            const userId =
+                localStorage.getItem("userId");
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/faculty-dashboard/${userId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(data.success && data.faculty){
+
+                    const faculty =
+                        data.faculty;
+
+                    document.getElementById("adviserSubtitle").innerText =
+                        `${faculty.fullname || "Faculty"} • ${faculty.user_id || "No ID"} • ${faculty.position || "Faculty"}`;
+
+                    localStorage.setItem(
+                        "fullname",
+                        faculty.fullname || ""
+                    );
+
+                    localStorage.setItem(
+                        "adviser_access",
+                        String(faculty.adviser_access || 0)
+                    );
+
+                    localStorage.setItem(
+                        "panelist_access",
+                        String(faculty.panelist_access || 0)
+                    );
+
+                    localStorage.setItem(
+                        "instructor_access",
+                        String(faculty.instructor_access || 0)
+                    );
+
+                    return;
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+            const fullname =
+                localStorage.getItem("fullname");
+
+            const storedUserId =
+                localStorage.getItem("userId");
+
+            document.getElementById("adviserSubtitle").innerText =
+                `${fullname || "Adviser"} • ${storedUserId || "No ID"} • Adviser`;
+
+        }
+
+        async function loadAdviserDashboardData() {
+            const userId = localStorage.getItem("userId");
+            try {
+                const response = await fetch(`http://localhost:3005/adviser-dashboard-data/${userId}`);
+                const data = await response.json();
+                if (data.success) {
+                    const stats = data.stats;
+                    document.getElementById("assignedGroups").innerText = stats.assignedGroups || 0;
+                    document.getElementById("pendingRequests").innerText = stats.pendingRequests || 0;
+                    document.getElementById("documentsForReview").innerText = stats.documentsForReview || 0;
+                    document.getElementById("approvedDocuments").innerText = stats.approvedDocuments || 0;
+
+                    // Adviser Status Card
+                    const faculty = data.faculty;
+                    const programText = faculty.program === "IS" ? "BSIS" : faculty.program === "IT" ? "BSIT" : "BSIT & BSIS";
+                    document.getElementById("programCatered").innerText = programText;
+                    document.getElementById("yearLevelCatered").innerText = "3rd & 4th Year";
+                    document.getElementById("adviserCapacity").innerText = "6 Groups";
+                    
+                    const availabilityEl = document.getElementById("availability");
+                    if (stats.assignedGroups >= 6) {
+                        availabilityEl.innerText = "Full Capacity";
+                        availabilityEl.className = "full-capacity-text";
+                        availabilityEl.style.color = "#dc2626";
+                    } else {
+                        availabilityEl.innerText = "Available";
+                        availabilityEl.className = "available-text";
+                        availabilityEl.style.color = "#15803d";
+                    }
+
+                    // Assigned Groups Overview
+                    const container = document.getElementById("assignedGroupsOverviewContainer");
+                    if (data.topGroups && data.topGroups.length > 0) {
+                        let html = '<div class="dashboard-group-list" style="display: flex; flex-direction: column; gap: 16px;">';
+                        data.topGroups.forEach(group => {
+                            const progName = group.program === "IS" ? "BSIS" : group.program === "IT" ? "BSIT" : "N/A";
+                            html += `
+                                <div style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 20px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; cursor: pointer;" onmouseover="this.style.background='#f8f4ff'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#faf8ff'; this.style.transform='none'" onclick="window.location.href='Capstone_Group.html'">
+                                    <div>
+                                        <h3 style="color: #2e1065; font-size: 18px; font-weight: 600; margin-bottom: 6px;">${group.group_name || 'Unnamed Group'}</h3>
+                                        <p style="color: #6d5f85; font-size: 14px; margin-bottom: 8px;">${group.project_title || 'No Project Title Set'}</p>
+                                        <span style="background: #ede9fe; color: #6d28d9; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px;">${group.stage || 'Stage 1'}</span>
+                                        <span style="background: #e0f2fe; color: #0369a1; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px; margin-left: 8px;">${progName}</span>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <span style="color: #7c3aed; font-size: 20px; font-weight: 700; display: block; margin-bottom: 4px;">${group.progress || 0}%</span>
+                                        <span style="color: #6d5f85; font-size: 12px;">Progress</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        container.innerHTML = html;
+                    } else {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fa-solid fa-users-gear"></i></div>
+                                <h3>No assigned groups loaded yet</h3>
+                                <p>Once adviser request approval and group assignment are connected, your assigned groups will appear here.</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading adviser dashboard data:", error);
+            }
+        }
+
+        loadAdviserDashboardHeader();
+        loadAdviserDashboardData();
+
+    </script>
+
+ <script>
+    const userRole =
+        localStorage.getItem("role");
+
+    const adviserAccess =
+        localStorage.getItem("adviser_access");
+
+    if(userRole !== "admin" && adviserAccess !== "1"){
+
+        alert(
+            "You do not have permission to access this role."
+        );
+
+        window.location.href =
+            "../FacultyDash.html";
+
+    }
+
+    function toggleRoleAccess(){
+
+        document
+            .getElementById("roleGrid")
+            .classList
+            .toggle("show-role-grid");
+
+    }
+
+    function goToFacultyHome(){
+
+        if(userRole === "admin"){
+
+            window.location.href =
+                "../../Admin/AdminDash.html";
+
+        }else{
+
+            window.location.href =
+                "../FacultyDash.html";
+
+        }
+
+    }
+
+    function goToPanelist(){
+
+        const panelistAccess =
+            localStorage.getItem("panelist_access");
+
+        if(userRole === "admin" || panelistAccess === "1"){
+
+            window.location.href =
+                "../Panelist/PanelistDash.html";
+
+        }else{
+
+            alert(
+                "You do not have permission to access the Panelist role."
+            );
+
+        }
+
+    }
+
+    function goToInstructor(){
+
+        const instructorAccess =
+            localStorage.getItem("instructor_access");
+
+        if(userRole === "admin" || instructorAccess === "1"){
+
+            window.location.href =
+                "../Instructor/InstructorDash.html";
+
+        }else{
+
+            alert(
+                "You do not have permission to access the Instructor role."
+            );
+
+        }
+
+    }
+</script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>
+

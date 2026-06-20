@@ -1,0 +1,338 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Password | CMS</title>
+
+    <link rel="icon" type="image/png" href="Images/CapstoneXicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="Force_Pass.css">
+
+</head>
+
+<body>
+
+    <!-- Atmospheric full-screen base -->
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grid-mesh" aria-hidden="true"></div>
+
+    <!-- Layered abstract wave composition -->
+    <div class="wave-stage" aria-hidden="true">
+        <svg viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#1e0a3c"/>
+                    <stop offset="50%" stop-color="#4c1d95"/>
+                    <stop offset="100%" stop-color="#312e81"/>
+                </linearGradient>
+                <linearGradient id="g2" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#5b21b6"/>
+                    <stop offset="60%" stop-color="#7c3aed"/>
+                    <stop offset="100%" stop-color="#6d28d9"/>
+                </linearGradient>
+                <linearGradient id="g3" x1="0%" y1="50%" x2="100%" y2="50%">
+                    <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.9"/>
+                    <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.7"/>
+                </linearGradient>
+                <linearGradient id="g4" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.15"/>
+                </linearGradient>
+                <linearGradient id="g5" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#4c1d95" stop-opacity="0.2"/>
+                </linearGradient>
+                <filter id="softBlur">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+                </filter>
+            </defs>
+            <!-- Deepest back layer -->
+            <path class="wave-layer wave-1" fill="url(#g1)" d="M0,0 L1200,0 L1200,900 L0,900 Z M0,520 Q200,380 400,450 T800,400 T1200,480 L1200,900 L0,900 Z" fill-rule="evenodd"/>
+            <!-- Mid sculptural wave -->
+            <path class="wave-layer wave-2" fill="url(#g2)" d="M0,580 Q180,420 380,500 Q580,580 780,460 Q980,340 1200,520 L1200,900 L0,900 Z"/>
+            <!-- Front luminous layer -->
+            <path class="wave-layer wave-3" fill="url(#g3)" d="M0,650 Q250,500 500,580 Q750,660 950,520 Q1100,420 1200,600 L1200,900 L0,900 Z" opacity="0.85"/>
+            <!-- Cyan accent slice -->
+            <path class="wave-layer wave-4" fill="url(#g4)" d="M0,720 Q300,580 600,640 Q900,700 1200,580 L1200,900 L0,900 Z"/>
+            <!-- Top paper-cut highlight -->
+            <path class="wave-layer wave-5" fill="url(#g5)" d="M0,400 Q350,280 700,380 Q950,450 1200,320 L1200,0 L0,0 Z" opacity="0.5"/>
+        </svg>
+    </div>
+
+    <div class="orb orb-1" aria-hidden="true"></div>
+    <div class="orb orb-2" aria-hidden="true"></div>
+    <div class="orb orb-3" aria-hidden="true"></div>
+
+    <div class="particles" aria-hidden="true">
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+    </div>
+
+    <div class="light-sweep" aria-hidden="true"></div>
+
+    <div class="scene">
+
+        <!-- CENTERED: Embedded security auth -->
+        <section class="auth-zone">
+
+            <header class="auth-header">
+                <p class="auth-label">Security Portal</p>
+                <h2>Reset Password</h2>
+                <p>Please update your credentials to secure your account</p>
+            </header>
+
+            <div class="notice-box">
+                <i class="fa-solid fa-circle-info"></i>
+                <p>
+                    For account security, please change your temporary password before accessing your dashboard.
+                </p>
+            </div>
+
+            <div class="auth-form-wrap">
+
+                <form class="password-form" onsubmit="changeForcedPassword(event)">
+
+                    <div class="input-group">
+                        <label for="userId">User ID</label>
+                        <div class="input-wrap">
+                            <input
+                                type="text"
+                                id="userId"
+                                readonly
+                            >
+                            <i class="fa-solid fa-user field-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="currentPassword">Current Password</label>
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="currentPassword"
+                                placeholder="Enter current password"
+                                required
+                            >
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <span class="password-toggle" onclick="togglePassword('currentPassword', this.querySelector('i'))">
+                                <i class="fa-solid fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="newPassword">New Password</label>
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="newPassword"
+                                placeholder="Enter new password"
+                                required
+                            >
+                            <i class="fa-solid fa-key field-icon"></i>
+                            <span class="password-toggle" onclick="togglePassword('newPassword', this.querySelector('i'))">
+                                <i class="fa-solid fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                placeholder="Confirm new password"
+                                required
+                            >
+                            <i class="fa-solid fa-shield-halved field-icon"></i>
+                            <span class="password-toggle" onclick="togglePassword('confirmPassword', this.querySelector('i'))">
+                                <i class="fa-solid fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="save-btn">
+                        <i class="fa-solid fa-check"></i> CHANGE PASSWORD
+                    </button>
+
+                    <button type="button" class="logout-btn" onclick="logout()">
+                        <i class="fa-solid fa-right-from-bracket"></i> LOGOUT INSTEAD
+                    </button>
+
+                </form>
+
+            </div>
+
+            <p class="footer-text">
+                <strong>INSTITUTE OF COMPUTING</strong>
+                Davao del Norte State College
+            </p>
+
+        </section>
+
+    </div>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        const loggedInRole =
+            localStorage.getItem("role");
+
+        if(!loggedInUserId || !loggedInRole){
+
+            window.location.href =
+                "Log-in.html";
+
+        }
+
+        document.getElementById("userId").value =
+            loggedInUserId || "";
+
+        async function changeForcedPassword(event){
+
+            event.preventDefault();
+
+            const currentPassword =
+                document.getElementById("currentPassword").value.trim();
+
+            const newPassword =
+                document.getElementById("newPassword").value.trim();
+
+            const confirmPassword =
+                document.getElementById("confirmPassword").value.trim();
+
+            if(
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword
+            ){
+                alert("Please complete all fields.");
+                return;
+            }
+
+            try{
+
+                const response =
+                    await fetch(
+                        "http://localhost:3005/force-change-password",
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+
+                            body:JSON.stringify({
+                                userId:loggedInUserId,
+                                currentPassword,
+                                newPassword,
+                                confirmPassword
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                alert(data.message || "Password updated.");
+
+                if(data.success){
+
+                    localStorage.setItem("forcePasswordChange", "0");
+
+                    redirectToDashboard(data.role || loggedInRole);
+
+                }
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function redirectToDashboard(role){
+
+            if(role === "admin"){
+
+                window.location.href =
+                    "Admin/AdminDash.html";
+
+            }else if(role === "faculty"){
+
+                window.location.href =
+                    "Faculty/Settings.html";
+
+            }else if(role === "student"){
+
+                window.location.href =
+                    "Student/Settings.html";
+
+            }else{
+
+                window.location.href =
+                    "Log-in.html";
+
+            }
+
+        }
+
+        function togglePassword(inputId, icon){
+
+            const input =
+                document.getElementById(inputId);
+
+            if(input.type === "password"){
+
+                input.type =
+                    "text";
+
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+
+            }else{
+
+                input.type =
+                    "password";
+
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+
+            }
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "Log-in.html";
+
+        }
+
+    </script>
+
+</body>
+
+</html>

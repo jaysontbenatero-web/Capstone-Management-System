@@ -1,0 +1,784 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Panelist Dashboard | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="PanelistDash.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        const panelistAccess =
+            localStorage.getItem("panelist_access");
+
+        if(userRole === "admin" && panelistAccess !== "1"){
+
+            alert("Your Panelist access is disabled. Enable it in Admin Settings first.");
+
+            window.location.href =
+                "../../Admin/AdminDash.html";
+
+        }else if(userRole !== "admin" && panelistAccess !== "1"){
+
+            alert("You do not have permission to access this role.");
+
+            window.location.href =
+                "../FacultyDash.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Panelist Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item active"
+                    onclick="window.location.href='PanelistDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>
+                        Dashboard
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Panelist Tasks
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Assigned_Defenses.html'"
+                >
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>
+                        Assigned Defenses
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Defense_Document.html'"
+                >
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>
+                        Defense Documents
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Panelist Dashboard</h1>
+
+                <p id="panelistSubtitle">
+                    Loading your panelist dashboard information...
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="dashboardSearch"
+                        placeholder="Search dashboard..."
+                        onkeyup="renderDashboardLists()"
+                    >
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ROLE ACCESS -->
+        <section class="role-access-card">
+
+            <div class="role-header">
+
+                <div>
+                    <h2>
+                        Role Access
+                    </h2>
+
+                    <p>
+                        Switch to another portal depending on your enabled access.
+                    </p>
+                </div>
+
+                <button
+                    class="role-toggle-btn"
+                    onclick="toggleRoleAccess()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-layer-group"></i>
+                    Select Role
+                    <i
+                        class="fa-solid fa-chevron-down"
+                        id="roleArrow"
+                    ></i>
+                </button>
+
+            </div>
+
+            <div
+                class="role-grid show-role-grid"
+                id="roleGrid"
+            >
+
+                <div
+                    class="role-card"
+                    onclick="goHomeRole()"
+                >
+                    <i class="fa-solid fa-house"></i>
+
+                    <span>
+                        Home
+                    </span>
+                </div>
+
+                <div
+                    class="role-card"
+                    id="adviserRoleCard"
+                    onclick="openRole('adviser')"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+
+                    <span>
+                        Adviser
+                    </span>
+                </div>
+
+                <div class="role-card active-role-card">
+
+                    <i class="fa-solid fa-clipboard-check"></i>
+
+                    <span>
+                        Panelist
+                    </span>
+
+                </div>
+
+                <div
+                    class="role-card"
+                    id="instructorRoleCard"
+                    onclick="openRole('instructor')"
+                >
+                    <i class="fa-solid fa-chalkboard-user"></i>
+
+                    <span>
+                        Instructor
+                    </span>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="assignedDefenses">
+                        0
+                    </h2>
+
+                    <p>
+                        Assigned Defenses
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+
+                <div>
+                    <h2 id="upcomingDefenses">
+                        0
+                    </h2>
+
+                    <p>
+                        Upcoming
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <div>
+                    <h2 id="completedDefenses">
+                        0
+                    </h2>
+
+                    <p>
+                        Completed
+                    </p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-file-lines"></i>
+                </div>
+
+                <div>
+                    <h2 id="receivedDocuments">
+                        0
+                    </h2>
+
+                    <p>
+                        Received Documents
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="dashboard-grid">
+
+            <!-- ASSIGNED DEFENSES -->
+            <section class="dashboard-card">
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>
+                            Assigned Defenses
+                        </h2>
+
+                        <p>
+                            Defense schedules where you are assigned as panelist.
+                        </p>
+                    </div>
+
+                    <button
+                        class="text-btn"
+                        onclick="window.location.href='Assigned_Defenses.html'"
+                        type="button"
+                    >
+                        View All
+                    </button>
+
+                </div>
+
+                <div
+                    class="list-box"
+                    id="defenseList"
+                >
+                    <div class="empty-card">
+                        Loading assigned defenses...
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- RECEIVED DOCUMENTS -->
+            <section class="dashboard-card">
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>
+                            Received Documents
+                        </h2>
+
+                        <p>
+                            Recent capstone documents sent to you by student groups.
+                        </p>
+                    </div>
+
+                    <button
+                        class="text-btn"
+                        onclick="window.location.href='Defense_Document.html'"
+                        type="button"
+                    >
+                        View All
+                    </button>
+
+                </div>
+
+                <div
+                    class="list-box"
+                    id="documentList"
+                >
+                    <div class="empty-card">
+                        Loading documents...
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        const loggedInUserId =
+            localStorage.getItem("userId");
+
+        let panelistData = null;
+        let schedules = [];
+        let documents = [];
+
+        async function loadPanelistDashboard(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/panelist-dashboard/${loggedInUserId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    alert(
+                        data.message || "Failed to load panelist dashboard."
+                    );
+
+                    if(userRole === "admin"){
+
+                        window.location.href =
+                            "../../Admin/AdminDash.html";
+
+                    }else{
+
+                        window.location.href =
+                            "../FacultyDash.html";
+
+                    }
+
+                    return;
+
+                }
+
+                panelistData =
+                    data.panelist;
+
+                schedules =
+                    data.schedules || [];
+
+                documents =
+                    data.documents || [];
+
+                renderProfile(data.panelist);
+
+                renderStats(data.stats);
+
+                renderDashboardLists();
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function renderProfile(panelist){
+
+            document.getElementById("panelistSubtitle").innerText =
+                `${panelist.fullname || "Panelist"} • ${panelist.user_id || "No ID"} • ${panelist.position || "Panelist"}`;
+
+            localStorage.setItem(
+                "fullname",
+                panelist.fullname || ""
+            );
+
+            localStorage.setItem(
+                "adviser_access",
+                String(panelist.adviser_access || 0)
+            );
+
+            localStorage.setItem(
+                "panelist_access",
+                String(panelist.panelist_access || 0)
+            );
+
+            localStorage.setItem(
+                "instructor_access",
+                String(panelist.instructor_access || 0)
+            );
+
+        }
+
+        function renderStats(stats){
+
+            document.getElementById("assignedDefenses").innerText =
+                stats.assignedDefenses || 0;
+
+            document.getElementById("upcomingDefenses").innerText =
+                stats.upcomingDefenses || 0;
+
+            document.getElementById("completedDefenses").innerText =
+                stats.completedDefenses || 0;
+
+            document.getElementById("receivedDocuments").innerText =
+                stats.receivedDocuments || 0;
+
+        }
+
+        function renderDashboardLists(){
+
+            const keyword =
+                document.getElementById("dashboardSearch").value.toLowerCase();
+
+            renderDefenseList(keyword);
+
+            renderDocumentList(keyword);
+
+        }
+
+        function renderDefenseList(keyword){
+
+            const defenseList =
+                document.getElementById("defenseList");
+
+            const filtered =
+                schedules.filter(schedule =>
+                    String(schedule.schedule_code || "").toLowerCase().includes(keyword)
+                    ||
+                    String(schedule.group_id || "").toLowerCase().includes(keyword)
+                    ||
+                    String(schedule.group_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(schedule.project_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(schedule.room_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(schedule.defense_type || "").toLowerCase().includes(keyword)
+                    ||
+                    String(schedule.defense_status || "").toLowerCase().includes(keyword)
+                );
+
+            const latest =
+                filtered.slice(0, 5);
+
+            defenseList.innerHTML =
+                "";
+
+            if(latest.length === 0){
+
+                defenseList.innerHTML =
+                    `<div class="empty-card">No assigned defenses found.</div>`;
+
+                return;
+
+            }
+
+            latest.forEach(schedule => {
+
+                const programText =
+                    schedule.group_program === "IS"
+                    ? "BSIS"
+                    : schedule.group_program === "IT"
+                    ? "BSIT"
+                    : "Not Set";
+
+                const statusClass =
+                    String(schedule.defense_status || "Scheduled").toLowerCase();
+
+                defenseList.innerHTML +=
+                    `
+                        <div class="list-item">
+
+                            <div class="item-icon">
+                                <i class="fa-solid fa-calendar-days"></i>
+                            </div>
+
+                            <div class="item-body">
+                                <div class="item-top">
+                                    <h3>
+                                        ${schedule.group_name || "Unnamed Group"}
+                                    </h3>
+
+                                    <span class="${statusClass}">
+                                        ${schedule.defense_status || "Scheduled"}
+                                    </span>
+                                </div>
+
+                                <p>
+                                    ${schedule.defense_type || "Defense"} • ${programText}
+                                </p>
+
+                                <p>
+                                    ${formatDate(schedule.defense_date)} • ${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)} • ${schedule.room_name}
+                                </p>
+                            </div>
+
+                        </div>
+                    `;
+
+            });
+
+        }
+
+        function renderDocumentList(keyword){
+
+            const documentList =
+                document.getElementById("documentList");
+
+            const filtered =
+                documents.filter(documentItem =>
+                    String(documentItem.document_code || "").toLowerCase().includes(keyword)
+                    ||
+                    String(documentItem.document_title || "").toLowerCase().includes(keyword)
+                    ||
+                    String(documentItem.document_type || "").toLowerCase().includes(keyword)
+                    ||
+                    String(documentItem.group_name || "").toLowerCase().includes(keyword)
+                    ||
+                    String(documentItem.sender_name || "").toLowerCase().includes(keyword)
+                );
+
+            const latest =
+                filtered.slice(0, 5);
+
+            documentList.innerHTML =
+                "";
+
+            if(latest.length === 0){
+
+                documentList.innerHTML =
+                    `<div class="empty-card">No received documents found.</div>`;
+
+                return;
+
+            }
+
+            latest.forEach(documentItem => {
+
+                documentList.innerHTML +=
+                    `
+                        <div class="list-item">
+
+                            <div class="item-icon document-icon">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </div>
+
+                            <div class="item-body">
+                                <div class="item-top">
+                                    <h3>
+                                        ${documentItem.document_title || "Untitled Document"}
+                                    </h3>
+
+                                    <a
+                                        class="open-link"
+                                        href="http://localhost:3005${documentItem.file_path}"
+                                        target="_blank"
+                                    >
+                                        View
+                                    </a>
+                                </div>
+
+                                <p>
+                                    ${documentItem.document_type || "Document"} • ${documentItem.document_code || "No Code"}
+                                </p>
+
+                                <p>
+                                    From ${documentItem.sender_name || "Unknown"} • ${documentItem.group_name || "No Group"}
+                                </p>
+                            </div>
+
+                        </div>
+                    `;
+
+            });
+
+        }
+
+        function toggleRoleAccess(){
+
+            document
+                .getElementById("roleGrid")
+                .classList
+                .toggle("show-role-grid");
+
+        }
+
+        function goHomeRole(){
+
+            const role =
+                localStorage.getItem("role");
+
+            if(role === "admin"){
+
+                window.location.href =
+                    "../../Admin/AdminDash.html";
+
+            }else{
+
+                window.location.href =
+                    "../FacultyDash.html";
+
+            }
+
+        }
+
+        function openRole(role){
+
+            if(role === "adviser"){
+
+                const access =
+                    localStorage.getItem("adviser_access");
+
+                if(access === "1"){
+
+                    window.location.href =
+                        "../Adviser/AdviserDash.html";
+
+                }else{
+
+                    alert("You do not have Adviser access.");
+
+                }
+
+            }else if(role === "instructor"){
+
+                const access =
+                    localStorage.getItem("instructor_access");
+
+                if(access === "1"){
+
+                    window.location.href =
+                        "../Instructor/InstructorDash.html";
+
+                }else{
+
+                    alert("You do not have Instructor access.");
+
+                }
+
+            }
+
+        }
+
+        function formatDate(dateValue){
+
+            if(!dateValue){
+                return "N/A";
+            }
+
+            const date =
+                new Date(dateValue);
+
+            return date.toLocaleDateString(
+                "en-US",
+                {
+                    year:"numeric",
+                    month:"short",
+                    day:"numeric"
+                }
+            );
+
+        }
+
+        function formatTime(timeValue){
+
+            if(!timeValue){
+                return "N/A";
+            }
+
+            return String(timeValue).slice(0, 5);
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../../Log-in.html";
+
+        }
+
+        loadPanelistDashboard();
+
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>
+

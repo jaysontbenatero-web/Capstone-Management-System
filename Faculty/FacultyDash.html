@@ -1,0 +1,931 @@
+﻿﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Faculty Dashboard | CMS</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="FacultyDash.css"
+    >
+
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole =
+            localStorage.getItem("role");
+
+        if(userRole !== "faculty" && userRole !== "admin"){
+
+            alert("You do not have permission to access the Faculty Portal.");
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <aside class="sidebar admin-sidebar">
+
+        <div>
+
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Faculty Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+
+                <div class="menu-title">
+                    Main
+                </div>
+
+                <div
+                    class="menu-item active"
+                    onclick="window.location.href='FacultyDash.html'"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    <span>
+                        Home
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Capstone
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Repository.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>
+                        Capstone Repository
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    Communication
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Announcements.html'"
+                >
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>
+                        Announcements
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Messages.html'"
+                >
+                    <i class="fa-solid fa-message"></i>
+                    <span>
+                        Messages
+                    </span>
+                </div>
+
+                <div class="menu-title">
+                    System
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Notifications.html'"
+                >
+                    <i class="fa-solid fa-bell"></i>
+                    <span>
+                        Notifications
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Settings.html'"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>
+                        Settings
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <main class="main admin-main">
+
+        <div class="topbar">
+
+            <div class="welcome">
+                <h1>Faculty Dashboard</h1>
+
+                <p id="facultySubtitle">
+                    Loading your faculty dashboard information...
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="dashboardSearch"
+                        placeholder="Search dashboard..."
+                        onkeyup="filterFacultyDashboard()"
+                    >
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <i class="fa-solid fa-user-graduate"></i>
+
+                <h2 id="totalStudents">
+                    0
+                </h2>
+
+                <p>
+                    Total Students
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <i class="fa-solid fa-book-open"></i>
+
+                <h2 id="repositoryRecords">
+                    0
+                </h2>
+
+                <p>
+                    Repository Records
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <i class="fa-solid fa-file-circle-check"></i>
+
+                <h2 id="pendingReviews">
+                    0
+                </h2>
+
+                <p>
+                    Pending Reviews
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <i class="fa-solid fa-calendar-check"></i>
+
+                <h2 id="scheduledDefenses">
+                    0
+                </h2>
+
+                <p>
+                    Scheduled Defenses
+                </p>
+            </div>
+
+        </div>
+
+        <div class="role-access-card">
+
+            <div class="role-header">
+
+                <div>
+                    <h2>
+                        Role Access
+                    </h2>
+
+                    <p>
+                        Switch faculty roles and access different functionalities.
+                    </p>
+                </div>
+
+                <button
+                    class="role-toggle-btn"
+                    onclick="toggleRoles()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-layer-group"></i>
+                    Select Role
+
+                    <i
+                        class="fa-solid fa-chevron-down"
+                        id="roleArrow"
+                    ></i>
+                </button>
+
+            </div>
+
+            <div
+                class="role-dropdown show-roles"
+                id="roleDropdown"
+            >
+
+                <button
+                    class="role-option active-role"
+                    onclick="goHome()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-house"></i>
+                    Faculty
+                </button>
+
+                <button
+                    id="roleBtnAdviser"
+                    class="role-option"
+                    onclick="openRole('adviser')"
+                    type="button"
+                >
+                    <i class="fa-solid fa-user-tie"></i>
+                    Adviser
+                </button>
+
+                <button
+                    id="roleBtnPanelist"
+                    class="role-option"
+                    onclick="openRole('panelist')"
+                    type="button"
+                >
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    Panelist
+                </button>
+
+                <button
+                    id="roleBtnInstructor"
+                    class="role-option"
+                    onclick="openRole('instructor')"
+                    type="button"
+                >
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    Instructor
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="dashboard-grid">
+
+            <section class="left-section">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h2>
+                            Recent Documents
+                        </h2>
+
+                        <button
+                            class="purple-btn"
+                            onclick="openDocumentPage()"
+                            type="button"
+                        >
+                            View All
+                        </button>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>
+                                    Sender
+                                </th>
+
+                                <th>
+                                    Document
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="recentDocumentsTable">
+                            <tr>
+                                <td colspan="3">
+                                    Loading documents...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h2>
+                            Recent Activity
+                        </h2>
+                    </div>
+
+                    <div id="activityList">
+                        <div class="empty-card">
+                            Loading recent activity...
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <aside class="right-section">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h2>
+                            Upcoming Defense
+                        </h2>
+                    </div>
+
+                    <div
+                        class="defense-box"
+                        id="upcomingDefenseBox"
+                    >
+                        Loading upcoming defense...
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h2>
+                            Admin Announcements
+                        </h2>
+                    </div>
+
+                    <div id="announcementList">
+                        <div class="empty-card">
+                            Loading announcements...
+                        </div>
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        const loggedInFacultyId =
+            localStorage.getItem("userId");
+
+        let facultyData = null;
+        let recentDocuments = [];
+        let recentActivity = [];
+        let adminAnnouncements = [];
+        let upcomingDefense = null;
+
+        async function loadFacultyDashboard(){
+
+            try{
+
+                const response =
+                    await fetch(
+                        `http://localhost:3005/faculty-dashboard/${loggedInFacultyId}`
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!data.success){
+
+                    alert(data.message || "Failed to load faculty dashboard.");
+
+                    return;
+
+                }
+
+                facultyData =
+                    data.faculty;
+
+                recentDocuments =
+                    data.recentDocuments || [];
+
+                recentActivity =
+                    data.recentActivity || [];
+
+                adminAnnouncements =
+                    data.adminAnnouncements || [];
+
+                upcomingDefense =
+                    data.upcomingDefense || null;
+
+                renderFacultyProfile();
+
+                renderStats(data.stats);
+
+                renderRecentDocuments();
+
+                renderActivity();
+
+                renderUpcomingDefense();
+
+                renderAnnouncements();
+
+            }catch(error){
+
+                console.log(error);
+
+                alert("Cannot connect to server.");
+
+            }
+
+        }
+
+        function renderFacultyProfile(){
+
+            document.getElementById("facultySubtitle").innerText =
+                `${facultyData.fullname || "Faculty"} • ${facultyData.user_id || "No ID"} • ${facultyData.position || "Faculty"}`;
+
+            localStorage.setItem("fullname", facultyData.fullname || "");
+            localStorage.setItem("adviser_access", String(facultyData.adviser_access || 0));
+            localStorage.setItem("panelist_access", String(facultyData.panelist_access || 0));
+            localStorage.setItem("instructor_access", String(facultyData.instructor_access || 0));
+
+            const disableBtn = (id) => {
+                const btn = document.getElementById(id);
+                if(btn){
+                    btn.style.opacity = "0.5";
+                    btn.style.cursor = "not-allowed";
+                    btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); };
+                }
+            };
+
+            if(String(facultyData.adviser_access || 0) !== "1") disableBtn("roleBtnAdviser");
+            if(String(facultyData.panelist_access || 0) !== "1") disableBtn("roleBtnPanelist");
+            if(String(facultyData.instructor_access || 0) !== "1") disableBtn("roleBtnInstructor");
+
+        }
+
+        function renderStats(stats){
+
+            document.getElementById("totalStudents").innerText =
+                stats.totalStudents || 0;
+
+            document.getElementById("repositoryRecords").innerText =
+                stats.repositoryRecords || 0;
+
+            document.getElementById("pendingReviews").innerText =
+                stats.pendingReviews || 0;
+
+            document.getElementById("scheduledDefenses").innerText =
+                stats.scheduledDefenses || 0;
+
+        }
+
+        function getDashboardSearchTerm(){
+
+            return (
+                document.getElementById("dashboardSearch")?.value || ""
+            ).trim().toLowerCase();
+
+        }
+
+        function filterFacultyDashboard(){
+
+            renderRecentDocuments();
+
+            renderActivity();
+
+            renderAnnouncements();
+
+        }
+
+        function renderRecentDocuments(){
+
+            const table =
+                document.getElementById("recentDocumentsTable");
+
+            table.innerHTML =
+                "";
+
+            const term =
+                getDashboardSearchTerm();
+
+            const filteredDocuments =
+                term
+                ? recentDocuments.filter(item =>
+                    `${item.sender_name || ""} ${item.document_title || ""} ${item.review_status || ""}`
+                        .toLowerCase()
+                        .includes(term)
+                  )
+                : recentDocuments;
+
+            if(filteredDocuments.length === 0){
+
+                table.innerHTML =
+                    `
+                        <tr>
+                            <td colspan="3">
+                                No recent documents found.
+                            </td>
+                        </tr>
+                    `;
+
+                return;
+
+            }
+
+            filteredDocuments.forEach(item => {
+
+                table.innerHTML +=
+                    `
+                        <tr>
+                            <td>
+                                ${item.sender_name || "Unknown"}
+                            </td>
+
+                            <td>
+                                ${item.document_title || "Untitled Document"}
+                            </td>
+
+                            <td>
+                                <span class="status ${getStatusClass(item.review_status)}">
+                                    ${item.review_status || "Pending Review"}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+
+            });
+
+        }
+
+        function renderActivity(){
+
+            const container =
+                document.getElementById("activityList");
+
+            container.innerHTML =
+                "";
+
+            const term =
+                getDashboardSearchTerm();
+
+            const filteredActivity =
+                term
+                ? recentActivity.filter(item =>
+                    `${item.activity_type || ""} ${item.activity_title || ""}`
+                        .toLowerCase()
+                        .includes(term)
+                  )
+                : recentActivity;
+
+            if(filteredActivity.length === 0){
+
+                container.innerHTML =
+                    `<div class="empty-card">No recent activity found.</div>`;
+
+                return;
+
+            }
+
+            filteredActivity.forEach(item => {
+
+                container.innerHTML +=
+                    `
+                        <div class="activity">
+
+                            <div class="activity-icon">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+
+                            <div>
+                                <h3>
+                                    ${item.activity_type || "Activity"}
+                                </h3>
+
+                                <p>
+                                    ${item.activity_title || "No details"} • ${formatDate(item.activity_date)}
+                                </p>
+                            </div>
+
+                        </div>
+                    `;
+
+            });
+
+        }
+
+        function renderUpcomingDefense(){
+
+            const box =
+                document.getElementById("upcomingDefenseBox");
+
+            if(!upcomingDefense){
+
+                box.innerHTML =
+                    `
+                        <h3>
+                            No upcoming defense
+                        </h3>
+
+                        <p>
+                            No scheduled defense assigned to you yet.
+                        </p>
+                    `;
+
+                return;
+
+            }
+
+            box.innerHTML =
+                `
+                    <h3>
+                        ${upcomingDefense.defense_type || "Defense Schedule"}
+                    </h3>
+
+                    <p>
+                        ${upcomingDefense.group_name || "Unnamed Group"}
+                    </p>
+
+                    <p>
+                        ${formatDate(upcomingDefense.defense_date)} • ${formatTime(upcomingDefense.start_time)} - ${formatTime(upcomingDefense.end_time)}
+                    </p>
+
+                    <span>
+                        ${upcomingDefense.room_name || "No Room"}
+                    </span>
+                `;
+
+        }
+
+        function renderAnnouncements(){
+
+            const container =
+                document.getElementById("announcementList");
+
+            container.innerHTML =
+                "";
+
+            const term =
+                getDashboardSearchTerm();
+
+            const filteredAnnouncements =
+                term
+                ? adminAnnouncements.filter(item =>
+                    `${item.announcement_title || ""} ${item.announcement_content || ""}`
+                        .toLowerCase()
+                        .includes(term)
+                  )
+                : adminAnnouncements;
+
+            if(filteredAnnouncements.length === 0){
+
+                container.innerHTML =
+                    `<div class="empty-card">No admin announcements found.</div>`;
+
+                return;
+
+            }
+
+            filteredAnnouncements.forEach(item => {
+
+                container.innerHTML +=
+                    `
+                        <div class="announcement">
+
+                            <h3>
+                                ${item.announcement_title || "Announcement"}
+                            </h3>
+
+                            <p>
+                                ${shortenText(item.announcement_content || "", 120)}
+                            </p>
+
+                            <small>
+                                ${formatDate(item.created_at)}
+                            </small>
+
+                        </div>
+                    `;
+
+            });
+
+        }
+
+        function openDocumentPage(){
+
+            if(localStorage.getItem("instructor_access") === "1"){
+
+                window.location.href =
+                    "Instructor/Document_Review.html";
+
+            }else if(localStorage.getItem("adviser_access") === "1"){
+
+                window.location.href =
+                    "Adviser/Documents.html";
+
+            }else{
+
+                alert("You do not have document review access yet.");
+
+            }
+
+        }
+
+        function toggleRoles(){
+
+            document.getElementById("roleDropdown").classList.toggle("show-roles");
+
+            document.getElementById("roleArrow").classList.toggle("rotate-arrow");
+
+        }
+
+        function goHome(){
+
+            if(userRole === "admin"){
+
+                window.location.href =
+                    "../Admin/AdminDash.html";
+
+            }else{
+
+                window.location.href =
+                    "FacultyDash.html";
+
+            }
+
+        }
+
+        function openRole(role){
+
+            if(role === "adviser"){
+
+                if(localStorage.getItem("adviser_access") === "1"){
+
+                    window.location.href =
+                        "Adviser/AdviserDash.html";
+
+                }else{
+
+                    alert("You do not have permission to access Adviser role.");
+
+                }
+
+            }
+
+            if(role === "panelist"){
+
+                if(localStorage.getItem("panelist_access") === "1"){
+
+                    window.location.href =
+                        "Panelist/PanelistDash.html";
+
+                }else{
+
+                    alert("You do not have permission to access Panelist role.");
+
+                }
+
+            }
+
+            if(role === "instructor"){
+
+                if(localStorage.getItem("instructor_access") === "1"){
+
+                    window.location.href =
+                        "Instructor/InstructorDash.html";
+
+                }else{
+
+                    alert("You do not have permission to access Instructor role.");
+
+                }
+
+            }
+
+        }
+
+        function getStatusClass(status){
+
+            if(status === "Approved"){
+                return "approved";
+            }
+
+            if(status === "Subject to Change"){
+                return "review";
+            }
+
+            if(status === "Rejected"){
+                return "rejected";
+            }
+
+            return "review";
+
+        }
+
+        function shortenText(text, limit){
+
+            if(text.length <= limit){
+                return text;
+            }
+
+            return text.substring(0, limit) + "...";
+
+        }
+
+        function formatDate(dateValue){
+
+            if(!dateValue){
+                return "N/A";
+            }
+
+            const date =
+                new Date(dateValue);
+
+            return date.toLocaleDateString(
+                "en-US",
+                {
+                    year:"numeric",
+                    month:"short",
+                    day:"numeric"
+                }
+            );
+
+        }
+
+        function formatTime(timeValue){
+
+            if(!timeValue){
+                return "N/A";
+            }
+
+            return String(timeValue).slice(0, 5);
+
+        }
+
+        function logout(){
+
+            localStorage.clear();
+
+            window.location.href =
+                "../Log-in.html";
+
+        }
+
+        loadFacultyDashboard();
+
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>
