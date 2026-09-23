@@ -1508,7 +1508,7 @@ async function loadStudentGroup(){
                 <div class="member">
 
                     <div class="member-avatar">
-                        ${initial}
+                        ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : initial}
                     </div>
 
                     <div>
@@ -1562,7 +1562,7 @@ async function loadStudentGroup(){
             <div class="assigned-adviser-top">
 
                 <div class="assigned-adviser-avatar">
-                    ${group.adviser_name.charAt(0).toUpperCase()}
+                    ${group.adviser_profile_image ? `<img src="http://localhost:3005${group.adviser_profile_image}" alt="Adviser Profile">` : group.adviser_name.charAt(0).toUpperCase()}
                 </div>
 
                 <div class="assigned-adviser-main">

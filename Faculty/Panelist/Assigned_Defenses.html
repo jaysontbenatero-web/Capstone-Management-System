@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -2959,7 +2959,10 @@
 
                     sortedMembers.forEach((member, idx) => {
                         const isLeader = idx === 0;
-                        const roleLabel = isLeader ? "Project Manager / Leader" : `Member ${idx}`;
+                        const memberActualPos = member.student_position || member.member_position;
+                        const roleLabel = isLeader 
+                            ? "Project Manager / Leader" 
+                            : (memberActualPos && memberActualPos !== "Member" ? memberActualPos : `Member ${idx}`);
                         
                         // Lineup visual list
                         lineupContainer.innerHTML += `
@@ -3050,7 +3053,10 @@
                     });
 
                     sortedMembers.forEach((member, idx) => {
-                        const roleLabel = idx === 0 ? "Project Manager / Leader" : `Member ${idx}`;
+                        const memberActualPos = member.student_position || member.member_position;
+                        const roleLabel = idx === 0 
+                            ? "Project Manager / Leader" 
+                            : (memberActualPos && memberActualPos !== "Member" ? memberActualPos : `Member ${idx}`);
 
                         outlineLineup.innerHTML += `
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);">

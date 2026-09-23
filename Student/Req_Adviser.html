@@ -30,6 +30,26 @@
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
     <link rel="stylesheet" href="student-portal.css">
+        <style>
+            /* Similarity rejection alert styles */
+            .similarity-reject {
+                background: linear-gradient(90deg,#fff1f2,#fee2e2);
+                border: 1px solid #fecaca;
+                color: #7f1d1d;
+                padding: 12px 14px;
+                border-radius: 12px;
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                box-shadow: 0 6px 18px rgba(124,58,237,0.04);
+            }
+            .similarity-reject .sr-icon{font-size:20px; color:#b91c1c;}
+            .similarity-reject .sr-body{flex:1; font-size:13px;}
+            .similarity-reject .sr-actions{display:flex; gap:8px}
+            .sr-edit-btn{background:#fff; border:1px solid #f87171; color:#b91c1c; padding:6px 10px; border-radius:8px; font-weight:600}
+            .sr-compare-btn{background:linear-gradient(135deg,#7c3aed,#a855f7); color:white; padding:6px 10px; border-radius:8px; font-weight:600; border:none}
+            .similarity-badge{letter-spacing:0.2px}
+        </style>
 </head>
 
 <body class="admin-portal">
@@ -172,7 +192,7 @@
                 <h1>Request Adviser</h1>
 
                 <p>
-                    Enter your 3 proposed titles first, then browse and request an adviser. Upload PDFs in Records Management.
+                    Enter your 3 proposed titles and PDFs here first, then browse and request an adviser. Files sync to Records Management automatically.
                 </p>
             </div>
 
@@ -221,7 +241,7 @@
                     </h2>
 
                     <p>
-                        Enter your 3 proposed capstone titles and attach the PDF concept paper for each one. Both are required before you can save a title proposal.
+                        Enter your 3 proposed capstone titles and attach the PDF for each. Saved proposals also appear in Records Management → Concept Presentation → Proposed concept paper (1–3).
                     </p>
                 </div>
 
@@ -257,7 +277,7 @@
                         id="pdfInput1"
                         accept=".pdf"
                         style="display:none;"
-                        onchange="updatePdfLabel(1)"
+                        onchange="onProposalPdfSelected(1)"
                     >
                     <label
                         class="pdf-pick-label"
@@ -305,7 +325,7 @@
                         id="pdfInput2"
                         accept=".pdf"
                         style="display:none;"
-                        onchange="updatePdfLabel(2)"
+                        onchange="onProposalPdfSelected(2)"
                     >
                     <label
                         class="pdf-pick-label"
@@ -353,7 +373,7 @@
                         id="pdfInput3"
                         accept=".pdf"
                         style="display:none;"
-                        onchange="updatePdfLabel(3)"
+                        onchange="onProposalPdfSelected(3)"
                     >
                     <label
                         class="pdf-pick-label"
@@ -393,9 +413,32 @@
                 <input
                     type="text"
                     id="searchAdviser"
-                    placeholder="Search adviser..."
+                    placeholder="Search adviser name or position..."
                     onkeyup="filterAdvisers()"
                 >
+            </div>
+
+            <div class="filter-controls">
+                <select id="filterProgram" onchange="filterAdvisers()">
+                    <option value="All">All Programs</option>
+                    <option value="IT">BSIT</option>
+                    <option value="IS">BSIS</option>
+                    <option value="Both">Both Programs</option>
+                </select>
+
+                <select id="filterYearLevel" onchange="filterAdvisers()">
+                    <option value="All">All Year Levels</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                    <option value="Both">Both Year Levels</option>
+                </select>
+
+                <select id="filterStatus" onchange="filterAdvisers()">
+                    <option value="All">All Statuses</option>
+                    <option value="Available">Available</option>
+                    <option value="Unavailable">Unavailable</option>
+                    <option value="Not Configured">Not Configured</option>
+                </select>
             </div>
 
         </div>
@@ -497,7 +540,7 @@
             <div class="request-box">
 
                 <label>
-                    Request Message
+                    Request Message (Optional)
                 </label>
 
                 <textarea
@@ -529,6 +572,60 @@
 
         </div>
 
+    </div>
+
+    <!-- SIMILARITY REJECTION MODAL -->
+    <div class="modal-overlay" id="similarityRejectionModal" style="display: none; align-items: center; justify-content: center; z-index: 1200; background: rgba(15, 12, 25, 0.85); backdrop-filter: blur(8px);">
+        <div class="modal-box" style="width: 550px; max-width: 90vw; border-radius: 24px; padding: 30px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); background: #1a1625; color: #fff; transform: scale(0.95); transition: transform 0.3s ease;">
+            
+            <div style="display: flex; align-items: center; gap: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px;">
+                <div style="background: rgba(239, 68, 68, 0.15); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(239, 68, 68, 0.3); flex-shrink: 0;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 24px;"></i>
+                </div>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.4rem; font-weight: 700; color: #fca5a5;">Automatic Rejection</h2>
+                    <p style="margin: 4px 0 0; color: #9ca3af; font-size: 13px;">Proposal exceeds maximum similarity threshold</p>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); padding: 16px; border-radius: 16px;">
+                    <div>
+                        <span style="font-size: 12px; font-weight: 600; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.5px;">Similarity Score</span>
+                        <h3 id="rejectScoreText" style="margin: 4px 0 0; font-size: 2.2rem; font-weight: 800; color: #ef4444; letter-spacing: -0.5px;">100%</h3>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 11px; display: block; color: #9ca3af; margin-bottom: 2px;">Limit Threshold</span>
+                        <strong style="font-size: 14px; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.25);">90% Max</strong>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 14px;">
+                        <span style="font-size: 11px; font-weight: 600; color: #a78bfa; display: block; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">Your Proposal Title</span>
+                        <span id="rejectProposedTitle" style="font-size: 14px; font-weight: 600; line-height: 1.5; display: block; color: #e5e7eb;"></span>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 14px;">
+                        <span style="font-size: 11px; font-weight: 600; color: #f87171; display: block; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">Matched Archived Study</span>
+                        <span id="rejectMatchedTitle" style="font-size: 14px; font-weight: 600; line-height: 1.5; display: block; color: #fca5a5; font-style: italic;"></span>
+                    </div>
+                </div>
+
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #9ca3af; text-align: center;">
+                    To maintain academic integrity, proposals with a similarity score of 90% or higher are automatically blocked. Please revise your title and submit a new concept.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px;">
+                <button onclick="closeSimilarityRejectionModal()" style="flex: 1; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 12px 18px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+                    Close
+                </button>
+                <button id="rejectReviseBtn" style="flex: 1; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; border: none; padding: 12px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);">
+                    Revise Title
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- COMPARISON MODAL -->
@@ -594,7 +691,7 @@
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                                 <span style="background: #6d28d9; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">PROPOSAL BODY / OBJECTIVES</span>
                             </div>
-                            <div id="compareProposedBody" style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 12px; padding: 18px; font-size: 13.5px; color: #2e1065; line-height: 1.8; font-family: 'Consolas', 'Courier New', Courier, monospace; white-space: pre-wrap; word-break: break-word; overflow-x: auto;"></div>
+                            <div id="compareProposedBody" style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 12px; padding: 18px; font-size: 13.5px; color: #2e1065; line-height: 1.75; font-family: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif; white-space: pre-wrap; word-break: break-word; overflow-x: auto;"></div>
                         </div>
                     </div>
                     
@@ -792,33 +889,53 @@
                     let similarityHtml = "";
                     if (foundProposal.similarity_percentage !== null && foundProposal.similarity_percentage !== undefined) {
                         const simLevel = foundProposal.similarity_level || "Low Similarity";
-                        const simPercent = foundProposal.similarity_percentage;
+                        const simPercent = Number(foundProposal.similarity_percentage);
                         const matchedTitle = foundProposal.matched_title;
                         const badgeStyle = getBadgeStyle(simLevel);
 
-                        similarityHtml = `
-                            <div class="similarity-section" style="margin-top: 14px; border-top: 1px dashed #ece3ff; padding-top: 12px; text-align: left;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                    <small style="font-weight: 600; color: #6d5f85;">Similarity Checker:</small>
-                                    <span class="similarity-badge" style="font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: 700; ${badgeStyle}">
-                                        ${simPercent}% - ${simLevel}
-                                    </span>
+                        // If extremely high similarity (>=90%), show a prominent rejection-style alert
+                        if (simPercent >= 90) {
+                            similarityHtml = `
+                                <div class="similarity-section" style="margin-top:14px;">
+                                    <div class="similarity-reject">
+                                        <div class="sr-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                        <div class="sr-body">
+                                            <strong style="display:block; margin-bottom:4px;">Proposal rejected due to high similarity</strong>
+                                            <div style="font-size:13px; color: rgba(0,0,0,0.72);">Your proposed title is <strong>${simPercent}%</strong> similar to an archived study${matchedTitle ? ' — <em>' + escapeHtml(matchedTitle) + '</em>' : ''}. Please revise the title to avoid duplication. Titles with 90%+ similarity are not accepted.</div>
+                                        </div>
+                                        <div class="sr-actions">
+                                            <button class="sr-edit-btn" onclick="document.getElementById('proposalTitle${number}').focus();">Edit Title</button>
+                                            <button class="sr-compare-btn" onclick="openCompareModal(${number})"><i class="fa-solid fa-eye" style="margin-right:8px"></i>Compare</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                ${matchedTitle ? `
-                                    <div class="matched-info" style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 12px; padding: 10px; margin-bottom: 10px;">
-                                        <small style="display: block; font-weight: 600; color: #7c3aed; margin-bottom: 2px;">Matched Study:</small>
-                                        <span style="font-size: 12px; font-weight: 500; color: #2e1065; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(matchedTitle)}">
-                                            ${escapeHtml(matchedTitle)}
+                            `;
+                        } else {
+                            // Default similarity summary (non-rejection)
+                            similarityHtml = `
+                                <div class="similarity-section" style="margin-top: 14px; border-top: 1px dashed #ece3ff; padding-top: 12px; text-align: left;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <small style="font-weight: 600; color: #6d5f85;">Similarity Checker:</small>
+                                        <span class="similarity-badge" style="font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: 700; ${badgeStyle}">
+                                            ${simPercent}% - ${simLevel}
                                         </span>
                                     </div>
-                                    <button class="action-upload-pdf-btn" style="width: 100%; margin: 0; background: linear-gradient(135deg, #7c3aed, #a855f7);" onclick="openCompareModal(${number})">
-                                        <i class="fa-solid fa-eye"></i> Compare Side-by-Side
-                                    </button>
-                                ` : `
-                                    <small style="color: #6d5f85;">No similar studies found in repository.</small>
-                                `}
-                            </div>
-                        `;
+                                    ${matchedTitle ? `
+                                        <div class="matched-info" style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 12px; padding: 10px; margin-bottom: 10px;">
+                                            <small style="display: block; font-weight: 600; color: #7c3aed; margin-bottom: 2px;">Matched Study:</small>
+                                            <span style="font-size: 12px; font-weight: 500; color: #2e1065; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(matchedTitle)}">
+                                                ${escapeHtml(matchedTitle)}
+                                            </span>
+                                        </div>
+                                        <button class="action-upload-pdf-btn" style="width: 100%; margin: 0; background: linear-gradient(135deg, #7c3aed, #a855f7);" onclick="openCompareModal(${number})">
+                                            <i class="fa-solid fa-eye"></i> Compare Side-by-Side
+                                        </button>
+                                    ` : `
+                                        <small style="color: #6d5f85;">No similar studies found in repository.</small>
+                                    `}
+                                </div>
+                            `;
+                        }
                     }
 
                     display.innerHTML = `
@@ -877,6 +994,19 @@
 
         }
 
+        function onProposalPdfSelected(number){
+            updatePdfLabel(number);
+
+            const foundProposal =
+                titleProposals.find(item =>
+                    Number(item.title_number) === number
+                );
+
+            if(foundProposal && String(foundProposal.proposed_title || "").trim()){
+                handlePdfUpload(number);
+            }
+        }
+
         /* Update the PDF label when a file is chosen via the picker */
         function updatePdfLabel(number){
             const fileInput = document.getElementById(`pdfInput${number}`);
@@ -896,6 +1026,37 @@
         /* Triggered from the "Upload PDF" / "Replace PDF" button on an ALREADY saved card */
         function triggerPdfUpload(number){
             document.getElementById(`pdfInput${number}`).click();
+        }
+
+        /* Show/Close similarity rejection modal */
+        function showSimilarityRejectionModal(details) {
+            document.getElementById("rejectScoreText").innerText = `${details.percentage}%`;
+            document.getElementById("rejectProposedTitle").innerText = details.title;
+            document.getElementById("rejectMatchedTitle").innerText = details.matchedTitle || "Unknown Study";
+            
+            const reviseBtn = document.getElementById("rejectReviseBtn");
+            reviseBtn.onclick = function() {
+                closeSimilarityRejectionModal();
+                const titleInput = document.getElementById(`proposalTitle${details.number}`);
+                if (titleInput) {
+                    titleInput.focus();
+                    titleInput.select();
+                }
+            };
+            
+            const modal = document.getElementById("similarityRejectionModal");
+            modal.style.display = "flex";
+            setTimeout(() => {
+                modal.firstElementChild.style.transform = "scale(1)";
+            }, 10);
+        }
+
+        function closeSimilarityRejectionModal() {
+            const modal = document.getElementById("similarityRejectionModal");
+            modal.firstElementChild.style.transform = "scale(0.95)";
+            setTimeout(() => {
+                modal.style.display = "none";
+            }, 150);
         }
 
         /* Upload a new/replacement PDF for an already-saved proposal */
@@ -927,7 +1088,16 @@
                     { method:"POST", body:formData }
                 );
                 const data = await response.json();
-                alert(data.message || "Upload processed.");
+                if (data.isSimilarityRejection) {
+                    showSimilarityRejectionModal({
+                        percentage: data.similarityPercentage,
+                        title: proposedTitle,
+                        matchedTitle: data.matchedTitle,
+                        number: number
+                    });
+                } else {
+                    alert(data.message || "Upload processed.");
+                }
                 if(data.success){ loadTitleProposals(); }
             }catch(error){
                 console.log(error);
@@ -973,7 +1143,16 @@
                 );
 
                 const data = await response.json();
-                alert(data.message || "Saved.");
+                if (data.isSimilarityRejection) {
+                    showSimilarityRejectionModal({
+                        percentage: data.similarityPercentage,
+                        title: proposedTitle,
+                        matchedTitle: data.matchedTitle,
+                        number: number
+                    });
+                } else {
+                    alert(data.message || "Saved.");
+                }
 
                 if(data.success){
                     // Reset the picker label
@@ -1118,15 +1297,37 @@
 
         /* ════════════════ DYNAMIC TABLE FORMATTER ════════════════ */
 
-        // Format plain text for right panel (archived study) — no table parsing, just clean text with line breaks
-        function formatPlainText(text) {
+        // Clean and unwrap proposal body text so continuous sentences flow properly without artificial line breaks
+        function formatProposalText(text) {
             if (!text) return '';
-            // Escape HTML then preserve line breaks
-            const escaped = text
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            return escaped;
+            let str = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            str = str.replace(/(\w+)-\n+(\w+)/g, '$1$2');
+            const blocks = str.split(/\n{2,}/);
+            const cleanedBlocks = blocks.map(block => {
+                const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length === 0) return '';
+                let result = '';
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const isBullet = /^[•\-\*\d+[\.\)]]\s*/.test(line);
+                    if (i === 0) {
+                        result = line;
+                    } else if (isBullet) {
+                        result += '\n' + line;
+                    } else {
+                        const prevLine = lines[i - 1];
+                        const prevTerminal = /[.!?:]$/.test(prevLine);
+                        const isShortHeader = line.length < 40 && !/[.,;:]$/.test(line);
+                        if (prevTerminal && (isShortHeader || /^[A-Z0-9]/.test(line))) {
+                            result += '\n\n' + line;
+                        } else {
+                            result += ' ' + line;
+                        }
+                    }
+                }
+                return result;
+            });
+            return cleanedBlocks.filter(Boolean).join('\n\n').trim();
         }
 
         function openCompareModal(proposalNumber) {
@@ -1164,7 +1365,7 @@
                 console.error('Error parsing matching sections:', e);
             }
 
-            const rawBody = proposal.proposed_objectives || '';
+            const rawBody = formatProposalText(proposal.proposed_objectives || '');
             const rawTitle = proposal.proposed_title || '';
             
             if (rawBody.trim() || rawTitle.trim()) {
@@ -1249,7 +1450,7 @@
 
                 adviserGrid.innerHTML = `
                     <div class="empty-card">
-                        No adviser accounts found.
+                        No adviser accounts found matching current filters.
                     </div>
                 `;
 
@@ -1269,35 +1470,25 @@
                 const remaining =
                     adviser.group_capacity - adviser.assigned_groups;
 
-                const adviserCard =
+                const adviserRow =
                     document.createElement("div");
 
-                adviserCard.className =
-                    isNotConfigured ? "adviser-card not-configured" : "adviser-card";
+                adviserRow.className =
+                    isNotConfigured ? "adviser-row not-configured" : "adviser-row";
 
-                let capacityHtml = "";
+                let slotsHtml = "";
                 if (isNotConfigured) {
-                    capacityHtml = `
+                    slotsHtml = `
                         <div class="not-configured-alert">
                             <i class="fa-solid fa-circle-info"></i>
-                            <span>Advising settings are not configured.</span>
+                            <span>Settings not configured</span>
                         </div>
                     `;
                 } else {
-                    capacityHtml = `
-                        <div class="capacity-box">
-                            <div>
-                                <small>Program</small>
-                                <strong>${adviser.program_cater}</strong>
-                            </div>
-                            <div>
-                                <small>Capacity</small>
-                                <strong>${adviser.assigned_groups}/${adviser.group_capacity}</strong>
-                            </div>
-                            <div>
-                                <small>Remaining</small>
-                                <strong>${remaining < 0 ? 0 : remaining}</strong>
-                            </div>
+                    slotsHtml = `
+                        <div class="slots-box">
+                            <small>Slots Remaining</small>
+                            <strong>${remaining < 0 ? 0 : remaining}</strong>
                         </div>
                     `;
                 }
@@ -1325,43 +1516,39 @@
                     `;
                 }
 
-                adviserCard.innerHTML = `
-                    <div class="adviser-top">
-
+                adviserRow.innerHTML = `
+                    <div class="adviser-row-main">
                         <div class="adviser-avatar">
-                            ${initial}
+                            ${adviser.profile_image ? `<img src="http://localhost:3005${adviser.profile_image}" alt="Profile">` : initial}
                         </div>
-
-                        <div>
-                            <h3>
-                                ${adviser.fullname}
-                            </h3>
-
-                            <p>
-                                ${adviser.user_id}
-                            </p>
+                        <div class="adviser-row-details">
+                            <h3>${adviser.fullname}</h3>
+                            <p>${adviser.user_id} • ${adviser.position || "Faculty"}</p>
                         </div>
-
                     </div>
 
-                    <div class="adviser-meta">
-
-                        <span>
-                            ${adviser.position || "Faculty"}
+                    <div class="adviser-row-meta">
+                        <span class="badge program-badge">
+                            <i class="fa-solid fa-graduation-cap"></i> Program: ${adviser.program_cater}
                         </span>
-
-                        <span>
+                        <span class="badge year-badge">
+                            <i class="fa-solid fa-layer-group"></i> Year: ${adviser.year_level_cater}
+                        </span>
+                        <span class="badge status-badge ${adviser.adviser_status.toLowerCase().replace(/\s+/g, '-')}">
                             ${adviser.adviser_status}
                         </span>
-
                     </div>
 
-                    ${capacityHtml}
+                    <div class="adviser-row-capacity">
+                        ${slotsHtml}
+                    </div>
 
-                    ${buttonHtml}
+                    <div class="adviser-row-actions">
+                        ${buttonHtml}
+                    </div>
                 `;
 
-                adviserGrid.appendChild(adviserCard);
+                adviserGrid.appendChild(adviserRow);
 
             });
 
@@ -1374,16 +1561,30 @@
                 .value
                 .toLowerCase();
 
-            const filtered =
-                advisers.filter(adviser =>
-                    adviser.fullname.toLowerCase().includes(keyword)
-                    ||
-                    adviser.user_id.toLowerCase().includes(keyword)
-                    ||
-                    String(adviser.position || "")
-                    .toLowerCase()
-                    .includes(keyword)
-                );
+            const programFilter = document.getElementById("filterProgram").value;
+            const yearFilter = document.getElementById("filterYearLevel").value;
+            const statusFilter = document.getElementById("filterStatus").value;
+
+            const filtered = advisers.filter(adviser => {
+                const matchesKeyword = adviser.fullname.toLowerCase().includes(keyword)
+                    || adviser.user_id.toLowerCase().includes(keyword)
+                    || String(adviser.position || "").toLowerCase().includes(keyword);
+
+                const matchesProgram = programFilter === "All"
+                    || adviser.program_cater === programFilter
+                    || (programFilter === "IT" && adviser.program_cater === "Both")
+                    || (programFilter === "IS" && adviser.program_cater === "Both");
+
+                const matchesYear = yearFilter === "All"
+                    || adviser.year_level_cater === yearFilter
+                    || (yearFilter === "3rd Year" && adviser.year_level_cater === "Both")
+                    || (yearFilter === "4th Year" && adviser.year_level_cater === "Both");
+
+                const matchesStatus = statusFilter === "All"
+                    || adviser.adviser_status === statusFilter;
+
+                return matchesKeyword && matchesProgram && matchesYear && matchesStatus;
+            });
 
             renderAdvisers(filtered);
 
@@ -1400,13 +1601,13 @@
                 return;
             }
 
-            const initial =
-                selectedAdviser.fullname
-                .charAt(0)
-                .toUpperCase();
-
-            document.getElementById("modalAvatar").innerText =
-                initial;
+            const initial = selectedAdviser.fullname ? selectedAdviser.fullname.charAt(0).toUpperCase() : "A";
+            const modalAvatar = document.getElementById("modalAvatar");
+            if (selectedAdviser.profile_image) {
+                modalAvatar.innerHTML = `<img src="http://localhost:3005${selectedAdviser.profile_image}" alt="Profile">`;
+            } else {
+                modalAvatar.innerText = initial;
+            }
 
             document.getElementById("modalAdviserName").innerText =
                 selectedAdviser.fullname;

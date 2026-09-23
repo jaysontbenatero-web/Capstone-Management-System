@@ -376,6 +376,110 @@
             background: #475569;
             box-shadow: none;
             cursor: not-allowed;
+        }        /* Glassmorphism Error Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 3, 14, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .error-modal-card {
+            background: linear-gradient(135deg, rgba(25, 18, 48, 0.9), rgba(15, 10, 30, 0.95));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(239, 68, 68, 0.15);
+            border-radius: 20px;
+            padding: 32px 28px 28px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-overlay.active .error-modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .error-modal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ef4444, #f97316, #ef4444);
+        }
+
+        .error-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 18px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ef4444;
+            font-size: 26px;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .error-modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .error-modal-message {
+            color: rgba(226, 232, 240, 0.8);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .error-modal-btn {
+            width: 100%;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .error-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+            background: linear-gradient(135deg, #f87171, #ef4444);
         }
 
         /* RESPONSIVE */
@@ -407,6 +511,18 @@
     <div class="ambient-mesh"></div>
     <div class="abstract-glass-blob-1"></div>
     <div class="abstract-glass-blob-2"></div>
+
+    <!-- Glassmorphism Custom Error Modal -->
+    <div class="modal-overlay" id="loginErrorModal">
+        <div class="error-modal-card">
+            <div class="error-modal-icon" id="errorModalIcon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="error-modal-title" id="errorModalTitle">Authentication Error</div>
+            <div class="error-modal-message" id="errorModalMessage">An unexpected error occurred. Please try again.</div>
+            <button type="button" class="error-modal-btn" onclick="closeErrorModal()">TRY AGAIN</button>
+        </div>
+    </div>
 
     <div class="login-container">
         <!-- Left Brand Side (Dynamic visuals) -->
@@ -478,6 +594,28 @@
     <script>
         const loginForm = document.getElementById("loginForm");
         const loginBtn = document.getElementById("loginBtn");
+        const loginErrorModal = document.getElementById("loginErrorModal");
+        const errorModalTitle = document.getElementById("errorModalTitle");
+        const errorModalMessage = document.getElementById("errorModalMessage");
+        const errorModalIcon = document.getElementById("errorModalIcon");
+
+        function showLoginError(message, title = "Login Failed", iconClass = "fa-solid fa-triangle-exclamation") {
+            errorModalTitle.innerText = title;
+            errorModalMessage.innerText = message;
+            errorModalIcon.innerHTML = `<i class="${iconClass}"></i>`;
+            loginErrorModal.classList.add("active");
+        }
+
+        function closeErrorModal() {
+            loginErrorModal.classList.remove("active");
+        }
+
+        // Close modal when clicking outside card
+        loginErrorModal.addEventListener("click", (e) => {
+            if (e.target === loginErrorModal) {
+                closeErrorModal();
+            }
+        });
 
         loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -486,7 +624,7 @@
             const password = document.getElementById("password").value.trim();
 
             if (!userId || !password) {
-                alert("Please fill in all fields.");
+                showLoginError("Please enter both your User ID and Password.", "Missing Information");
                 return;
             }
 
@@ -508,7 +646,18 @@
                 const data = await response.json();
 
                 if (!data.success) {
-                    alert(data.message || "Invalid login credentials.");
+                    let title = "Login Failed";
+                    let icon = "fa-solid fa-circle-xmark";
+                    
+                    if (data.errorType === "user_not_found") {
+                        title = "User ID Not Found";
+                        icon = "fa-solid fa-user-slash";
+                    } else if (data.errorType === "incorrect_password") {
+                        title = "Incorrect Password";
+                        icon = "fa-solid fa-key";
+                    }
+                    
+                    showLoginError(data.message || "Invalid login credentials.", title, icon);
                     resetLoginButton();
                     return;
                 }
@@ -531,7 +680,7 @@
                 redirectToDashboard(data.role);
             } catch (error) {
                 console.log(error);
-                alert("Unable to connect to server.");
+                showLoginError("Unable to connect to the login server. Please ensure the backend service is running.", "Connection Error", "fa-solid fa-network-wired");
                 resetLoginButton();
             }
         });
@@ -544,7 +693,7 @@
             } else if (role === "admin") {
                 window.location.href = "Admin/AdminDash.html";
             } else {
-                alert("Unknown role.");
+                showLoginError("Account role could not be recognized. Please contact system administrator.", "Invalid Role");
                 resetLoginButton();
             }
         }

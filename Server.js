@@ -6,6 +6,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
+const { PDFDocument } = require("pdf-lib");
 
 const app = express();
 
@@ -361,6 +362,38 @@ db.connect((err) => {
             );
         });
 
+        const checkSignedFileColumnSql = `
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+            AND table_name = 'student_documents'
+            AND column_name = 'signed_file_path'
+            LIMIT 1
+        `;
+
+        db.query(checkSignedFileColumnSql, (signedColErr, signedColResult) => {
+            if(signedColErr){
+                console.error("Unable to check student_documents.signed_file_path column:", signedColErr);
+                return;
+            }
+
+            if(Array.isArray(signedColResult) && signedColResult.length > 0){
+                console.log("student_documents.signed_file_path column already exists");
+                return;
+            }
+
+            db.query(
+                `ALTER TABLE student_documents ADD COLUMN signed_file_path VARCHAR(500) NULL`,
+                (signedAddErr) => {
+                    if(signedAddErr){
+                        console.error("Unable to add student_documents.signed_file_path column:", signedAddErr);
+                    }else{
+                        console.log("student_documents.signed_file_path column created");
+                    }
+                }
+            );
+        });
+
         const createMessagesTable = `
             CREATE TABLE IF NOT EXISTS messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -485,11 +518,10 @@ app.post("/login", (req, res) => {
         SELECT *
         FROM users
         WHERE user_id = ?
-        AND password = ?
         LIMIT 1
     `;
 
-    db.query(sql, [userId, password], (err, result) => {
+    db.query(sql, [userId], (err, result) => {
 
         if(err){
             console.log(err);
@@ -504,13 +536,21 @@ app.post("/login", (req, res) => {
 
             return res.json({
                 success:false,
-                message:"Invalid User ID or password."
+                errorType:"user_not_found",
+                message:"User ID not found. Please check your User ID and try again."
             });
 
         }
 
-        const user =
-            result[0];
+        const user = result[0];
+
+        if(user.password !== password){
+            return res.json({
+                success:false,
+                errorType:"incorrect_password",
+                message:"Incorrect password. Please verify your password and try again."
+            });
+        }
 
         return res.json({
             success:true,
@@ -1535,6 +1575,7 @@ app.get("/student-group/:userId", (req, res) => {
             adviser.user_id AS adviser_user_id,
             adviser.fullname AS adviser_name,
             adviser.position AS adviser_position,
+            adviser.profile_image AS adviser_profile_image,
 
             adset.program_cater AS adviser_program,
             adset.year_level_cater AS adviser_year_level,
@@ -1545,6 +1586,7 @@ app.get("/student-group/:userId", (req, res) => {
             u.user_id,
             gm.member_position,
             u.enrolled_by_user_id,
+            u.profile_image,
             inst.fullname AS instructor_name
         FROM group_members gm
         JOIN capstone_groups cg 
@@ -1605,6 +1647,7 @@ app.get("/student-group/:userId", (req, res) => {
                 adviser_user_id: first.adviser_user_id,
                 adviser_name: first.adviser_name,
                 adviser_position: first.adviser_position,
+                adviser_profile_image: first.adviser_profile_image,
                 adviser_program: first.adviser_program,
                 adviser_year_level: first.adviser_year_level,
                 adviser_capacity: first.adviser_capacity,
@@ -1615,9 +1658,51 @@ app.get("/student-group/:userId", (req, res) => {
                     user_id: member.user_id,
                     member_position: member.member_position,
                     enrolled_by_user_id: member.enrolled_by_user_id,
+                    profile_image: member.profile_image,
                     instructor_name: member.instructor_name
                 }))
             }
+        });
+    });
+});
+
+/* ================= GROUP DEFENSE HISTORY ================= */
+
+app.get("/group-defense-history/:groupDbId", (req, res) => {
+    const groupDbId = req.params.groupDbId;
+    if(!groupDbId){
+        return res.json({
+            success:false,
+            message:"Missing group ID."
+        });
+    }
+    const sql = `
+        SELECT
+            ds.id,
+            ds.schedule_code,
+            ds.room_name,
+            ds.defense_date,
+            ds.start_time,
+            ds.end_time,
+            ds.defense_type,
+            ds.defense_status,
+            ds.panel_result,
+            ds.notes,
+            ds.score,
+            ds.created_at,
+            ds.updated_at
+        FROM defense_schedules ds
+        WHERE ds.group_id = ?
+        ORDER BY ds.id ASC
+    `;
+    db.query(sql, [groupDbId], (err, result) => {
+        if(err){
+            console.log(err);
+            return res.json({ success: false, message: "Database error." });
+        }
+        res.json({
+            success: true,
+            defenses: result
         });
     });
 });
@@ -1702,6 +1787,7 @@ app.get("/student-info/:userId", (req, res) => {
             u.program,
             u.year_level,
             u.student_position,
+            u.profile_image,
             u.enrolled_by_user_id,
             inst.fullname AS instructor_name
         FROM users u
@@ -2415,6 +2501,7 @@ app.get("/student-advisers/:userId", (req, res) => {
                 u.fullname,
                 u.position,
                 u.role,
+                u.profile_image,
 
                 COALESCE(a.group_capacity, 0) AS group_capacity,
                 COALESCE(a.program_cater, 'Not Set') AS program_cater,
@@ -2681,6 +2768,7 @@ app.post("/request-adviser", (req, res) => {
                     FROM title_proposals
                     WHERE group_id = ?
                     AND TRIM(COALESCE(proposed_title, '')) != ''
+                    AND TRIM(COALESCE(file_path, '')) != ''
                 `;
 
                 db.query(checkProposalsSql, [group.id], (err, proposalResult) => {
@@ -2698,7 +2786,7 @@ app.post("/request-adviser", (req, res) => {
 
                         return res.json({
                             success:false,
-                            message:"Please enter all 3 proposed titles in Request Adviser before sending an adviser request. Upload the PDF files in Records Management."
+                            message:"Please save all 3 title proposals (title + PDF) on this page before requesting an adviser."
                         });
 
                     }
@@ -3317,7 +3405,9 @@ app.get("/instructor-capstone-groups", (req, res) => {
             u.user_id,
             u.fullname,
             u.program,
-            u.year_level
+            u.year_level,
+            u.profile_image,
+            u.enrolled_by_user_id
         FROM group_members gm
         JOIN users u
             ON gm.student_id = u.id
@@ -3890,27 +3980,35 @@ async function extractTextFromPdf(filePath) {
         const cleanLines = filteredLines.filter(l => seenCount.get(l) === 1);
 
         // Reassemble with paragraph structure preserved.
-        // Heuristic: a line is a "paragraph boundary" if it is short (likely a
-        // heading/section title) OR ends with sentence-terminal punctuation.
-        // Wrapped body lines (no terminal punctuation, long) get space-joined.
+        // Wrapped body lines in PDF paragraphs get space-joined so sentences flow naturally.
         let assembled = '';
         let prevWasTable = false;
         for (let i = 0; i < cleanLines.length; i++) {
             const line = cleanLines[i];
-            const isTerminal = /[.!?:]\s*$/.test(line);
-            const isShort    = line.length < 80;   // likely a heading or standalone line
+            const isBullet = /^[•\-\*\d+[\.\)]]\s*/.test(line);
+            const isShortHeader = line.length < 40 && !/[.,;:]\s*$/.test(line);
             const isTableLine = line.includes('\t') || line.includes('|') || / {3,}/.test(line);
 
             if (assembled.length === 0) {
                 assembled = line;
-            } else if (isTableLine) {
+            } else if (isTableLine || prevWasTable) {
                 assembled += '\n' + line;
-            } else if (prevWasTable) {
+            } else if (isBullet) {
                 assembled += '\n\n' + line;
-            } else if (isTerminal || isShort) {
+            } else if (isShortHeader) {
                 assembled += '\n\n' + line;
             } else {
-                assembled += ' ' + line;
+                // If previous line ends with hyphenation (e.g., "implement-"), join without hyphen/space
+                if (/-\s*$/.test(assembled)) {
+                    assembled = assembled.replace(/-\s*$/, '') + line;
+                } else {
+                    const prevTerminal = /[.!?:]\s*$/.test(assembled);
+                    if (prevTerminal && (isShortHeader || /^[A-Z0-9]/.test(line))) {
+                        assembled += '\n\n' + line;
+                    } else {
+                        assembled += ' ' + line;
+                    }
+                }
             }
             prevWasTable = isTableLine;
         }
@@ -4271,7 +4369,10 @@ app.post(
 
                     return res.json({
                         success: false,
-                        message: `Automatically Rejected: This title proposal has a similarity score of ${similarityResult.percentage}% (matches "${similarityResult.matchedRecord.title}"), which is 90% or higher. You are required to submit another concept.`
+                        isSimilarityRejection: true,
+                        similarityPercentage: similarityResult.percentage,
+                        matchedTitle: similarityResult.matchedRecord.title,
+                        message: `Automatically Rejected: This title proposal has a similarity score of ${similarityResult.percentage}% (matches "${similarityResult.matchedRecord.title}"), which exceeds the maximum allowable threshold of 90%. You are required to submit another concept.`
                     });
                 }
 
@@ -4388,9 +4489,11 @@ app.post(
                                         file_path = ?,
                                         file_format = 'PDF',
                                         document_status = 'Uploaded',
+                                        is_sent = 0,
                                         uploaded_by = ?,
                                         updated_at = CURRENT_TIMESTAMP
                                     WHERE id = ?
+                                    AND document_status != 'Approved'
                                 `;
                                 db.query(updateDocSql, [proposedTitle, req.file.originalname, filePath, uploadedBy, docId], (err3) => {
                                     if(err3){
@@ -4548,7 +4651,8 @@ app.get("/adviser-requests/:adviserUserId", (req, res) => {
                 u.user_id,
                 u.fullname,
                 u.program,
-                u.year_level
+                u.year_level,
+                u.profile_image
             FROM group_members gm
             JOIN users u
                 ON gm.student_id = u.id
@@ -5009,7 +5113,8 @@ app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
                 u.fullname,
                 u.program,
                 u.year_level,
-                u.student_position
+                u.student_position,
+                u.profile_image
 
             FROM group_members gm
 
@@ -5228,6 +5333,7 @@ app.get("/student-documents/:userId", (req, res) => {
                 sd.document_title,
                 sd.file_name,
                 sd.file_path,
+                sd.signed_file_path,
                 sd.file_format,
                 sd.document_status,
                 sd.is_sent,
@@ -5254,6 +5360,18 @@ app.get("/student-documents/:userId", (req, res) => {
                     ORDER BY ds.reviewed_at DESC, ds.id DESC
                     LIMIT 1
                 ) AS latest_review_status,
+
+                (
+                    SELECT ds.review_comment
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.adviser_access = 1
+                    AND ds.review_comment IS NOT NULL
+                    AND TRIM(ds.review_comment) != ''
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS latest_adviser_comment,
 
                 (
                     SELECT COUNT(*)
@@ -7122,18 +7240,10 @@ app.get("/document-recipients", (req, res) => {
 
             // Sort recipients: adviser first, instructor second, then the rest
             const ordered = recipients.sort((a, b) => {
-                if(a.recipient_type === "adviser"){
-                    return -1;
-                }
-                if(b.recipient_type === "adviser"){
-                    return 1;
-                }
-                if(a.recipient_type === "instructor"){
-                    return -1;
-                }
-                if(b.recipient_type === "instructor"){
-                    return 1;
-                }
+                if(a.recipient_type === "adviser") return -1;
+                if(b.recipient_type === "adviser") return 1;
+                if(a.recipient_type === "instructor") return -1;
+                if(b.recipient_type === "instructor") return 1;
                 return 0;
             });
 
@@ -8819,7 +8929,8 @@ app.get("/defense-schedules", (req, res) => {
                 u.id,
                 u.user_id,
                 u.fullname,
-                gm.member_position
+                gm.member_position,
+                u.profile_image
             FROM group_members gm
 
             JOIN users u
@@ -8846,7 +8957,8 @@ app.get("/defense-schedules", (req, res) => {
                     u.user_id,
                     u.fullname,
                     u.position,
-                    u.role
+                    u.role,
+                    u.profile_image
                 FROM defense_schedule_panelists dsp
 
                 JOIN users u
@@ -9481,6 +9593,148 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 });
 
 
+/* ================= UPDATE ENVIRONMENTAL SCANNING STATUS & DECLINE REASON ================= */
+
+app.post("/update-environmental-scanning-status", (req, res) => {
+    const { studentUserId, documentId, reasonCategory, reasonText, newStatus } = req.body;
+
+    if (!studentUserId || !documentId || !reasonCategory) {
+        return res.json({
+            success: false,
+            message: "Missing required fields (studentUserId, documentId, reasonCategory)."
+        });
+    }
+
+    const findStudentSql = `
+        SELECT u.id, u.user_id, u.fullname, u.program,
+               COALESCE(u.group_id, gm.group_id) AS group_id,
+               cg.group_name, cg.instructor_id
+        FROM users u
+        LEFT JOIN group_members gm ON u.id = gm.student_id
+        LEFT JOIN capstone_groups cg ON COALESCE(u.group_id, gm.group_id) = cg.id
+        WHERE u.user_id = ? OR u.id = ?
+        LIMIT 1
+    `;
+
+    db.query(findStudentSql, [studentUserId, studentUserId], (errStudent, studentRows) => {
+        if (errStudent || !studentRows || studentRows.length === 0) {
+            return res.json({
+                success: false,
+                message: "Student user not found."
+            });
+        }
+
+        const student = studentRows[0];
+        const studentDbId = student.id;
+        const groupDbId = student.group_id;
+        const studentName = student.fullname || student.user_id || "Student";
+        const groupName = student.group_name || `Group ${groupDbId || ''}`;
+        const instructorDbId = student.instructor_id;
+
+        const findDocSql = `
+            SELECT id, document_type, document_title, group_id
+            FROM student_documents
+            WHERE id = ?
+            LIMIT 1
+        `;
+
+        db.query(findDocSql, [documentId], (errDoc, docRows) => {
+            if (errDoc || !docRows || docRows.length === 0) {
+                return res.json({
+                    success: false,
+                    message: "Environmental scanning document not found."
+                });
+            }
+
+            const doc = docRows[0];
+            const docTitle = doc.document_title || doc.document_type || "Environmental Scanning";
+            const fullReason = reasonCategory + (reasonText && reasonText.trim() ? ` - ${reasonText.trim()}` : "");
+            const statusToSet = newStatus || "Declined by Organization";
+
+            const updateDocSql = `
+                UPDATE student_documents
+                SET document_status = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `;
+
+            db.query(updateDocSql, [statusToSet, documentId], (errUpdate) => {
+                if (errUpdate) {
+                    console.log("Failed to update environmental scanning status:", errUpdate);
+                    return res.json({
+                        success: false,
+                        message: "Failed to update environmental scanning status in database."
+                    });
+                }
+
+                const updateSubmissionsSql = `
+                    UPDATE document_submissions
+                    SET review_status = ?,
+                        review_comment = ?,
+                        reviewed_at = NOW()
+                    WHERE document_id = ?
+                `;
+                db.query(updateSubmissionsSql, [statusToSet, `Declined by Organization: ${fullReason}`, documentId], () => {});
+
+                const prog = String(student.program || "").toUpperCase();
+                let chairPosition = 'Program Chairperson IT';
+                if (prog.includes("IS")) {
+                    chairPosition = 'Program Chairperson IS';
+                }
+
+                const findRecipientsSql = `
+                    SELECT id, role, position FROM users
+                    WHERE (id = ?)
+                       OR (role = 'admin' AND position = ?)
+                       OR (position = 'Dean')
+                       OR (role = 'admin' AND position LIKE 'Program Chairperson%')
+                `;
+
+                db.query(findRecipientsSql, [instructorDbId || 0, chairPosition], (errRecip, recipientRows) => {
+                    const notifyUserIds = new Set();
+                    if (recipientRows && recipientRows.length > 0) {
+                        recipientRows.forEach(r => notifyUserIds.add(r.id));
+                    }
+
+                    if (notifyUserIds.size === 0) {
+                        return res.json({
+                            success: true,
+                            message: "Status updated successfully."
+                        });
+                    }
+
+                    const notifyTitle = "Environmental Scanning Declined by Organization";
+                    const notifyMessage = `${groupName} (${studentName}) updated status for ${docTitle}: The organization declined the proposed system. Reason: ${fullReason}`;
+
+                    const notificationValues = Array.from(notifyUserIds).map(uid => [
+                        uid,
+                        notifyTitle,
+                        notifyMessage,
+                        "Document Review"
+                    ]);
+
+                    const insertNotifSql = `
+                        INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                        VALUES ?
+                    `;
+
+                    db.query(insertNotifSql, [notificationValues], (errNotif) => {
+                        if (errNotif) {
+                            console.log("Error sending decline notifications:", errNotif);
+                        }
+
+                        res.json({
+                            success: true,
+                            message: "Environmental scanning status updated and rationale sent to Instructor, Chairperson, and Dean."
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+
 /* ================= CONSULTATION DOCUMENT GATES ================= */
 
 const CONSULTATION_CATALOG = [
@@ -9489,9 +9743,8 @@ const CONSULTATION_CATALOG = [
         items:[
             { label:"Proposed concept paper", slots:3 },
             { label:"Adviser acceptance for advisory", slots:1 },
-            { label:"Environmental scanning", slots:1 },
-            { label:"Recommendation for concept presentation", slots:1 },
-            { label:"Concept presentation evaluation sheet", slots:1 }
+            { label:"Environmental scanning", slots:3 },
+            { label:"Recommendation for concept presentation", slots:1 }
         ]
     },
     {
@@ -9825,7 +10078,8 @@ function fetchGroupStudentDocuments(groupDbId, callback){
             sd.file_format,
             sd.document_status,
             sd.is_sent,
-            sd.created_at
+            sd.created_at,
+            sd.signed_file_path
         FROM student_documents sd
         WHERE sd.group_id = ?
         ORDER BY sd.id DESC
@@ -13938,7 +14192,8 @@ app.get("/instructor-document-review/:userId", (req, res) => {
             program,
             adviser_access,
             panelist_access,
-            instructor_access
+            instructor_access,
+            digital_signature
         FROM users
         WHERE user_id = ?
         AND role IN ('faculty', 'admin')
@@ -13989,6 +14244,7 @@ app.get("/instructor-document-review/:userId", (req, res) => {
                 sd.document_type,
                 sd.file_name,
                 sd.file_path,
+                sd.signed_file_path,
                 sd.file_format,
                 sd.document_status,
 
@@ -14613,7 +14869,8 @@ app.get("/adviser-documents/:userId", (req, res) => {
             program,
             adviser_access,
             panelist_access,
-            instructor_access
+            instructor_access,
+            digital_signature
         FROM users
         WHERE user_id = ?
         AND role IN ('faculty', 'admin')
@@ -14664,6 +14921,7 @@ app.get("/adviser-documents/:userId", (req, res) => {
                 sd.document_type,
                 sd.file_name,
                 sd.file_path,
+                sd.signed_file_path,
                 sd.file_format,
                 sd.document_status,
 
@@ -15026,6 +15284,2088 @@ app.post("/adviser-send-document", studentDocumentUpload.single("documentFile"),
 
             }
         );
+
+    });
+
+});
+
+function isEnvironmentalScanningDoc(documentType, documentTitle) {
+    const docType = String(documentType || "").toLowerCase();
+    const docTitle = String(documentTitle || "").toLowerCase();
+    return docType.includes("environmental scanning") || docTitle.includes("environmental scanning");
+}
+
+function isAdviserSigningDocumentType(documentType, documentTitle){
+
+    const docType =
+        String(documentType || "").toLowerCase();
+
+    const docTitle =
+        String(documentTitle || "").toLowerCase();
+
+    return docType.includes("adviser acceptance")
+        || docTitle.includes("adviser acceptance")
+        || docType.includes("acceptance for advisory")
+        || docTitle.includes("acceptance for advisory")
+        || docType.includes("recommendation for concept")
+        || docTitle.includes("recommendation for concept")
+        || docType.includes("environmental scanning")
+        || docTitle.includes("environmental scanning");
+
+}
+
+/* Acceptance for advisory = adviser signs THEN routes to Dean */
+function isAdviserAcceptanceDoc(documentType, documentTitle){
+    const docType  = String(documentType  || "").toLowerCase();
+    const docTitle = String(documentTitle || "").toLowerCase();
+    return docType.includes("adviser acceptance")
+        || docTitle.includes("adviser acceptance")
+        || docType.includes("acceptance for advisory")
+        || docTitle.includes("acceptance for advisory");
+}
+
+/* Recommendation for concept presentation = adviser is the FINAL signer */
+function isAdviserOnlyDoc(documentType, documentTitle){
+    const docType  = String(documentType  || "").toLowerCase();
+    const docTitle = String(documentTitle || "").toLowerCase();
+    return docType.includes("recommendation for concept")
+        || docTitle.includes("recommendation for concept");
+}
+
+function decodeSignatureImageData(signatureImage){
+
+    const raw =
+        String(signatureImage || "").trim();
+
+    if(!raw){
+        return null;
+    }
+
+    const base64 =
+        raw.includes(",")
+        ? raw.split(",")[1]
+        : raw;
+
+    return Buffer.from(base64, "base64");
+
+}
+
+async function embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement){
+
+    const existingPdfBytes =
+        fs.readFileSync(sourcePath);
+
+    const pdfDoc =
+        await PDFDocument.load(existingPdfBytes);
+
+    const pages =
+        pdfDoc.getPages();
+
+    const pageIndex =
+        Math.max(0, Math.min(Number(placement.pageIndex || 0), pages.length - 1));
+
+    const page =
+        pages[pageIndex];
+
+    const pageW =
+        page.getWidth();
+
+    const pageH =
+        page.getHeight();
+
+    const containerWidth =
+        Number(placement.containerWidth || 1);
+
+    const containerHeight =
+        Number(placement.containerHeight || 1);
+
+    const sigLeft =
+        Number(placement.sigLeft || 0);
+
+    const sigTop =
+        Number(placement.sigTop || 0);
+
+    const sigWidth =
+        Number(placement.sigWidth || 120);
+
+    const sigHeight =
+        Number(placement.sigHeight || 50);
+
+    const xRatio =
+        sigLeft / containerWidth;
+
+    const yRatio =
+        sigTop / containerHeight;
+
+    const wRatio =
+        sigWidth / containerWidth;
+
+    const hRatio =
+        sigHeight / containerHeight;
+
+    const drawW =
+        pageW * wRatio;
+
+    const drawH =
+        pageH * hRatio;
+
+    const drawX =
+        pageW * xRatio;
+
+    const drawY =
+        pageH * (1 - yRatio - hRatio);
+
+    const pngImage =
+        await pdfDoc.embedPng(signatureBuffer);
+
+    page.drawImage(pngImage, {
+        x:drawX,
+        y:drawY,
+        width:drawW,
+        height:drawH
+    });
+
+    return pdfDoc.save();
+
+}
+
+/* ================= ADVISER SIGNING DOCUMENT FILE ================= */
+
+app.get("/adviser-signing-document-file/:submissionId", (req, res) => {
+
+    const submissionId =
+        req.params.submissionId;
+
+    const adviserUserId =
+        String(req.query.adviserUserId || "").trim();
+
+    if(!submissionId || !adviserUserId){
+        return res.status(400).json({
+            success:false,
+            message:"Missing submission or adviser information."
+        });
+    }
+
+    const adviserSql = `
+        SELECT id
+        FROM users
+        WHERE user_id = ?
+        AND role IN ('faculty', 'admin')
+        AND adviser_access = 1
+        LIMIT 1
+    `;
+
+    db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
+
+        if(err){
+            console.log(err);
+            return res.status(500).json({
+                success:false,
+                message:"Failed to verify adviser account."
+            });
+        }
+
+        if(adviserResult.length === 0){
+            return res.status(403).json({
+                success:false,
+                message:"Adviser access denied."
+            });
+        }
+
+        const adviserDbId =
+            adviserResult[0].id;
+
+        const submissionSql = `
+            SELECT
+                sd.file_path,
+                sd.file_name,
+                sd.file_format,
+                sd.document_type,
+                sd.document_title
+            FROM document_submissions ds
+
+            JOIN student_documents sd
+                ON ds.document_id = sd.id
+
+            WHERE ds.id = ?
+            AND ds.receiver_id = ?
+            LIMIT 1
+        `;
+
+        db.query(
+            submissionSql,
+            [submissionId, adviserDbId],
+            (err2, rows) => {
+
+                if(err2){
+                    console.log(err2);
+                    return res.status(500).json({
+                        success:false,
+                        message:"Failed to load signing document."
+                    });
+                }
+
+                if(rows.length === 0){
+                    return res.status(404).json({
+                        success:false,
+                        message:"Signing document not found."
+                    });
+                }
+
+                const documentRow =
+                    rows[0];
+
+                if(!isAdviserSigningDocumentType(
+                    documentRow.document_type,
+                    documentRow.document_title
+                )){
+                    return res.status(400).json({
+                        success:false,
+                        message:"This submission is not an adviser e-signature document."
+                    });
+                }
+
+                const relativePath =
+                    String(documentRow.file_path || "")
+                    .replace(/\\/g, "/")
+                    .replace(/^\/+/, "");
+
+                if(!relativePath){
+                    return res.status(404).json({
+                        success:false,
+                        message:"Document file path is missing."
+                    });
+                }
+
+                const absolutePath =
+                    path.join(__dirname, relativePath);
+
+                if(!fs.existsSync(absolutePath)){
+                    console.log("Signing file missing:", absolutePath);
+                    return res.status(404).json({
+                        success:false,
+                        message:"Document file was not found on the server."
+                    });
+                }
+
+                const lowerName =
+                    String(documentRow.file_name || relativePath).toLowerCase();
+
+                if(
+                    !lowerName.endsWith(".pdf")
+                    && String(documentRow.file_format || "").toUpperCase() !== "PDF"
+                ){
+                    return res.status(400).json({
+                        success:false,
+                        message:"Only PDF files can be opened in the e-signature viewer."
+                    });
+                }
+
+                res.setHeader("Content-Type", "application/pdf");
+                res.setHeader(
+                    "Content-Disposition",
+                    `inline; filename="${path.basename(relativePath)}"`
+                );
+
+                return res.sendFile(absolutePath);
+
+            }
+        );
+
+    });
+
+});
+
+/* ================= INSTRUCTOR SIGNING DOCUMENT FILE ================= */
+
+app.get("/instructor-signing-document-file/:submissionId", (req, res) => {
+
+    const submissionId =
+        req.params.submissionId;
+
+    const instructorUserId =
+        String(req.query.instructorUserId || "").trim();
+
+    if(!submissionId || !instructorUserId){
+        return res.status(400).json({
+            success:false,
+            message:"Missing submission or instructor information."
+        });
+    }
+
+    const instructorSql = `
+        SELECT id
+        FROM users
+        WHERE user_id = ?
+        AND role IN ('faculty', 'admin')
+        AND instructor_access = 1
+        LIMIT 1
+    `;
+
+    db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
+
+        if(err){
+            console.log(err);
+            return res.status(500).json({
+                success:false,
+                message:"Failed to verify instructor account."
+            });
+        }
+
+        if(instructorResult.length === 0){
+            return res.status(403).json({
+                success:false,
+                message:"Instructor access denied."
+            });
+        }
+
+        const instructorDbId =
+            instructorResult[0].id;
+
+        const submissionSql = `
+            SELECT
+                sd.file_path,
+                sd.signed_file_path,
+                sd.file_name,
+                sd.file_format,
+                sd.document_type,
+                sd.document_title
+            FROM document_submissions ds
+
+            JOIN student_documents sd
+                ON ds.document_id = sd.id
+
+            WHERE ds.id = ?
+            AND ds.receiver_id = ?
+            LIMIT 1
+        `;
+
+        db.query(
+            submissionSql,
+            [submissionId, instructorDbId],
+            (err2, rows) => {
+
+                if(err2){
+                    console.log(err2);
+                    return res.status(500).json({
+                        success:false,
+                        message:"Failed to load signing document."
+                    });
+                }
+
+                if(rows.length === 0){
+                    return res.status(404).json({
+                        success:false,
+                        message:"Signing document not found."
+                    });
+                }
+
+                const documentRow =
+                    rows[0];
+
+                if(!isEnvironmentalScanningDoc(
+                    documentRow.document_type,
+                    documentRow.document_title
+                )){
+                    return res.status(400).json({
+                        success:false,
+                        message:"This submission is not an instructor e-signature document."
+                    });
+                }
+
+                const chosenPath = documentRow.signed_file_path || documentRow.file_path;
+                const relativePath =
+                    String(chosenPath || "")
+                    .replace(/\\/g, "/")
+                    .replace(/^\/+/, "");
+
+                if(!relativePath){
+                    return res.status(404).json({
+                        success:false,
+                        message:"Document file path is missing."
+                    });
+                }
+
+                const absolutePath =
+                    path.join(__dirname, relativePath);
+
+                if(!fs.existsSync(absolutePath)){
+                    console.log("Signing file missing:", absolutePath);
+                    return res.status(404).json({
+                        success:false,
+                        message:"Document file was not found on the server."
+                    });
+                }
+
+                const lowerName =
+                    String(documentRow.file_name || relativePath).toLowerCase();
+
+                if(
+                    !lowerName.endsWith(".pdf")
+                    && String(documentRow.file_format || "").toUpperCase() !== "PDF"
+                ){
+                    return res.status(400).json({
+                        success:false,
+                        message:"Only PDF files can be opened in the e-signature viewer."
+                    });
+                }
+
+                res.setHeader("Content-Type", "application/pdf");
+                res.setHeader(
+                    "Content-Disposition",
+                    `inline; filename="${path.basename(relativePath)}"`
+                );
+
+                return res.sendFile(absolutePath);
+
+            }
+        );
+
+    });
+
+});
+
+/* ================= INSTRUCTOR APPLY DOCUMENT SIGNATURE ================= */
+
+app.put("/instructor-apply-document-signature/:submissionId", async (req, res) => {
+
+    const submissionId =
+        req.params.submissionId;
+
+    const {
+        instructorUserId,
+        reviewStatus,
+        reviewComment,
+        signatureImage,
+        signatureType,
+        placement
+    } = req.body;
+
+    if(!submissionId || !instructorUserId || !reviewStatus){
+        return res.json({
+            success:false,
+            message:"Missing signing information."
+        });
+    }
+
+    const finalStatus =
+        String(reviewStatus || "").trim();
+
+    if(
+        finalStatus === "Approved"
+        && !placement
+    ){
+        return res.json({
+            success:false,
+            message:"Please place your e-signature on the document before approving."
+        });
+    }
+
+    if(
+        (finalStatus === "Rejected" || finalStatus === "Subject to Change" || finalStatus === "For Revision")
+        && !String(reviewComment || "").trim()
+    ){
+        return res.json({
+            success:false,
+            message:"Please add notes explaining your decision."
+        });
+    }
+
+    const instructorSql = `
+        SELECT id, fullname, digital_signature
+        FROM users
+        WHERE user_id = ?
+        AND role IN ('faculty', 'admin')
+        AND instructor_access = 1
+        LIMIT 1
+    `;
+
+    db.query(instructorSql, [instructorUserId], async (err, instructorResult) => {
+
+        if(err){
+            console.log(err);
+            return res.json({
+                success:false,
+                message:"Failed to check instructor account."
+            });
+        }
+
+        if(instructorResult.length === 0){
+            return res.json({
+                success:false,
+                message:"Instructor account not found or access is disabled."
+            });
+        }
+
+        const instructorDbId =
+            instructorResult[0].id;
+
+        const instructorName =
+            instructorResult[0].fullname;
+
+        const submissionSql = `
+            SELECT
+                ds.id,
+                ds.sender_id,
+                ds.document_id,
+
+                sd.document_title,
+                sd.document_type,
+                sd.document_status,
+                sd.file_path,
+                sd.signed_file_path,
+                sd.file_format,
+
+                sender.user_id AS sender_user_id,
+                sender.fullname AS sender_name,
+                cg.program AS group_program,
+                sender.program AS sender_program
+
+            FROM document_submissions ds
+
+            JOIN student_documents sd
+                ON ds.document_id = sd.id
+
+            JOIN users sender
+                ON ds.sender_id = sender.id
+
+            LEFT JOIN group_members gm
+                ON sender.id = gm.student_id
+
+            LEFT JOIN capstone_groups cg
+                ON gm.group_id = cg.id
+
+            WHERE ds.id = ?
+            AND ds.receiver_id = ?
+            LIMIT 1
+        `;
+
+        db.query(
+            submissionSql,
+            [submissionId, instructorDbId],
+            async (err2, submissionResult) => {
+
+                if(err2){
+                    console.log(err2);
+                    return res.json({
+                        success:false,
+                        message:"Failed to check document submission."
+                    });
+                }
+
+                if(submissionResult.length === 0){
+                    return res.json({
+                        success:false,
+                        message:"Document submission not found or you are not the assigned receiver."
+                    });
+                }
+
+                const submission =
+                    submissionResult[0];
+
+                if(!isEnvironmentalScanningDoc(
+                    submission.document_type,
+                    submission.document_title
+                )){
+                    return res.json({
+                        success:false,
+                        message:"This document is not an environmental scanning e-signature request."
+                    });
+                }
+
+                let signedFilePath =
+                    submission.signed_file_path || null;
+
+                if(
+                    (submission.document_status === 'Approved' || submission.document_status === 'Instructor Signed' || submission.document_status === 'Chairperson Signed')
+                    && finalStatus !== 'Approved'
+                ){
+                    return res.json({
+                        success: false,
+                        message: 'This document has already been signed/approved. The decision cannot be changed.'
+                    });
+                }
+
+                try{
+
+                    if(finalStatus === "Approved"){
+
+                        let signatureBuffer;
+                        if (signatureType === "saved" && instructorResult[0].digital_signature) {
+                            const localSigPath = path.join(__dirname, instructorResult[0].digital_signature.replace(/^\//, ""));
+                            if (!fs.existsSync(localSigPath)) {
+                                return res.json({
+                                    success: false,
+                                    message: "Saved signature file not found on the server. Please re-upload it in settings."
+                                });
+                            }
+                            signatureBuffer = fs.readFileSync(localSigPath);
+                        } else {
+                            signatureBuffer = decodeSignatureImageData(signatureImage);
+                        }
+
+                        if(!signatureBuffer || signatureBuffer.length === 0){
+                            return res.json({
+                                success:false,
+                                message:"Invalid signature image."
+                            });
+                        }
+
+                        const srcRelative = submission.signed_file_path || submission.file_path;
+                        const sourcePath =
+                            path.join(
+                                __dirname,
+                                String(srcRelative || "").replace(/^\/uploads\//, "uploads/")
+                            );
+
+                        if(!fs.existsSync(sourcePath)){
+                            return res.json({
+                                success:false,
+                                message:"Original document file was not found on the server."
+                            });
+                        }
+
+                        const signedBytes =
+                            await embedSignatureOnPdfFile(
+                                sourcePath,
+                                signatureBuffer,
+                                placement
+                            );
+
+                        const signedDir =
+                            path.join(__dirname, "uploads", "signed_documents");
+
+                        if(!fs.existsSync(signedDir)){
+                            fs.mkdirSync(signedDir, { recursive:true });
+                        }
+
+                        const signedFileName =
+                            `signed-instructor-${Date.now()}-${submission.document_id}.pdf`;
+
+                        const signedDiskPath =
+                            path.join(signedDir, signedFileName);
+
+                        fs.writeFileSync(signedDiskPath, signedBytes);
+
+                        signedFilePath =
+                            `/uploads/signed_documents/${signedFileName}`;
+
+                    }
+
+                }catch(signErr){
+                    console.log(signErr);
+                    return res.json({
+                        success:false,
+                        message:"Failed to apply e-signature to the PDF."
+                    });
+                }
+
+                const revisionStatus =
+                    finalStatus === "Rejected"
+                    ? "Rejected"
+                    : (
+                        finalStatus === "Subject to Change"
+                        || finalStatus === "For Revision"
+                    )
+                    ? "For Revision"
+                    : finalStatus;
+
+                const updateSubmissionSql = `
+                    UPDATE document_submissions
+                    SET
+                        review_status = ?,
+                        review_comment = ?,
+                        reviewed_by = ?,
+                        reviewed_at = NOW(),
+                        submission_status = 'Reviewed'
+                    WHERE id = ?
+                    AND receiver_id = ?
+                `;
+
+                db.query(
+                    updateSubmissionSql,
+                    [
+                        finalStatus,
+                        reviewComment || "",
+                        instructorDbId,
+                        submissionId,
+                        instructorDbId
+                    ],
+                    (err3) => {
+
+                        if(err3){
+                            console.log(err3);
+                            return res.json({
+                                success:false,
+                                message:"Failed to save review status."
+                            });
+                        }
+
+                        const updateDocumentSql =
+                            (finalStatus === "Approved")
+                            ? `
+                                UPDATE student_documents
+                                SET
+                                    document_status = 'Instructor Signed',
+                                    signed_file_path = ?,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE id = ?
+                            `
+                            : `
+                                UPDATE student_documents
+                                SET
+                                    document_status = ?,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE id = ?
+                            `;
+
+                        const updateParams =
+                            finalStatus === "Approved"
+                            ? [signedFilePath, submission.document_id]
+                            : [revisionStatus, submission.document_id];
+
+                        db.query(
+                            updateDocumentSql,
+                            updateParams,
+                            (err4) => {
+
+                                if(err4){
+                                    console.log(err4);
+                                    return res.json({
+                                        success:false,
+                                        message:"Review saved, but failed to update student document."
+                                    });
+                                }
+
+                                const proceedWithNotifications = () => {
+                                    let notifyTitle, notifyMessage;
+                                    if(finalStatus === 'Approved'){
+                                        notifyTitle = 'Instructor Signed Environmental Scanning';
+                                        notifyMessage = `${instructorName} (Instructor) signed your "${submission.document_title}" document. It has been forwarded to the Program Chairperson for review.`;
+                                    } else if(finalStatus === 'Rejected'){
+                                        notifyTitle = 'Document Rejected by Instructor';
+                                        notifyMessage = `Your "${submission.document_title}" was rejected by ${instructorName} (Instructor). Reason: ${reviewComment || 'No reason provided.'}`;
+                                    } else {
+                                        notifyTitle = 'Instructor Requested Revision';
+                                        notifyMessage = `${instructorName} (Instructor) requested a revision on your "${submission.document_title}". Notes: ${reviewComment || 'Please check the document and resubmit.'}`;
+                                    }
+
+                                    db.query(
+                                        `
+                                            INSERT INTO user_notifications
+                                            (
+                                                user_id,
+                                                notification_title,
+                                                notification_message,
+                                                notification_type
+                                            )
+                                            VALUES (?, ?, ?, 'Document Review')
+                                        `,
+                                        [
+                                            submission.sender_id,
+                                            notifyTitle,
+                                            notifyMessage
+                                        ],
+                                        (err5) => {
+                                            if(err5){
+                                                console.log(err5);
+                                            }
+
+                                            res.json({
+                                                success: true,
+                                                message:
+                                                    finalStatus === 'Approved'
+                                                    ? 'Document signed and forwarded to the Program Chairperson. Student notified.'
+                                                    : 'Review submitted. Student notified.',
+                                                signed_file_path: signedFilePath
+                                            });
+                                        }
+                                    );
+                                };
+
+                                if (finalStatus === "Approved") {
+                                    const prog = String(submission.group_program || submission.sender_program || "").toUpperCase();
+                                    let chairPosition = 'Program Chairperson IT';
+                                    if (prog.includes("IS")) {
+                                        chairPosition = 'Program Chairperson IS';
+                                    }
+
+                                    const getChairSql = `
+                                        SELECT id FROM users
+                                        WHERE role = 'admin' AND position = ?
+                                        LIMIT 1
+                                    `;
+                                    db.query(getChairSql, [chairPosition], (errChair, chairRows) => {
+                                        if (errChair || !chairRows || chairRows.length === 0) {
+                                            console.log("No Chairperson found for " + chairPosition, errChair);
+                                            proceedWithNotifications();
+                                        } else {
+                                            const chairDbId = chairRows[0].id;
+                                            db.query(
+                                                `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? LIMIT 1`,
+                                                [submission.document_id, chairDbId],
+                                                (errExist, existResult) => {
+                                                    if (existResult && existResult.length > 0) {
+                                                        db.query(
+                                                            `UPDATE document_submissions
+                                                             SET submission_message = ?, review_status = NULL, review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', sent_at = NOW()
+                                                             WHERE id = ?`,
+                                                            ["Instructor signed. Pending Chairperson signature.", existResult[0].id],
+                                                            () => {
+                                                                db.query(
+                                                                    `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                     VALUES (?, ?, ?, 'Document Review')`,
+                                                                    [chairDbId, "Environmental Scanning Pending Signature", `${instructorName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
+                                                                    () => {}
+                                                                );
+                                                                proceedWithNotifications();
+                                                            }
+                                                        );
+                                                    } else {
+                                                        db.query(
+                                                            `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message)
+                                                             VALUES (?, ?, ?, ?)`,
+                                                             [submission.document_id, submission.sender_id, chairDbId, "Instructor signed. Pending Chairperson signature."],
+                                                            () => {
+                                                                db.query(
+                                                                    `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                     VALUES (?, ?, ?, 'Document Review')`,
+                                                                    [chairDbId, "Environmental Scanning Pending Signature", `${instructorName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
+                                                                    () => {}
+                                                                );
+                                                                proceedWithNotifications();
+                                                            }
+                                                        );
+                                                    }
+                                                }
+                                            );
+                                        }
+                                    });
+                                } else {
+                                    proceedWithNotifications();
+                                }
+
+                            }
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    });
+
+});
+
+/* ================= ADMIN SIGNING DOCUMENT FILE ================= */
+
+app.get("/admin-signing-document-file/:submissionId", (req, res) => {
+
+    const submissionId = req.params.submissionId;
+    const adminUserId = String(req.query.adminUserId || "").trim();
+
+    if(!submissionId || !adminUserId){
+        return res.status(400).json({
+            success:false,
+            message:"Missing submission or admin information."
+        });
+    }
+
+    const adminSql = `
+        SELECT id, position
+        FROM users
+        WHERE user_id = ?
+        AND role = 'admin'
+        LIMIT 1
+    `;
+
+    db.query(adminSql, [adminUserId], (err, adminResult) => {
+        if(err){
+            console.log(err);
+            return res.status(500).json({
+                success:false,
+                message:"Failed to verify admin account."
+            });
+        }
+
+        if(adminResult.length === 0){
+            return res.status(403).json({
+                success:false,
+                message:"Admin access denied."
+            });
+        }
+
+        const positionLower = String(adminResult[0].position || "").toLowerCase();
+        const isDean = positionLower === "dean";
+        const isChairperson = positionLower.includes("program chairperson");
+
+        if (!isDean && !isChairperson) {
+            return res.status(403).json({
+                success:false,
+                message:"Only Dean or Program Chairperson can sign this document."
+            });
+        }
+
+        const adminDbId = adminResult[0].id;
+
+        /* For env scanning, the chairperson may not have a submission row yet — fetch by document_id instead */
+        const submissionSql = `
+            SELECT
+                sd.file_path,
+                sd.signed_file_path,
+                sd.file_name,
+                sd.file_format,
+                sd.document_type,
+                sd.document_title
+            FROM document_submissions ds
+            JOIN student_documents sd ON ds.document_id = sd.id
+            WHERE ds.id = ?
+            AND ds.receiver_id = ?
+            LIMIT 1
+        `;
+
+        db.query(submissionSql, [submissionId, adminDbId], (err2, rows) => {
+            if(err2){
+                console.log(err2);
+                return res.status(500).json({
+                    success:false,
+                    message:"Failed to load signing document."
+                });
+            }
+
+            if(rows.length === 0){
+                return res.status(404).json({
+                    success:false,
+                    message:"Signing document not found."
+                });
+            }
+
+            const documentRow = rows[0];
+            console.log("[DEAN SIGNING FILE] signed_file_path:", documentRow.signed_file_path, "| file_path:", documentRow.file_path);
+            const chosenPath = documentRow.signed_file_path || documentRow.file_path;
+            console.log("[DEAN SIGNING FILE] chosenPath:", chosenPath);
+            const relativePath = String(chosenPath || "")
+                .replace(/\\/g, "/")
+                .replace(/^\/+/, "");
+
+
+            if(!relativePath){
+                return res.status(404).json({
+                    success:false,
+                    message:"Document file path is missing."
+                });
+            }
+
+            const absolutePath = path.join(__dirname, relativePath);
+
+            if(!fs.existsSync(absolutePath)){
+                console.log("Signing file missing:", absolutePath);
+                return res.status(404).json({
+                    success:false,
+                    message:"Document file was not found on the server."
+                });
+            }
+
+            const lowerName = String(documentRow.file_name || relativePath).toLowerCase();
+
+            if(!lowerName.endsWith(".pdf") && String(documentRow.file_format || "").toUpperCase() !== "PDF"){
+                return res.status(400).json({
+                    success:false,
+                    message:"Only PDF files can be opened in the e-signature viewer."
+                });
+            }
+
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader("Content-Disposition", `inline; filename="${path.basename(relativePath)}"`);
+
+            return res.sendFile(absolutePath);
+        });
+    });
+});
+
+/* ================= ADVISER APPLY DOCUMENT SIGNATURE ================= */
+
+app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
+
+    const submissionId =
+        req.params.submissionId;
+
+    const {
+        adviserUserId,
+        reviewStatus,
+        reviewComment,
+        signatureImage,
+        signatureType,
+        placement
+    } = req.body;
+
+    if(!submissionId || !adviserUserId || !reviewStatus){
+        return res.json({
+            success:false,
+            message:"Missing signing information."
+        });
+    }
+
+    const finalStatus =
+        String(reviewStatus || "").trim();
+
+    if(
+        finalStatus === "Approved"
+        && !placement
+    ){
+        return res.json({
+            success:false,
+            message:"Please place your e-signature on the document before approving."
+        });
+    }
+
+    if(
+        (finalStatus === "Rejected" || finalStatus === "Subject to Change" || finalStatus === "For Revision")
+        && !String(reviewComment || "").trim()
+    ){
+        return res.json({
+            success:false,
+            message:"Please add notes explaining your decision."
+        });
+    }
+
+    const adviserSql = `
+        SELECT id, fullname, digital_signature
+        FROM users
+        WHERE user_id = ?
+        AND role IN ('faculty', 'admin')
+        AND adviser_access = 1
+        LIMIT 1
+    `;
+
+    db.query(adviserSql, [adviserUserId], async (err, adviserResult) => {
+
+        if(err){
+            console.log(err);
+            return res.json({
+                success:false,
+                message:"Failed to check adviser account."
+            });
+        }
+
+        if(adviserResult.length === 0){
+            return res.json({
+                success:false,
+                message:"Adviser account not found or adviser access is disabled."
+            });
+        }
+
+        const adviserDbId =
+            adviserResult[0].id;
+
+        const adviserName =
+            adviserResult[0].fullname;
+
+        const submissionSql = `
+            SELECT
+                ds.id,
+                ds.sender_id,
+                ds.document_id,
+
+                sd.document_title,
+                sd.document_type,
+                sd.document_status,
+                sd.file_path,
+                sd.signed_file_path,
+                sd.file_format,
+
+                sender.user_id AS sender_user_id,
+                sender.fullname AS sender_name
+
+            FROM document_submissions ds
+
+            JOIN student_documents sd
+                ON ds.document_id = sd.id
+
+            JOIN users sender
+                ON ds.sender_id = sender.id
+
+            WHERE ds.id = ?
+            AND ds.receiver_id = ?
+            LIMIT 1
+        `;
+
+        db.query(
+            submissionSql,
+            [submissionId, adviserDbId],
+            async (err2, submissionResult) => {
+
+                if(err2){
+                    console.log(err2);
+                    return res.json({
+                        success:false,
+                        message:"Failed to check document submission."
+                    });
+                }
+
+                if(submissionResult.length === 0){
+                    return res.json({
+                        success:false,
+                        message:"Document submission not found or you are not the assigned receiver."
+                    });
+                }
+
+                const submission =
+                    submissionResult[0];
+
+                if(!isAdviserSigningDocumentType(
+                    submission.document_type,
+                    submission.document_title
+                )){
+                    return res.json({
+                        success:false,
+                        message:"This document is not an adviser e-signature request."
+                    });
+                }
+
+                let signedFilePath =
+                    submission.signed_file_path || null;
+
+                /* ── Lock: if the document is already Approved or Adviser Signed (waiting for Dean),
+                   the adviser cannot retroactively change their verdict ── */
+                if(
+                    (submission.document_status === 'Approved' || submission.document_status === 'Adviser Signed')
+                    && finalStatus !== 'Approved'
+                ){
+                    const isRecoDoc = isAdviserOnlyDoc(submission.document_type, submission.document_title);
+                    return res.json({
+                        success: false,
+                        message: submission.document_status === 'Approved'
+                            ? (isRecoDoc
+                                ? 'This document has already been signed and fully approved by you. The verdict cannot be changed.'
+                                : 'This document has already been fully approved by the Dean. The verdict cannot be changed.')
+                            : 'You have already signed this document. It is now waiting for the Dean. You cannot change your decision.'
+                    });
+                }
+
+                try{
+
+
+                    if(finalStatus === "Approved"){
+
+                        let signatureBuffer;
+                        if (signatureType === "saved" && adviserResult[0].digital_signature) {
+                            const localSigPath = path.join(__dirname, adviserResult[0].digital_signature.replace(/^\//, ""));
+                            if (!fs.existsSync(localSigPath)) {
+                                return res.json({
+                                    success: false,
+                                    message: "Saved signature file not found on the server. Please re-upload it in settings."
+                                });
+                            }
+                            signatureBuffer = fs.readFileSync(localSigPath);
+                        } else {
+                            signatureBuffer = decodeSignatureImageData(signatureImage);
+                        }
+
+                        if(!signatureBuffer || signatureBuffer.length === 0){
+                            return res.json({
+                                success:false,
+                                message:"Invalid signature image."
+                            });
+                        }
+
+                        const sourcePath =
+                            path.join(
+                                __dirname,
+                                String(submission.file_path || "").replace(/^\/uploads\//, "uploads/")
+                            );
+
+                        if(!fs.existsSync(sourcePath)){
+                            return res.json({
+                                success:false,
+                                message:"Original document file was not found on the server."
+                            });
+                        }
+
+                        const signedBytes =
+                            await embedSignatureOnPdfFile(
+                                sourcePath,
+                                signatureBuffer,
+                                placement
+                            );
+
+                        const signedDir =
+                            path.join(__dirname, "uploads", "signed_documents");
+
+                        if(!fs.existsSync(signedDir)){
+                            fs.mkdirSync(signedDir, { recursive:true });
+                        }
+
+                        const signedFileName =
+                            `signed-${Date.now()}-${submission.document_id}.pdf`;
+
+                        const signedDiskPath =
+                            path.join(signedDir, signedFileName);
+
+                        fs.writeFileSync(signedDiskPath, signedBytes);
+
+                        signedFilePath =
+                            `/uploads/signed_documents/${signedFileName}`;
+
+                    }
+
+                }catch(signErr){
+                    console.log(signErr);
+                    return res.json({
+                        success:false,
+                        message:"Failed to apply e-signature to the PDF."
+                    });
+                }
+
+                const revisionStatus =
+                    finalStatus === "Rejected"
+                    ? "Rejected"
+                    : (
+                        finalStatus === "Subject to Change"
+                        || finalStatus === "For Revision"
+                    )
+                    ? "For Revision"
+                    : finalStatus;
+
+                const updateSubmissionSql = `
+                    UPDATE document_submissions
+                    SET
+                        review_status = ?,
+                        review_comment = ?,
+                        reviewed_by = ?,
+                        reviewed_at = NOW(),
+                        submission_status = 'Reviewed'
+                    WHERE id = ?
+                    AND receiver_id = ?
+                `;
+
+                db.query(
+                    updateSubmissionSql,
+                    [
+                        finalStatus,
+                        reviewComment || "",
+                        adviserDbId,
+                        submissionId,
+                        adviserDbId
+                    ],
+                    (err3) => {
+
+                        if(err3){
+                            console.log(err3);
+                            return res.json({
+                                success:false,
+                                message:"Failed to save review status."
+                            });
+                        }
+
+                        const isAcceptanceDoc = isAdviserAcceptanceDoc(
+                            submission.document_type,
+                            submission.document_title
+                        );
+                        const isRecommendationDoc = isAdviserOnlyDoc(
+                            submission.document_type,
+                            submission.document_title
+                        );
+
+                        const updateDocumentSql =
+                            (finalStatus === "Approved")
+                            ? (isAcceptanceDoc
+                                ? `
+                                    UPDATE student_documents
+                                    SET
+                                        document_status = 'Adviser Signed',
+                                        signed_file_path = ?,
+                                        updated_at = CURRENT_TIMESTAMP
+                                    WHERE id = ?
+                                `
+                                : `
+                                    UPDATE student_documents
+                                    SET
+                                        document_status = 'Approved',
+                                        signed_file_path = ?,
+                                        updated_at = CURRENT_TIMESTAMP
+                                    WHERE id = ?
+                                `)
+                            : `
+                                UPDATE student_documents
+                                SET
+                                    document_status = ?,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE id = ?
+                            `;
+
+                        const updateParams =
+                            finalStatus === "Approved"
+                            ? [signedFilePath, submission.document_id]
+                            : [revisionStatus, submission.document_id];
+
+                        db.query(
+                            updateDocumentSql,
+                            updateParams,
+                            (err4) => {
+
+                                if(err4){
+                                    console.log(err4);
+                                    return res.json({
+                                        success:false,
+                                        message:"Review saved, but failed to update student document."
+                                    });
+                                }
+
+                                const proceedWithNotifications = () => {
+                                    let notifyTitle, notifyMessage;
+                                    if(finalStatus === 'Approved'){
+                                        notifyTitle = isRecommendationDoc
+                                            ? 'Adviser Signed Recommendation Document'
+                                            : 'Adviser Signed Your Document';
+                                        notifyMessage = isRecommendationDoc
+                                            ? `${adviserName} (Adviser) signed and approved your "${submission.document_title}" document. It is now fully approved. ${reviewComment ? 'Notes: ' + reviewComment : ''}`
+                                            : `${adviserName} (Adviser) signed your "${submission.document_title}" document. It has been forwarded to the Dean for final approval. ${reviewComment ? 'Notes: ' + reviewComment : ''}`;
+                                    } else if(finalStatus === 'Rejected'){
+                                        notifyTitle = 'Document Rejected by Adviser';
+                                        notifyMessage = `Your "${submission.document_title}" was rejected by ${adviserName} (Adviser). Reason: ${reviewComment || 'No reason provided.'} Please review and resubmit if needed.`;
+                                    } else {
+                                        notifyTitle = 'Adviser Requested Revision';
+                                        notifyMessage = `${adviserName} (Adviser) requested a revision on your "${submission.document_title}". Notes: ${reviewComment || 'Please check the document and resubmit.'}`;
+                                    }
+
+                                    db.query(
+                                        `
+                                            INSERT INTO user_notifications
+                                            (
+                                                user_id,
+                                                notification_title,
+                                                notification_message,
+                                                notification_type
+                                            )
+                                            VALUES (?, ?, ?, 'Document Review')
+                                        `,
+                                        [
+                                            submission.sender_id,
+                                            notifyTitle,
+                                            notifyMessage
+                                        ],
+                                        (err5) => {
+                                            if(err5){
+                                                console.log(err5);
+                                            }
+
+                                            res.json({
+                                                success: true,
+                                                message:
+                                                    finalStatus === 'Approved'
+                                                    ? (isRecommendationDoc ? 'Recommendation document signed and fully approved. Student notified.' : isAcceptanceDoc ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and returned to the student.')
+                                                    : finalStatus === 'Rejected'
+                                                    ? 'Document rejected. Student has been notified with your reason.'
+                                                    : 'Revision requested. Student has been notified.',
+                                                signed_file_path: signedFilePath
+                                            });
+                                        }
+                                    );
+                                };
+
+                                /* Route to Dean only for acceptance docs, NOT for recommendation docs */
+                                if (finalStatus === "Approved" && isAcceptanceDoc && !isRecommendationDoc) {
+                                    const getDeansSql = `
+                                        SELECT id FROM users
+                                        WHERE role = 'admin' AND LOWER(position) = 'dean'
+                                    `;
+                                    db.query(getDeansSql, [], (errDeans, deanRows) => {
+                                        if (errDeans || !deanRows || deanRows.length === 0) {
+                                            console.log("No Dean found or query failed", errDeans);
+                                            proceedWithNotifications();
+                                        } else {
+                                            const routeToDean = (idx) => {
+                                                if (idx >= deanRows.length) {
+                                                    proceedWithNotifications();
+                                                    return;
+                                                }
+                                                const deanDbId = deanRows[idx].id;
+                                                db.query(
+                                                    `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? LIMIT 1`,
+                                                    [submission.document_id, deanDbId],
+                                                    (errExist, existResult) => {
+                                                        if (existResult && existResult.length > 0) {
+                                                            db.query(
+                                                                `UPDATE document_submissions
+                                                                 SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', sent_at = NOW()
+                                                                 WHERE id = ?`,
+                                                                ["Adviser signed. Pending Dean signature.", existResult[0].id],
+                                                                (errUpd) => {
+                                                                    db.query(
+                                                                        `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                         VALUES (?, ?, ?, 'Document Review')`,
+                                                                        [deanDbId, "Adviser Acceptance Form Signed", `${adviserName} has signed the Adviser Acceptance Form. It is now pending your signature.`, "Document Review"],
+                                                                        () => {}
+                                                                    );
+                                                                    routeToDean(idx + 1);
+                                                                }
+                                                            );
+                                                        } else {
+                                                            db.query(
+                                                                `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status)
+                                                                 VALUES (?, ?, ?, ?, 'Pending Review')`,
+                                                                [submission.document_id, submission.sender_id, deanDbId, "Adviser signed. Pending Dean signature."],
+                                                                (errIns) => {
+                                                                    db.query(
+                                                                        `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                         VALUES (?, ?, ?, 'Document Review')`,
+                                                                        [deanDbId, "Adviser Acceptance Form Pending Signature", `${adviserName} has signed the Adviser Acceptance Form. It is now pending your signature.`, "Document Review"],
+                                                                        () => {}
+                                                                    );
+                                                                    routeToDean(idx + 1);
+                                                                }
+                                                            );
+                                                        }
+                                                    }
+                                                );
+                                            };
+                                            routeToDean(0);
+                                        }
+                                    });
+                                } else {
+                                    proceedWithNotifications();
+                                }
+
+                            }
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    });
+
+});
+
+/* ================= ADMIN APPLY DOCUMENT SIGNATURE ================= */
+
+app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
+    const submissionId = req.params.submissionId;
+    const {
+        adminUserId,
+        reviewStatus,
+        reviewComment,
+        signatureImage,
+        signatureType,
+        placement
+    } = req.body;
+
+    if(!submissionId || !adminUserId || !reviewStatus){
+        return res.json({
+            success:false,
+            message:"Missing signing information."
+        });
+    }
+
+    const finalStatus = String(reviewStatus || "").trim();
+
+    if(finalStatus === "Approved" && !placement){
+        return res.json({
+            success:false,
+            message:"Please place your e-signature on the document before approving."
+        });
+    }
+
+    if(
+        (finalStatus === "Rejected" || finalStatus === "Subject to Change" || finalStatus === "For Revision")
+        && !String(reviewComment || "").trim()
+    ){
+        return res.json({
+            success:false,
+            message:"Please add notes explaining your decision."
+        });
+    }
+
+    const adminSql = `
+        SELECT id, fullname, digital_signature, position
+        FROM users
+        WHERE user_id = ?
+        AND role = 'admin'
+        LIMIT 1
+    `;
+
+    db.query(adminSql, [adminUserId], async (err, adminResult) => {
+        if(err){
+            console.log(err);
+            return res.json({
+                success:false,
+                message:"Failed to check admin account."
+            });
+        }
+
+        if(adminResult.length === 0){
+            return res.json({
+                success:false,
+                message:"Admin account not found."
+            });
+        }
+
+        const adminPosition = String(adminResult[0].position || "").toLowerCase();
+        const isDean = adminPosition === "dean";
+        const isChair = adminPosition === "program chairperson is" || adminPosition === "program chairperson it";
+
+        if (!isDean && !isChair) {
+            return res.json({
+                success:false,
+                message:"Only Dean or Program Chairpersons can e-sign documents here."
+            });
+        }
+
+        const adminDbId = adminResult[0].id;
+        const adminName = adminResult[0].fullname;
+
+        const submissionSql = `
+            SELECT
+                ds.id,
+                ds.sender_id,
+                ds.document_id,
+                sd.document_title,
+                sd.document_type,
+                sd.document_status,
+                sd.file_path,
+                sd.signed_file_path,
+                sd.file_format,
+                sender.user_id AS sender_user_id,
+                sender.fullname AS sender_name
+            FROM document_submissions ds
+            JOIN student_documents sd ON ds.document_id = sd.id
+            JOIN users sender ON ds.sender_id = sender.id
+            WHERE ds.id = ?
+            AND ds.receiver_id = ?
+            LIMIT 1
+        `;
+
+        db.query(submissionSql, [submissionId, adminDbId], async (err2, submissionResult) => {
+            if(err2){
+                console.log(err2);
+                return res.json({
+                    success:false,
+                    message:"Failed to check document submission."
+                });
+            }
+
+            if(submissionResult.length === 0){
+                return res.json({
+                    success:false,
+                    message:"Document submission not found or you are not the assigned receiver."
+                });
+            }
+
+            const submission = submissionResult[0];
+            let signedFilePath = submission.signed_file_path || null;
+
+            /* ── Lock: if already Approved by Dean, no further changes allowed ── */
+            if(submission.document_status === 'Approved' && finalStatus !== 'Approved'){
+                return res.json({
+                    success: false,
+                    message: 'This document has already been fully approved by the Dean. The verdict cannot be changed.'
+                });
+            }
+
+            try{
+                if(finalStatus === "Approved"){
+                    let signatureBuffer;
+                    if (signatureType === "saved" && adminResult[0].digital_signature) {
+                        const localSigPath = path.join(__dirname, adminResult[0].digital_signature.replace(/^\//, ""));
+                        if (!fs.existsSync(localSigPath)) {
+                            return res.json({
+                                success: false,
+                                message: "Saved signature file not found on the server. Please re-upload it in settings."
+                            });
+                        }
+                        signatureBuffer = fs.readFileSync(localSigPath);
+                    } else {
+                        signatureBuffer = decodeSignatureImageData(signatureImage);
+                    }
+
+                    if(!signatureBuffer || signatureBuffer.length === 0){
+                        return res.json({
+                            success:false,
+                            message:"Invalid signature image."
+                        });
+                    }
+
+                    console.log("DEAN SIGNING submission object:", submission);
+                    const srcRelative = submission.signed_file_path || submission.file_path;
+                    console.log("DEAN SIGNING srcRelative resolved:", srcRelative);
+                    const sourcePath = path.join(
+                        __dirname,
+                        String(srcRelative || "").replace(/^\/uploads\//, "uploads/")
+                    );
+
+                    if(!fs.existsSync(sourcePath)){
+                        return res.json({
+                            success:false,
+                            message:"Source document file was not found on the server."
+                        });
+                    }
+
+                    const signedBytes = await embedSignatureOnPdfFile(
+                        sourcePath,
+                        signatureBuffer,
+                        placement
+                    );
+
+                    const signedDir = path.join(__dirname, "uploads", "signed_documents");
+                    if(!fs.existsSync(signedDir)){
+                        fs.mkdirSync(signedDir, { recursive:true });
+                    }
+
+                    const signedFileName = `signed-dean-${Date.now()}-${submission.document_id}.pdf`;
+                    const signedDiskPath = path.join(signedDir, signedFileName);
+                    fs.writeFileSync(signedDiskPath, signedBytes);
+
+                    signedFilePath = `/uploads/signed_documents/${signedFileName}`;
+                }
+            }catch(signErr){
+                console.log(signErr);
+                return res.json({
+                    success:false,
+                    message:"Failed to apply e-signature to the PDF."
+                });
+            }
+
+            const revisionStatus =
+                finalStatus === "Rejected"
+                ? "Rejected"
+                : (finalStatus === "Subject to Change" || finalStatus === "For Revision")
+                ? "For Revision"
+                : finalStatus;
+
+            const updateSubmissionSql = `
+                UPDATE document_submissions
+                SET
+                    review_status = ?,
+                    review_comment = ?,
+                    reviewed_by = ?,
+                    reviewed_at = NOW(),
+                    submission_status = 'Reviewed'
+                WHERE id = ?
+                AND receiver_id = ?
+            `;
+
+            db.query(
+                updateSubmissionSql,
+                [finalStatus, reviewComment || "", adminDbId, submissionId, adminDbId],
+                (err3) => {
+                    if(err3){
+                        console.log(err3);
+                        return res.json({
+                            success:false,
+                            message:"Failed to save review status."
+                        });
+                    }
+
+                    const isEnvScan = isEnvironmentalScanningDoc(submission.document_type, submission.document_title);
+                    let targetDocStatus = 'Approved';
+                    if (isEnvScan && isChair && finalStatus === "Approved") {
+                        targetDocStatus = 'Chairperson Signed';
+                    }
+
+                    const updateDocumentSql =
+                        finalStatus === "Approved"
+                        ? `
+                            UPDATE student_documents
+                            SET
+                                document_status = ?,
+                                signed_file_path = ?,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                        `
+                        : `
+                            UPDATE student_documents
+                            SET
+                                document_status = ?,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                        `;
+
+                    const updateParams =
+                        finalStatus === "Approved"
+                        ? [targetDocStatus, signedFilePath, submission.document_id]
+                        : [revisionStatus, submission.document_id];
+
+                    db.query(updateDocumentSql, updateParams, (err4) => {
+                        if(err4){
+                            console.log(err4);
+                            return res.json({
+                                success:false,
+                                message:"Review saved, but failed to update student document."
+                            });
+                        }
+
+                        let notifyTitle, notifyMessage;
+                        if(finalStatus === 'Approved'){
+                            notifyTitle = isEnvScan
+                                ? (isChair ? 'Chairperson Signed Environmental Scanning' : 'Dean Signed Environmental Scanning')
+                                : 'Dean Signed Your Document';
+                            notifyMessage = isEnvScan
+                                ? (isChair
+                                    ? `${adminName} (Chairperson) signed your "${submission.document_title}" document. It has been forwarded to the Dean for final approval.`
+                                    : `${adminName} (Dean) signed and fully approved your "${submission.document_title}" document.`)
+                                : `${adminName} (Dean) signed and fully approved your "${submission.document_title}" document. ${reviewComment ? 'Notes: ' + reviewComment : 'Your adviser acceptance form is now complete.'}`;
+                        } else if(finalStatus === 'Rejected'){
+                            notifyTitle = isChair ? 'Document Rejected by Chairperson' : 'Document Rejected by Dean';
+                            notifyMessage = `Your "${submission.document_title}" was rejected by ${adminName} (${isChair ? 'Chairperson' : 'Dean'}). Reason: ${reviewComment || 'No reason provided.'}`;
+                        } else {
+                            notifyTitle = isChair ? 'Chairperson Requested Revision' : 'Dean Requested Revision';
+                            notifyMessage = `${adminName} (${isChair ? 'Chairperson' : 'Dean'}) requested a revision on your "${submission.document_title}". Notes: ${reviewComment || 'Please check the document and resubmit.'}`;
+                        }
+
+                        const proceedWithDeanRouting = () => {
+                            db.query(
+                                `
+                                    INSERT INTO user_notifications
+                                    (
+                                        user_id,
+                                        notification_title,
+                                        notification_message,
+                                        notification_type
+                                    )
+                                    VALUES (?, ?, ?, 'Document Review')
+                                `,
+                                [submission.sender_id, notifyTitle, notifyMessage],
+                                (err5) => {
+                                    if(err5) console.log(err5);
+
+                                    res.json({
+                                        success: true,
+                                        message:
+                                            finalStatus === 'Approved'
+                                            ? (isEnvScan && isChair ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and fully approved. Student has been notified.')
+                                            : finalStatus === 'Rejected'
+                                            ? 'Document rejected. Student has been notified with your reason.'
+                                            : 'Revision requested. Student has been notified.',
+                                        signed_file_path: signedFilePath
+                                    });
+                                }
+                            );
+                        };
+
+                        if (finalStatus === "Approved" && isEnvScan && isChair) {
+                            const getDeansSql = `
+                                SELECT id FROM users
+                                WHERE role = 'admin' AND LOWER(position) = 'dean'
+                            `;
+                            db.query(getDeansSql, [], (errDeans, deanRows) => {
+                                if (errDeans || !deanRows || deanRows.length === 0) {
+                                    console.log("No Dean found or query failed", errDeans);
+                                    proceedWithDeanRouting();
+                                } else {
+                                    const routeToDean = (idx) => {
+                                        if (idx >= deanRows.length) {
+                                            proceedWithDeanRouting();
+                                            return;
+                                        }
+                                        const deanDbId = deanRows[idx].id;
+                                        db.query(
+                                            `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? LIMIT 1`,
+                                            [submission.document_id, deanDbId],
+                                            (errExist, existResult) => {
+                                                if (existResult && existResult.length > 0) {
+                                                    db.query(
+                                                        `UPDATE document_submissions
+                                                         SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', sent_at = NOW()
+                                                         WHERE id = ?`,
+                                                        ["Chairperson signed. Pending Dean signature.", existResult[0].id],
+                                                        () => {
+                                                            db.query(
+                                                                `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                 VALUES (?, ?, ?, 'Document Review')`,
+                                                                [deanDbId, "Environmental Scanning Signed", `${adminName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
+                                                                () => {}
+                                                            );
+                                                            routeToDean(idx + 1);
+                                                        }
+                                                    );
+                                                } else {
+                                                    db.query(
+                                                        `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status)
+                                                         VALUES (?, ?, ?, ?, 'Pending Review')`,
+                                                        [submission.document_id, submission.sender_id, deanDbId, "Chairperson signed. Pending Dean signature."],
+                                                        () => {
+                                                            db.query(
+                                                                `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                 VALUES (?, ?, ?, 'Document Review')`,
+                                                                [deanDbId, "Environmental Scanning Pending Signature", `${adminName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
+                                                                () => {}
+                                                                );
+                                                            routeToDean(idx + 1);
+                                                        }
+                                                    );
+                                                }
+                                            }
+                                        );
+                                    };
+                                    routeToDean(0);
+                                }
+                            });
+                        } else {
+                            proceedWithDeanRouting();
+                        }
+                    });
+                }
+            );
+        });
+    });
+});
+
+/* ================= STUDENT SIGNING DOCUMENTS ================= */
+
+app.get("/student-signing-documents/:userId", (req, res) => {
+
+    const userId =
+        req.params.userId;
+
+    const groupSql = `
+        SELECT cg.id AS group_db_id
+        FROM group_members gm
+        JOIN capstone_groups cg ON gm.group_id = cg.id
+        JOIN users u ON gm.student_id = u.id
+        WHERE u.user_id = ?
+        LIMIT 1
+    `;
+
+    db.query(groupSql, [userId], (err, groupResult) => {
+
+        if(err){
+            console.log(err);
+            return res.json({
+                success:false,
+                message:"Failed to load group."
+            });
+        }
+
+        if(groupResult.length === 0){
+            return res.json({
+                success:true,
+                documents:[]
+            });
+        }
+
+        const groupDbId =
+            groupResult[0].group_db_id;
+
+        const sql = `
+            SELECT
+                sd.id,
+                sd.document_code,
+                sd.document_title,
+                sd.document_type,
+                sd.file_path,
+                sd.signed_file_path,
+                sd.file_name,
+                sd.document_status,
+                sd.submitted_at,
+                sd.updated_at,
+
+                (
+                    SELECT ds.review_status
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.adviser_access = 1
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS adviser_review_status,
+
+                (
+                    SELECT ds.review_comment
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.adviser_access = 1
+                    AND ds.review_comment IS NOT NULL
+                    AND TRIM(ds.review_comment) != ''
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS adviser_review_comment,
+
+                (
+                    SELECT reviewer.fullname
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.adviser_access = 1
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS adviser_name,
+
+                (
+                    SELECT ds.reviewed_at
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.adviser_access = 1
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS adviser_reviewed_at,
+
+                (
+                    SELECT ds.review_status
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.role = 'admin' AND LOWER(reviewer.position) = 'dean'
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS dean_review_status,
+
+                (
+                    SELECT ds.review_comment
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.role = 'admin' AND LOWER(reviewer.position) = 'dean'
+                    AND ds.review_comment IS NOT NULL
+                    AND TRIM(ds.review_comment) != ''
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS dean_review_comment,
+
+                (
+                    SELECT reviewer.fullname
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.role = 'admin' AND LOWER(reviewer.position) = 'dean'
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS dean_name,
+
+                (
+                    SELECT ds.reviewed_at
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.role = 'admin' AND LOWER(reviewer.position) = 'dean'
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS dean_reviewed_at,
+
+                (
+                    SELECT ds.review_status
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.instructor_access = 1
+                    AND (reviewer.position IS NULL OR (reviewer.position NOT LIKE 'Program Chairperson%' AND LOWER(reviewer.position) != 'dean'))
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS instructor_review_status,
+
+                (
+                    SELECT ds.review_comment
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.instructor_access = 1
+                    AND (reviewer.position IS NULL OR (reviewer.position NOT LIKE 'Program Chairperson%' AND LOWER(reviewer.position) != 'dean'))
+                    AND ds.review_comment IS NOT NULL
+                    AND TRIM(ds.review_comment) != ''
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS instructor_review_comment,
+
+                (
+                    SELECT reviewer.fullname
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.instructor_access = 1
+                    AND (reviewer.position IS NULL OR (reviewer.position NOT LIKE 'Program Chairperson%' AND LOWER(reviewer.position) != 'dean'))
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS instructor_name,
+
+                (
+                    SELECT ds.reviewed_at
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND reviewer.instructor_access = 1
+                    AND (reviewer.position IS NULL OR (reviewer.position NOT LIKE 'Program Chairperson%' AND LOWER(reviewer.position) != 'dean'))
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS instructor_reviewed_at,
+
+                (
+                    SELECT ds.review_status
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND (reviewer.position = 'Program Chairperson IS' OR reviewer.position = 'Program Chairperson IT')
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS chairperson_review_status,
+
+                (
+                    SELECT ds.review_comment
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND (reviewer.position = 'Program Chairperson IS' OR reviewer.position = 'Program Chairperson IT')
+                    AND ds.review_comment IS NOT NULL
+                    AND TRIM(ds.review_comment) != ''
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS chairperson_review_comment,
+
+                (
+                    SELECT reviewer.fullname
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND (reviewer.position = 'Program Chairperson IS' OR reviewer.position = 'Program Chairperson IT')
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS chairperson_name,
+
+                (
+                    SELECT ds.reviewed_at
+                    FROM document_submissions ds
+                    JOIN users reviewer ON ds.receiver_id = reviewer.id
+                    WHERE ds.document_id = sd.id
+                    AND (reviewer.position = 'Program Chairperson IS' OR reviewer.position = 'Program Chairperson IT')
+                    ORDER BY ds.reviewed_at DESC, ds.id DESC
+                    LIMIT 1
+                ) AS chairperson_reviewed_at
+
+            FROM student_documents sd
+            WHERE sd.group_id = ?
+            AND (
+                LOWER(sd.document_type) LIKE '%adviser acceptance%'
+                OR LOWER(sd.document_type) LIKE '%acceptance for advisory%'
+                OR LOWER(sd.document_title) LIKE '%adviser acceptance%'
+                OR LOWER(sd.document_title) LIKE '%acceptance for advisory%'
+                OR LOWER(sd.document_type) LIKE '%recommendation for concept%'
+                OR LOWER(sd.document_title) LIKE '%recommendation for concept%'
+                OR LOWER(sd.document_type) LIKE '%environmental scanning%'
+                OR LOWER(sd.document_title) LIKE '%environmental scanning%'
+            )
+            ORDER BY sd.id DESC
+        `;
+
+        db.query(sql, [groupDbId], (err2, rows) => {
+
+            if(err2){
+                console.log(err2);
+                return res.json({
+                    success:false,
+                    message:"Failed to load signing documents."
+                });
+            }
+
+            res.json({
+                success:true,
+                documents:rows || []
+            });
+
+        });
 
     });
 
@@ -15880,7 +18220,7 @@ app.get("/chat-users", (req, res) => {
     const search = req.query.search || "";
 
     let sql = `
-        SELECT user_id, fullname, role, position, program, year_level, student_position
+        SELECT user_id, fullname, role, position, program, year_level, student_position, profile_image
         FROM users
         WHERE user_id != ?
     `;
@@ -16393,7 +18733,8 @@ app.get("/admin-document-review/:userId", (req, res) => {
             fullname,
             role,
             position,
-            program
+            program,
+            digital_signature
         FROM users
         WHERE user_id = ?
         AND role = 'admin'
@@ -16434,6 +18775,7 @@ app.get("/admin-document-review/:userId", (req, res) => {
                 sd.document_type,
                 sd.file_name,
                 sd.file_path,
+                sd.signed_file_path,
                 sd.file_format,
                 sd.document_status,
                 sender.id AS sender_db_id,
@@ -16445,7 +18787,69 @@ app.get("/admin-document-review/:userId", (req, res) => {
                 cg.group_name,
                 cg.project_title,
                 cg.program AS group_program,
-                reviewer.fullname AS reviewer_name
+                reviewer.fullname AS reviewer_name,
+                (
+                    SELECT adv.fullname
+                    FROM document_submissions adv_ds
+                    JOIN users adv ON adv_ds.receiver_id = adv.id
+                    WHERE adv_ds.document_id = sd.id
+                    AND adv.adviser_access = 1
+                    AND adv.role IN ('faculty', 'admin')
+                    AND adv_ds.review_status = 'Approved'
+                    ORDER BY adv_ds.reviewed_at DESC
+                    LIMIT 1
+                ) AS adviser_name,
+                (
+                    SELECT adv_ds.reviewed_at
+                    FROM document_submissions adv_ds
+                    JOIN users adv ON adv_ds.receiver_id = adv.id
+                    WHERE adv_ds.document_id = sd.id
+                    AND adv.adviser_access = 1
+                    AND adv.role IN ('faculty', 'admin')
+                    AND adv_ds.review_status = 'Approved'
+                    ORDER BY adv_ds.reviewed_at DESC
+                    LIMIT 1
+                ) AS adviser_reviewed_at,
+                (
+                    SELECT instr.fullname
+                    FROM document_submissions instr_ds
+                    JOIN users instr ON instr_ds.receiver_id = instr.id
+                    WHERE instr_ds.document_id = sd.id
+                    AND instr.instructor_access = 1
+                    AND instr_ds.review_status = 'Approved'
+                    ORDER BY instr_ds.reviewed_at DESC
+                    LIMIT 1
+                ) AS instructor_name,
+                (
+                    SELECT instr_ds.reviewed_at
+                    FROM document_submissions instr_ds
+                    JOIN users instr ON instr_ds.receiver_id = instr.id
+                    WHERE instr_ds.document_id = sd.id
+                    AND instr.instructor_access = 1
+                    AND instr_ds.review_status = 'Approved'
+                    ORDER BY instr_ds.reviewed_at DESC
+                    LIMIT 1
+                ) AS instructor_reviewed_at,
+                (
+                    SELECT chair.fullname
+                    FROM document_submissions chair_ds
+                    JOIN users chair ON chair_ds.receiver_id = chair.id
+                    WHERE chair_ds.document_id = sd.id
+                    AND (LOWER(chair.position) LIKE '%program chairperson%')
+                    AND chair_ds.review_status = 'Approved'
+                    ORDER BY chair_ds.reviewed_at DESC
+                    LIMIT 1
+                ) AS chairperson_name,
+                (
+                    SELECT chair_ds.reviewed_at
+                    FROM document_submissions chair_ds
+                    JOIN users chair ON chair_ds.receiver_id = chair.id
+                    WHERE chair_ds.document_id = sd.id
+                    AND (LOWER(chair.position) LIKE '%program chairperson%')
+                    AND chair_ds.review_status = 'Approved'
+                    ORDER BY chair_ds.reviewed_at DESC
+                    LIMIT 1
+                ) AS chairperson_reviewed_at
             FROM document_submissions ds
             JOIN student_documents sd
                 ON ds.document_id = sd.id
@@ -16478,7 +18882,8 @@ app.get("/admin-document-review/:userId", (req, res) => {
                     role,
                     position,
                     program,
-                    year_level
+                    year_level,
+                    profile_image
                 FROM users
                 WHERE role IN ('student', 'faculty', 'admin')
                 AND user_id != ?

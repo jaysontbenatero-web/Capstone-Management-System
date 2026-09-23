@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -338,6 +338,9 @@
 
             filtered.forEach(u => {
                 const initials = u.fullname ? u.fullname.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "?";
+                const avatarContent = u.profile_image
+                    ? `<img src="http://localhost:3005${u.profile_image}" alt="Profile">`
+                    : initials;
                 const isSelected = activeReceiverId === u.user_id;
 
                 const item = document.createElement("div");
@@ -349,7 +352,7 @@
                     : (u.position || u.role);
 
                 item.innerHTML = `
-                    <div class="contact-avatar">${initials}</div>
+                    <div class="contact-avatar">${avatarContent}</div>
                     <div class="contact-details">
                         <div class="contact-name-row">
                             <span class="contact-name">${u.fullname}</span>
@@ -373,7 +376,12 @@
             document.getElementById("chatWindowContent").style.display = "flex";
 
             const initials = user.fullname ? user.fullname.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "?";
-            document.getElementById("activeChatAvatar").innerText = initials;
+            const avatarEl = document.getElementById("activeChatAvatar");
+            if (user.profile_image) {
+                avatarEl.innerHTML = `<img src="http://localhost:3005${user.profile_image}" alt="Profile">`;
+            } else {
+                avatarEl.innerText = initials;
+            }
             document.getElementById("activeChatName").innerText = user.fullname;
 
             const detailLabel = user.role === "student"

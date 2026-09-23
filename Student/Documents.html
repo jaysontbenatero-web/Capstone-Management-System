@@ -619,6 +619,80 @@
             </div>
     </div>
 
+    <!-- ENVIRONMENTAL SCANNING DECLINE REASON MODAL -->
+    <div class="modal-overlay" id="envScanDeclineModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px); padding:20px;">
+        <div class="modal-box" style="width:650px; max-width:95%; background:white; border-radius:24px; padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.18);">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <div>
+                    <h2 style="color: #ef4444; font-size:22px; margin:0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-building-circle-xmark"></i>
+                        Environmental Scanning Status & Decline Rationale
+                    </h2>
+                    <p style="margin-top: 6px; color: #64748b; font-size: 13px; line-height: 1.5;">
+                        "The organization that we presented this declined our proposed system."
+                    </p>
+                </div>
+                <button class="close-modal-btn" type="button" onclick="closeEnvScanDeclineModal()" style="border:none; background:#fee2e2; color:#ef4444; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="envScanDeclineDocId">
+
+            <div class="input-group" style="margin-bottom: 16px;">
+                <label style="font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block; color: #334155;">
+                    Document Item:
+                </label>
+                <input type="text" id="envScanDeclineDocTitle" readonly style="width:100%; padding:10px 14px; border-radius:12px; border:1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 600; font-size:13px;">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 16px;">
+                <label style="font-weight: 700; font-size: 13px; margin-bottom: 10px; display: block; color: #334155;">
+                    Please select the reason for decline:
+                </label>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; background:#f8fafc; padding:16px; border-radius:14px; border:1px solid #e2e8f0;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: #1e293b;">
+                        <input type="radio" name="envScanReason" value="1. They already have system." checked onchange="toggleEnvScanOtherText()" style="width:18px; height:18px; accent-color:#ef4444;">
+                        <span>1. They already have system.</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: #1e293b;">
+                        <input type="radio" name="envScanReason" value="2. They don't need system." onchange="toggleEnvScanOtherText()" style="width:18px; height:18px; accent-color:#ef4444;">
+                        <span>2. They don't need system.</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: #1e293b;">
+                        <input type="radio" name="envScanReason" value="3. Others" id="envScanReasonOthersRadio" onchange="toggleEnvScanOtherText()" style="width:18px; height:18px; accent-color:#ef4444;">
+                        <span>3. Others, specify:</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="input-group" id="envScanOthersGroup" style="margin-bottom: 16px; display: none;">
+                <label style="font-weight: 600; font-size: 13px; color: #475569; margin-bottom:6px; display:block;">
+                    Specify Reason:
+                </label>
+                <textarea id="envScanOtherText" rows="3" placeholder="Specify why the organization declined your proposed system..." style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:12px; resize:vertical; font-size:13px; font-family:inherit; outline:none;"></textarea>
+            </div>
+
+            <div style="font-size: 12px; color: #991b1b; background: #fef2f2; border: 1px solid #fecdd3; padding: 12px; border-radius: 12px; margin-bottom: 20px;">
+                <i class="fa-solid fa-circle-info" style="color:#ef4444; margin-right: 6px;"></i>
+                Submitting this reason will update the proposal status to <strong>Declined by Organization</strong> and automatically notify your <strong>Instructor</strong>, <strong>Program Chairperson</strong>, and <strong>Dean</strong>.
+            </div>
+
+            <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:12px;">
+                <button class="cancel-btn" type="button" onclick="closeEnvScanDeclineModal()" style="padding:10px 18px; border-radius:12px; border:none; background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
+                    Cancel
+                </button>
+                <button class="save-btn" type="button" onclick="submitEnvScanDeclineReason()" style="padding:10px 18px; border-radius:12px; border:none; background:#ef4444; color:white; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Submit Reason & Notify
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- HIDDEN QUICK UPLOAD INPUT (for template rows) -->
     <input
         type="file"
@@ -1289,7 +1363,32 @@
 
             await loadRecipients();
 
-            renderRecipients(recipients);
+            const isSigningDoc = isAdviserSigningDocument(documentItem) ||
+                                 String(documentItem.document_type || "").toLowerCase().includes("environmental scanning") ||
+                                 String(documentItem.document_title || "").toLowerCase().includes("environmental scanning");
+
+            const sendList =
+                isSigningDoc
+                ? recipients.filter(user =>
+                    user.recipient_type === "adviser"
+                    || user.recipient_type === "instructor"
+                    || (
+                        pinnedRecipients.adviserUserId
+                        && user.user_id === pinnedRecipients.adviserUserId
+                    )
+                    || (
+                        pinnedRecipients.instructorUserId
+                        && user.user_id === pinnedRecipients.instructorUserId
+                    )
+                )
+                : recipients;
+
+            if(isSigningDoc){
+                document.getElementById("sendDocumentDetails").innerText =
+                    `${documentItem.document_code} • ${documentItem.document_type} • Sent to your adviser or instructor for e-signature`;
+            }
+
+            renderRecipients(sendList);
 
         }
 
@@ -1331,24 +1430,22 @@
             const rest = [];
 
             list.forEach(user => {
-                if(
-                    user.recipient_type === "adviser"
-                    || (
-                        pinnedRecipients.adviserUserId
-                        && user.user_id === pinnedRecipients.adviserUserId
-                    )
-                ){
-                    adviserFirst.push(user);
+                // If this user is BOTH adviser and instructor, duplicate them for each section
+                const matchesAdviser = user.recipient_type === "adviser" || (pinnedRecipients.adviserUserId && user.user_id === pinnedRecipients.adviserUserId);
+                const matchesInstructor = user.recipient_type === "instructor" || (pinnedRecipients.instructorUserId && user.user_id === pinnedRecipients.instructorUserId);
+
+                if (matchesAdviser && matchesInstructor) {
+                    adviserFirst.push({ ...user, display_role: "adviser" });
+                    instructorFirst.push({ ...user, display_role: "instructor" });
                     return;
                 }
-                if(
-                    user.recipient_type === "instructor"
-                    || (
-                        pinnedRecipients.instructorUserId
-                        && user.user_id === pinnedRecipients.instructorUserId
-                    )
-                ){
-                    instructorFirst.push(user);
+
+                if (matchesAdviser) {
+                    adviserFirst.push({ ...user, display_role: "adviser" });
+                    return;
+                }
+                if (matchesInstructor) {
+                    instructorFirst.push({ ...user, display_role: "instructor" });
                     return;
                 }
                 if(user.position === "Dean"){
@@ -1371,9 +1468,9 @@
                 let accessText =
                     "";
 
-                if(user.recipient_type === "adviser"){
+                if(user.display_role === "adviser" || user.recipient_type === "adviser"){
                     accessText = "Your Adviser";
-                }else if(user.recipient_type === "instructor"){
+                }else if(user.display_role === "instructor" || user.recipient_type === "instructor"){
                     accessText = "Your Instructor";
                 }else{
 
@@ -1399,6 +1496,8 @@
                 const isPrimary =
                     user.recipient_type === "adviser"
                     || user.recipient_type === "instructor"
+                    || user.display_role === "adviser"
+                    || user.display_role === "instructor"
                     || user.position === "Dean"
                     || user.position === "Program Chairperson IS"
                     || user.position === "Program Chairperson IT"
@@ -1694,13 +1793,12 @@
                 category: "Concept Presentation",
                 icon: "fa-lightbulb",
                 iconClass: "purple",
-                description: "Enter your 3 proposed titles in Request Adviser, then upload each PDF here as Proposed concept paper (1–3). Send to your adviser and instructor; only adviser approval locks the file for panel review.",
+                description: "Save your 3 titles in Request Adviser and upload each PDF there or here. Each file appears as Proposed concept paper (1–3). Send to adviser and instructor from this page.",
                 items: [
-                    { label: "Proposed concept paper", slots: 3 },
-                    { label: "Adviser acceptance for advisory", slots: 1 },
-                    { label: "Environmental scanning", slots: 1 },
-                    { label: "Recommendation for concept presentation", slots: 1 },
-                    { label: "Concept presentation evaluation sheet", slots: 1 }
+                    { label: "Proposed concept paper", slots: 3, group: "Adviser Approval" },
+                    { label: "Adviser acceptance for advisory", slots: 1, group: "Adviser Approval" },
+                    { label: "Recommendation for concept presentation", slots: 1, group: "Adviser Approval" },
+                    { label: "Environmental scanning", slots: 3, group: "Others" }
                 ]
             },
             {
@@ -1818,6 +1916,23 @@
             return String(label || "").trim().toLowerCase() === "defense minutes";
         }
 
+        function isAdviserSigningDocument(documentItem){
+            if(!documentItem){
+                return false;
+            }
+
+            const docType =
+                String(documentItem.document_type || "").toLowerCase();
+
+            const docTitle =
+                String(documentItem.document_title || "").toLowerCase();
+
+            return docType.includes("adviser acceptance")
+                || docTitle.includes("adviser acceptance")
+                || docType.includes("acceptance for advisory")
+                || docTitle.includes("acceptance for advisory");
+        }
+
         function isAdviserLocked(documentItem){
             return !!(
                 documentItem
@@ -1907,8 +2022,13 @@
                     ? "Approved (faculty — editable)"
                     : latestStatus;
 
+                const adviserNote =
+                    String(documentItem.latest_adviser_comment || "").trim();
+
                 return {
-                    text: displayText,
+                    text: adviserNote
+                        ? `${displayText} — ${adviserNote}`
+                        : displayText,
                     className: getSlotStatusClass(latestStatus)
                 };
             }
@@ -2207,21 +2327,41 @@
 
                 const listHtml = [];
 
+                // Group items by their group property (if defined)
+                const groups = {};
                 phase.items.forEach(item => {
-                    const totalSlots =
-                        Number(item.slots || 1);
-
-                    for(let slotIndex = 1; slotIndex <= totalSlots; slotIndex++){
-                        listHtml.push(
-                            buildConsultationSlotRow(
-                                phase.category,
-                                item.label,
-                                slotIndex,
-                                totalSlots,
-                                isCatalogPhaseLocked(phase.category, item.label)
-                            )
-                        );
+                    const groupName = item.group || "";
+                    if(!groups[groupName]){
+                        groups[groupName] = [];
                     }
+                    groups[groupName].push(item);
+                });
+
+                Object.keys(groups).forEach(groupName => {
+                    if(groupName){
+                        listHtml.push(`
+                            <div class="document-group-header" style="font-size: 13px; font-weight: 700; color: #7c3aed; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px dashed #e9d5ff; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid ${groupName.includes("Adviser") ? "fa-user-tie" : "fa-ellipsis-h"}"></i>
+                                <span>${groupName}</span>
+                            </div>
+                        `);
+                    }
+                    groups[groupName].forEach(item => {
+                        const totalSlots =
+                            Number(item.slots || 1);
+
+                        for(let slotIndex = 1; slotIndex <= totalSlots; slotIndex++){
+                            listHtml.push(
+                                buildConsultationSlotRow(
+                                    phase.category,
+                                    item.label,
+                                    slotIndex,
+                                    totalSlots,
+                                    isCatalogPhaseLocked(phase.category, item.label)
+                                )
+                            );
+                        }
+                    });
                 });
 
                 listHtml.push(`
@@ -2420,8 +2560,31 @@
                         ${buildSlotViewButton(documentItem)}
                         ${buildSlotSendButton(documentItem, isLocked, isPhaseLocked, baseLabel)}
                         ${buildSlotDeleteButton(documentItem, canDelete)}
+                        ${buildSlotDeclineReasonButton(documentItem, baseLabel)}
                     </div>
                 </div>
+            `;
+        }
+
+        function buildSlotDeclineReasonButton(documentItem, baseLabel){
+            if(baseLabel !== "Environmental scanning" || !documentItem || !documentItem.id){
+                return "";
+            }
+
+            const docTitleEsc =
+                String(documentItem.document_title || documentItem.document_type || "Environmental Scanning").replace(/'/g, "\\'");
+
+            return `
+                <button
+                    class="slot-btn delete"
+                    type="button"
+                    style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;"
+                    title="Report Decline by Organization / Change Status"
+                    onclick="openEnvScanDeclineModal(${documentItem.id}, '${docTitleEsc}')"
+                >
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Report Decline
+                </button>
             `;
         }
 
@@ -2495,14 +2658,26 @@
                 `;
             }
 
+            const viewPath =
+                documentItem.signed_file_path
+                && String(documentItem.signed_file_path).trim()
+                ? documentItem.signed_file_path
+                : documentItem.file_path;
+
+            const viewLabel =
+                documentItem.signed_file_path
+                ? "Signed"
+                : "View";
+
             return `
                 <a
                     class="slot-btn view"
-                    href="http://localhost:3005${documentItem.file_path}"
+                    href="http://localhost:3005${viewPath}"
                     target="_blank"
+                    title="${documentItem.signed_file_path ? 'View signed document' : 'View document'}"
                 >
                     <i class="fa-solid fa-eye"></i>
-                    View
+                    ${viewLabel}
                 </a>
             `;
         }
@@ -2949,6 +3124,84 @@
 
             renderReceivedDocuments(filtered);
 
+        }
+
+        /* ================= ENVIRONMENTAL SCANNING DECLINE REASON MODAL HANDLERS ================= */
+
+        function openEnvScanDeclineModal(docId, docTitle) {
+            document.getElementById("envScanDeclineDocId").value = docId;
+            document.getElementById("envScanDeclineDocTitle").value = docTitle || "Environmental Scanning";
+
+            const radios = document.getElementsByName("envScanReason");
+            if (radios.length > 0) radios[0].checked = true;
+
+            document.getElementById("envScanOtherText").value = "";
+            document.getElementById("envScanOthersGroup").style.display = "none";
+
+            const modal = document.getElementById("envScanDeclineModal");
+            if (modal) modal.style.display = "flex";
+        }
+
+        function closeEnvScanDeclineModal() {
+            const modal = document.getElementById("envScanDeclineModal");
+            if (modal) modal.style.display = "none";
+        }
+
+        function toggleEnvScanOtherText() {
+            const othersRadio = document.getElementById("envScanReasonOthersRadio");
+            const othersGroup = document.getElementById("envScanOthersGroup");
+            if (othersRadio && othersGroup) {
+                othersGroup.style.display = othersRadio.checked ? "block" : "none";
+            }
+        }
+
+        async function submitEnvScanDeclineReason() {
+            const docId = document.getElementById("envScanDeclineDocId").value;
+            const selectedRadio = document.querySelector('input[name="envScanReason"]:checked');
+            if (!docId || !selectedRadio) {
+                alert("Please select a valid reason.");
+                return;
+            }
+
+            let reasonCategory = selectedRadio.value;
+            let reasonText = "";
+
+            if (reasonCategory === "3. Others") {
+                reasonText = document.getElementById("envScanOtherText").value.trim();
+                if (!reasonText) {
+                    alert("Please specify the reason in the text box.");
+                    return;
+                }
+            }
+
+            const confirmed = confirm("Are you sure you want to report this proposal as declined by the organization? Your Instructor, Program Chairperson, and Dean will be notified.");
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch("http://localhost:3005/update-environmental-scanning-status", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        studentUserId: loggedInUserId,
+                        documentId: docId,
+                        reasonCategory: reasonCategory,
+                        reasonText: reasonText,
+                        newStatus: "Declined by Organization"
+                    })
+                });
+
+                const data = await response.json();
+                alert(data.message || "Status updated.");
+                if (data.success) {
+                    closeEnvScanDeclineModal();
+                    loadStudentDocuments();
+                }
+            } catch (err) {
+                console.error("Error updating environmental scanning status:", err);
+                alert("Cannot update status. Server error.");
+            }
         }
 
         async function initDocumentsPage(){

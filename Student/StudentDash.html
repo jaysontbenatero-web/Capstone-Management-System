@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -668,7 +668,7 @@
             container.innerHTML = members.map(member => `
                 <div class="member">
                     <div class="member-avatar">
-                        ${escapeHtml(getMemberInitial(member.fullname))}
+                        ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : escapeHtml(getMemberInitial(member.fullname))}
                     </div>
                     <div>
                         <h3>${escapeHtml(member.fullname || "Member")}</h3>

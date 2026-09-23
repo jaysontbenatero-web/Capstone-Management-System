@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -11,7 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
-
+    <style>
+        .admin-main .content-card.notifications-panel {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+    </style>
 </head>
 
 <body class="admin-portal notifications-full-page">
@@ -187,11 +194,11 @@
                     return;
                 }
 
-                list.innerHTML = items.map((item) => {
+                list.innerHTML = items.map((item, index) => {
                     const unread = Number(item.is_read) === 0;
 
                     return `
-                        <article class="portal-notif-page-item${unread ? " unread" : ""}">
+                        <article class="portal-notif-page-item${unread ? " unread" : ""}" data-index="${index}" style="cursor:pointer;">
                             <div class="portal-notif-page-head">
                                 <h3>${escapeHtml(item.notification_title)}</h3>
                                 <span class="portal-notif-page-meta">${formatPageTime(item.created_at)}</span>
@@ -201,6 +208,20 @@
                         </article>
                     `;
                 }).join("");
+
+                list.querySelectorAll(".portal-notif-page-item").forEach((node) => {
+                    node.addEventListener("click", async () => {
+                        const idx = Number(node.getAttribute("data-index"));
+                        const item = items[idx];
+                        if (item && window.PortalNotifications) {
+                            await window.PortalNotifications.markRead(item.id);
+                            const targetUrl = window.PortalNotifications.getNotificationTargetUrl(item);
+                            if (targetUrl) {
+                                window.location.href = targetUrl;
+                            }
+                        }
+                    });
+                });
 
                 if (window.PortalNotifications) {
                     window.PortalNotifications.refresh(false);

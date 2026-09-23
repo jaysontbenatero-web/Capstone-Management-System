@@ -121,3 +121,27 @@ body{
     .form-grid{grid-template-columns:1fr}
 }
 .sidebar{height:100vh;position:fixed;left:0;top:0;display:flex;flex-direction:column;justify-content:space-between}
+
+.view-signed-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-top:12px;
+    padding:10px 14px;
+    border-radius:12px;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    color:#fff;
+    text-decoration:none;
+    font-weight:600;
+    font-size:13px;
+}
+
+.section-note{
+    color:#6d5f85;
+    margin:0 0 16px;
+    line-height:1.6;
+}
+
+.signing-doc-actions{
+    margin-top:8px;
+}

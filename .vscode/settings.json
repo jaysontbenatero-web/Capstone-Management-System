@@ -1,4 +1,9 @@
 {
     "liveServer.settings.port": 5501,
-    "livePreview.defaultPreviewPath": "/Log-in.html"
+    "livePreview.defaultPreviewPath": "/Log-in.html",
+    "livePreview.autoRefreshPreview": "On File Save",
+    "liveServer.settings.ignoreFiles": [
+        "**/uploads/**",
+        "**/.git/**"
+    ]
 }

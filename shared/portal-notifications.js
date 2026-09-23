@@ -77,6 +77,133 @@
         return `${targetPortal}/Notifications.html`;
     }
 
+    function resolveRelativeUrl(targetPath) {
+        const currentPath = (window.location.pathname || "").replace(/\\/g, "/");
+        const portalMarker = findPortalInPath(currentPath);
+        if (!portalMarker) {
+            return targetPath;
+        }
+        const depth = portalMarker.segments.length;
+        const ups = "../".repeat(depth);
+        return `${ups}${targetPath}`;
+    }
+
+    function getNotificationTargetUrl(item) {
+        if (!item) {
+            return getNotificationsPageUrl();
+        }
+
+        const title = String(item.notification_title || "").toLowerCase();
+        const message = String(item.notification_message || "").toLowerCase();
+        const type = String(item.notification_type || "").toLowerCase();
+        const combined = `${title} ${message} ${type}`;
+
+        const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
+        const position = String(localStorage.getItem("position") || "").toLowerCase().trim();
+        const facultyRole = String(localStorage.getItem("facultyRole") || "").toLowerCase().trim();
+
+        // 1. MESSAGES / CHAT / CONVERSATION
+        if (
+            combined.includes("message") ||
+            combined.includes("chat") ||
+            combined.includes("conversation") ||
+            combined.includes("inbox") ||
+            type === "message"
+        ) {
+            if (role === "student") return resolveRelativeUrl("Student/Messages.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/Messages.html");
+            if (role === "faculty") {
+                if (position.includes("instructor") || facultyRole === "instructor") {
+                    return resolveRelativeUrl("Faculty/Instructor/Messages.html");
+                }
+                return resolveRelativeUrl("Faculty/Messages.html");
+            }
+        }
+
+        // 2. PROFILE / SETTINGS / ACCOUNT
+        if (
+            combined.includes("profile") ||
+            combined.includes("settings") ||
+            combined.includes("account") ||
+            combined.includes("password")
+        ) {
+            if (role === "student") return resolveRelativeUrl("Student/Settings.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/Settings.html");
+            if (role === "faculty") return resolveRelativeUrl("Faculty/Settings.html");
+        }
+
+        // 3. ADVISER REQUEST / ADVISORY / TITLE PROPOSALS
+        if (
+            combined.includes("adviser request") ||
+            combined.includes("adviser acceptance") ||
+            combined.includes("acceptance for advisory") ||
+            combined.includes("title proposal") ||
+            combined.includes("proposed title")
+        ) {
+            if (role === "student") return resolveRelativeUrl("Student/Req_Adviser.html");
+            if (role === "faculty") return resolveRelativeUrl("Faculty/Adviser/Adviser_Request.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
+        }
+
+        // 4. DOCUMENTS / SIGNING / E-SIGNATURE / ENVIRONMENTAL SCANNING / REVISION / CONCEPT PRESENTATION
+        if (
+            combined.includes("document") ||
+            combined.includes("signing") ||
+            combined.includes("signature") ||
+            combined.includes("environmental scanning") ||
+            combined.includes("concept presentation") ||
+            combined.includes("concept paper") ||
+            combined.includes("recommendation") ||
+            combined.includes("review") ||
+            combined.includes("revision") ||
+            combined.includes("manuscript")
+        ) {
+            if (role === "student") return resolveRelativeUrl("Student/Documents.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
+            if (role === "faculty") {
+                if (position.includes("instructor") || position.includes("chairperson") || facultyRole === "instructor") {
+                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+                }
+                if (position.includes("adviser") || facultyRole === "adviser") {
+                    return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+                }
+                if (position.includes("panelist") || facultyRole === "panelist") {
+                    return resolveRelativeUrl("Faculty/Panelist/Defense_Document.html");
+                }
+                return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+            }
+        }
+
+        // 5. DEFENSE / SCHEDULE / EVALUATION / PANELIST / GRADING
+        if (
+            combined.includes("defense") ||
+            combined.includes("schedule") ||
+            combined.includes("panel") ||
+            combined.includes("evaluation") ||
+            combined.includes("grading") ||
+            combined.includes("room")
+        ) {
+            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/Defense_Schedule.html");
+            if (role === "faculty") {
+                if (position.includes("panelist") || facultyRole === "panelist") {
+                    return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+                }
+                return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+            }
+        }
+
+        // 6. ANNOUNCEMENTS
+        if (combined.includes("announcement") || type === "announcement") {
+            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/Announcements.html");
+            if (role === "faculty") return resolveRelativeUrl("Faculty/Announcements.html");
+        }
+
+        // Fallback
+        return getNotificationsPageUrl();
+    }
+
     function formatNotificationTime(value) {
         if (!value) {
             return "";
@@ -547,8 +674,12 @@
             list.querySelectorAll(".portal-notif-item").forEach((node) => {
                 node.addEventListener("click", async () => {
                     const id = node.getAttribute("data-notification-id");
+                    const item = (this.cachedNotifications || []).find((n) => String(n.id) === String(id));
                     await this.markRead(id);
-                    window.location.href = getNotificationsPageUrl();
+                    const targetUrl = getNotificationTargetUrl(item);
+                    if (targetUrl) {
+                        window.location.href = targetUrl;
+                    }
                 });
             });
         },
@@ -611,6 +742,7 @@
         PortalNotifications.init();
     }
 
+    PortalNotifications.getNotificationTargetUrl = getNotificationTargetUrl;
     window.PortalNotifications = PortalNotifications;
 
 })();

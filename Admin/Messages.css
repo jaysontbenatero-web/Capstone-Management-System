@@ -54,257 +54,21 @@ body.admin-portal {
 }
 
 /* ============================================================
-   SIDEBAR FIX
+   MESSAGES PAGE SHELL FIX
    ============================================================ */
 
-.sidebar,
-.admin-sidebar {
-    position: fixed !important;
-    inset: 0 auto 0 0 !important;
-    width: 280px !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    z-index: 20;
-    padding: 26px 16px 18px;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-    overflow: hidden !important;
-    background:
-        linear-gradient(180deg, rgba(36, 11, 77, 0.98), rgba(31, 8, 67, 0.98)),
-        #240b4d;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 18px 0 45px rgba(40, 16, 78, 0.22);
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 12px 24px;
-}
-
-.logo-mark {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #8b5cf6, #22d3ee);
-    box-shadow: 0 10px 24px rgba(124, 58, 237, 0.28);
+body.admin-portal {
     overflow: hidden;
 }
 
-.logo-mark img {
-    width: 30px;
-    height: 30px;
-    object-fit: contain;
-}
-
-.logo h1 {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.1;
-    color: #ffffff;
-    letter-spacing: -0.3px;
-}
-
-.logo p {
-    margin: 4px 0 0;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.58);
-}
-
-.menu {
-    height: calc(100vh - 145px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0 8px 12px;
-}
-
-.menu::-webkit-scrollbar {
-    width: 4px;
-}
-
-.menu::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-}
-
-.menu-title {
-    margin: 18px 10px 9px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.9px;
-    text-transform: uppercase;
-    color: rgba(216, 204, 255, 0.58);
-}
-
-.menu-title::before {
-    content: "";
-    display: inline-block;
-    width: 3px;
-    height: 12px;
-    margin-right: 9px;
-    vertical-align: -2px;
-    border-radius: 99px;
-    background: #22d3ee;
-}
-
-.menu-item {
-    width: 100%;
-    min-height: 48px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    margin-bottom: 7px;
-    border-radius: 14px;
-    cursor: pointer;
-    color: rgba(255, 255, 255, 0.76);
-    border: 1px solid transparent;
-    transition: 0.22s ease;
-}
-
-.menu-item i {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 11px;
-    color: #d8caff;
-    background: rgba(255, 255, 255, 0.07);
-    font-size: 15px;
-}
-
-.menu-item span {
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.2;
-}
-
-.menu-item:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.08);
-    transform: translateX(3px);
-}
-
-.menu-item.active {
-    color: #ffffff;
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(79, 70, 229, 0.95));
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow: 0 12px 28px rgba(124, 58, 237, 0.28);
-}
-
-.menu-item.active i {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.16);
-}
-
-.sidebar-footer {
-    padding: 14px 8px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.logout-btn {
-    color: #fecaca;
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(248, 113, 113, 0.18);
-}
-
-.logout-btn i {
-    color: #fecaca;
-    background: rgba(239, 68, 68, 0.16);
-}
-
-/* ============================================================
-   MAIN LAYOUT FIX
-   ============================================================ */
-
-.main,
-.admin-main {
-    position: fixed !important;
-    top: 0 !important;
-    left: 280px !important;
-    width: calc(100vw - 280px) !important;
-    height: 100vh !important;
-    margin: 0 !important;
-    padding: 24px 28px !important;
-    z-index: 5;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 18px;
-}
-
-/* Top page header */
-.topbar {
-    flex: 0 0 auto !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-.welcome {
-    position: relative;
+.admin-portal .main.admin-main {
+    height: 100vh;
+    max-height: 100vh;
     overflow: hidden;
-    min-height: 118px;
-    padding: 26px 30px;
-    border-radius: 24px;
-    background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72)),
-        radial-gradient(circle at right top, rgba(124, 58, 237, 0.16), transparent 35%);
-    border: 1px solid rgba(124, 58, 237, 0.18);
-    box-shadow: 0 18px 45px rgba(76, 29, 149, 0.11);
-}
-
-.welcome::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 18px;
-    bottom: 18px;
-    width: 5px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, #7c3aed, #22d3ee);
-}
-
-.welcome::after {
-    content: "";
-    position: absolute;
-    width: 230px;
-    height: 230px;
-    right: -85px;
-    top: -105px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.2), transparent 68%);
-}
-
-.welcome h1 {
-    position: relative;
-    z-index: 1;
-    margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.7px;
-    color: #20123f;
-}
-
-.welcome p {
-    position: relative;
-    z-index: 1;
-    max-width: 720px;
-    margin: 10px 0 0;
-    font-size: 13.5px;
-    line-height: 1.65;
-    color: #57516f;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 24px;
 }
 
 /* ============================================================
@@ -312,7 +76,7 @@ body.admin-portal {
    ============================================================ */
 
 .messages-container {
-    flex: 1 1 auto !important;
+    flex: 1 1 auto;
     min-height: 0 !important;
     width: 100%;
     height: auto !important;
@@ -944,35 +708,12 @@ body.admin-portal {
     .messages-container {
         grid-template-columns: 310px minmax(0, 1fr);
     }
-
-    .main,
-    .admin-main {
-        padding: 18px !important;
-    }
 }
 
 @media (max-width: 900px) {
     html,
     body {
         overflow: auto !important;
-    }
-
-    .sidebar,
-    .admin-sidebar {
-        position: relative !important;
-        width: 100% !important;
-        height: auto !important;
-        min-height: auto !important;
-    }
-
-    .main,
-    .admin-main {
-        position: relative !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: auto !important;
-        min-height: 100vh;
-        overflow: visible !important;
     }
 
     .messages-container {

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -29,6 +29,8 @@
     >
 
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -295,6 +297,16 @@
                     type="button"
                 >
                     Received Documents
+                </button>
+
+                <button
+                    class="tab-btn"
+                    id="tab-signing"
+                    onclick="setTab('signing')"
+                    type="button"
+                >
+                    <i class="fa-solid fa-file-signature" style="margin-right:5px;"></i>
+                    Signing Requests
                 </button>
 
                 <button
@@ -655,6 +667,124 @@
 
     </div>
 
+    <!-- ===================== E-SIGNATURE WORKSPACE ===================== -->
+    <div class="modal-overlay esign-workspace-overlay" id="eSignModal">
+        <div class="modal-box esign-workspace-modal">
+
+            <div class="modal-header">
+                <div>
+                    <h2 id="eSignDocTitle">Document Title</h2>
+                    <p id="eSignDocSubtitle">Review the document, drag your signature into place, then save.</p>
+                </div>
+                <button class="close-modal-btn" onclick="closeESignModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="esign-workspace-grid">
+                <div class="esign-pdf-panel">
+                    <div class="esign-pdf-toolbar">
+                        <span id="eSignPageInfo">Page 1 of 1</span>
+                        <div class="esign-page-nav">
+                            <button type="button" class="esign-nav-btn" onclick="changePdfPage(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button type="button" class="esign-nav-btn" onclick="changePdfPage(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="esign-pdf-viewport" id="pdfViewport">
+                        <canvas id="pdfPreviewCanvas"></canvas>
+                        <div id="signaturePlacementLayer" class="signature-placement-layer"></div>
+                    </div>
+                </div>
+
+                <div class="esign-side-panel">
+                    <div class="detail-card compact-detail">
+                        <span>Submitted By</span>
+                        <h3 id="eSignRequester">Student</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Document Type</span>
+                        <h3 id="eSignDocType">Environmental Scanning</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Status</span>
+                        <h3 id="eSignStatus">Pending Review</h3>
+                    </div>
+
+                    <div class="section-box compact-section">
+                        <h3>Student Message</h3>
+                        <p id="eSignStudentMsg">No message provided.</p>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Instructor Notes</label>
+                        <textarea
+                            id="eSignNotes"
+                            placeholder="Add notes for approval, revision, or rejection..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Signature Mode Tabs -->
+                    <div class="signature-mode-tabs" style="display:flex; gap:10px; margin-bottom:12px;">
+                        <button type="button" id="tabUseSavedSig" class="tab-btn active" style="flex:1; border:none; padding:10px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="setSignatureMode('saved')">Saved Signature</button>
+                        <button type="button" id="tabDrawSig" class="tab-btn" style="flex:1; border:none; padding:10px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="setSignatureMode('draw')">Draw Signature</button>
+                    </div>
+
+                    <!-- Saved Signature Wrapper -->
+                    <div class="esign-canvas-wrapper" id="savedSignatureWrapper" style="background:#f8f5ff; border:2px dashed #c4b5fd; border-radius:22px; padding:18px; margin-bottom:18px; display:none; text-align:center;">
+                        <div class="esign-canvas-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <div>
+                                <h3>Saved Signature</h3>
+                                <p>Using your uploaded signature from Settings.</p>
+                            </div>
+                        </div>
+                        <div style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:15px; display:inline-block; min-width:200px; margin-bottom:10px;">
+                            <img id="savedSignaturePreview" src="" alt="Saved Signature" style="max-height:80px; max-width:100%; display:block; margin:0 auto;">
+                        </div>
+                        <button class="esign-place-btn" type="button" onclick="placeSavedSignatureOnDocument()">
+                            <i class="fa-solid fa-file-signature"></i>
+                            Place Saved Signature
+                        </button>
+                    </div>
+
+                    <!-- Draw Signature Wrapper -->
+                    <div class="esign-canvas-wrapper compact-esign-draw" id="drawSignatureWrapper" style="display:block;">
+                        <div class="esign-canvas-header">
+                            <div>
+                                <h3>Draw Signature</h3>
+                                <p>Use your mouse or touch screen to draw below.</p>
+                            </div>
+                            <button class="esign-clear-btn" onclick="clearSignature()" type="button">
+                                <i class="fa-solid fa-eraser"></i> Clear
+                            </button>
+                        </div>
+                        <canvas id="signatureCanvas" class="signature-canvas" width="320" height="120"></canvas>
+                        <button class="esign-place-btn" type="button" onclick="placeSignatureOnDocument()">
+                            <i class="fa-solid fa-file-signature"></i>
+                            Place Signature on Document
+                        </button>
+                    </div>
+
+                    <div class="modal-actions esign-action-stack">
+                        <button class="save-btn" onclick="submitInstructorESignature('Approved')" type="button">
+                            <i class="fa-solid fa-check"></i>
+                            Approve &amp; Save
+                        </button>
+                        <button class="esign-revision-toggle-btn" onclick="submitInstructorESignature('Subject to Change')" type="button">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            Request Revision
+                        </button>
+                        <button class="cancel-btn reject-outline-btn" onclick="submitInstructorESignature('Rejected')" type="button">
+                            <i class="fa-solid fa-ban"></i>
+                            Reject
+                        </button>
+                        <button class="cancel-btn" onclick="closeESignModal()" type="button">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <script>
 
         const loggedInInstructorId =
@@ -662,10 +792,25 @@
 
         let instructorData = null;
         let receivedDocuments = [];
+        let signingRequests = [];
         let sentDocuments = [];
         let recipients = [];
         let currentTab = "received";
         let selectedSubmissionId = null;
+        let activeSigningRequest = null;
+        let savedSignaturePath = null;
+        let currentSignatureMode = 'saved';
+
+        /* ── Identifies Environmental Scanning docs that need Instructor e-signature ── */
+        function isEnvironmentalScanningDoc(item){
+            if(!item) return false;
+            const dt = String(item.document_type  || '').toLowerCase();
+            const dl = String(item.document_title || '').toLowerCase();
+            return dt.includes('environmental scanning')
+                || dl.includes('environmental scanning')
+                || dt.includes('concept presentation • environmental')
+                || dl.includes('concept presentation • environmental');
+        }
 
         async function loadDocumentReview(){
 
@@ -689,9 +834,11 @@
 
                 instructorData =
                     data.instructor;
+                savedSignaturePath = instructorData ? instructorData.digital_signature : null;
 
-                receivedDocuments =
-                    data.receivedDocuments || [];
+                const allReceived = data.receivedDocuments || [];
+                signingRequests = allReceived.filter(isEnvironmentalScanningDoc);
+                receivedDocuments = allReceived.filter(item => !isEnvironmentalScanningDoc(item));
 
                 sentDocuments =
                     data.sentDocuments || [];
@@ -768,6 +915,19 @@
 
                 renderReceivedDocuments();
 
+            }else if(currentTab === "signing"){
+
+                document.getElementById("sectionTitle").innerText =
+                    "Signing Requests";
+
+                document.getElementById("sectionDescription").innerText =
+                    "Documents intended for you to e-sign. Students can request revisions and track their progress.";
+
+                document.getElementById("statusFilter").style.display =
+                    "none";
+
+                renderSigningRequests();
+
             }else{
 
                 document.getElementById("sectionTitle").innerText =
@@ -819,9 +979,13 @@
                     key,
                     ...group,
                     hasNew: group.docs.some(isNewDocument),
-                    latestSent: Math.max(
-                        ...group.docs.map(doc => new Date(doc.sent_at || 0).getTime())
-                    )
+                    latestSent: (() => {
+                        const times = group.docs.map(doc => {
+                            const d = doc.sent_at ? new Date(doc.sent_at).getTime() : 0;
+                            return isNaN(d) ? 0 : d;
+                        });
+                        return times.length > 0 ? Math.max(...times) : 0;
+                    })()
                 }))
                 .sort((a, b) => {
                     if(a.hasNew !== b.hasNew){
@@ -967,6 +1131,13 @@
                         </div>
                     </div>
                     <div class="group-bundle-body" id="received-group-${domId}" style="display:${isOpen ? "block" : "none"};">
+                        <div class="group-col-header">
+                            <span class="col-doc-label">Document</span>
+                            <div class="col-right-labels">
+                                <span class="lbl-status">Status</span>
+                                <span class="lbl-action">Action</span>
+                            </div>
+                        </div>
                         ${group.docs.map(buildGroupedDocRowHtml).join("")}
                     </div>
                 `;
@@ -982,6 +1153,160 @@
             });
 
         }
+
+        /* ====== RENDER SIGNING REQUESTS (Grouped by Capstone Group) ====== */
+        function renderSigningRequests(){
+            const grid = document.getElementById("documentGrid");
+            grid.classList.add("grouped-view");
+            grid.innerHTML = "";
+
+            if(signingRequests.length === 0){
+                grid.innerHTML = `<div class="empty-card"><i class="fa-solid fa-pen-nib" style="margin-right:8px;color:#7c3aed;"></i>No signing requests at the moment.</div>`;
+                return;
+            }
+
+            const grouped = {};
+            signingRequests.forEach(item => {
+                const key = item.group_name || item.group_id || `no-group-${item.sender_name || "unknown"}`;
+                if(!grouped[key]){
+                    grouped[key] = {
+                        group_name: item.group_name || "No Group",
+                        group_program: item.group_program || item.sender_program || "N/A",
+                        project_title: item.project_title || "",
+                        docs: []
+                    };
+                }
+                grouped[key].docs.push(item);
+            });
+
+            const groups = Object.entries(grouped)
+                .map(([key, group]) => ({
+                    key,
+                    ...group,
+                    hasNew: group.docs.some(d => d.review_status === "Pending Review" || !d.review_status),
+                    newCount: group.docs.filter(d => d.review_status === "Pending Review" || !d.review_status).length
+                }))
+                .sort((a, b) => b.hasNew - a.hasNew);
+
+            groups.forEach((group, index) => {
+                const domId = String(group.key).replace(/[^a-zA-Z0-9_-]/g, "_");
+                const isOpen = index === 0;
+
+                const bundle = document.createElement("div");
+                bundle.className = "group-bundle-card" + (group.hasNew ? " has-new-submissions" : "");
+
+                const rowsHtml = group.docs.map(item => {
+                    const isNew = item.review_status === "Pending Review" || !item.review_status;
+                    const isSigned = item.review_status === "Approved";
+                    const statusLabel = isSigned ? "Signed" : (item.review_status || "Awaiting Signature");
+                    const statusCls = isSigned ? "approved" : (item.review_status === "Rejected" ? "rejected" : "pending");
+
+                    return `
+                        <div class="group-doc-row signing-doc-row ${isNew ? "is-new" : ""}" data-submission-id="${item.submission_id}">
+                            <div class="group-doc-main">
+                                ${isNew ? '<span class="signing-unread-dot" title="New — unread"></span>' : ''}
+                                <h4>
+                                    ${item.document_title || "Signing Request"}
+                                    ${isNew ? '<span class="new-doc-pill">New</span>' : ''}
+                                </h4>
+                                <div class="group-doc-meta">
+                                    <span>${item.document_code || "No Code"}</span>
+                                    <span>&bull;</span>
+                                    <span>${item.document_type || "Document"}</span>
+                                    <span>&bull;</span>
+                                    <span>From ${item.sender_name || "Unknown Student"}</span>
+                                    <span>&bull;</span>
+                                    <span>${formatDate(item.sent_at)}</span>
+                                </div>
+                            </div>
+                            <div class="group-doc-actions">
+                                <div class="document-meta" style="margin:0;">
+                                    <span class="${statusCls}">${statusLabel}</span>
+                                </div>
+                                <a class="view-file-btn" href="http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <button
+                                    class="review-btn sign-doc-btn"
+                                    type="button"
+                                    data-submission-id="${item.submission_id}"
+                                    onclick="handleSigningButtonClick(event, ${item.submission_id})"
+                                    title="${isSigned ? 'View signed copy' : 'Attach e-signature'}"
+                                    ${isSigned ? 'style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;"' : ''}
+                                >
+                                    <i class="fa-solid fa-${isSigned ? 'circle-check' : 'file-signature'}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+
+                bundle.innerHTML = `
+                    <div class="group-bundle-header" onclick="toggleSigningGroup('${domId}')">
+                        <div class="group-bundle-title" style="display:flex;align-items:center;gap:12px;">
+                            <div style="background:rgba(255,255,255,0.2);width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fa-solid fa-pen-nib"></i>
+                            </div>
+                            <div>
+                                <h3>${group.group_name} ${group.hasNew ? '<span class="signing-group-red-dot" title="Has new unread requests"></span>' : ''}</h3>
+                                <p>${group.group_program}${group.project_title ? ` &bull; ${group.project_title}` : ""}</p>
+                            </div>
+                        </div>
+                        <div class="group-bundle-badges">
+                            ${group.hasNew ? `<span class="group-new-badge"><i class="fa-solid fa-circle-dot"></i> ${group.newCount} Unread</span>` : ""}
+                            <span class="group-count-badge">${group.docs.length} Request${group.docs.length !== 1 ? "s" : ""}</span>
+                            <i class="fa-solid fa-chevron-down" id="signing-chevron-${domId}" style="transition:transform 0.3s;transform:${isOpen ? "rotate(180deg)" : "rotate(0deg)"};"></i>
+                        </div>
+                    </div>
+                    <div class="group-bundle-body" id="signing-group-${domId}" style="display:${isOpen ? "block" : "none"};">
+                        <div class="group-col-header">
+                            <span class="col-doc-label">Document</span>
+                            <div class="col-right-labels">
+                                <span class="lbl-status">Status</span>
+                                <span class="lbl-action">Action</span>
+                            </div>
+                        </div>
+                        ${rowsHtml}
+                    </div>
+                `;
+
+                bundle.querySelectorAll(".sign-doc-btn").forEach(btn => {
+                    btn.addEventListener("click", (event) => {
+                        event.stopPropagation();
+                        openInstructorESignModal(Number(btn.dataset.submissionId));
+                    });
+                });
+
+                grid.appendChild(bundle);
+            });
+        }
+
+        function handleSigningButtonClick(event, submissionId){
+            if(event){
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if(!submissionId && event && event.currentTarget){
+                submissionId = event.currentTarget.dataset.submissionId || event.currentTarget.getAttribute("data-submission-id");
+            }
+            if(!submissionId){
+                alert("Invalid signing request.");
+                return;
+            }
+            openInstructorESignModal(Number(submissionId));
+        }
+
+        function toggleSigningGroup(domId){
+            const body = document.getElementById(`signing-group-${domId}`);
+            const chevron = document.getElementById(`signing-chevron-${domId}`);
+            if(!body || !chevron) return;
+            const isHidden = body.style.display === "none";
+            body.style.display = isHidden ? "block" : "none";
+            chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+        }
+
+        window.handleSigningButtonClick = handleSigningButtonClick;
+        window.toggleSigningGroup = toggleSigningGroup;
 
         function renderSentDocuments(){
 
@@ -1134,6 +1459,66 @@
 
             document.getElementById("reviewComment").value =
                 item.review_comment || "";
+
+            /* ── For Environmental Scanning: replace Approve btn with Sign & Approve ── */
+            const isEnvScan = isEnvironmentalScanningDoc(item);
+            const btnContainer = document.querySelector(".review-action-buttons");
+            if(isEnvScan){
+                btnContainer.innerHTML = `
+                    <button
+                        class="review-action-btn revise-btn"
+                        type="button"
+                        onclick="submitDocumentReview('Subject to Change')"
+                    >
+                        <i class="fa-solid fa-rotate-left"></i>
+                        Request Revision
+                    </button>
+                    <button
+                        class="review-action-btn reject-btn"
+                        type="button"
+                        onclick="submitDocumentReview('Rejected')"
+                    >
+                        <i class="fa-solid fa-ban"></i>
+                        Reject
+                    </button>
+                    <button
+                        class="review-action-btn approve-btn"
+                        type="button"
+                        onclick="handleInstructorEsignClick()"
+                        style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;"
+                    >
+                        <i class="fa-solid fa-file-signature"></i>
+                        Sign &amp; Approve
+                    </button>
+                `;
+            } else {
+                btnContainer.innerHTML = `
+                    <button
+                        class="review-action-btn revise-btn"
+                        type="button"
+                        onclick="submitDocumentReview('Subject to Change')"
+                    >
+                        <i class="fa-solid fa-rotate-left"></i>
+                        Request Revision
+                    </button>
+                    <button
+                        class="review-action-btn reject-btn"
+                        type="button"
+                        onclick="submitDocumentReview('Rejected')"
+                    >
+                        <i class="fa-solid fa-ban"></i>
+                        Reject
+                    </button>
+                    <button
+                        class="review-action-btn approve-btn"
+                        type="button"
+                        onclick="submitDocumentReview('Approved')"
+                    >
+                        <i class="fa-solid fa-check"></i>
+                        Approve
+                    </button>
+                `;
+            }
 
             document.getElementById("reviewModal").style.display =
                 "flex";
@@ -1469,6 +1854,451 @@
             window.location.href =
                 "../../Log-in.html";
 
+        }
+
+        /* ====================================================
+           INSTRUCTOR E-SIGNATURE WORKSPACE
+           ==================================================== */
+        let pdfDocInstance = null;
+        let pdfRenderTask = null;
+        let pdfCurrentPage = 1;
+        let pdfTotalPages = 1;
+        let pdfRenderScale = 1.2;
+        let signaturePlaced = false;
+        let signatureDragState = null;
+        if(window.pdfjsLib){
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        }else{
+            console.warn("PDF.js did not load.");
+        }
+
+        function handleInstructorEsignClick(){
+            closeReviewModal();
+            openInstructorESignModal(selectedSubmissionId);
+        }
+
+        function showESignModalShell(){
+            const modal = document.getElementById("eSignModal");
+            if(!modal){ alert("E-signature modal missing."); return false; }
+            modal.classList.add("active");
+            modal.style.display = "flex";
+            document.body.classList.add("esign-modal-open");
+            return true;
+        }
+
+        function hideESignModalShell(){
+            const modal = document.getElementById("eSignModal");
+            if(modal){ modal.classList.remove("active"); modal.style.display = "none"; }
+            document.body.classList.remove("esign-modal-open");
+        }
+
+        async function openInstructorESignModal(submissionId){
+            /* Search both signingRequests (primary) and receivedDocuments */
+            const item = signingRequests.find(d => Number(d.submission_id) === Number(submissionId))
+                      || receivedDocuments.find(d => Number(d.submission_id) === Number(submissionId));
+            if(!item){ alert("Document not found."); return; }
+
+            activeSigningRequest = item;
+
+            /* Pull instructor's saved signature */
+            savedSignaturePath = instructorData ? instructorData.digital_signature : null;
+
+            if(!showESignModalShell()) return;
+
+            try{
+                document.getElementById("eSignDocTitle").innerText   = item.document_title || "Environmental Scanning";
+                document.getElementById("eSignDocSubtitle").innerText = item.document_code  || "No Code";
+                document.getElementById("eSignRequester").innerText  = `${item.sender_name || "Student"} (${item.sender_user_id || "No ID"})`;
+                document.getElementById("eSignDocType").innerText    = item.document_type  || "Environmental Scanning";
+                document.getElementById("eSignStatus").innerText     = item.review_status  || "Pending Review";
+                document.getElementById("eSignStudentMsg").innerText = item.submission_message || "No message.";
+                document.getElementById("eSignNotes").value = "";
+
+                if(savedSignaturePath){
+                    document.getElementById("savedSignaturePreview").src =
+                        `http://localhost:3005${savedSignaturePath}`;
+                    setSignatureMode('saved');
+                } else {
+                    setSignatureMode('draw');
+                }
+
+                clearSignature();
+                initSignatureCanvas();
+
+                const filePath = String(item.file_path || "").trim();
+                if(!filePath){
+                    showPdfViewerMessage("No document file attached.");
+                    return;
+                }
+                if(filePath.toLowerCase().endsWith(".pdf")){
+                    await loadInstructorPdfForSigning(filePath, submissionId);
+                } else {
+                    showPdfViewerMessage("Preview available for PDF files only.");
+                }
+            }catch(err){
+                console.error(err);
+                alert("Could not open e-signature workspace.");
+            }
+        }
+
+        function showPdfViewerMessage(message){
+            const canvas = document.getElementById("pdfPreviewCanvas");
+            const viewportEl = document.getElementById("pdfViewport");
+            if(!canvas || !viewportEl) return;
+            const ctx = canvas.getContext("2d");
+            canvas.width = 720; canvas.height = 360;
+            viewportEl.style.width = "720px"; viewportEl.style.height = "360px";
+            ctx.fillStyle = "#f8fafc";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#5b4b7a";
+            ctx.font = "16px Poppins, sans-serif";
+            ctx.textAlign = "center";
+            const lines = String(message || "").split(". ");
+            lines.forEach((line, i) => ctx.fillText(line + (i < lines.length - 1 ? "." : ""), canvas.width/2, canvas.height/2 - 10 + i*24));
+            document.getElementById("eSignPageInfo").innerText = "Preview unavailable";
+        }
+
+        function closeESignModal(){
+            /* Cancel any in-progress render before closing */
+            if(pdfRenderTask){
+                pdfRenderTask.cancel();
+                pdfRenderTask = null;
+            }
+            hideESignModalShell();
+            activeSigningRequest = null;
+            pdfDocInstance = null;
+            signaturePlaced = false;
+            document.getElementById("signaturePlacementLayer").innerHTML = "";
+        }
+
+        async function loadInstructorPdfForSigning(filePath, submissionId){
+            if(!window.pdfjsLib){ showPdfViewerMessage("PDF viewer not loaded."); return; }
+
+            /* Cancel any existing render before loading a new document */
+            if(pdfRenderTask){
+                pdfRenderTask.cancel();
+                pdfRenderTask = null;
+            }
+
+            const infoEl = document.getElementById("eSignPageInfo");
+            if(infoEl) infoEl.innerText = "Loading PDF...";
+
+            try{
+                const apiUrl = `http://localhost:3005/instructor-signing-document-file/${submissionId}?instructorUserId=${encodeURIComponent(loggedInInstructorId)}`;
+                const response = await fetch(apiUrl);
+                if(!response.ok){
+                    let msg = `Cannot load PDF (HTTP ${response.status}).`;
+                    try{ const e = await response.json(); if(e && e.message) msg = e.message; }catch(ex){}
+                    showPdfViewerMessage(msg);
+                    return;
+                }
+                const buffer = await response.arrayBuffer();
+                const loadingTask = window.pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+                pdfDocInstance = await loadingTask.promise;
+                pdfTotalPages = pdfDocInstance.numPages || 1;
+                pdfCurrentPage = 1;
+                await renderPdfPage(pdfCurrentPage);
+            }catch(err){
+                console.error(err);
+                showPdfViewerMessage("Could not render PDF.");
+            }
+        }
+
+        async function renderPdfPage(pageNumber){
+            if(!pdfDocInstance) return;
+
+            /* Cancel any prior render that may still be in progress */
+            if(pdfRenderTask){
+                pdfRenderTask.cancel();
+                pdfRenderTask = null;
+            }
+
+            const page = await pdfDocInstance.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: pdfRenderScale });
+            const canvas = document.getElementById("pdfPreviewCanvas");
+            const ctx = canvas.getContext("2d");
+
+            /* Resizing the canvas clears it and resets the context */
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const vpEl = document.getElementById("pdfViewport");
+            vpEl.style.width = `${viewport.width}px`;
+            vpEl.style.height = `${viewport.height}px`;
+            document.getElementById("eSignPageInfo").innerText = `Page ${pageNumber} of ${pdfTotalPages}`;
+
+            pdfRenderTask = page.render({ canvasContext: ctx, viewport });
+            try{
+                await pdfRenderTask.promise;
+            }catch(renderError){
+                if(renderError && renderError.name === "RenderingCancelledException"){
+                    /* Cancelled intentionally — not a real error */
+                    return;
+                }
+                throw renderError;
+            }finally{
+                pdfRenderTask = null;
+            }
+        }
+
+        async function changePdfPage(delta){
+            if(!pdfDocInstance) return;
+            const next = pdfCurrentPage + delta;
+            if(next < 1 || next > pdfTotalPages) return;
+            pdfCurrentPage = next;
+            document.getElementById("signaturePlacementLayer").innerHTML = "";
+            signaturePlaced = false;
+            try{ await renderPdfPage(pdfCurrentPage); }catch(e){ console.error(e); }
+        }
+
+        function setSignatureMode(mode){
+            currentSignatureMode = mode;
+            const tabSaved    = document.getElementById("tabUseSavedSig");
+            const tabDraw     = document.getElementById("tabDrawSig");
+            const wrapSaved   = document.getElementById("savedSignatureWrapper");
+            const wrapDraw    = document.getElementById("drawSignatureWrapper");
+
+            if(mode === 'saved'){
+                if(!savedSignaturePath){ alert("No saved signature. Switch to Draw."); setSignatureMode('draw'); return; }
+                if(tabSaved)  tabSaved.classList.add("active");
+                if(tabDraw)   tabDraw.classList.remove("active");
+                if(wrapSaved) wrapSaved.style.display = "block";
+                if(wrapDraw)  wrapDraw.style.display  = "none";
+            } else {
+                if(tabSaved)  tabSaved.classList.remove("active");
+                if(tabDraw)   tabDraw.classList.add("active");
+                if(wrapSaved) wrapSaved.style.display = "none";
+                if(wrapDraw)  wrapDraw.style.display  = "block";
+                initSignatureCanvas();
+            }
+        }
+
+        function placeSavedSignatureOnDocument(){
+            if(!savedSignaturePath){ alert("No saved signature."); return; }
+            const dataUrl = `http://localhost:3005${savedSignaturePath}`;
+            const layer = document.getElementById("signaturePlacementLayer");
+            layer.innerHTML = `<img id="draggableSignature" class="draggable-signature" src="${dataUrl}" alt="Signature" draggable="false">`;
+            const sigEl = document.getElementById("draggableSignature");
+            if(sigEl){ sigEl.style.left="40px"; sigEl.style.top="40px"; enableSignatureDrag(sigEl); }
+            signaturePlaced = true;
+            currentSignatureMode = 'saved';
+        }
+
+        function placeSignatureOnDocument(){
+            const drawCanvas = document.getElementById("signatureCanvas");
+            const ctx = drawCanvas.getContext("2d");
+            const pixels = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height).data;
+            const hasSignature = Array.from(pixels).some((val, i) => i % 4 === 3 && val > 0);
+            if(!hasSignature){ alert("Please draw your signature first."); return; }
+            const dataUrl = drawCanvas.toDataURL("image/png");
+            const layer = document.getElementById("signaturePlacementLayer");
+            layer.innerHTML = `<img id="draggableSignature" class="draggable-signature" src="${dataUrl}" alt="Signature" draggable="false">`;
+            const sigEl = document.getElementById("draggableSignature");
+            sigEl.style.left="40px"; sigEl.style.top="40px";
+            enableSignatureDrag(sigEl);
+            signaturePlaced = true;
+            currentSignatureMode = 'draw';
+        }
+
+        function enableSignatureDrag(element){
+            const onPointerDown = (event) => {
+                event.preventDefault();
+                signatureDragState = { element, startX:event.clientX, startY:event.clientY, origLeft:element.offsetLeft, origTop:element.offsetTop };
+            };
+            const onPointerMove = (event) => {
+                if(!signatureDragState || signatureDragState.element !== element) return;
+                element.style.left = `${signatureDragState.origLeft + event.clientX - signatureDragState.startX}px`;
+                element.style.top  = `${signatureDragState.origTop  + event.clientY - signatureDragState.startY}px`;
+            };
+            const onPointerUp = () => { signatureDragState = null; };
+            element.addEventListener("mousedown", onPointerDown);
+            document.addEventListener("mousemove", onPointerMove);
+            document.addEventListener("mouseup", onPointerUp);
+            element.addEventListener("touchstart", (e) => {
+                const t = e.touches[0];
+                onPointerDown({ preventDefault:()=>e.preventDefault(), clientX:t.clientX, clientY:t.clientY });
+            }, { passive:false });
+            document.addEventListener("touchmove", (e) => {
+                if(!signatureDragState) return;
+                const t = e.touches[0]; onPointerMove({ clientX:t.clientX, clientY:t.clientY });
+            }, { passive:false });
+            document.addEventListener("touchend", onPointerUp);
+        }
+
+        function getSignaturePlacementPayload(){
+            const viewport = document.getElementById("pdfViewport");
+            const sigEl = document.getElementById("draggableSignature");
+            if(!viewport || !sigEl) return null;
+            return {
+                pageIndex: pdfCurrentPage - 1,
+                containerWidth: viewport.scrollWidth,
+                containerHeight: viewport.scrollHeight,
+                sigLeft: sigEl.offsetLeft,
+                sigTop: sigEl.offsetTop,
+                sigWidth: sigEl.offsetWidth,
+                sigHeight: sigEl.offsetHeight
+            };
+        }
+
+        function showESignToast(message, type){
+            const existing = document.getElementById('esignToastMsg');
+            if(existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.id = 'esignToastMsg';
+            const bg    = type === 'success' ? '#dcfce7' : '#fee2e2';
+            const color = type === 'success' ? '#15803d' : '#b91c1c';
+            const icon  = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
+            toast.style.cssText = `position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:${bg};color:${color};border-radius:14px;padding:14px 24px;font-weight:700;font-size:14px;box-shadow:0 6px 28px rgba(0,0,0,0.14);z-index:99999;display:flex;align-items:center;gap:10px;`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        async function submitInstructorESignature(reviewStatus){
+            if(!activeSigningRequest){ showESignToast('No active signing request.', 'error'); return; }
+
+            const notes = document.getElementById("eSignNotes").value.trim();
+            const submissionId = activeSigningRequest.submission_id;
+
+            if(reviewStatus !== "Approved" && !notes){
+                showESignToast('Please add notes explaining your decision.', 'error');
+                return;
+            }
+
+            const actionBtns = document.querySelectorAll('.esign-action-stack button');
+            actionBtns.forEach(btn => { btn.disabled = true; btn.style.opacity = '0.6'; });
+
+            if(reviewStatus === "Approved"){
+                if(!signaturePlaced){
+                    showESignToast('Please place your signature on the document first.', 'error');
+                    actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
+                    return;
+                }
+
+                const placement = getSignaturePlacementPayload();
+                if(!placement){
+                    showESignToast('Signature placement is missing.', 'error');
+                    actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
+                    return;
+                }
+
+                let signatureImage = null;
+                if(currentSignatureMode === 'saved'){
+                    signatureImage = savedSignaturePath ? `http://localhost:3005${savedSignaturePath}` : null;
+                } else {
+                    signatureImage = document.getElementById("signatureCanvas").toDataURL("image/png");
+                }
+
+                try{
+                    const res = await fetch(
+                        `http://localhost:3005/instructor-apply-document-signature/${submissionId}`,
+                        {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                instructorUserId: loggedInInstructorId,
+                                reviewStatus: "Approved",
+                                reviewComment: notes,
+                                signatureImage,
+                                signatureType: currentSignatureMode,
+                                placement
+                            })
+                        }
+                    );
+                    const data = await res.json();
+                    if(data.success){
+                        closeESignModal();
+                        showESignToast(data.message || 'Document signed & approved!', 'success');
+                        loadDocumentReview();
+                    } else {
+                        showESignToast(data.message || 'Failed to sign document.', 'error');
+                        actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
+                    }
+                }catch(err){
+                    console.log(err);
+                    showESignToast('Failed to submit. Check connection.', 'error');
+                    actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
+                }
+                return;
+            }
+
+            /* Non-Approved (Revision / Reject) — no signature needed */
+            try{
+                const res = await fetch(
+                    `http://localhost:3005/instructor-apply-document-signature/${submissionId}`,
+                    {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            instructorUserId: loggedInInstructorId,
+                            reviewStatus,
+                            reviewComment: notes
+                        })
+                    }
+                );
+                const data = await res.json();
+                if(data.success){
+                    closeESignModal();
+                    showESignToast(data.message || 'Review submitted.', 'success');
+                    loadDocumentReview();
+                } else {
+                    showESignToast(data.message || 'Failed to submit review.', 'error');
+                    actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
+                }
+            }catch(err){
+                console.log(err);
+                showESignToast('Failed to submit. Check connection.', 'error');
+                actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
+            }
+        }
+
+        let isDrawing = false;
+        let canvasInitialized = false;
+
+        function initSignatureCanvas(){
+            const canvas = document.getElementById("signatureCanvas");
+            if(!canvas) return;
+            const ctx = canvas.getContext("2d");
+            const wrapper = canvas.parentElement;
+            const wrapperWidth = wrapper && wrapper.clientWidth ? wrapper.clientWidth : 320;
+            canvas.width = Math.max(wrapperWidth - 4, 280);
+            canvas.height = 120;
+            ctx.strokeStyle = "#2e1065"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
+            if(canvasInitialized) return;
+            canvasInitialized = true;
+
+            canvas.addEventListener("mousedown", e => {
+                isDrawing = true; ctx.beginPath();
+                const p = getPos(e, canvas); ctx.moveTo(p.x, p.y);
+            });
+            canvas.addEventListener("mousemove", e => {
+                if(!isDrawing) return;
+                const p = getPos(e, canvas); ctx.lineTo(p.x, p.y); ctx.stroke();
+            });
+            canvas.addEventListener("mouseup", () => { isDrawing = false; });
+            canvas.addEventListener("mouseleave", () => { isDrawing = false; });
+
+            canvas.addEventListener("touchstart", e => {
+                e.preventDefault(); isDrawing = true; ctx.beginPath();
+                const p = getPos(e.touches[0], canvas); ctx.moveTo(p.x, p.y);
+            }, { passive:false });
+            canvas.addEventListener("touchmove", e => {
+                e.preventDefault(); if(!isDrawing) return;
+                const p = getPos(e.touches[0], canvas); ctx.lineTo(p.x, p.y); ctx.stroke();
+            }, { passive:false });
+            canvas.addEventListener("touchend", () => { isDrawing = false; });
+        }
+
+        function getPos(e, canvas){
+            const rect = canvas.getBoundingClientRect();
+            return { x: (e.clientX || e.pageX) - rect.left, y: (e.clientY || e.pageY) - rect.top };
+        }
+
+        function clearSignature(){
+            const canvas = document.getElementById("signatureCanvas");
+            if(!canvas) return;
+            canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
         }
 
         loadDocumentReview();

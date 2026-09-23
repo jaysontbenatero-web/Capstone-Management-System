@@ -935,7 +935,7 @@
                         <div class="member-row">
 
                             <div class="member-avatar">
-                                ${member.fullname ? member.fullname.charAt(0).toUpperCase() : "S"}
+                                ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : (member.fullname ? member.fullname.charAt(0).toUpperCase() : "S")}
                             </div>
 
                             <div>
@@ -1071,6 +1071,39 @@
             return mergeAdjacentMarks(out);
         }
 
+        // Clean and unwrap proposal body text so continuous sentences flow properly without artificial line breaks
+        function formatProposalText(text) {
+            if (!text) return '';
+            let str = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            str = str.replace(/(\w+)-\n+(\w+)/g, '$1$2');
+            const blocks = str.split(/\n{2,}/);
+            const cleanedBlocks = blocks.map(block => {
+                const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length === 0) return '';
+                let result = '';
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const isBullet = /^[•\-\*\d+[\.\)]]\s*/.test(line);
+                    if (i === 0) {
+                        result = line;
+                    } else if (isBullet) {
+                        result += '\n' + line;
+                    } else {
+                        const prevLine = lines[i - 1];
+                        const prevTerminal = /[.!?:]$/.test(prevLine);
+                        const isShortHeader = line.length < 40 && !/[.,;:]$/.test(line);
+                        if (prevTerminal && (isShortHeader || /^[A-Z0-9]/.test(line))) {
+                            result += '\n\n' + line;
+                        } else {
+                            result += ' ' + line;
+                        }
+                    }
+                }
+                return result;
+            });
+            return cleanedBlocks.filter(Boolean).join('\n\n').trim();
+        }
+
         function openCompareModal(proposalNumber) {
             const request = adviserRequests.find(item => String(item.request_id) === String(selectedRequestId));
             if (!request || !request.proposals) return;
@@ -1109,7 +1142,7 @@
             );
 
             document.getElementById("compareProposedObjectives").innerHTML = highlightMulti(
-                proposal.proposed_objectives, [
+                formatProposalText(proposal.proposed_objectives || ''), [
                     { words: mw.synonymAbstractWords,      type: 'synonym' },
                     { words: mw.synonymObjectivesWords,    type: 'synonym' },
                     { words: mw.matchedObjAbstractWords,   type: 'abstract' },

@@ -422,60 +422,41 @@
                 </div>
             </div>
 
-            <!-- PANEL SELECTION SYSTEM (STACKED & HORIZONTAL REDESIGN) -->
-            <div class="panel-selection-stacked">
-
-                <!-- Selected Panel Committee Summary Area -->
-                <div class="selected-panel-card">
-                    <h4><i class="fa-solid fa-user-shield"></i> Selected Panel Committee</h4>
-                    <div id="selectedPanelSummary" class="selected-panel-summary">
-                        <!-- Dynamic pills showing selected Chair and Members -->
-                    </div>
-                </div>
-
-                <!-- Select Panel Chair -->
-                <div class="panel-picker-row">
-                    <div class="picker-header">
+            <!-- PANEL SELECTION SYSTEM (DROPDOWN REDESIGN) -->
+            <div class="panel-selection-dropdowns" style="margin-top: 15px;">
+                <div class="form-grid">
+                    <div class="input-group" style="grid-column: span 2;">
                         <label><i class="fa-solid fa-user-tie"></i> Select Panel Chair <span class="required-star">*</span></label>
-                        <div class="picker-search">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input
-                                type="text"
-                                id="panelChairSearch"
-                                placeholder="Search panel chair..."
-                                onkeyup="filterPanelChair()"
-                            >
-                        </div>
-                    </div>
-                    <div class="panel-selector-container horizontal-picker" id="panelChairList">
-                        Loading panel chair options...
+                        <select id="panelChairSelect" onchange="onChairChange()">
+                            <option value="">Select Panel Chair</option>
+                        </select>
                     </div>
                 </div>
-
-                <!-- Select Panel Members -->
-                <div class="panel-picker-row">
-                    <div class="picker-header">
-                        <label><i class="fa-solid fa-users"></i> Select Panel Members <span class="required-star">*</span></label>
-                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                            <span class="section-hint" id="panelMemberHint" style="margin: 0; font-size: 13px; color: #6d5f85;">
-                                Select exactly 2 panel members (0 selected).
-                            </span>
-                            <div class="picker-search">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                                <input
-                                    type="text"
-                                    id="panelMemberSearch"
-                                    placeholder="Search panel members..."
-                                    onkeyup="filterPanelMembers()"
-                                >
-                            </div>
-                        </div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label><i class="fa-solid fa-user"></i> Select Panel Member 1 <span class="required-star">*</span></label>
+                        <select id="panelMember1Select" onchange="onMember1Change()">
+                            <option value="">Select Panel Member 1</option>
+                        </select>
                     </div>
-                    <div class="panel-selector-container horizontal-picker" id="panelMembersList">
-                        Loading panel member options...
+                    <div class="input-group">
+                        <label><i class="fa-solid fa-user"></i> Select Panel Member 2 <span class="required-star">*</span></label>
+                        <select id="panelMember2Select" onchange="onMember2Change()">
+                            <option value="">Select Panel Member 2</option>
+                        </select>
                     </div>
                 </div>
+            </div>
 
+            <!-- PANEL SUMMARY RECEIPT CARD -->
+            <div id="panelSummaryCard" style="display:none;" class="panel-summary-receipt">
+                <div class="panel-summary-header">
+                    <i class="fa-solid fa-id-card-clip"></i>
+                    <span>Panel Composition</span>
+                    <span class="panel-summary-count" id="panelSummaryCount">0/3 Selected</span>
+                </div>
+                <div class="panel-summary-body" id="panelSummaryBody">
+                </div>
             </div>
 
             <div class="form-grid">
@@ -609,7 +590,7 @@
             </div>
 
             <div class="input-group">
-                <label>Notes</label>
+                <label>Notes (Optional)</label>
 
                 <textarea
                     id="notes"
@@ -921,227 +902,128 @@
         let selectedChairId = null;
         let selectedMemberIds = [];
 
-        function renderChairOptions(list){
-            const chairList = document.getElementById("panelChairList");
-            if (!chairList) return;
+        function renderPanelistDropdowns() {
+            const chairSelect = document.getElementById("panelChairSelect");
+            const member1Select = document.getElementById("panelMember1Select");
+            const member2Select = document.getElementById("panelMember2Select");
+            if (!chairSelect || !member1Select || !member2Select) return;
 
-            chairList.innerHTML = "";
+            const currentChair = selectedChairId || "";
+            const currentMem1 = selectedMemberIds[0] || "";
+            const currentMem2 = selectedMemberIds[1] || "";
 
-            if(list.length === 0){
-                chairList.innerHTML = `<p class="empty-text">No panelists found.</p>`;
-                return;
-            }
+            // Populate Chair Select
+            chairSelect.innerHTML = '<option value="">Select Panel Chair</option>';
+            panelists.forEach(p => {
+                if (String(p.id) === currentMem1 || String(p.id) === currentMem2) return;
+                chairSelect.innerHTML += `<option value="${p.id}" ${String(p.id) === currentChair ? 'selected' : ''}>${p.fullname} (${p.user_id})</option>`;
+            });
 
-            list.forEach(panelist => {
-                const roleText = panelist.role === "admin" ? "Admin" : "Faculty";
-                const isSelected = selectedChairId === String(panelist.id);
-                
-                const card = document.createElement("div");
-                card.className = `panelist-card ${isSelected ? 'selected-chair' : ''}`;
-                card.onclick = () => toggleChairSelection(panelist.id);
+            // Populate Member 1 Select
+            member1Select.innerHTML = '<option value="">Select Panel Member 1</option>';
+            panelists.forEach(p => {
+                if (String(p.id) === currentChair || String(p.id) === currentMem2) return;
+                member1Select.innerHTML += `<option value="${p.id}" ${String(p.id) === currentMem1 ? 'selected' : ''}>${p.fullname} (${p.user_id})</option>`;
+            });
 
-                card.innerHTML = `
-                    <input
-                        type="radio"
-                        name="panelChairRadio"
-                        class="panelist-card-checkbox"
-                        value="${panelist.id}"
-                        ${isSelected ? 'checked' : ''}
-                    >
-                    <div class="panelist-card-avatar">
-                        ${panelist.fullname.charAt(0).toUpperCase()}
-                    </div>
-                    <h4>${panelist.fullname}</h4>
-                    <p>${panelist.user_id}</p>
-                    <span class="panelist-role-badge">${roleText} • ${panelist.position || "Panelist"}</span>
-                `;
-                chairList.appendChild(card);
+            // Populate Member 2 Select
+            member2Select.innerHTML = '<option value="">Select Panel Member 2</option>';
+            panelists.forEach(p => {
+                if (String(p.id) === currentChair || String(p.id) === currentMem1) return;
+                member2Select.innerHTML += `<option value="${p.id}" ${String(p.id) === currentMem2 ? 'selected' : ''}>${p.fullname} (${p.user_id})</option>`;
             });
         }
 
-        function renderMemberOptions(list){
-            const membersList = document.getElementById("panelMembersList");
-            if (!membersList) return;
+        function onChairChange() {
+            selectedChairId = document.getElementById("panelChairSelect").value || null;
+            renderPanelistDropdowns();
+            updatePanelSummary();
+        }
 
-            membersList.innerHTML = "";
+        function onMember1Change() {
+            const val = document.getElementById("panelMember1Select").value;
+            if (val) {
+                selectedMemberIds[0] = val;
+            } else {
+                selectedMemberIds.splice(0, 1);
+            }
+            renderPanelistDropdowns();
+            updatePanelSummary();
+        }
 
-            if(list.length === 0){
-                membersList.innerHTML = `<p class="empty-text">No panelists found.</p>`;
+        function onMember2Change() {
+            const val = document.getElementById("panelMember2Select").value;
+            if (val) {
+                selectedMemberIds[1] = val;
+            } else {
+                selectedMemberIds.splice(1, 1);
+            }
+            renderPanelistDropdowns();
+            updatePanelSummary();
+        }
+
+        function updatePanelSummary() {
+            const card = document.getElementById("panelSummaryCard");
+            const body = document.getElementById("panelSummaryBody");
+            const countEl = document.getElementById("panelSummaryCount");
+            if (!card || !body || !countEl) return;
+
+            const selections = [];
+
+            // Chair
+            if (selectedChairId) {
+                const chair = panelists.find(p => String(p.id) === String(selectedChairId));
+                if (chair) selections.push({ person: chair, role: "Chair", type: "chair" });
+            }
+
+            // Members
+            selectedMemberIds.forEach((id, idx) => {
+                if (!id) return;
+                const member = panelists.find(p => String(p.id) === String(id));
+                if (member) selections.push({ person: member, role: `Member ${idx + 1}`, type: "member" });
+            });
+
+            if (selections.length === 0) {
+                card.style.display = "none";
                 return;
             }
 
-            list.forEach(panelist => {
-                const roleText = panelist.role === "admin" ? "Admin" : "Faculty";
-                const isSelected = selectedMemberIds.includes(String(panelist.id));
-                const isDisabled = selectedChairId === String(panelist.id);
-                
-                const card = document.createElement("div");
-                card.className = `panelist-card ${isSelected ? 'selected-member' : ''} ${isDisabled ? 'disabled' : ''}`;
-                if (!isDisabled) {
-                    card.onclick = () => toggleMemberSelection(panelist.id);
-                }
+            card.style.display = "block";
+            countEl.textContent = `${selections.length}/3 Selected`;
+            countEl.className = "panel-summary-count" + (selections.length === 3 ? " complete" : "");
 
-                card.innerHTML = `
-                    <input
-                        type="checkbox"
-                        class="panelist-card-checkbox"
-                        value="${panelist.id}"
-                        ${isSelected ? 'checked' : ''}
-                        ${isDisabled ? 'disabled' : ''}
-                    >
-                    <div class="panelist-card-avatar">
-                        ${panelist.fullname.charAt(0).toUpperCase()}
+            body.innerHTML = selections.map(({ person, role, type }) => {
+                const initials = person.fullname
+                    .split(" ")
+                    .slice(0, 2)
+                    .map(w => w[0])
+                    .join("")
+                    .toUpperCase();
+                const isChair = type === "chair";
+                return `
+                    <div class="panel-summary-person ${type}">
+                        <div class="panel-summary-avatar ${type}">${initials}</div>
+                        <div class="panel-summary-info">
+                            <div class="panel-summary-name">${person.fullname}</div>
+                            <div class="panel-summary-id">${person.user_id || ""}</div>
+                        </div>
+                        <span class="panel-summary-role ${type}">${role}</span>
                     </div>
-                    <h4>${panelist.fullname}</h4>
-                    <p>${panelist.user_id}</p>
-                    <span class="panelist-role-badge">${roleText} • ${panelist.position || "Panelist"}</span>
                 `;
-                membersList.appendChild(card);
-            });
+            }).join("");
         }
 
         function renderPanelistOptions(list = panelists){
-            renderChairOptions(list);
-            renderMemberOptions(list);
-            renderSelectedPanelSummary();
-        }
-
-        function toggleChairSelection(id) {
-            const strId = String(id);
-            if (selectedChairId === strId) {
-                selectedChairId = null;
-            } else {
-                selectedChairId = strId;
-                // Exclude from member selection if selected as chair
-                selectedMemberIds = selectedMemberIds.filter(mId => mId !== strId);
-            }
-            renderPanelistOptions();
-            updatePanelMemberHint();
-        }
-
-        function toggleMemberSelection(id) {
-            const strId = String(id);
-            if (selectedMemberIds.includes(strId)) {
-                selectedMemberIds = selectedMemberIds.filter(mId => mId !== strId);
-            } else {
-                if (selectedMemberIds.length >= REQUIRED_PANEL_MEMBER_COUNT) {
-                    alert("You can only select 2 panel members.");
-                    return;
-                }
-                selectedMemberIds.push(strId);
-            }
-            renderPanelistOptions();
-            updatePanelMemberHint();
-        }
-
-        function renderSelectedPanelSummary() {
-            const summary = document.getElementById("selectedPanelSummary");
-            if (!summary) return;
-
-            summary.innerHTML = "";
-
-            if (!selectedChairId && selectedMemberIds.length === 0) {
-                summary.innerHTML = `<span style="color: #8a7aa6; font-size: 13px; font-style: italic;"><i class="fa-solid fa-circle-info"></i> No panelists selected yet. Select a chair and exactly 2 members below.</span>`;
-                return;
-            }
-
-            if (selectedChairId) {
-                const chairObj = panelists.find(p => String(p.id) === selectedChairId);
-                if (chairObj) {
-                    summary.innerHTML += `
-                        <div class="selected-pill chair">
-                            <div class="selected-pill-avatar">
-                                ${chairObj.fullname.charAt(0).toUpperCase()}
-                            </div>
-                            <div class="selected-pill-info">
-                                <strong>${chairObj.fullname}</strong>
-                                <span class="selected-pill-role">Chair</span>
-                            </div>
-                            <button class="selected-remove-btn" onclick="toggleChairSelection('${chairObj.id}')" type="button">
-                                <i class="fa-solid fa-circle-xmark"></i>
-                            </button>
-                        </div>
-                    `;
-                }
-            }
-
-            selectedMemberIds.forEach(mId => {
-                const memberObj = panelists.find(p => String(p.id) === mId);
-                if (memberObj) {
-                    summary.innerHTML += `
-                        <div class="selected-pill member">
-                            <div class="selected-pill-avatar">
-                                ${memberObj.fullname.charAt(0).toUpperCase()}
-                            </div>
-                            <div class="selected-pill-info">
-                                <strong>${memberObj.fullname}</strong>
-                                <span class="selected-pill-role">Member</span>
-                            </div>
-                            <button class="selected-remove-btn" onclick="toggleMemberSelection('${memberObj.id}')" type="button">
-                                <i class="fa-solid fa-circle-xmark"></i>
-                            </button>
-                        </div>
-                    `;
-                }
-            });
-        }
-
-        function matchesPanelistKeyword(panelist, keyword){
-            return String(panelist.fullname || "").toLowerCase().includes(keyword)
-                || String(panelist.user_id || "").toLowerCase().includes(keyword)
-                || String(panelist.position || "").toLowerCase().includes(keyword)
-                || String(panelist.role || "").toLowerCase().includes(keyword);
-        }
-
-        function filterPanelChair(){
-            const keyword = document.getElementById("panelChairSearch").value.toLowerCase().trim();
-            const filtered = keyword
-                ? panelists.filter(panelist => matchesPanelistKeyword(panelist, keyword))
-                : panelists;
-
-            renderChairOptions(filtered);
-        }
-
-        function filterPanelMembers(){
-            const keyword = document.getElementById("panelMemberSearch").value.toLowerCase().trim();
-            const filtered = keyword
-                ? panelists.filter(panelist => matchesPanelistKeyword(panelist, keyword))
-                : panelists;
-
-            renderMemberOptions(filtered);
+            renderPanelistDropdowns();
         }
 
         const REQUIRED_PANEL_MEMBER_COUNT = 2;
-
-        function getSelectedPanelChairId(){
-            return selectedChairId;
-        }
-
-        function getSelectedPanelMemberIds(){
-            return selectedMemberIds;
-        }
-
-        function updatePanelMemberHint(){
-            const hint = document.getElementById("panelMemberHint");
-            if(!hint){ return; }
-
-            const count = selectedMemberIds.length;
-            hint.textContent =
-                count === REQUIRED_PANEL_MEMBER_COUNT
-                ? `2 of 2 panel members selected.`
-                : `Select exactly 2 panel members (${count} selected).`;
-
-            hint.style.color =
-                count === REQUIRED_PANEL_MEMBER_COUNT
-                ? "#15803d"
-                : "#b45309";
-        }
 
         function getSelectedPanelistIds(){
             if(!selectedChairId){
                 return [];
             }
-            return [selectedChairId, ...selectedMemberIds];
+            return [selectedChairId, ...selectedMemberIds.filter(Boolean)];
         }
 
         function validatePanelSelection(){
@@ -1150,13 +1032,9 @@
                 return false;
             }
 
-            if(selectedMemberIds.length < REQUIRED_PANEL_MEMBER_COUNT){
-                alert("Please select exactly 2 panel members. You cannot save the schedule with only one panel member.");
-                return false;
-            }
-
-            if(selectedMemberIds.length > REQUIRED_PANEL_MEMBER_COUNT){
-                alert("Please select only 2 panel members.");
+            const cleanMembers = selectedMemberIds.filter(Boolean);
+            if(cleanMembers.length < REQUIRED_PANEL_MEMBER_COUNT){
+                alert("Please select exactly 2 panel members.");
                 return false;
             }
 
@@ -1166,8 +1044,7 @@
         function setSelectedPanelists(selectedIds){
             selectedChairId = selectedIds[0] ? String(selectedIds[0]) : null;
             selectedMemberIds = selectedIds.slice(1).map(id => String(id));
-            renderPanelistOptions();
-            updatePanelMemberHint();
+            renderPanelistDropdowns();
         }
 
         function calculateDuration(){
@@ -1668,11 +1545,6 @@
 
             await loadSelectedGroupMembers();
 
-            document.getElementById("panelChairSearch").value =
-                "";
-            document.getElementById("panelMemberSearch").value =
-                "";
-
             renderPanelistOptions();
 
             const selectedPanelistIds =
@@ -1748,11 +1620,6 @@
             selectedMemberIds = [];
 
             document.getElementById("groupSelect").value =
-                "";
-
-            document.getElementById("panelChairSearch").value =
-                "";
-            document.getElementById("panelMemberSearch").value =
                 "";
 
             renderPanelistOptions();
@@ -2485,7 +2352,7 @@
                     <div class="member-row">
 
                         <div class="member-avatar">
-                            ${panelist.fullname.charAt(0).toUpperCase()}
+                            ${panelist.profile_image ? `<img src="http://localhost:3005${panelist.profile_image}" alt="Profile">` : panelist.fullname.charAt(0).toUpperCase()}
                         </div>
 
                         <div>
@@ -2523,7 +2390,7 @@
                     <div class="member-row">
 
                         <div class="member-avatar student-avatar">
-                            ${member.fullname.charAt(0).toUpperCase()}
+                            ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
                         </div>
 
                         <div>

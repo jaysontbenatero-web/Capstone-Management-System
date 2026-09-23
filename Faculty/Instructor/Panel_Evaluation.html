@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -184,7 +184,7 @@
             <section class="panel-card receipt-card">
                 <div class="panel-card-header">
                     <div>
-                        <h2><i class="fa-solid fa-file-invoice"></i> Evaluation Receipt</h2>
+                        <h2><i class="fa-solid fa-file-invoice"></i> Evaluation Sheet</h2>
                         <p>Official sheet for the selected defense schedule.</p>
                     </div>
                 </div>
@@ -193,14 +193,14 @@
                     <div class="empty-receipt">
                         <i class="fa-solid fa-clipboard-question"></i>
                         <h3>No Group Selected</h3>
-                        <p>Select an evaluated defense from the list to view its evaluation receipt and panel results.</p>
+                        <p>Select an evaluated defense from the list to view its evaluation sheet and panel results.</p>
                     </div>
                 </div>
 
                 <div class="receipt-actions" id="receiptActions" style="display:none;">
                     <button class="btn-print" type="button" onclick="window.print()">
                         <i class="fa-solid fa-print"></i>
-                        Print Receipt
+                        Print Evaluation
                     </button>
                 </div>
             </section>
@@ -361,7 +361,7 @@
                 <div class="empty-receipt">
                     <i class="fa-solid fa-clipboard-question"></i>
                     <h3>No Group Selected</h3>
-                    <p>Select an evaluated defense from the list to view its evaluation receipt and panel results.</p>
+                    <p>Select an evaluated defense from the list to view its evaluation sheet and panel results.</p>
                 </div>
             `;
             document.getElementById("receiptActions").style.display = "none";
@@ -634,163 +634,390 @@
         function renderCompiledPanelReport(sched, viewport) {
             const panelEvaluations = sched.panel_evaluations || [];
             const formattedDate = formatDefenseDate(sched.defense_date);
-            const progressText =
-                `${Number(sched.evaluations_submitted || 0)}/${Number(sched.evaluations_required || 0)} panel evaluations received`;
+            const defenseType = sched.defense_type || "";
+
+            // ── Aggregate concept / outline data from each panelist ──────────
+            let allPresenters = [];
+            const conceptData = [];
+            const outlineData = [];
+
+            panelEvaluations.forEach(pe => {
+                if (pe.concept_evaluation_details) {
+                    try {
+                        const d = typeof pe.concept_evaluation_details === "string"
+                            ? JSON.parse(pe.concept_evaluation_details)
+                            : pe.concept_evaluation_details;
+                        conceptData.push({ pe, d });
+                        if (!allPresenters.length && d.presenters) allPresenters = d.presenters;
+                    } catch (e) { console.error("Concept parse:", e); }
+                }
+                if (pe.outline_evaluation_details) {
+                    const d = parseOutlineDetails(pe.outline_evaluation_details);
+                    if (d) {
+                        outlineData.push({ pe, d });
+                        if (!allPresenters.length && d.presenters) allPresenters = d.presenters;
+                    }
+                }
+            });
+
+            // ── Header ───────────────────────────────────────────────────────
+            const sheetTitle = conceptData.length
+                ? "Concept Proposal Evaluation Sheet"
+                : `${escapeHtml(defenseType)} Evaluation Sheet`;
 
             let html = `
                 <div class="receipt-container compiled-report">
                     <div class="receipt-header">
                         <h1>Institute of Computing</h1>
-                        <h2>Compiled Panel Evaluation — ${escapeHtml(sched.group_name)}</h2>
+                        <h2>${sheetTitle}</h2>
                     </div>
 
                     <div class="receipt-meta">
                         <div>
                             <p><strong>Date:</strong> ${formattedDate}</p>
-                            <p><strong>Defense Type:</strong> ${escapeHtml(sched.defense_type)}</p>
-                            <p><strong>Project:</strong> ${escapeHtml(sched.project_title || "N/A")}</p>
+                            <p><strong>Group Name:</strong> ${escapeHtml(sched.group_name)}</p>
+                            <p><strong>Capstone Title:</strong> ${escapeHtml(sched.project_title || "N/A")}</p>
                         </div>
                         <div class="receipt-meta-right">
-                            <p><strong>Schedule:</strong> ${escapeHtml(sched.schedule_code)}</p>
-                            <p><strong>Progress:</strong> ${escapeHtml(progressText)}</p>
-                            <p><strong>Final Result:</strong>
+                            <p><strong>Schedule ID:</strong> ${escapeHtml(sched.schedule_code)}</p>
+                            <p><strong>Defense Type:</strong> ${escapeHtml(defenseType)}</p>
+                            <p><strong>Panel Outcome:</strong>
                                 <strong style="color:#7c3aed;text-transform:uppercase;">
-                                    ${sched.evaluations_complete ? escapeHtml(sched.panel_result) : "Pending all panel grades"}
+                                    ${sched.evaluations_complete ? escapeHtml(sched.panel_result) : "Pending"}
                                 </strong>
                             </p>
                         </div>
                     </div>
             `;
 
-            if (sched.evaluations_complete && sched.evaluation) {
+            // ── Presenters Lineup ────────────────────────────────────────────
+            if (allPresenters.length) {
                 html += `
-                    <div class="receipt-summary-box">
-                        <p><strong>Compiled panel decision</strong> (after all panelists submitted)</p>
-                        <p>• Final outcome: <strong style="color:#7c3aed;">${escapeHtml(sched.panel_result)}</strong></p>
-                        <p>• Compiled grade / score: <strong>${escapeHtml(String(sched.evaluation.score ?? "N/A"))}</strong></p>
+                    <p style="font-weight:600;font-size:0.85rem;margin-bottom:6px;">Presenters' Names</p>
+                    <div style="font-size:0.8rem;line-height:1.6;margin-bottom:16px;padding-left:8px;color:#374151;">
+                        ${allPresenters.map((p, i) =>
+                            `<p>${i + 1}. <strong>${escapeHtml(p.fullname)}</strong> (${escapeHtml(p.role)})</p>`
+                        ).join("")}
                     </div>
                 `;
             }
 
-            html += `<div class="receipt-section-title">Individual Panel Evaluations</div>`;
+            // ── CONCEPT evaluation layout ────────────────────────────────────
+            if (conceptData.length) {
+                const numS = allPresenters.length;
+                const studentHeaderCells = allPresenters.map((_, i) => `<th class="score-col">${i + 1}</th>`).join("");
 
-            if (panelEvaluations.length === 0) {
-                html += `<p class="section-hint">No panel evaluations submitted yet.</p>`;
-            } else {
-                html += `<div class="panel-grades-grid">`;
+                // ── Selected Proposal Titles ─────────────────────────────────
+                const hasTitles = conceptData.some(({ d }) => d.selected_title_text);
+                if (hasTitles) {
+                    html += `
+                        <div class="receipt-section-title">Selected Proposal Title</div>
+                        <table class="receipt-table">
+                            <thead>
+                                <tr>
+                                    <th>Panelist</th>
+                                    <th>Chosen Proposal Title</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${conceptData.map(({ pe, d }, i) => `
+                                    <tr>
+                                        <td><strong>Panelist ${i + 1}</strong> — ${escapeHtml(pe.panelist_name)}
+                                            <span style="font-size:0.75rem;color:#7c3aed;margin-left:6px;">${escapeHtml(pe.panelist_position || "")}</span>
+                                        </td>
+                                        <td style="font-style:italic;color:#1e1b4b;">
+                                            ${d.selected_title_text ? `&#8220;${escapeHtml(d.selected_title_text)}&#8221;` : '<span style="color:#9ca3af;">—</span>'}
+                                        </td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>
+                    `;
+                }
 
-                panelEvaluations.forEach((panelEval, index) => {
-                    let conceptHtml = "";
-                    let outlineHtml = "";
+                html += `
+                    <div class="receipt-section-title">Individual Grade (Disposition 20%, Delivery &amp; Presentation 80%)</div>
+                    <table class="receipt-table compiled-eval-table">
+                        <thead>
+                            <tr>
+                                <th>Panelist / Criteria</th>
+                                ${studentHeaderCells}
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
 
-                    if (panelEval.concept_evaluation_details) {
-                        try {
-                            const details = typeof panelEval.concept_evaluation_details === "string"
-                                ? JSON.parse(panelEval.concept_evaluation_details)
-                                : panelEval.concept_evaluation_details;
+                conceptData.forEach(({ pe, d }, pIdx) => {
+                    const pList = d.presenters || [];
 
-                            const presentersHtml = (details.presenters || []).map((p, pIdx) => {
-                                const weighted = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
-                                return `
-                                    <p class="panel-receipt-line">
-                                        Student ${pIdx + 1} (${escapeHtml(p.fullname)}):
-                                        Disposition ${escapeHtml(p.disposition_score)}, Delivery ${escapeHtml(p.delivery_score)}
-                                        (Weighted: ${escapeHtml(weighted)})
-                                    </p>
-                                `;
-                            }).join("");
+                    const dispositionCells = allPresenters.map((_, sIdx) => {
+                        const p = pList[sIdx];
+                        return p ? `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>` : `<td class="score-col">—</td>`;
+                    }).join("");
 
-                            const chosenTitleHtml = details.selected_title_text
-                                ? `<p class="panel-receipt-line"><strong>Title selected:</strong> <em>${escapeHtml(details.selected_title_text)}</em></p>`
-                                : "";
+                    const deliveryCells = allPresenters.map((_, sIdx) => {
+                        const p = pList[sIdx];
+                        return p ? `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>` : `<td class="score-col">—</td>`;
+                    }).join("");
 
-                            conceptHtml = `
-                                <div class="panel-receipt-block">
-                                    <p class="panel-receipt-label">Concept presentation sheet</p>
-                                    ${chosenTitleHtml}
-                                    ${presentersHtml}
-                                    <p class="panel-receipt-line">
-                                        <strong>Group concept papers:</strong>
-                                        ${escapeHtml(details.group_score)}
-                                        (GPA: ${escapeHtml(convert100ToGpa(details.group_score))})
-                                    </p>
-                                </div>
-                            `;
-                        } catch (e) {
-                            console.error("Concept details parse error:", e);
-                        }
-                    }
-
-                    if (panelEval.outline_evaluation_details) {
-                        const details = parseOutlineDetails(panelEval.outline_evaluation_details);
-
-                        if (details) {
-                            const sheetLabel = getSystemDocSheetShortLabel(details.defense_type || sched.defense_type);
-                            let presentersHtml = "";
-
-                            (details.presenters || []).forEach((presenter, idx) => {
-                                const weighted = (Number(presenter.disposition_score) * 0.2 + Number(presenter.delivery_score) * 0.8).toFixed(1);
-                                presentersHtml += `
-                                    <p class="panel-receipt-line">
-                                        Student ${idx + 1} (${escapeHtml(presenter.fullname)}):
-                                        Disposition ${escapeHtml(presenter.disposition_score)},
-                                        Delivery ${escapeHtml(presenter.delivery_score)}
-                                        &mdash; Weighted ${escapeHtml(weighted)}
-                                    </p>
-                                `;
-                            });
-
-                            const groupTotal = ((Number(details.system_score) + Number(details.documentation_score)) / 2).toFixed(1);
-
-                            outlineHtml = `
-                                <div class="panel-receipt-block">
-                                    <p class="panel-receipt-label"><i class="fa-solid fa-file-shield"></i> ${escapeHtml(sheetLabel)} evaluation sheet</p>
-                                    ${presentersHtml}
-                                    <p class="panel-receipt-line">
-                                        <strong>System (50%):</strong>
-                                        ${escapeHtml(details.system_score)}
-                                    </p>
-                                    <p class="panel-receipt-line">
-                                        <strong>Documentation (50%):</strong>
-                                        ${escapeHtml(details.documentation_score)}
-                                    </p>
-                                    <p class="panel-receipt-line">
-                                        <strong>Group average:</strong>
-                                        ${escapeHtml(groupTotal)}
-                                        (GPA: ${escapeHtml(convert100ToGpa(groupTotal))})
-                                    </p>
-                                </div>
-                            `;
-                        }
-                    }
-
-                    const signatureDetails = getPanelEvalSignatureDetails(panelEval);
-                    const signatureHtml = buildPanelSignatureHtml(signatureDetails);
+                    const weightedCells = allPresenters.map((_, sIdx) => {
+                        const p = pList[sIdx];
+                        if (!p) return `<td class="score-col">—</td>`;
+                        const w = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
+                        return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${w}<br><small>(${convert100ToGpa(w)})</small></td>`;
+                    }).join("");
 
                     html += `
-                        <div class="panel-receipt-card">
-                            <div class="panel-receipt-card-head">
-                                <span class="panel-receipt-index">Panelist ${index + 1}</span>
-                                <span class="panel-outcome-badge ${getReceiptOutcomeClass(panelEval.panel_result)}">${escapeHtml(panelEval.panel_result)}</span>
-                            </div>
-                            <h4 class="panel-receipt-name">${escapeHtml(panelEval.panelist_name)}</h4>
-                            <p class="panel-receipt-meta">${escapeHtml(panelEval.panelist_position || "Panelist")}</p>
-                            <p class="panel-receipt-line"><strong>Score:</strong> ${escapeHtml(String(panelEval.score ?? "N/A"))}</p>
-                            <p class="panel-receipt-line"><strong>Comments:</strong> ${escapeHtml(panelEval.comments || "None")}</p>
-                            <p class="panel-receipt-line"><strong>Recommendations:</strong> ${escapeHtml(panelEval.recommendations || "None")}</p>
-                            ${conceptHtml}
-                            ${outlineHtml}
-                            <div class="panel-receipt-signature-block">
-                                ${signatureHtml}
-                                <div class="panel-receipt-signature-line"></div>
-                                <p class="panel-receipt-signature-caption">Signature over Printed Name of Panelist</p>
-                                <p class="panel-receipt-signature-name">${escapeHtml(panelEval.panelist_name)}</p>
-                            </div>
-                        </div>
+                        <tr>
+                            <td colspan="${numS + 1}" style="background:#f0ebff;font-weight:700;font-size:0.78rem;padding:5px 10px;border-bottom:1px solid #c4b5fd;">
+                                Panelist ${pIdx + 1} — ${escapeHtml(pe.panelist_name)}
+                                <span style="font-weight:400;margin-left:8px;color:#7c3aed;">${escapeHtml(pe.panelist_position || "")}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>I. Disposition (20%)</strong>
+                                <div class="criteria-desc">a. Generally neat in appearance</div>
+                                <div class="criteria-desc">b. Projects an aura of confidence</div>
+                                <div class="criteria-desc">c. Preparedness and teamwork</div>
+                            </td>
+                            ${dispositionCells}
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>II. Delivery and Presentation (80%)</strong>
+                                <div class="criteria-desc">a. Organization of Content</div>
+                                <div class="criteria-desc">b. Manner of Presentation</div>
+                                <div class="criteria-desc">c. Ability to Defend Ideas</div>
+                            </td>
+                            ${deliveryCells}
+                        </tr>
+                        <tr style="background:#faf8ff;">
+                            <td><strong>Individual Weighted Average (GPA)</strong></td>
+                            ${weightedCells}
+                        </tr>
                     `;
                 });
 
-                html += `</div>`;
+                html += `</tbody></table>`;
+
+                // ── Group Grade ──────────────────────────────────────────────
+                const panHeaderCells = conceptData.map((_, i) => `<th class="score-col">Panelist ${i + 1}</th>`).join("");
+                const avgGroupScore = (conceptData.reduce((s, { d }) => s + Number(d.group_score || 0), 0) / conceptData.length).toFixed(1);
+
+                html += `
+                    <div class="receipt-section-title">Group Grade (Concept Papers 100%)</div>
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th>Criteria and Weight</th>
+                                ${panHeaderCells}
+                                <th class="score-col">Average</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>Concept Papers (100%)</strong>
+                                    <div class="criteria-desc">• Mechanics, completeness, and content</div>
+                                </td>
+                                ${conceptData.map(({ d }) => `<td class="score-col">${escapeHtml(String(d.group_score))}</td>`).join("")}
+                                <td class="score-col"><strong>${avgGroupScore}</strong></td>
+                            </tr>
+                            <tr style="font-weight:700;background:#f3f4f6;">
+                                <td>Total Group Grade (GPA Equivalent)</td>
+                                ${conceptData.map(({ d }) => `<td class="score-col" style="color:#7c3aed;">${convert100ToGpa(d.group_score)}</td>`).join("")}
+                                <td class="score-col" style="color:#7c3aed;">${convert100ToGpa(avgGroupScore)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+
+                // ── Comments & Recommendations ───────────────────────────────
+                const commentsHtml = conceptData.map(({ pe }, i) =>
+                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span class="receipt-quote" style="border:none;padding:0;font-style:italic;color:#374151;">"${escapeHtml(pe.comments || "None")}"</span></div>`
+                ).join("");
+                const recsHtml = conceptData.map(({ pe }, i) =>
+                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span class="receipt-quote" style="border:none;padding:0;font-style:italic;color:#374151;">"${escapeHtml(pe.recommendations || "None")}"</span></div>`
+                ).join("");
+
+                html += `
+                    <div class="receipt-feedback">
+                        <div>
+                            <p><strong>Comments</strong></p>
+                            ${commentsHtml}
+                        </div>
+                        <div class="receipt-feedback-border">
+                            <p><strong>Recommendations</strong></p>
+                            ${recsHtml}
+                        </div>
+                    </div>
+                `;
+
+            // ── OUTLINE / PRE-FINAL / FINAL evaluation layout ────────────────
+            } else if (outlineData.length) {
+                const numS = allPresenters.length;
+                const studentHeaderCells = allPresenters.map((_, i) => `<th class="score-col">${i + 1}</th>`).join("");
+
+                html += `
+                    <div class="receipt-section-title">Individual Grade (Disposition 20%, Delivery &amp; Presentation 80%)</div>
+                    <table class="receipt-table compiled-eval-table">
+                        <thead>
+                            <tr>
+                                <th>Panelist / Criteria</th>
+                                ${studentHeaderCells}
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                outlineData.forEach(({ pe, d }, pIdx) => {
+                    const pList = d.presenters || [];
+
+                    const dispositionCells = allPresenters.map((_, sIdx) => {
+                        const p = pList[sIdx];
+                        return p ? `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>` : `<td class="score-col">—</td>`;
+                    }).join("");
+
+                    const deliveryCells = allPresenters.map((_, sIdx) => {
+                        const p = pList[sIdx];
+                        return p ? `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>` : `<td class="score-col">—</td>`;
+                    }).join("");
+
+                    const weightedCells = allPresenters.map((_, sIdx) => {
+                        const p = pList[sIdx];
+                        if (!p) return `<td class="score-col">—</td>`;
+                        const w = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
+                        return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${w}<br><small>(${convert100ToGpa(w)})</small></td>`;
+                    }).join("");
+
+                    html += `
+                        <tr>
+                            <td colspan="${numS + 1}" style="background:#f0ebff;font-weight:700;font-size:0.78rem;padding:5px 10px;border-bottom:1px solid #c4b5fd;">
+                                Panelist ${pIdx + 1} — ${escapeHtml(pe.panelist_name)}
+                                <span style="font-weight:400;margin-left:8px;color:#7c3aed;">${escapeHtml(pe.panelist_position || "")}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>I. Disposition (20%)</strong>
+                                <div class="criteria-desc">a. Generally neat in appearance</div>
+                                <div class="criteria-desc">b. Projects an aura of confidence</div>
+                                <div class="criteria-desc">c. Preparedness and teamwork</div>
+                            </td>
+                            ${dispositionCells}
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>II. Delivery and Presentation (80%)</strong>
+                                <div class="criteria-desc">a. Organization of Content</div>
+                                <div class="criteria-desc">b. Manner of Presentation</div>
+                                <div class="criteria-desc">c. Ability to Defend Ideas</div>
+                            </td>
+                            ${deliveryCells}
+                        </tr>
+                        <tr style="background:#faf8ff;">
+                            <td><strong>Individual Weighted Average (GPA)</strong></td>
+                            ${weightedCells}
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+
+                // ── Group Grade (System + Documentation) ─────────────────────
+                const panHeaderCells = outlineData.map((_, i) => `<th class="score-col">Panelist ${i + 1}</th>`).join("");
+                const avgSys  = (outlineData.reduce((s, { d }) => s + Number(d.system_score || 0), 0) / outlineData.length).toFixed(1);
+                const avgDoc  = (outlineData.reduce((s, { d }) => s + Number(d.documentation_score || 0), 0) / outlineData.length).toFixed(1);
+                const avgGrp  = ((Number(avgSys) + Number(avgDoc)) / 2).toFixed(1);
+
+                html += `
+                    <div class="receipt-section-title">Group Grade</div>
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th>Criteria and Weight</th>
+                                ${panHeaderCells}
+                                <th class="score-col">Average</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>System (50%)</strong></td>
+                                ${outlineData.map(({ d }) => `<td class="score-col">${escapeHtml(String(d.system_score))}</td>`).join("")}
+                                <td class="score-col"><strong>${avgSys}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Documentation (50%)</strong></td>
+                                ${outlineData.map(({ d }) => `<td class="score-col">${escapeHtml(String(d.documentation_score))}</td>`).join("")}
+                                <td class="score-col"><strong>${avgDoc}</strong></td>
+                            </tr>
+                            <tr style="font-weight:700;background:#f3f4f6;">
+                                <td>Group Average (GPA Equivalent)</td>
+                                ${outlineData.map(({ d }) => {
+                                    const a = ((Number(d.system_score || 0) + Number(d.documentation_score || 0)) / 2).toFixed(1);
+                                    return `<td class="score-col" style="color:#7c3aed;">${convert100ToGpa(a)}</td>`;
+                                }).join("")}
+                                <td class="score-col" style="color:#7c3aed;">${convert100ToGpa(avgGrp)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+
+                // ── Comments & Recommendations ───────────────────────────────
+                const commentsHtml = outlineData.map(({ pe }, i) =>
+                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span style="font-style:italic;color:#374151;">"${escapeHtml(pe.comments || "None")}"</span></div>`
+                ).join("");
+                const recsHtml = outlineData.map(({ pe }, i) =>
+                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span style="font-style:italic;color:#374151;">"${escapeHtml(pe.recommendations || "None")}"</span></div>`
+                ).join("");
+
+                html += `
+                    <div class="receipt-feedback">
+                        <div>
+                            <p><strong>Comments</strong></p>
+                            ${commentsHtml}
+                        </div>
+                        <div class="receipt-feedback-border">
+                            <p><strong>Recommendations</strong></p>
+                            ${recsHtml}
+                        </div>
+                    </div>
+                `;
+
+            } else {
+                // Fallback: no detailed sheets but evaluations submitted
+                html += `
+                    <div class="receipt-summary-box">
+                        <p>Panel evaluations were submitted but no detailed score sheets are available for this defense type.</p>
+                        ${panelEvaluations.map((pe, i) => `
+                            <p style="margin-top:8px;"><strong>Panelist ${i + 1} — ${escapeHtml(pe.panelist_name)}:</strong>
+                                Score ${escapeHtml(String(pe.score ?? "N/A"))}, Outcome: <strong style="color:#7c3aed;">${escapeHtml(pe.panel_result)}</strong>
+                            </p>
+                        `).join("")}
+                    </div>
+                `;
+            }
+
+            // ── Signatures Row ───────────────────────────────────────────────
+            if (panelEvaluations.length) {
+                const sigRowHtml = panelEvaluations.map(pe => {
+                    const sigDetails = getPanelEvalSignatureDetails(pe);
+                    const sigHtml    = buildPanelSignatureHtml(sigDetails);
+                    return `
+                        <div class="compiled-sig-block">
+                            ${sigHtml}
+                            <div class="sig-line">${escapeHtml(pe.panelist_name)}</div>
+                            <p style="font-size:0.72rem;color:#6d5f85;margin-top:3px;">${escapeHtml(pe.panelist_position || "Panelist")}</p>
+                        </div>
+                    `;
+                }).join("");
+
+                html += `
+                    <div class="compiled-sig-row">
+                        ${sigRowHtml}
+                    </div>
+                `;
             }
 
             html += `</div>`;
@@ -939,7 +1166,7 @@
                 <div class="receipt-container">
                     <div class="receipt-header">
                         <h1>Institute of Computing</h1>
-                        <h2>Defense Panel Evaluation Receipt</h2>
+                        <h2>Defense Panel Evaluation Sheet</h2>
                     </div>
 
                     <div class="receipt-meta">

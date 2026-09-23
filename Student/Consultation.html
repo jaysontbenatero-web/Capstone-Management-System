@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -106,6 +106,20 @@
             </button>
         </section>
 
+        <!-- ADVISER / INSTRUCTOR E-SIGNATURE DOCUMENTS -->
+        <section class="card" id="signingSection">
+            <div class="section-head">
+                <h2 class="history-title">
+                    <i class="fa-solid fa-file-signature" style="color:#7c3aed;margin-right:8px;"></i>
+                    E-Signature Documents
+                </h2>
+            </div>
+            <p class="section-note">When you upload <strong>Adviser acceptance for advisory</strong> or <strong>Environmental Scanning</strong> in Records Management, it is sent to your adviser or instructor for e-signature. Signed copies and notes appear here.</p>
+            <div class="request-grid" id="signingDocumentList">
+                <div class="request-card"><p>Loading e-signature documents...</p></div>
+            </div>
+        </section>
+
         <!-- ACTIVE RECORDS -->
         <section class="card" id="activeSection">
             <div class="section-head">
@@ -137,6 +151,7 @@
     <script>
         const userId = localStorage.getItem("userId");
         let consultations = [];
+        let signingDocuments = [];
         let showingHistory = false;
 
         function logout(){ localStorage.clear(); window.location.href = "../Log-in.html"; }
@@ -251,6 +266,220 @@
             list.innerHTML = done.map(item => buildStudentCard(item, true)).join("");
         }
 
+        function signingStatusClass(status){
+            const key = String(status || "").toLowerCase();
+            if(key.includes("approved")) return "b-completed";
+            if(key.includes("reject")) return "b-cancelled";
+            if(key.includes("revision") || key.includes("change")) return "b-pending";
+            return "b-scheduled";
+        }
+
+        /* Client-side doc type helpers */
+        function isRecommendationDoc(item){
+            var dt = String(item.document_type  || '').toLowerCase();
+            var dl = String(item.document_title || '').toLowerCase();
+            return dt.includes('recommendation for concept') || dl.includes('recommendation for concept');
+        }
+
+        function isEnvScanningDoc(item){
+            var dt = String(item.document_type  || '').toLowerCase();
+            var dl = String(item.document_title || '').toLowerCase();
+            return dt.includes('environmental scanning') || dl.includes('environmental scanning');
+        }
+
+        function renderSigningDocuments(){
+            const list = document.getElementById("signingDocumentList");
+
+            if(!signingDocuments.length){
+                list.innerHTML = '<div class="request-card"><p>No e-signature documents found. Upload them in Records Management.</p></div>';
+                return;
+            }
+
+            list.innerHTML = signingDocuments.map(function(item, index){
+                const viewPath = item.signed_file_path || item.file_path;
+                const hasSigned = !!(item.signed_file_path && String(item.signed_file_path).trim());
+                const isReco    = isRecommendationDoc(item);
+                const isEnvScan = isEnvScanningDoc(item);
+
+                var pct, barColor, statusLabel, statusBadge;
+                var stepsHtml;
+
+                /* ── Environmental Scanning: 4-step chain ── */
+                if(isEnvScan){
+                    var instrSigned   = ['Instructor Signed','Chairperson Signed','Approved'].includes(item.document_status) || item.instructor_review_status === 'Approved';
+                    var instrRejected = !instrSigned && item.instructor_review_status === 'Rejected';
+                    var instrRevision = !instrSigned && (item.instructor_review_status === 'Subject to Change' || item.instructor_review_status === 'For Revision');
+
+                    var chairSigned   = ['Chairperson Signed','Approved'].includes(item.document_status) || item.chairperson_review_status === 'Approved';
+                    var chairRejected = !chairSigned && item.chairperson_review_status === 'Rejected';
+                    var chairRevision = !chairSigned && (item.chairperson_review_status === 'Subject to Change' || item.chairperson_review_status === 'For Revision');
+
+                    var deanSigned    = item.document_status === 'Approved' || item.dean_review_status === 'Approved';
+                    var deanRejected  = !deanSigned && item.dean_review_status === 'Rejected';
+                    var deanRevision  = !deanSigned && (item.dean_review_status === 'Subject to Change' || item.dean_review_status === 'For Revision');
+
+                    if(deanSigned){           pct = 100; statusLabel = 'Approved (Signed by All 3)';               statusBadge = 'b-completed';  }
+                    else if(deanRejected){    pct = 75;  statusLabel = 'Rejected by Dean';                         statusBadge = 'b-cancelled';  }
+                    else if(deanRevision){    pct = 75;  statusLabel = 'Revision Requested by Dean';               statusBadge = 'b-pending';    }
+                    else if(chairSigned){     pct = 75;  statusLabel = 'Chairperson Signed (Pending Dean)';        statusBadge = 'b-scheduled';  }
+                    else if(chairRejected){   pct = 50;  statusLabel = 'Rejected by Chairperson';                  statusBadge = 'b-cancelled';  }
+                    else if(chairRevision){   pct = 50;  statusLabel = 'Revision Requested by Chairperson';        statusBadge = 'b-pending';    }
+                    else if(instrSigned){     pct = 50;  statusLabel = 'Instructor Signed (Pending Chairperson)';  statusBadge = 'b-scheduled';  }
+                    else if(instrRejected){   pct = 25;  statusLabel = 'Rejected by Instructor';                   statusBadge = 'b-cancelled';  }
+                    else if(instrRevision){   pct = 25;  statusLabel = 'Revision Requested by Instructor';         statusBadge = 'b-pending';    }
+                    else {                    pct = 25;  statusLabel = 'Pending Instructor Signature';             statusBadge = 'b-scheduled';  }
+
+                    barColor = (instrRejected || chairRejected || deanRejected)
+                        ? 'linear-gradient(90deg,#f87171,#ef4444)'
+                        : 'linear-gradient(90deg,#7c3aed,#a855f7)';
+
+                    var iColor = instrSigned ? '#059669' : instrRejected ? '#ef4444' : instrRevision ? '#f59e0b' : '#94a3b8';
+                    var iIcon  = instrSigned ? 'fa-circle-check' : instrRejected ? 'fa-circle-xmark' : instrRevision ? 'fa-rotate-left' : 'fa-circle';
+                    var cColor = chairSigned ? '#059669' : chairRejected ? '#ef4444' : chairRevision ? '#f59e0b' : '#94a3b8';
+                    var cIcon  = chairSigned ? 'fa-circle-check' : chairRejected ? 'fa-circle-xmark' : chairRevision ? 'fa-rotate-left' : 'fa-circle';
+                    var dColor = deanSigned ? '#059669' : deanRejected ? '#ef4444' : deanRevision ? '#f59e0b' : '#94a3b8';
+                    var dIcon  = deanSigned ? 'fa-circle-check' : deanRejected ? 'fa-circle-xmark' : deanRevision ? 'fa-rotate-left' : 'fa-circle';
+
+                    /* Rejection / revision alert */
+                    var rejMsg = deanRejected ? item.dean_review_comment : chairRejected ? item.chairperson_review_comment : instrRejected ? item.instructor_review_comment : null;
+                    var revMsg = deanRevision ? item.dean_review_comment : chairRevision ? item.chairperson_review_comment : instrRevision ? item.instructor_review_comment : null;
+                    var rejBy  = deanRejected ? 'Dean' : chairRejected ? 'Chairperson' : 'Instructor';
+                    var revBy  = deanRevision ? 'Dean' : chairRevision ? 'Chairperson' : 'Instructor';
+                    var rejectionAlert = '';
+                    if(rejMsg){
+                        rejectionAlert = '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:flex-start;"><i class="fa-solid fa-circle-xmark" style="color:#ef4444;margin-top:2px;flex-shrink:0;"></i><div><strong style="color:#b91c1c;font-size:13px;">Rejected by ' + rejBy + '</strong><p style="color:#7f1d1d;font-size:13px;margin:4px 0 0;line-height:1.6;">' + rejMsg + '</p></div></div>';
+                    } else if(revMsg){
+                        rejectionAlert = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:flex-start;"><i class="fa-solid fa-rotate-left" style="color:#f59e0b;margin-top:2px;flex-shrink:0;"></i><div><strong style="color:#92400e;font-size:13px;">' + revBy + ' requested revision</strong><p style="color:#78350f;font-size:13px;margin:4px 0 0;line-height:1.6;">' + revMsg + '</p></div></div>';
+                    }
+
+                    stepsHtml =
+                        '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;">'
+                        + '<div style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle-check"></i> Submitted</div>'
+                        + '<div style="color:' + iColor + ';font-weight:700;"><i class="fa-solid ' + iIcon + '"></i> Instructor</div>'
+                        + '<div style="color:' + cColor + ';font-weight:700;"><i class="fa-solid ' + cIcon + '"></i> Chairperson</div>'
+                        + '<div style="color:' + dColor + ';font-weight:700;"><i class="fa-solid ' + dIcon + '"></i> Dean</div>'
+                        + '</div>';
+
+                    return '<article class="request-card">'
+                        + '<h3>' + (item.document_title || 'E-Signature Document') + '</h3>'
+                        + '<div class="request-meta">'
+                        +   '<span class="badge ' + statusBadge + '">' + statusLabel + '</span>'
+                        +   '<span class="badge">E-Signature</span>'
+                        + '</div>'
+                        + '<p><strong>Document Code:</strong> ' + (item.document_code || 'N/A') + '</p>'
+                        + rejectionAlert
+                        + '<div class="esign-progress-container" style="margin-top:14px;margin-bottom:14px;">'
+                        +   '<div style="display:flex;justify-content:space-between;font-size:12px;color:#6d5f85;margin-bottom:6px;font-weight:600;"><span>Approval Tracking</span><span>' + pct + '%</span></div>'
+                        +   '<div style="width:100%;height:8px;background:#e2e8f0;border-radius:10px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:' + barColor + ';border-radius:10px;transition:width 0.5s;"></div></div>'
+                        +   stepsHtml
+                        + '</div>'
+                        + '<p><strong>Last Updated:</strong> ' + (item.updated_at ? new Date(item.updated_at).toLocaleString() : 'N/A') + '</p>'
+                        + '<button onclick="openTrackingModal(' + index + ')" style="width:100%;margin-top:4px;padding:12px 18px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border:none;border-radius:14px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity=\'0.88\'" onmouseout="this.style.opacity=\'1\'"><i class="fa-solid fa-eye"></i> View Progress</button>'
+                        + '</article>';
+                }
+
+                /* ── For Recommendation: adviser is the FINAL signer (no Dean step) ── */
+                var adviserSigned, adviserRejected, adviserRevision;
+                var deanSigned2 = false, deanRejected2 = false, deanRevision2 = false;
+
+                if(isReco){
+                    adviserSigned   = item.document_status === 'Approved' || item.adviser_review_status === 'Approved';
+                    adviserRejected = !adviserSigned && item.adviser_review_status === 'Rejected';
+                    adviserRevision = !adviserSigned && (item.adviser_review_status === 'Subject to Change' || item.adviser_review_status === 'For Revision');
+
+                    pct = adviserSigned ? 100 : 50;
+
+                    if(adviserSigned){        statusLabel = 'Approved by Adviser'; statusBadge = 'b-completed'; }
+                    else if(adviserRejected){ statusLabel = 'Rejected by Adviser'; statusBadge = 'b-cancelled'; }
+                    else if(adviserRevision){ statusLabel = 'Revision Requested';  statusBadge = 'b-pending';   }
+                    else {                    statusLabel = 'Pending Adviser Signature'; statusBadge = 'b-scheduled'; }
+
+                } else {
+                    /* ── For Acceptance: needs both Adviser + Dean ── */
+                    deanSigned2    = item.dean_review_status === 'Approved' || item.document_status === 'Approved';
+                    adviserSigned  = deanSigned2 || item.adviser_review_status === 'Approved' || item.document_status === 'Adviser Signed';
+                    adviserRejected = !adviserSigned && item.adviser_review_status === 'Rejected';
+                    deanRejected2   = !deanSigned2 && item.dean_review_status === 'Rejected';
+                    adviserRevision = !adviserSigned && (item.adviser_review_status === 'Subject to Change' || item.adviser_review_status === 'For Revision');
+                    deanRevision2   = !deanSigned2 && (item.dean_review_status === 'Subject to Change' || item.dean_review_status === 'For Revision');
+
+                    pct = deanSigned2 ? 100 : adviserSigned ? 66 : 33;
+
+                    if(deanSigned2){          statusLabel = 'Approved (Signed by Adviser & Dean)'; statusBadge = 'b-completed'; }
+                    else if(deanRejected2){   statusLabel = 'Rejected by Dean';                    statusBadge = 'b-cancelled'; }
+                    else if(deanRevision2){   statusLabel = 'Revision Requested by Dean';          statusBadge = 'b-pending';   }
+                    else if(adviserSigned){   statusLabel = 'Adviser Signed (Pending Dean)';       statusBadge = 'b-scheduled'; }
+                    else if(adviserRejected){ statusLabel = 'Rejected by Adviser';                 statusBadge = 'b-cancelled'; }
+                    else if(adviserRevision){ statusLabel = 'Revision Requested by Adviser';       statusBadge = 'b-pending';   }
+                    else {                    statusLabel = item.document_status || 'Pending Review'; statusBadge = 'b-scheduled'; }
+                }
+
+                barColor = (adviserRejected || deanRejected2) ? 'linear-gradient(90deg,#f87171,#ef4444)' : 'linear-gradient(90deg,#7c3aed,#a855f7)';
+
+                var advColor = adviserSigned ? '#059669' : adviserRejected ? '#ef4444' : adviserRevision ? '#f59e0b' : '#94a3b8';
+                var advIcon  = adviserSigned ? 'fa-circle-check' : adviserRejected ? 'fa-circle-xmark' : adviserRevision ? 'fa-rotate-left' : 'fa-circle';
+
+                /* Rejection / revision alert box */
+                var rejectionAlert = '';
+                var rejMsg = deanRejected2 ? item.dean_review_comment : adviserRejected ? item.adviser_review_comment : null;
+                var revMsg = deanRevision2 ? item.dean_review_comment : adviserRevision ? item.adviser_review_comment : null;
+                var rejBy  = deanRejected2 ? 'Dean' : 'Adviser';
+                var revBy  = deanRevision2 ? 'Dean' : 'Adviser';
+                if(rejMsg){
+                    rejectionAlert = '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:flex-start;"><i class="fa-solid fa-circle-xmark" style="color:#ef4444;margin-top:2px;flex-shrink:0;"></i><div><strong style="color:#b91c1c;font-size:13px;">Rejected by ' + rejBy + '</strong><p style="color:#7f1d1d;font-size:13px;margin:4px 0 0;line-height:1.6;">' + rejMsg + '</p></div></div>';
+                } else if(revMsg){
+                    rejectionAlert = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:flex-start;"><i class="fa-solid fa-rotate-left" style="color:#f59e0b;margin-top:2px;flex-shrink:0;"></i><div><strong style="color:#92400e;font-size:13px;">' + revBy + ' requested revision</strong><p style="color:#78350f;font-size:13px;margin:4px 0 0;line-height:1.6;">' + revMsg + '</p></div></div>';
+                }
+
+                /* Build step indicators */
+                if(isReco){
+                    stepsHtml =
+                        '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;">'
+                        + '<div style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle-check"></i> Student Submitted</div>'
+                        + '<div style="color:' + advColor + ';font-weight:700;"><i class="fa-solid ' + advIcon + '"></i> Adviser (Final)</div>'
+                        + '</div>';
+                } else {
+                    var deanColor = deanSigned2 ? '#059669' : deanRejected2 ? '#ef4444' : deanRevision2 ? '#f59e0b' : '#94a3b8';
+                    var deanIcon  = deanSigned2 ? 'fa-circle-check' : deanRejected2 ? 'fa-circle-xmark' : deanRevision2 ? 'fa-rotate-left' : 'fa-circle';
+                    stepsHtml =
+                        '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;">'
+                        + '<div style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle-check"></i> Student Submitted</div>'
+                        + '<div style="color:' + advColor + ';font-weight:700;"><i class="fa-solid ' + advIcon + '"></i> Adviser</div>'
+                        + '<div style="color:' + deanColor + ';font-weight:700;"><i class="fa-solid ' + deanIcon + '"></i> Dean</div>'
+                        + '</div>';
+                }
+
+                return '<article class="request-card">'
+                    + '<h3>' + (item.document_title || 'E-Signature Document') + '</h3>'
+                    + '<div class="request-meta">'
+                    +   '<span class="badge ' + statusBadge + '">' + statusLabel + '</span>'
+                    +   '<span class="badge">E-Signature</span>'
+                    + '</div>'
+                    + '<p><strong>Document Code:</strong> ' + (item.document_code || 'N/A') + '</p>'
+                    + rejectionAlert
+                    + '<div class="esign-progress-container" style="margin-top:14px;margin-bottom:14px;">'
+                    +   '<div style="display:flex;justify-content:space-between;font-size:12px;color:#6d5f85;margin-bottom:6px;font-weight:600;"><span>Approval Tracking</span><span>' + pct + '%</span></div>'
+                    +   '<div style="width:100%;height:8px;background:#e2e8f0;border-radius:10px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:' + barColor + ';border-radius:10px;transition:width 0.5s;"></div></div>'
+                    +   stepsHtml
+                    + '</div>'
+                    + '<p><strong>Last Updated:</strong> ' + (item.updated_at ? new Date(item.updated_at).toLocaleString() : 'N/A') + '</p>'
+                    + '<button onclick="openTrackingModal(' + index + ')" style="width:100%;margin-top:4px;padding:12px 18px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border:none;border-radius:14px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity=\'0.88\'" onmouseout="this.style.opacity=\'1\'"><i class="fa-solid fa-eye"></i> View Progress</button>'
+                    + '</article>';
+            }).join('');
+        }
+
+        async function loadSigningDocuments(){
+            try{
+                const res = await fetch(`http://localhost:3005/student-signing-documents/${encodeURIComponent(userId)}`);
+                const data = await res.json();
+                signingDocuments = data.success ? (data.documents || []) : [];
+            }catch(error){
+                console.log(error);
+                signingDocuments = [];
+            }
+            renderSigningDocuments();
+        }
+
         async function loadConsultations(){
             const res = await fetch(`http://localhost:3005/student-consultations/${encodeURIComponent(userId)}`);
             const data = await res.json();
@@ -285,8 +514,259 @@
 
         async function loadAllData(){
             await loadContext();
+            await loadSigningDocuments();
             await loadConsultations();
         }
+
+        function openTrackingModal(index) {
+            const item = signingDocuments[index];
+            if (!item) return;
+
+            const trackingModal = document.getElementById("trackingModal");
+            const content = document.getElementById("trackingDetailsContent");
+            const isReco    = isRecommendationDoc(item);
+            const isEnvScan = isEnvScanningDoc(item);
+
+            var step1Color = '#10b981';
+            var viewPath = item.signed_file_path || item.file_path;
+
+            var stepsHtml, viewBtnLabel;
+            viewBtnLabel = item.signed_file_path ? 'View Signed Document' : 'View Uploaded Document';
+
+            if(isEnvScan){
+                /* ── 4-step: Student → Instructor → Chairperson → Dean ── */
+                var instrSigned   = ['Instructor Signed','Chairperson Signed','Approved'].includes(item.document_status) || item.instructor_review_status === 'Approved';
+                var instrRejected = !instrSigned && item.instructor_review_status === 'Rejected';
+                var instrRevision = !instrSigned && (item.instructor_review_status === 'Subject to Change' || item.instructor_review_status === 'For Revision');
+
+                var chairSigned   = ['Chairperson Signed','Approved'].includes(item.document_status) || item.chairperson_review_status === 'Approved';
+                var chairRejected = !chairSigned && item.chairperson_review_status === 'Rejected';
+                var chairRevision = !chairSigned && (item.chairperson_review_status === 'Subject to Change' || item.chairperson_review_status === 'For Revision');
+
+                var deanSigned    = item.document_status === 'Approved' || item.dean_review_status === 'Approved';
+                var deanRejected  = !deanSigned && item.dean_review_status === 'Rejected';
+                var deanRevision  = !deanSigned && (item.dean_review_status === 'Subject to Change' || item.dean_review_status === 'For Revision');
+
+                var s2Color = instrSigned ? '#10b981' : instrRejected ? '#ef4444' : instrRevision ? '#f59e0b' : '#cbd5e1';
+                var s3Color = chairSigned ? '#10b981' : chairRejected ? '#ef4444' : chairRevision ? '#f59e0b' : '#cbd5e1';
+                var s4Color = deanSigned  ? '#10b981' : deanRejected  ? '#ef4444' : deanRevision  ? '#f59e0b' : '#cbd5e1';
+                var l1Color = instrSigned  ? '#10b981' : '#e2e8f0';
+                var l2Color = chairSigned  ? '#10b981' : '#e2e8f0';
+                var l3Color = deanSigned   ? '#10b981' : '#e2e8f0';
+
+                var instrText, instrTextColor;
+                if(instrSigned)        { instrText = 'Signed by ' + (item.instructor_name || 'Instructor');           instrTextColor = '#10b981'; }
+                else if(instrRejected) { instrText = 'Rejected by ' + (item.instructor_name || 'Instructor');         instrTextColor = '#ef4444'; }
+                else if(instrRevision) { instrText = 'Revision requested by ' + (item.instructor_name || 'Instructor'); instrTextColor = '#f59e0b'; }
+                else                   { instrText = 'Waiting for instructor to review';                               instrTextColor = '#64748b'; }
+
+                var chairText, chairTextColor;
+                if(chairSigned)        { chairText = 'Signed by ' + (item.chairperson_name || 'Program Chairperson');           chairTextColor = '#10b981'; }
+                else if(chairRejected) { chairText = 'Rejected by ' + (item.chairperson_name || 'Program Chairperson');         chairTextColor = '#ef4444'; }
+                else if(chairRevision) { chairText = 'Revision requested by ' + (item.chairperson_name || 'Program Chairperson'); chairTextColor = '#f59e0b'; }
+                else if(instrSigned)   { chairText = 'Waiting for Chairperson to sign';                                          chairTextColor = '#64748b'; }
+                else                   { chairText = 'Waiting for instructor first';                                              chairTextColor = '#94a3b8'; }
+
+                var deanText, deanTextColor;
+                if(deanSigned)         { deanText = 'Signed by ' + (item.dean_name || 'Dean');           deanTextColor = '#10b981'; }
+                else if(deanRejected)  { deanText = 'Rejected by ' + (item.dean_name || 'Dean');         deanTextColor = '#ef4444'; }
+                else if(deanRevision)  { deanText = 'Revision requested by ' + (item.dean_name || 'Dean'); deanTextColor = '#f59e0b'; }
+                else if(chairSigned)   { deanText = 'Waiting for Dean to sign';                           deanTextColor = '#64748b'; }
+                else                   { deanText = 'Waiting for chairperson first';                       deanTextColor = '#94a3b8'; }
+
+                function makeReasonHtml(rejected, revision, comment, rejectorLabel){
+                    if(!comment) return '';
+                    if(rejected){
+                        return '<div style="margin:6px 0 0;font-size:12px;background:#fef2f2;padding:8px 10px;border-radius:8px;color:#7f1d1d;border:1px solid #fecaca;"><strong>Reason:</strong> ' + comment + '</div>';
+                    } else if(revision){
+                        return '<div style="margin:6px 0 0;font-size:12px;background:#fffbeb;padding:8px 10px;border-radius:8px;color:#78350f;border:1px solid #fde68a;"><strong>Notes:</strong> ' + comment + '</div>';
+                    }
+                    return '<p style="margin:4px 0 0;font-size:12px;background:#f1f5f9;padding:8px;border-radius:8px;color:#475569;">"' + comment + '"</p>';
+                }
+
+                stepsHtml =
+                    '<div style="display:flex;flex-direction:column;gap:20px;margin-top:10px;position:relative;padding-left:24px;">'
+                    /* Step 1 - Student */
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + step1Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + step1Color + ';margin-top:2px;"></div>'
+                    +     '<div><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">1. Student Submitted</h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:#64748b;">Uploaded successfully.</p>'
+                    +     '<p style="margin:2px 0 0;font-size:11px;color:#94a3b8;">' + (item.submitted_at ? new Date(item.submitted_at).toLocaleString() : 'N/A') + '</p></div>'
+                    +   '</div>'
+                    /* Connector 1-2 */
+                    +   '<div style="position:absolute;left:7px;top:12px;height:62px;width:2px;background:' + l1Color + ';z-index:1;"></div>'
+                    /* Step 2 - Instructor */
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;margin-top:22px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + s2Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + s2Color + ';margin-top:2px;"></div>'
+                    +     '<div style="flex:1;"><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">2. Instructor Review</h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:' + instrTextColor + ';font-weight:600;">' + instrText + '</p>'
+                    +     makeReasonHtml(instrRejected, instrRevision, item.instructor_review_comment, 'Instructor')
+                    +     '<p style="margin:4px 0 0;font-size:11px;color:#94a3b8;">' + (item.instructor_reviewed_at ? new Date(item.instructor_reviewed_at).toLocaleString() : 'Pending') + '</p></div>'
+                    +   '</div>'
+                    /* Connector 2-3 */
+                    +   '<div style="position:absolute;left:7px;top:100px;height:62px;width:2px;background:' + l2Color + ';z-index:1;"></div>'
+                    /* Step 3 - Chairperson */
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;margin-top:22px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + s3Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + s3Color + ';margin-top:2px;"></div>'
+                    +     '<div style="flex:1;"><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">3. Program Chairperson Review</h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:' + chairTextColor + ';font-weight:600;">' + chairText + '</p>'
+                    +     makeReasonHtml(chairRejected, chairRevision, item.chairperson_review_comment, 'Chairperson')
+                    +     '<p style="margin:4px 0 0;font-size:11px;color:#94a3b8;">' + (item.chairperson_reviewed_at ? new Date(item.chairperson_reviewed_at).toLocaleString() : 'Pending') + '</p></div>'
+                    +   '</div>'
+                    /* Connector 3-4 */
+                    +   '<div style="position:absolute;left:7px;top:186px;height:62px;width:2px;background:' + l3Color + ';z-index:1;"></div>'
+                    /* Step 4 - Dean */
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;margin-top:22px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + s4Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + s4Color + ';margin-top:2px;"></div>'
+                    +     '<div style="flex:1;"><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">4. Dean Review <span style="font-size:11px;color:#7c3aed;font-weight:600;">(Final Approval)</span></h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:' + deanTextColor + ';font-weight:600;">' + deanText + '</p>'
+                    +     makeReasonHtml(deanRejected, deanRevision, item.dean_review_comment, 'Dean')
+                    +     '<p style="margin:2px 0 0;font-size:11px;color:#94a3b8;">' + (item.dean_reviewed_at ? new Date(item.dean_reviewed_at).toLocaleString() : 'Pending') + '</p></div>'
+                    +   '</div>'
+                    + '</div>';
+
+            } else if(isReco){
+                /* ── 2-step: Student → Adviser (final) ── */
+                var adviserApproved = item.document_status === 'Approved' || item.adviser_review_status === 'Approved';
+                var adviserRejected = !adviserApproved && item.adviser_review_status === 'Rejected';
+                var adviserRevision = !adviserApproved && (item.adviser_review_status === 'Subject to Change' || item.adviser_review_status === 'For Revision');
+
+                var step2Color = adviserApproved ? '#10b981' : adviserRejected ? '#ef4444' : adviserRevision ? '#f59e0b' : '#cbd5e1';
+                var line1Color = adviserApproved ? '#10b981' : '#e2e8f0';
+
+                var advStepText, advStepColor;
+                if(adviserApproved){       advStepText = 'Signed & approved by ' + (item.adviser_name || 'Adviser'); advStepColor = '#10b981'; }
+                else if(adviserRejected){  advStepText = 'Rejected by ' + (item.adviser_name || 'Adviser');          advStepColor = '#ef4444'; }
+                else if(adviserRevision){  advStepText = 'Revision requested by ' + (item.adviser_name || 'Adviser'); advStepColor = '#f59e0b'; }
+                else {                     advStepText = 'Waiting for adviser to review';                            advStepColor = '#64748b'; }
+
+                var advReasonHtml = '';
+                if((adviserRejected || adviserRevision) && item.adviser_review_comment){
+                    var bg = adviserRejected ? '#fef2f2' : '#fffbeb';
+                    var co = adviserRejected ? '#7f1d1d' : '#78350f';
+                    var bo = adviserRejected ? '#fecaca' : '#fde68a';
+                    advReasonHtml = '<div style="margin:6px 0 0;font-size:12px;background:' + bg + ';padding:8px 10px;border-radius:8px;color:' + co + ';border:1px solid ' + bo + ';"><strong>' + (adviserRejected ? 'Reason:' : 'Notes:') + '</strong> ' + item.adviser_review_comment + '</div>';
+                } else if(item.adviser_review_comment && adviserApproved){
+                    advReasonHtml = '<p style="margin:4px 0 0;font-size:12px;background:#f1f5f9;padding:8px;border-radius:8px;color:#475569;">"' + item.adviser_review_comment + '"</p>';
+                }
+
+                stepsHtml =
+                    '<div style="display:flex;flex-direction:column;gap:20px;margin-top:10px;position:relative;padding-left:24px;">'
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + step1Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + step1Color + ';margin-top:2px;"></div>'
+                    +     '<div><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">1. Student Submitted</h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:#64748b;">Uploaded successfully.</p>'
+                    +     '<p style="margin:2px 0 0;font-size:11px;color:#94a3b8;">' + (item.submitted_at ? new Date(item.submitted_at).toLocaleString() : 'N/A') + '</p></div>'
+                    +   '</div>'
+                    +   '<div style="position:absolute;left:7px;top:12px;height:55px;width:2px;background:' + line1Color + ';z-index:1;"></div>'
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;margin-top:20px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + step2Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + step2Color + ';margin-top:2px;"></div>'
+                    +     '<div style="flex:1;"><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">2. Adviser Review <span style="font-size:11px;color:#7c3aed;font-weight:600;">(Final Approval)</span></h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:' + advStepColor + ';font-weight:600;">' + advStepText + '</p>'
+                    +     advReasonHtml
+                    +     '<p style="margin:4px 0 0;font-size:11px;color:#94a3b8;">' + (item.adviser_reviewed_at ? new Date(item.adviser_reviewed_at).toLocaleString() : 'Pending') + '</p></div>'
+                    +   '</div>'
+                    + '</div>';
+
+            } else {
+                /* ── 3-step: Student → Adviser → Dean ── */
+                var deanSigned      = item.dean_review_status === 'Approved' || item.document_status === 'Approved';
+                var adviserSigned   = deanSigned || item.adviser_review_status === 'Approved' || item.document_status === 'Adviser Signed';
+                var adviserRejected2 = !adviserSigned && item.adviser_review_status === 'Rejected';
+                var deanRejected    = !deanSigned && item.dean_review_status === 'Rejected';
+                var adviserRevision2 = !adviserSigned && (item.adviser_review_status === 'Subject to Change' || item.adviser_review_status === 'For Revision');
+                var deanRevision    = !deanSigned && (item.dean_review_status === 'Subject to Change' || item.dean_review_status === 'For Revision');
+
+                var step2Color3 = adviserSigned ? '#10b981' : adviserRejected2 ? '#ef4444' : adviserRevision2 ? '#f59e0b' : '#cbd5e1';
+                var step3Color  = deanSigned ? '#10b981' : deanRejected ? '#ef4444' : deanRevision ? '#f59e0b' : '#cbd5e1';
+                var line1Color3 = adviserSigned ? '#10b981' : '#e2e8f0';
+                var line2Color3 = deanSigned ? '#10b981' : '#e2e8f0';
+
+                var advStepText3, advStepColor3;
+                if(adviserSigned){        advStepText3 = 'Signed by ' + (item.adviser_name || 'Adviser');             advStepColor3 = '#10b981'; }
+                else if(adviserRejected2){advStepText3 = 'Rejected by ' + (item.adviser_name || 'Adviser');           advStepColor3 = '#ef4444'; }
+                else if(adviserRevision2){advStepText3 = 'Revision requested by ' + (item.adviser_name || 'Adviser'); advStepColor3 = '#f59e0b'; }
+                else {                    advStepText3 = 'Waiting for adviser to review';                             advStepColor3 = '#64748b'; }
+
+                var deanStepText, deanStepColor;
+                if(deanSigned){        deanStepText = 'Signed by ' + (item.dean_name || 'Dean');             deanStepColor = '#10b981'; }
+                else if(deanRejected){ deanStepText = 'Rejected by ' + (item.dean_name || 'Dean');           deanStepColor = '#ef4444'; }
+                else if(deanRevision){ deanStepText = 'Revision requested by ' + (item.dean_name || 'Dean'); deanStepColor = '#f59e0b'; }
+                else if(adviserSigned){ deanStepText = 'Waiting for Dean to sign';                           deanStepColor = '#64748b'; }
+                else {                  deanStepText = 'Waiting for adviser first';                           deanStepColor = '#94a3b8'; }
+
+                var advReasonHtml3 = '';
+                if((adviserRejected2 || adviserRevision2) && item.adviser_review_comment){
+                    var bg3 = adviserRejected2 ? '#fef2f2' : '#fffbeb';
+                    var co3 = adviserRejected2 ? '#7f1d1d' : '#78350f';
+                    var bo3 = adviserRejected2 ? '#fecaca' : '#fde68a';
+                    advReasonHtml3 = '<div style="margin:6px 0 0;font-size:12px;background:' + bg3 + ';padding:8px 10px;border-radius:8px;color:' + co3 + ';border:1px solid ' + bo3 + ';"><strong>' + (adviserRejected2 ? 'Reason:' : 'Notes:') + '</strong> ' + item.adviser_review_comment + '</div>';
+                } else if(item.adviser_review_comment && adviserSigned){
+                    advReasonHtml3 = '<p style="margin:4px 0 0;font-size:12px;background:#f1f5f9;padding:8px;border-radius:8px;color:#475569;">"' + item.adviser_review_comment + '"</p>';
+                }
+
+                var deanReasonHtml = '';
+                if((deanRejected || deanRevision) && item.dean_review_comment){
+                    var bgD = deanRejected ? '#fef2f2' : '#fffbeb';
+                    var coD = deanRejected ? '#7f1d1d' : '#78350f';
+                    var boD = deanRejected ? '#fecaca' : '#fde68a';
+                    deanReasonHtml = '<div style="margin:6px 0 0;font-size:12px;background:' + bgD + ';padding:8px 10px;border-radius:8px;color:' + coD + ';border:1px solid ' + boD + ';"><strong>' + (deanRejected ? 'Reason:' : 'Notes:') + '</strong> ' + item.dean_review_comment + '</div>';
+                } else if(item.dean_review_comment && deanSigned){
+                    deanReasonHtml = '<p style="margin:4px 0 0;font-size:12px;background:#f1f5f9;padding:8px;border-radius:8px;color:#475569;">"' + item.dean_review_comment + '"</p>';
+                }
+
+                stepsHtml =
+                    '<div style="display:flex;flex-direction:column;gap:20px;margin-top:10px;position:relative;padding-left:24px;">'
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + step1Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + step1Color + ';margin-top:2px;"></div>'
+                    +     '<div><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">1. Student Submitted</h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:#64748b;">Uploaded successfully.</p>'
+                    +     '<p style="margin:2px 0 0;font-size:11px;color:#94a3b8;">' + (item.submitted_at ? new Date(item.submitted_at).toLocaleString() : 'N/A') + '</p></div>'
+                    +   '</div>'
+                    +   '<div style="position:absolute;left:7px;top:12px;height:60px;width:2px;background:' + line1Color3 + ';z-index:1;"></div>'
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;margin-top:25px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + step2Color3 + ';border:3px solid white;box-shadow:0 0 0 1px ' + step2Color3 + ';margin-top:2px;"></div>'
+                    +     '<div style="flex:1;"><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">2. Adviser Review</h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:' + advStepColor3 + ';font-weight:600;">' + advStepText3 + '</p>'
+                    +     advReasonHtml3
+                    +     '<p style="margin:4px 0 0;font-size:11px;color:#94a3b8;">' + (item.adviser_reviewed_at ? new Date(item.adviser_reviewed_at).toLocaleString() : 'Pending') + '</p></div>'
+                    +   '</div>'
+                    +   '<div style="position:absolute;left:7px;top:95px;height:65px;width:2px;background:' + line2Color3 + ';z-index:1;"></div>'
+                    +   '<div style="position:relative;z-index:2;display:flex;gap:12px;margin-top:25px;">'
+                    +     '<div style="width:16px;height:16px;border-radius:50%;background:' + step3Color + ';border:3px solid white;box-shadow:0 0 0 1px ' + step3Color + ';margin-top:2px;"></div>'
+                    +     '<div style="flex:1;"><h5 style="margin:0;font-size:13px;color:#1e293b;font-weight:700;">3. Dean Review (Final Approval)</h5>'
+                    +     '<p style="margin:4px 0 0;font-size:12px;color:' + deanStepColor + ';font-weight:600;">' + deanStepText + '</p>'
+                    +     deanReasonHtml
+                    +     '<p style="margin:2px 0 0;font-size:11px;color:#94a3b8;">' + (item.dean_reviewed_at ? new Date(item.dean_reviewed_at).toLocaleString() : 'Pending') + '</p></div>'
+                    +   '</div>'
+                    + '</div>';
+            }
+
+            content.innerHTML =
+                '<div style="background:#f8fafc;border-radius:16px;padding:16px;border:1px solid #e2e8f0;">'
+                +   '<h4 style="margin:0;color:#1e293b;font-size:14px;font-weight:700;">' + item.document_title + '</h4>'
+                +   '<p style="margin:4px 0 0;color:#64748b;font-size:12px;">Code: ' + (item.document_code || 'N/A') + '</p>'
+                + '</div>'
+                + stepsHtml
+                + '<div style="margin-top:24px;padding-top:16px;border-top:1px solid #f1f5f9;">'
+                +   '<a href="http://localhost:3005' + viewPath + '" target="_blank" '
+                +      'style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 18px;'
+                +      'background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border-radius:14px;'
+                +      'font-weight:700;font-size:14px;text-decoration:none;transition:opacity 0.2s;box-sizing:border-box;"'
+                +      'onmouseover="this.style.opacity=\'0.88\'" onmouseout="this.style.opacity=\'1\'">'
+                +     '<i class="fa-solid fa-file-pdf"></i> ' + viewBtnLabel
+                +   '</a>'
+                + '</div>';
+
+            trackingModal.style.display = 'flex';
+        }
+
+        function closeTrackingModal() {
+            document.getElementById("trackingModal").style.display = "none";
+        }
+
+        window.openTrackingModal = openTrackingModal;
+        window.closeTrackingModal = closeTrackingModal;
 
         (async function init(){
             toggleTopicField();
@@ -294,6 +774,23 @@
             await initStudentGroupGate({ requireGroup:true, activeNav:"nav-consultation" });
         })();
     </script>
+
+    <!-- SIGNATURE TRACKING MODAL -->
+    <div class="modal-overlay" id="trackingModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
+        <div class="modal-box" style="background:white; padding:30px; border-radius:24px; width:520px; max-width:92%; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.18);">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:12px; flex-shrink:0;">
+                <h2 style="color:#2e1065; font-size:20px; font-weight:700;">Acceptance Signature Tracking</h2>
+                <button type="button" class="close-modal-btn" onclick="closeTrackingModal()" style="width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="trackingDetailsContent" style="display:flex; flex-direction:column; gap:16px; overflow-y:auto; padding-right:4px;">
+                <!-- details will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+
     <script src="../shared/portal-notifications.js" defer></script>
 </body>
 </html>

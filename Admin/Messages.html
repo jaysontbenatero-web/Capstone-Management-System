@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -30,12 +30,12 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     >
 
-    <link rel="stylesheet" href="AdminTheme.css">
-
     <link
         rel="stylesheet"
         href="Messages.css"
     >
+
+    <link rel="stylesheet" href="AdminTheme.css">
 
 </head>
 
@@ -421,6 +421,9 @@
 
         filtered.forEach((user) => {
             const initials = getInitials(user.fullname);
+            const avatarContent = user.profile_image
+                ? `<img src="http://localhost:3005${user.profile_image}" alt="Profile">`
+                : initials;
             const isSelected = activeReceiverId === user.user_id;
             const lastMessage = lastMessageMap[user.user_id];
             const hasUnread = unreadMap[user.user_id] === 1;
@@ -445,7 +448,7 @@
 
             item.innerHTML = `
                 <div class="contact-avatar-wrap">
-                    <div class="contact-avatar">${initials}</div>
+                    <div class="contact-avatar">${avatarContent}</div>
                     ${hasUnread ? `<span class="online-message-dot"></span>` : ""}
                 </div>
 
@@ -492,8 +495,12 @@
         document.getElementById("chatWindowContent").style.display = "flex";
 
         const initials = getInitials(user.fullname);
-
-        document.getElementById("activeChatAvatar").innerText = initials;
+        const avatarEl = document.getElementById("activeChatAvatar");
+        if (user.profile_image) {
+            avatarEl.innerHTML = `<img src="http://localhost:3005${user.profile_image}" alt="Profile">`;
+        } else {
+            avatarEl.innerText = initials;
+        }
         document.getElementById("activeChatName").innerText = user.fullname || "Unknown User";
 
         const detailLabel = user.role === "student"

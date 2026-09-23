@@ -392,12 +392,13 @@ body{
     margin:0;
     font-size:1.02rem;
     font-weight:600;
+    color: #ffffff !important;
 }
 
 .group-bundle-title p{
     margin:4px 0 0;
     font-size:0.8rem;
-    opacity:0.9;
+    color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .group-bundle-badges{
@@ -434,11 +435,55 @@ body{
     padding:0.35rem 1.25rem 1.1rem;
 }
 
+.group-col-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0.6rem 0 0.4rem;
+    margin-bottom:0.2rem;
+    border-bottom:2px solid #ede9fe;
+}
+
+.group-col-header .col-doc-label{
+    font-size:0.72rem;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#7c3aed;
+}
+
+.group-col-header .col-right-labels{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+}
+
+.group-col-header .col-right-labels .lbl-status{
+    font-size:0.72rem;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#7c3aed;
+    width:95px;
+    text-align:center;
+}
+
+.group-col-header .col-right-labels .lbl-action{
+    font-size:0.72rem;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#7c3aed;
+    width:88px;
+    text-align:center;
+}
+
 .group-doc-row{
     display:flex;
-    flex-wrap:wrap;
     align-items:center;
-    gap:12px;
+    justify-content:space-between;
+    gap:16px;
     padding:0.95rem 0;
     border-bottom:1px dashed #ece3ff;
 }
@@ -495,9 +540,26 @@ body{
 
 .group-doc-actions{
     display:flex;
-    flex-wrap:wrap;
-    gap:8px;
+    gap:10px;
     align-items:center;
+    flex-shrink:0;
+}
+
+.group-doc-actions .view-file-btn,
+.group-doc-actions .review-btn,
+.group-doc-actions .sign-doc-btn{
+    flex:none;
+    padding:9px 12px;
+    width:36px;
+    height:36px;
+    border-radius:12px;
+    box-sizing:border-box;
+}
+
+.group-doc-actions .document-meta{
+    width:95px;
+    display:flex;
+    justify-content:center;
 }
 
 .document-card,
@@ -612,9 +674,13 @@ body{
     margin-top:auto;
 }
 
+.card-actions .view-file-btn,
+.card-actions .review-btn{
+    flex:1;
+}
+
 .view-file-btn,
 .review-btn{
-    flex:1;
     border:none;
     text-decoration:none;
     padding:12px 14px;
@@ -1204,6 +1270,7 @@ body{
     line-height:1.7;
 }
 
+
 .esign-revision-toggle-btn{
     border:none;
     background:#fff7ed;
@@ -1216,8 +1283,10 @@ body{
     font-size:13px;
     display:flex;
     align-items:center;
+    justify-content:center;
     gap:8px;
     transition:0.3s;
+    width:100%;
 }
 
 .esign-revision-toggle-btn:hover,
@@ -1226,6 +1295,19 @@ body{
     color:white;
     border-color:#ea580c;
 }
+
+.esign-action-stack{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.esign-action-stack > button,
+.esign-action-stack > a{
+    width:100%;
+    justify-content:center;
+}
+
 
 /* ================= PROGRESS TRACKER ================= */
 
@@ -1542,4 +1624,202 @@ body{
         align-items:flex-start;
     }
 
+}
+
+/* ================= SIGNING REQUESTS — RED DOT & COMPACT ROWS ================= */
+
+/* Red dot on the group card header next to group name */
+.signing-group-red-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+    animation: signingDotPulse 1.8s ease-in-out infinite;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
+/* Small red dot on the individual document row */
+.signing-unread-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+@keyframes signingDotPulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3); }
+    50%       { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+}
+
+/* Compact signing doc row overrides */
+.signing-doc-row {
+    padding: 0.75rem 0;
+    gap: 10px;
+}
+
+.group-doc-actions {
+    position: relative;
+    z-index: 3;
+}
+
+body.esign-modal-open{
+    overflow:hidden;
+}
+
+#eSignModal.modal-overlay{
+    z-index:10050;
+}
+
+#eSignModal.modal-overlay.active{
+    display:flex !important;
+    pointer-events:auto !important;
+    visibility:visible !important;
+    opacity:1 !important;
+}
+
+.esign-workspace-overlay{
+    padding:12px;
+}
+
+.esign-workspace-modal{
+    width:min(1200px, 96vw);
+    max-height:94vh;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+}
+
+.esign-workspace-grid{
+    display:grid;
+    grid-template-columns:minmax(0, 1.4fr) minmax(280px, 0.8fr);
+    gap:18px;
+    min-height:0;
+    flex:1;
+}
+
+.esign-pdf-panel,
+.esign-side-panel{
+    min-height:0;
+}
+
+.esign-pdf-panel{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.esign-pdf-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    font-size:13px;
+    color:#5b4b7a;
+}
+
+.esign-page-nav{
+    display:flex;
+    gap:8px;
+}
+
+.esign-nav-btn{
+    border:1px solid #ddd6fe;
+    background:#faf8ff;
+    color:#6d28d9;
+    border-radius:10px;
+    width:34px;
+    height:34px;
+    cursor:pointer;
+}
+
+.esign-pdf-viewport{
+    position:relative;
+    overflow:auto;
+    border:1px solid #ddd6fe;
+    border-radius:16px;
+    background:#f8fafc;
+    max-height:68vh;
+}
+
+#pdfPreviewCanvas{
+    display:block;
+    max-width:100%;
+}
+
+.signature-placement-layer{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
+
+.draggable-signature{
+    position:absolute;
+    width:150px;
+    pointer-events:auto;
+    cursor:move;
+    user-select:none;
+    filter:drop-shadow(0 4px 10px rgba(46,16,101,0.18));
+}
+
+.esign-side-panel{
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    max-height:72vh;
+}
+
+.compact-detail h3{
+    font-size:14px;
+}
+
+.compact-section p{
+    font-size:13px;
+}
+
+.compact-esign-draw .signature-canvas{
+    width:100%;
+    border-radius:12px;
+    border:1px dashed #c4b5fd;
+    background:#fff;
+}
+
+.esign-place-btn{
+    width:100%;
+    margin-top:10px;
+    border:none;
+    border-radius:12px;
+    padding:11px 14px;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.esign-action-stack{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.reject-outline-btn{
+    border:1px solid #fecaca;
+    color:#b91c1c;
+}
+
+@media (max-width: 980px){
+    .esign-workspace-grid{
+        grid-template-columns:1fr;
+    }
+
+    .esign-side-panel{
+        max-height:none;
+    }
 }
