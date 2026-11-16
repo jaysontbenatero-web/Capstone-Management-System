@@ -1,23 +1,57 @@
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const mysql = require("mysql2/promise");
+const bcrypt = require("bcryptjs");
 
-const ADMINS = [
-    { user_id: "ADM2026-0002", fullname: "ADM2026-0002", password: "12345" },
-    { user_id: "ADM2026-0003", fullname: "ADM2026-0003", password: "12345" }
-];
+/**
+ * add-admins.js — seed new admin accounts.
+ * User IDs are generated dynamically: ADM<currentYear>-XXXX
+ * Edit the ADMINS array below to add more accounts.
+ * Duplicate user_ids are skipped automatically.
+ */
 
 async function main() {
+    const year = new Date().getFullYear();
+
     const conn = await mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "capstone123",
+        password: process.env.DB_PASSWORD,
         database: "capx_db",
         port: 3307
     });
 
-    const [existing] = await conn.query(
-        "SELECT user_id, fullname, password, role, position, adviser_access, panelist_access, instructor_access, force_password_change FROM users WHERE role = 'admin'"
+    // Get the last ADM<year> number so we can continue the sequence
+    const [lastRows] = await conn.query(
+        `SELECT user_id FROM users
+         WHERE user_id LIKE 'ADM${year}-%'
+         ORDER BY CAST(SUBSTRING_INDEX(user_id, '-', -1) AS UNSIGNED) DESC
+         LIMIT 1`
     );
-    console.log("Existing admin template:", existing[0] || "(none)");
+
+    let nextNumber = 1;
+    if (lastRows.length > 0) {
+        const lastId = lastRows[0].user_id;
+        nextNumber = parseInt(lastId.split("-")[1]) + 1;
+    }
+
+    // ── Define how many new admin accounts to seed ───────────────────────────
+    // Change this number to seed more or fewer accounts at once
+    const COUNT_TO_ADD = 2;
+
+    const ADMINS = [];
+    for (let i = 0; i < COUNT_TO_ADD; i++) {
+        const uid = `ADM${year}-${String(nextNumber + i).padStart(4, "0")}`;
+        ADMINS.push({ user_id: uid, fullname: uid, password: "12345" });
+    }
+
+    console.log(`Year: ${year} | Starting from ADM${year}-${String(nextNumber).padStart(4, "0")}`);
+    console.log("Accounts to add:", ADMINS.map(a => a.user_id).join(", "));
+
+    // Get template from existing admin (copies position, access flags, etc.)
+    const [existing] = await conn.query(
+        "SELECT user_id, fullname, password, role, position, adviser_access, panelist_access, instructor_access, force_password_change FROM users WHERE role = 'admin' ORDER BY id LIMIT 1"
+    );
+    console.log("Template admin:", existing[0] ? existing[0].user_id : "(none — using defaults)");
 
     const template = existing[0] || {
         role: "admin",
@@ -39,6 +73,8 @@ async function main() {
             continue;
         }
 
+        const hashedPassword = await bcrypt.hash(String(admin.password), 10);
+
         await conn.query(
             `INSERT INTO users
             (
@@ -49,7 +85,7 @@ async function main() {
             [
                 admin.user_id,
                 admin.fullname,
-                admin.password,
+                hashedPassword,
                 template.position || "Dean",
                 template.program || "Dean Office",
                 template.adviser_access ?? 1,
@@ -59,7 +95,7 @@ async function main() {
             ]
         );
 
-        console.log(`Added: ${admin.user_id} (${admin.fullname}) password: ${admin.password}`);
+        console.log(`Added: ${admin.user_id} password: ${admin.password}`);
     }
 
     const [all] = await conn.query(

@@ -611,6 +611,20 @@ body{
     overflow-wrap:anywhere;
 }
 
+.preserved-text-content{
+    white-space:pre-wrap;
+    word-wrap:break-word;
+    overflow-wrap:anywhere;
+    line-height:1.75;
+    font-size:14px;
+    color:#2e1065;
+}
+
+.preserved-text-content p{
+    white-space:pre-wrap;
+    margin-bottom:14px;
+}
+
 /* ================= RESPONSIVE ================= */
 
 @media(max-width:1100px) {
@@ -831,9 +845,12 @@ body{
 
 .repo-toolbar .search-wrapper {
     position: relative;
+    display: flex;
+    align-items: center;
     flex: 1;
     min-width: 240px;
     max-width: 360px;
+    overflow: hidden;
 }
 
 .repo-toolbar .search-wrapper i {
@@ -846,7 +863,8 @@ body{
 }
 
 .repo-toolbar .search-wrapper input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     border: 1px solid #e9d5ff;
     background: white;
     border-radius: 12px;
@@ -855,6 +873,9 @@ body{
     color: #2e1065;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .repo-toolbar .search-wrapper input:focus {
@@ -1110,3 +1131,16 @@ body{
     font-size: 14px;
     padding: 0 4px;
 }
+
+/* ================= SEARCH HIGHLIGHT ================= */
+
+mark.search-highlight {
+    background-color: #fef08a !important;
+    color: #854d0e !important;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px #eab308;
+    display: inline;
+}
+

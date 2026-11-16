@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Capstone Repository | CMS</title>
+
+    <!-- GOOGLE FONT -->
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <!-- CSS -->
+
+    <link
+        rel="stylesheet"
+        href="../Repository.css"
+    >
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+</head>
+
+<body class="admin-portal">
+
+     <!-- SIDEBAR -->
+<aside class="sidebar admin-sidebar">
+
+    <div>
+
+        <!-- LOGO -->
+        <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Instructor Portal</p>
+                </div>
+            </div>
+
+        <!-- MENU -->
+        <div class="menu">
+
+            <div class="menu-title">
+                Main
+            </div>
+
+            <!-- HOME -->
+            <div
+                class="menu-item"
+                id="nav-home"
+                onclick="window.location.href='InstructorDash.html'"
+            >
+                <i class="fa-solid fa-house"></i>
+                <span>
+                    Dashboard
+                </span>
+            </div>
+
+            <!-- MANAGEMENT -->
+            <div class="menu-title">
+                Management
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-enroll"
+                onclick="window.location.href='STU_Enroll.html'"
+            >
+                <i class="fa-solid fa-user-plus"></i>
+                <span>
+                    Register Students
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-adviser"
+                onclick="window.location.href='Manage_Adviser.html'"
+            >
+                <i class="fa-solid fa-user-tie"></i>
+                <span>
+                    Manage Adviser
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-groups"
+                onclick="window.location.href='Capstone_Group.html'"
+            >
+                <i class="fa-solid fa-users-gear"></i>
+                <span>
+                    Capstone Groups
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-document"
+                onclick="window.location.href='Document_Review.html'"
+            >
+                <i class="fa-solid fa-file-circle-check"></i>
+                <span>
+                    Document Review
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-defense"
+                onclick="window.location.href='Defense_Schedule.html'"
+            >
+                <i class="fa-solid fa-calendar-alt"></i>
+                <span>
+                    Schedule Defense
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-consultation"
+                onclick="window.location.href='Consultation.html'"
+            >
+                <i class="fa-solid fa-comments"></i>
+                <span>
+                    Consultation
+                </span>
+            </div>
+
+            <div
+                class="menu-item"
+                id="nav-panel-evaluation"
+                onclick="window.location.href='Panel_Evaluation.html'"
+            >
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>
+                    Panel Evaluation
+                </span>
+            </div>
+
+            <!-- CAPSTONE REPOSITORY -->
+            <div
+                class="menu-item active"
+                id="nav-repository"
+                onclick="window.location.href='Repository.html'"
+            >
+                <i class="fa-solid fa-book-open"></i>
+                <span>
+                    Repository
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="menu-item logout-btn" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </div>
+    </div>
+
+</aside>
+
+    <!-- MAIN -->
+
+    <main class="main admin-main">
+
+        <!-- HEADER -->
+
+        <header class="header admin-header">
+
+            <div>
+
+                <p class="breadcrumbs">
+                    <span>Pages</span> / Capstone Repository
+                </p>
+
+                <h1>
+                    Capstone Repository
+                </h1>
+
+            </div>
+
+        </header>
+
+        <!-- LAYOUT -->
+
+        <div class="repository-layout">
+
+            <!-- LEFT — form sticks to the top of the viewport when scrolling -->
+
+            <section class="form-panel form-panel-sticky">
+
+                <div class="form-panel-header">
+                    <div class="form-panel-header-icon">
+                        <i class="fa-solid fa-box-archive"></i>
+                    </div>
+                    <div>
+                        <h2>Add Approved Title</h2>
+                        <p>Archive a passed capstone project to the repository.</p>
+                    </div>
+                </div>
+
+                <form class="repository-form" id="repositoryForm" onsubmit="return false;">
+
+                    <div class="form-section">
+                        <p class="form-section-label">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            Program &amp; Title
+                        </p>
+
+                        <div class="form-group">
+                            <label for="program">Program <span class="required">*</span></label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-building-columns"></i>
+                                <select id="program" class="select-box">
+                                    <option value="">Select program</option>
+                                    <option value="IT">BSIT — Information Technology</option>
+                                    <option value="IS">BSIS — Information Systems</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="title">Capstone Title <span class="required">*</span></label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-heading"></i>
+                                <input type="text" id="title" class="input-box" placeholder="e.g. Smart Campus Navigation System">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <p class="form-section-label">
+                            <i class="fa-solid fa-file-lines"></i>
+                            Project Summary
+                        </p>
+
+                        <div class="form-group">
+                            <label for="abstract">Abstract <span class="required">*</span></label>
+                            <textarea id="abstract" class="textarea-box textarea-compact" rows="4" placeholder="Brief summary of the project..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="objectives">Objectives <span class="required">*</span></label>
+                            <textarea id="objectives" class="textarea-box textarea-compact" rows="4" placeholder="List the main objectives..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="research_problem">Research Problem <span class="required">*</span></label>
+                            <textarea id="research_problem" class="textarea-box textarea-compact" rows="3" placeholder="Describe the specific research problem addressed..."></textarea>
+                        </div>
+
+                        <div class="form-group form-group-last">
+                            <label for="methodology">Methodology <span class="required">*</span></label>
+                            <textarea id="methodology" class="textarea-box textarea-compact" rows="3" placeholder="Describe research design, data collection, algorithms, tools used..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <p class="form-section-label">
+                            <i class="fa-solid fa-users"></i>
+                            People
+                        </p>
+
+                        <div class="form-group">
+                            <label for="researchers">Researchers</label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-user-group"></i>
+                                <input type="text" id="researchers" class="input-box" placeholder="Names separated by commas">
+                            </div>
+                        </div>
+
+                        <div class="form-group form-group-last">
+                            <label for="adviser">Adviser</label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-user-tie"></i>
+                                <input type="text" id="adviser" class="input-box" placeholder="Adviser full name">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section form-section-last">
+                        <p class="form-section-label">
+                            <i class="fa-solid fa-tags"></i>
+                            Classification
+                        </p>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="category">Category</label>
+                                <div class="input-with-icon">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                    <select id="category" class="select-box">
+                                        <option value="">Select category</option>
+                                        <option>Artificial Intelligence</option>
+                                        <option>Web Development</option>
+                                        <option>Web Application</option>
+                                        <option>Mobile Development</option>
+                                        <option>Data Analytics</option>
+                                        <option>IoT</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="year">Year</label>
+                                <div class="input-with-icon">
+                                    <i class="fa-solid fa-calendar"></i>
+                                    <input type="number" id="year" class="input-box" placeholder="2026" min="2000" max="2099">
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="form-hint">
+                            <i class="fa-solid fa-circle-info"></i>
+                            Fields marked with <span class="required">*</span> are required.
+                        </p>
+                    </div>
+
+                    <div class="form-panel-footer">
+                        <button class="submit-btn" type="button" id="addBtn">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            Save to Repository
+                        </button>
+                    </div>
+
+                </form>
+
+            </section>
+
+            <!-- RIGHT — independent scroll; does not stretch the form column -->
+
+            <section class="archive-panel">
+
+                <!-- Stats Dashboard -->
+                <div class="repo-stats-dashboard">
+                    <div class="repo-stat-card total">
+                        <div class="stat-icon"><i class="fa-solid fa-database"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statTotalCount">0</h3>
+                            <p>Total Titles</p>
+                        </div>
+                    </div>
+                    <div class="repo-stat-card it">
+                        <div class="stat-icon"><i class="fa-solid fa-laptop-code"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statItCount">0</h3>
+                            <p>BSIT Titles</p>
+                        </div>
+                    </div>
+                    <div class="repo-stat-card is">
+                        <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statIsCount">0</h3>
+                            <p>BSIS Titles</p>
+                        </div>
+                    </div>
+                    <div class="repo-stat-card categories">
+                        <div class="stat-icon"><i class="fa-solid fa-tags"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statCatCount">0</h3>
+                            <p>Categories</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Toolbar -->
+                <div class="repo-toolbar">
+                    <div class="toolbar-row top">
+                        <div class="program-tabs">
+                            <button type="button" class="tab-btn active" data-program="all">All Programs</button>
+                            <button type="button" class="tab-btn" data-program="IT">BSIT</button>
+                            <button type="button" class="tab-btn" data-program="IS">BSIS</button>
+                        </div>
+                        <div class="view-toggles">
+                            <button type="button" class="view-toggle-btn active" id="viewGridBtn" title="Grid View">
+                                <i class="fa-solid fa-grip"></i>
+                            </button>
+                            <button type="button" class="view-toggle-btn" id="viewTableBtn" title="Table View">
+                                <i class="fa-solid fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-row bottom">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="archiveSearch" placeholder="Search title, objectives, problem, methodology, researchers...">
+                        </div>
+                        <div class="filters-wrapper">
+                            <select id="filterCategory" class="toolbar-select">
+                                <option value="all">All Categories</option>
+                                <option value="Artificial Intelligence">Artificial Intelligence</option>
+                                <option value="Web Development">Web Development</option>
+                                <option value="Web Application">Web Application</option>
+                                <option value="Mobile Development">Mobile Development</option>
+                                <option value="Data Analytics">Data Analytics</option>
+                                <option value="IoT">IoT</option>
+                            </select>
+                            <select id="filterYear" class="toolbar-select">
+                                <option value="all">All Years</option>
+                            </select>
+                            <select id="sortRepo" class="toolbar-select">
+                                <option value="year-desc">Newest Year First</option>
+                                <option value="year-asc">Oldest Year First</option>
+                                <option value="title-asc">Title (A-Z)</option>
+                                <option value="title-desc">Title (Z-A)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Repository Container -->
+                <div id="repoContainer" class="repo-grid-layout">
+                    <!-- Cards or table will render here -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="repo-pagination">
+                    <div class="pagination-info" id="paginationInfo">
+                        Showing 0-0 of 0 titles
+                    </div>
+                    <div class="pagination-controls" id="paginationControls">
+                        <!-- Buttons will dynamically render here -->
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL -->
+
+    <div
+        class="modal"
+        id="modal"
+    >
+
+        <div class="modal-content">
+
+            <h1 id="modalTitle"></h1>
+
+            <div
+                class="modal-abstract"
+                id="modalAbstract"
+            ></div>
+
+            <div class="details-grid">
+
+                <div class="detail-card">
+
+                    <h4>
+                        Program
+                    </h4>
+
+                    <p id="modalProgram"></p>
+
+                </div>
+
+                <div class="detail-card">
+
+                    <h4>
+                        Researchers
+                    </h4>
+
+                    <p id="modalResearchers"></p>
+
+                </div>
+
+                <div class="detail-card">
+
+                    <h4>
+                        Adviser
+                    </h4>
+
+                    <p id="modalAdviser"></p>
+
+                </div>
+
+                <div class="detail-card">
+
+                    <h4>
+                        Year
+                    </h4>
+
+                    <p id="modalYear"></p>
+
+                </div>
+
+            </div>
+
+            <button
+                class="modal-btn"
+                onclick="closeModal()"
+            >
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- SCRIPT -->
+
+    <script src="../Repository.js"></script>
+
+</body>
+
+</html>
+

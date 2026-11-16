@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -26,6 +26,9 @@
                 <div class="menu-item active" onclick="window.location.href='Consultation.html'"><i class="fa-solid fa-comments"></i><span>Consultation</span></div>
                 <div class="menu-item" id="nav-panel-evaluation" onclick="window.location.href='Panel_Evaluation.html'">
                     <i class="fa-solid fa-clipboard-list"></i><span>Panel Evaluation</span>
+                </div>
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-book-open"></i><span>Repository</span>
                 </div>
             </div>
         </div>
@@ -70,6 +73,9 @@
     </main>
 
     <script>
+        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+            ? `${window.location.protocol}//${window.location.hostname}:3005`
+            : `${window.location.protocol}//${window.location.hostname}:3005`;
         const facultyUserId = localStorage.getItem("userId");
         let consultations = [];
         let showingHistory = false;
@@ -129,7 +135,7 @@
             if(!scheduledDate){ alert("Please set a date for the consultation."); return; }
             if(!scheduledEndTime){ alert("Please set an end time."); return; }
 
-            const res = await fetch(`http://localhost:3005/faculty-consultations/${id}/schedule`, {
+            const res = await fetch(`${API_BASE}/faculty-consultations/${id}/schedule`, {
                 method:"PUT",
                 headers:{ "Content-Type":"application/json" },
                 body: JSON.stringify({
@@ -151,6 +157,21 @@
             const startStr = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : "";
             const endStr   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : "";
 
+            const docBlock = item.file_path ? `
+                <div style="margin:10px 0 12px 0;background:#faf5ff;border:1.5px solid #d8b4fe;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <i class="fa-solid fa-file-pdf" style="color:#ef4444;font-size:22px;flex-shrink:0;"></i>
+                        <div style="min-width:0;">
+                            <div style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px;">Attached Document</div>
+                            <div style="font-size:13px;font-weight:600;color:#2e1065;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${item.file_name || 'Document.pdf'}">${item.file_name || 'Document.pdf'}</div>
+                        </div>
+                    </div>
+                    <a href="${API_BASE}${item.file_path}" target="_blank" style="flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border-radius:10px;text-decoration:none;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(124,58,237,0.25);">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open PDF
+                    </a>
+                </div>
+            ` : "";
+
             if(isHistory){
                 return `
                     <article class="consultation-card history-card">
@@ -158,7 +179,8 @@
                         <h3>${item.consultation_code}</h3>
                         <p><strong>Student:</strong> ${item.student_name} (${item.student_user_id})</p>
                         <p><strong>Type:</strong> ${item.consultation_type}</p>
-                        <p><strong>Topic:</strong> ${item.topic || "N/A"}</p>
+                        ${item.file_name ? `<p><strong>Document:</strong> ${item.file_name}</p>` : (item.topic ? `<p><strong>Topic:</strong> ${item.topic}</p>` : "")}
+                        ${docBlock}
                         <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
                         <div class="sched-summary">
                             <i class="fa-solid fa-calendar-check"></i>
@@ -179,7 +201,8 @@
                     </div>
                     <p><strong>Student:</strong> ${item.student_name} (${item.student_user_id})</p>
                     <p><strong>Type:</strong> ${item.consultation_type}</p>
-                    <p><strong>Topic:</strong> ${item.topic || "N/A"}</p>
+                    ${item.file_name ? `<p><strong>Document:</strong> ${item.file_name}</p>` : (item.topic ? `<p><strong>Topic:</strong> ${item.topic}</p>` : "")}
+                    ${docBlock}
                     <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
                     <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
 
@@ -234,7 +257,7 @@
         }
 
         async function loadConsultations(){
-            const res = await fetch(`http://localhost:3005/faculty-consultations?facultyUserId=${encodeURIComponent(facultyUserId)}&assignedRole=Instructor`);
+            const res = await fetch(`${API_BASE}/faculty-consultations?facultyUserId=${encodeURIComponent(facultyUserId)}&assignedRole=Instructor`);
             const data = await res.json();
             consultations = data.success ? (data.consultations || []) : [];
             renderConsultations();

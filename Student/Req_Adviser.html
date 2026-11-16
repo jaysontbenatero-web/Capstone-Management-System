@@ -4,6 +4,9 @@
 <head>
 
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
     <meta
         name="viewport"
@@ -12,6 +15,19 @@
 
     <title>
         Request Adviser | CMS</title>
+
+    <script>
+        window.addEventListener('error', function(e) {
+            console.error('Portal Global Error:', e);
+            if (!document.getElementById('portalErrorBanner')) {
+                const b = document.createElement('div');
+                b.id = 'portalErrorBanner';
+                b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#dc2626;color:white;padding:10px 16px;font-family:sans-serif;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 14px rgba(0,0,0,0.3);';
+                b.innerHTML = '<span><strong>Script Error:</strong> ' + (e.message || 'Error occurred') + ' (' + (e.filename || '').split('/').pop() + ':' + e.lineno + ')</span><button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,0.25);border:none;color:white;padding:3px 8px;border-radius:4px;cursor:pointer;">Dismiss</button>';
+                (document.body ? document.body.prepend(b) : document.addEventListener('DOMContentLoaded', () => document.body.prepend(b)));
+            }
+        });
+    </script>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -25,12 +41,42 @@
 
     <link
         rel="stylesheet"
-        href="Req_Adviser.css"
+        href="Req_Adviser.css?v=20261114_01"
     >
 
-    <link rel="stylesheet" href="../Admin/AdminTheme.css">
-    <link rel="stylesheet" href="student-portal.css">
+    <link rel="stylesheet" href="../Admin/AdminTheme.css?v=20261114_01">
+    <link rel="stylesheet" href="student-portal.css?v=20261114_01">
         <style>
+        /* Clean Semantic Highlighter Classes */
+        mark.sim-hl {
+            padding: 0 3px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline;
+            line-height: inherit;
+            vertical-align: baseline;
+        }
+        mark.sim-hl-title {
+            background: #fde68a;
+            color: #b45309;
+        }
+        mark.sim-hl-abstract {
+            background: #bfdbfe;
+            color: #1d4ed8;
+        }
+        mark.sim-hl-objectives {
+            background: #bbf7d0;
+            color: #15803d;
+        }
+        mark.sim-hl-semantic {
+            background: #fed7aa;
+            color: #9a3412;
+            border: 1px solid #f97316;
+        }
+        mark.sim-hl-synonym {
+            background: #e9d5ff;
+            color: #7c3aed;
+        }
             /* Similarity rejection alert styles */
             .similarity-reject {
                 background: linear-gradient(90deg,#fff1f2,#fee2e2);
@@ -49,7 +95,30 @@
             .sr-edit-btn{background:#fff; border:1px solid #f87171; color:#b91c1c; padding:6px 10px; border-radius:8px; font-weight:600}
             .sr-compare-btn{background:linear-gradient(135deg,#7c3aed,#a855f7); color:white; padding:6px 10px; border-radius:8px; font-weight:600; border:none}
             .similarity-badge{letter-spacing:0.2px}
-        </style>
+        
+        .compare-paragraph {
+            margin-bottom: 14px;
+            line-height: 1.8;
+            font-size: 13.5px;
+            color: #2e1065;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .compare-list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            line-height: 1.75;
+            font-size: 13.5px;
+        }
+        .compare-list-bullet {
+            color: #7c3aed;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+    
+    </style>
 </head>
 
 <body class="admin-portal">
@@ -637,7 +706,10 @@
                     <h2 style="margin: 0 0 4px; font-size: 1.3rem;">Side-by-Side Similarity Comparison</h2>
                     <p id="compareModalSubtitle" style="margin: 0; color: #6d5f85; font-size: 13px;">Comparing Proposal 1 against Matched Repository Record</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+                    <button onclick="toggleScoringGuide()" title="View Similarity Weight Breakdown" style="display:flex; align-items:center; gap:6px; background:#f5f3ff; border:1px solid #ece3ff; color:#7c3aed; font-size:12px; font-weight:600; padding:7px 14px; border-radius:20px; cursor:pointer; white-space:nowrap; font-family:inherit;">
+                        <i class="fa-solid fa-calculator"></i> How Scoring Works
+                    </button>
                     <span id="compareModalBadge" style="font-size: 13px; padding: 7px 16px; border-radius: 20px; font-weight: 700; white-space: nowrap;"></span>
                     <button class="close-modal-btn" onclick="closeCompareModal()" style="flex-shrink:0;">
                         <i class="fa-solid fa-xmark"></i>
@@ -645,10 +717,40 @@
                 </div>
             </div>
 
-            <!-- Info bar -->
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: #faf8ff; border: 1px solid #ece3ff; padding: 10px 16px; border-radius: 14px; flex-wrap: wrap;">
-                <i class="fa-solid fa-circle-info" style="color: #7c3aed;"></i>
-                <span style="color: #6d5f85; font-size: 12.5px;">The left panel shows your proposal text extracted from the PDF with highlighted matches. The right panel shows the matched archived study with highlighted matches.</span>
+            <!-- Scoring Guide Panel (collapsed by default) -->
+            <div id="scoringGuidePanel" style="display:none; margin-bottom:12px; background:#faf8ff; border:1px solid #ece3ff; border-radius:16px; padding:16px 18px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                    <i class="fa-solid fa-calculator" style="color:#7c3aed;"></i>
+                    <strong style="font-size:13px; color:#2e1065;">How the Similarity Score is Calculated</strong>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:10px;">
+                    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#b45309;">35%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#92400e; margin-top:2px;">Title</div>
+                        <div style="font-size:10.5px; color:#78350f; margin-top:4px; line-height:1.4;">Exact &amp; synonym keyword matches in the capstone title.</div>
+                    </div>
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#1d4ed8;">25%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#1e40af; margin-top:2px;">Abstract</div>
+                        <div style="font-size:10.5px; color:#1e3a8a; margin-top:4px; line-height:1.4;">Matching terms found in the abstract or project summary.</div>
+                    </div>
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#15803d;">25%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#166534; margin-top:2px;">Objectives</div>
+                        <div style="font-size:10.5px; color:#14532d; margin-top:4px; line-height:1.4;">Shared keywords in the objectives and goals section.</div>
+                    </div>
+                    <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#c2410c;">10%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#9a3412; margin-top:2px;">Research Problem</div>
+                        <div style="font-size:10.5px; color:#7c2d12; margin-top:4px; line-height:1.4;">Overlapping terms in the research problem or statement.</div>
+                    </div>
+                    <div style="background:#fdf4ff; border:1px solid #e9d5ff; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#7c3aed;">5%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#6d28d9; margin-top:2px;">Methodology</div>
+                        <div style="font-size:10.5px; color:#5b21b6; margin-top:4px; line-height:1.4;">Method and approach keywords found in both studies.</div>
+                    </div>
+                </div>
+                <p style="font-size:11px; color:#9ca3af; margin:0;"><i class="fa-solid fa-circle-info"></i> Scores are weighted and blended using keyword matching + semantic similarity. Results are for guidance only.</p>
             </div>
 
             <!-- Colour Legend (both panels) -->
@@ -657,13 +759,14 @@
                 <span style="background: #fde68a; color: #b45309; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Title Match</span>
                 <span style="background: #bfdbfe; color: #1d4ed8; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Abstract Match</span>
                 <span style="background: #bbf7d0; color: #15803d; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Objectives Match</span>
+                <span style="background: #fed7aa; color: #9a3412; border: 1px solid #f97316; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;" title="Phrases that share the same concept or meaning even if phrased differently"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Concept / Semantic</span>
                 <span style="background: #e9d5ff; color: #7c3aed; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Synonym / Related</span>
             </div>
 
             <!-- Two-column comparison area -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; overflow: hidden; min-height: 0;">
 
-                <!-- LEFT: Student Proposal — Rendered text with highlights -->
+                <!-- LEFT: Student Proposal – Rendered text with highlights -->
                 <div style="display: flex; flex-direction: column; background: #faf8ff; border: 2px solid #ddd6fe; border-radius: 20px; overflow: hidden;">
                     <div style="padding: 14px 18px 10px; border-bottom: 1px solid #ece3ff; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;">
                         <div>
@@ -701,33 +804,99 @@
                     </div>
                 </div>
 
-                <!-- RIGHT: Archived Study text with highlights -->
+                <!-- RIGHT: Matched Study – Archived / Ongoing tabs -->
                 <div style="display: flex; flex-direction: column; background: #faf8ff; border: 2px solid #ddd6fe; border-radius: 20px; overflow: hidden;">
-                    <div style="padding: 14px 18px 10px; border-bottom: 1px solid #ece3ff; flex-shrink: 0;">
-                        <h3 style="margin: 0; color: #6d28d9; font-size: 15px;">
-                            <i class="fa-solid fa-box-archive"></i> Archived Study Match
+                    <!-- Tab buttons -->
+                    <div style="padding: 10px 18px 0; border-bottom: 1px solid #ece3ff; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <h3 style="margin: 0; color: #6d28d9; font-size: 14px; white-space: nowrap;">
+                            <i class="fa-solid fa-box-archive"></i> <span id="compareRightPanelTitle">Archived Study Match</span>
                         </h3>
+                        <div style="display: flex; gap: 6px; padding-bottom: 4px;">
+                            <button id="tabBtnArchived" onclick="switchCompareTab('archived')" style="font-size:11px; font-weight:700; padding:5px 12px; border-radius:20px; border:1px solid #ece3ff; cursor:pointer; font-family:inherit; background:#7c3aed; color:white;">
+                                <i class="fa-solid fa-box-archive" style="font-size:9px;"></i> Archived Study
+                            </button>
+                            <button id="tabBtnOngoing" onclick="switchCompareTab('ongoing')" style="font-size:11px; font-weight:700; padding:5px 12px; border-radius:20px; border:1px solid #ece3ff; cursor:pointer; font-family:inherit; background:#f5f3ff; color:#7c3aed;">
+                                <i class="fa-solid fa-circle-check" style="font-size:9px;"></i> Approved Ongoing Study
+                            </button>
+                        </div>
                     </div>
-                    <div style="flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 18px;">
+                    <!-- ARCHIVED TAB -->
+                    <div id="compareTabArchived" style="flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:18px;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                                 <span style="background: #7c3aed; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">TITLE</span>
+                                <span id="sectionScoreTitle" style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; display:none;"></span>
+                                <span style="font-size: 10.5px; color: #9ca3af;">Weight: 35%</span>
                             </div>
                             <div id="compareMatchedTitle" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 14.5px; font-weight: 600; color: #2e1065; line-height: 1.65;"></div>
                         </div>
-
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                                 <span style="background: #1d4ed8; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">ABSTRACT</span>
+                                <span id="sectionScoreAbstract" style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; display:none;"></span>
+                                <span style="font-size: 10.5px; color: #9ca3af;">Weight: 25%</span>
                             </div>
-                            <div id="compareMatchedAbstract" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word;"></div>
+                            <div id="compareMatchedAbstract" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
                         </div>
-
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                                 <span style="background: #15803d; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">OBJECTIVES</span>
+                                <span id="sectionScoreObjectives" style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; display:none;"></span>
+                                <span style="font-size: 10.5px; color: #9ca3af;">Weight: 25%</span>
                             </div>
-                            <div id="compareMatchedObjectives" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word;"></div>
+                            <div id="compareMatchedObjectives" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #c2410c; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">RESEARCH PROBLEM</span>
+                                <span id="sectionScoreResearchProblem" style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; display:none;"></span>
+                                <span style="font-size: 10.5px; color: #9ca3af;">Weight: 10%</span>
+                            </div>
+                            <div id="compareMatchedResearchProblem" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #6d28d9; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">METHODOLOGY</span>
+                                <span id="sectionScoreMethodology" style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; display:none;"></span>
+                                <span style="font-size: 10.5px; color: #9ca3af;">Weight: 5%</span>
+                            </div>
+                            <div id="compareMatchedMethodology" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
+                    </div>
+                    <!-- ONGOING TAB -->
+                    <div id="compareTabOngoing" style="display:none; flex:1; overflow-y:auto; padding:18px; flex-direction:column; gap:18px;">
+                        <div style="background:#fdf4ff; border:1px solid #e9d5ff; border-radius:16px; padding:18px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <i class="fa-solid fa-circle-check" style="color:#7c3aed; font-size:18px;"></i>
+                                    <strong style="color:#2e1065; font-size:14px;">Approved Ongoing Study</strong>
+                                </div>
+                                <span id="sectionScoreOngoingOverall" style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe; display:none;"></span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span style="background:#7c3aed; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:0.5px;">APPROVED TITLE</span>
+                                <span id="sectionScoreOngoingTitle" style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; display:none;"></span>
+                                <span style="font-size: 10.5px; color: #9ca3af;">Weight: 35%</span>
+                            </div>
+                            <div id="compareOngoingTitle" style="background:white; border:1px solid #e9d5ff; border-radius:12px; padding:14px 16px; font-size:14px; font-weight:600; color:#2e1065; line-height:1.65; margin-bottom:12px;"></div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span style="background:#6d28d9; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:0.5px;">GROUP</span>
+                            </div>
+                            <div id="compareOngoingGroup" style="background:white; border:1px solid #e9d5ff; border-radius:12px; padding:12px 16px; font-size:13px; color:#4b5563; line-height:1.6; margin-bottom:14px;"></div>
+                            
+                            <!-- Ongoing Document Body Content -->
+                            <div id="compareOngoingBodyWrap" style="margin-top:10px;">
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                    <span style="background:#1d4ed8; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:0.5px;">DOCUMENT CONTENT (SYSTEM TEXT)</span>
+                                    <span id="sectionScoreOngoingBody" style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; display:none;"></span>
+                                    <span style="font-size: 10.5px; color: #9ca3af;">Weight: 65%</span>
+                                </div>
+                                <div id="compareOngoingBody" style="background:white; border:1px solid #e9d5ff; border-radius:12px; padding:14px 16px; font-size:13px; color:#2e1065; line-height:1.8; white-space:pre-wrap; word-break:break-word; max-height:360px; overflow-y:auto; font-family:'Poppins','Inter',system-ui,sans-serif;"></div>
+                            </div>
+
+                            <p style="margin:14px 0 0; font-size:11.5px; color:#9ca3af; font-style:italic;">
+                                <i class="fa-solid fa-circle-info"></i> This is an ongoing approved study from Concept Presentation records management. Converted from PDF system text.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -741,12 +910,26 @@
         </div>
     </div>
 
-    <script src="student-portal.js"></script>
+    <script src="student-portal.js?v=20261114_01"></script>
 
     <script>
 
+        const API_BASE = (function() {
+            if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
+                if (window.location.port === "3005" || window.location.host.endsWith(":3005")) {
+                    return "";
+                }
+                return `${window.location.protocol}//${window.location.hostname}:3005`;
+            }
+            return "http://localhost:3005";
+        })();
+
         const loggedInUserId =
             localStorage.getItem("userId");
+
+        if (!loggedInUserId) {
+            window.location.href = "../Log-in.html";
+        }
 
         let currentGroup = null;
         let advisers = [];
@@ -764,7 +947,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/student-advisers/${loggedInUserId}`
+                        `${API_BASE}/student-advisers/${loggedInUserId}`
                     );
 
                 const data =
@@ -798,20 +981,20 @@
                     data.group;
 
                 advisers =
-                    data.advisers;
+                    data.advisers || [];
 
                 const groupProgramText =
-                    currentGroup.program === "IS"
+                    currentGroup && currentGroup.program === "IS"
                     ? "BSIS"
-                    : currentGroup.program === "IT"
+                    : currentGroup && currentGroup.program === "IT"
                     ? "BSIT"
                     : "Not Set";
 
                 document.getElementById("groupName").innerText =
-                    currentGroup.group_name;
+                    currentGroup ? currentGroup.group_name : "No group found";
 
                 document.getElementById("groupDetails").innerText =
-                    currentGroup.project_title || "No project title yet.";
+                    currentGroup ? (currentGroup.project_title || "No project title yet.") : "";
 
                 document.getElementById("groupProgramBadge").innerText =
                     groupProgramText;
@@ -820,7 +1003,23 @@
 
             }catch(error){
 
-                console.log(error);
+                console.error("loadAdvisers error:", error);
+                document.getElementById("groupName").innerText = "Unable to connect";
+                document.getElementById("groupDetails").innerText = "Could not reach the server at " + API_BASE + ". Please ensure Server.js is running.";
+                document.getElementById("groupProgramBadge").innerText = "Error";
+                const grid = document.getElementById("adviserGrid");
+                if (grid) {
+                    grid.innerHTML = `
+                        <div class="empty-card" style="padding: 24px; text-align: center;">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 26px; color: #ef4444; margin-bottom: 8px; display: block;"></i>
+                            <p style="font-weight: 600; color: #2e1065; margin: 0 0 6px;">Server Connection Error</p>
+                            <small style="color: #6d5f85; display: block; margin-bottom: 12px;">${error.message || 'Network request failed'}</small>
+                            <button onclick="loadPageData()" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; border: none; padding: 7px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: inherit;">
+                                <i class="fa-solid fa-rotate-right" style="margin-right: 6px;"></i> Retry
+                            </button>
+                        </div>
+                    `;
+                }
 
             }
 
@@ -832,7 +1031,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/title-proposals/${loggedInUserId}`
+                        `${API_BASE}/title-proposals/${loggedInUserId}`
                     );
 
                 const data =
@@ -849,7 +1048,7 @@
 
             }catch(error){
 
-                console.log(error);
+                console.error("loadTitleProposals error:", error);
 
             }
 
@@ -901,7 +1100,7 @@
                                         <div class="sr-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                                         <div class="sr-body">
                                             <strong style="display:block; margin-bottom:4px;">Proposal rejected due to high similarity</strong>
-                                            <div style="font-size:13px; color: rgba(0,0,0,0.72);">Your proposed title is <strong>${simPercent}%</strong> similar to an archived study${matchedTitle ? ' — <em>' + escapeHtml(matchedTitle) + '</em>' : ''}. Please revise the title to avoid duplication. Titles with 90%+ similarity are not accepted.</div>
+                                            <div style="font-size:13px; color: rgba(0,0,0,0.72);">Your proposed title is <strong>${simPercent}%</strong> similar to an archived study${matchedTitle ? ' – <em>' + escapeHtml(matchedTitle) + '</em>' : ''}. Please revise the title to avoid duplication. Titles with 90%+ similarity are not accepted.</div>
                                         </div>
                                         <div class="sr-actions">
                                             <button class="sr-edit-btn" onclick="document.getElementById('proposalTitle${number}').focus();">Edit Title</button>
@@ -952,7 +1151,7 @@
                                     ? `
                                       <div class="pdf-file-info">
                                           <i class="fa-solid fa-file-pdf pdf-icon-small"></i>
-                                          <a href="http://localhost:3005${foundProposal.file_path}" target="_blank" class="view-pdf-link">
+                                          <a href="${API_BASE}${foundProposal.file_path}" target="_blank" class="view-pdf-link">
                                               View PDF
                                           </a>
                                       </div>
@@ -1084,7 +1283,7 @@
 
             try{
                 const response = await fetch(
-                    "http://localhost:3005/upload-title-proposal",
+                    `${API_BASE}/upload-title-proposal`,
                     { method:"POST", body:formData }
                 );
                 const data = await response.json();
@@ -1107,7 +1306,7 @@
             }
         }
 
-        /* Save a new proposal — requires BOTH a title AND a PDF */
+        /* Save a new proposal – requires BOTH a title AND a PDF */
         async function saveTitleProposal(number){
 
             const proposedTitle =
@@ -1138,7 +1337,7 @@
 
             try{
                 const response = await fetch(
-                    "http://localhost:3005/upload-title-proposal",
+                    `${API_BASE}/upload-title-proposal`,
                     { method:"POST", body:formData }
                 );
 
@@ -1172,24 +1371,175 @@
         /* ================= SIDE-BY-SIDE MODAL HELPERS ================= */
 
         const SYNONYMS = {
-            'monitoring': ['tracking', 'surveillance', 'observation', 'checking', 'record', 'recording'],
-            'tracking': ['monitoring', 'surveillance', 'observation', 'checking', 'record', 'recording', 'tracing'],
+            // â”€â”€ Capstone / academic domain (CRITICAL – these must ALWAYS match) â”€â”€â”€â”€â”€â”€
+            'capstone': ['thesis', 'dissertation', 'research project', 'final project', 'senior project'],
+            'thesis': ['capstone', 'dissertation', 'research', 'study', 'paper', 'project'],
+            'dissertation': ['thesis', 'capstone', 'research', 'study'],
+            'research': ['study', 'thesis', 'investigation', 'inquiry', 'analysis'],
+            'project': ['system', 'application', 'study', 'work', 'initiative'],
+            // â”€â”€ Management / tracking / monitoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'management': ['tracker', 'tracking', 'monitoring', 'administration', 'coordination', 'oversight'],
+            'tracker': ['management', 'monitoring', 'tracking', 'system', 'tool'],
+            'monitoring': ['tracking', 'surveillance', 'observation', 'management', 'record', 'checking'],
+            'tracking': ['monitoring', 'management', 'surveillance', 'observation', 'tracing'],
+            // â”€â”€ Repository / archive / library â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'repository': ['archive', 'database', 'library', 'collection', 'storage', 'catalog', 'registry'],
+            'archive': ['repository', 'database', 'library', 'collection', 'storage'],
+            'library': ['repository', 'archive', 'collection', 'catalog', 'database'],
+            'database': ['repository', 'archive', 'storage', 'records'],
+            // â”€â”€ System / platform / portal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'system': ['application', 'platform', 'portal', 'software', 'tool', 'tracker'],
+            'application': ['system', 'software', 'platform', 'app', 'tool', 'portal'],
+            'platform': ['system', 'application', 'portal', 'software', 'tool'],
+            'portal': ['system', 'platform', 'application', 'gateway', 'interface', 'web'],
+            'app': ['system', 'software', 'platform', 'application', 'tool', 'portal'],
+            'software': ['system', 'application', 'platform', 'tool'],
+            // â”€â”€ Web / online â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'web': ['online', 'website', 'internet', 'portal', 'cloud'],
+            'online': ['web', 'digital', 'cloud', 'internet', 'virtual'],
+            // â”€â”€ Collaborative / team â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'collaborative': ['shared', 'teamwork', 'cooperative', 'joint', 'group', 'collective'],
+            'adviser': ['advisor', 'mentor', 'supervisor', 'faculty', 'instructor', 'professor'],
+            'advisor': ['adviser', 'mentor', 'supervisor', 'faculty', 'instructor'],
+            'faculty': ['adviser', 'advisor', 'instructor', 'professor', 'teacher'],
+            // â”€â”€ Workload / balancer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'workload': ['load', 'tasks', 'assignments', 'capacity', 'work', 'duties'],
+            'balancer': ['scheduler', 'distribution', 'allocator'],
+            'scheduler': ['calendar', 'planner', 'timetable', 'booking', 'schedule'],
+            'schedule': ['timetable', 'calendar', 'appointment', 'booking', 'plan', 'scheduler'],
+            // â”€â”€ Attendance / QR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             'attendance': ['presence', 'roll call', 'tardy', 'absent', 'log'],
             'qr': ['qr code', 'quick response', 'barcode', 'scan'],
             'code': ['qr', 'barcode', 'scan'],
+            // â”€â”€ Student / academic context â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             'class': ['student', 'classroom', 'course', 'school', 'academic'],
-            'student': ['class', 'learner', 'pupil', 'academic', 'classroom'],
-            'system': ['application', 'software', 'platform', 'app', 'tool', 'portal'],
-            'application': ['system', 'software', 'platform', 'app', 'tool', 'portal'],
-            'app': ['system', 'software', 'platform', 'application', 'tool', 'portal'],
-            'web': ['online', 'website', 'internet', 'portal', 'cloud'],
-            'mobile': ['android', 'ios', 'phone', 'smartphone', 'handheld'],
+            'student': ['class', 'learner', 'pupil', 'academic', 'undergraduate'],
+            'undergraduate': ['student', 'bsit', 'bsis', 'learner', 'pupil'],
+            // â”€â”€ Automated / smart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             'automated': ['automatic', 'smart', 'intelligent', 'computerized'],
             'smart': ['automated', 'automatic', 'intelligent', 'cognitive'],
+            // â”€â”€ Notification / alert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             'sms': ['text message', 'notification', 'alert', 'message'],
             'alert': ['notification', 'sms', 'warning', 'alarm'],
-            'notification': ['alert', 'sms', 'warning', 'message']
+            'notification': ['alert', 'sms', 'warning', 'message'],
+            // ── OJT / internship ──────────────────────────────────────
+            'ojt': ['internship', 'practicum', 'on-the-job training', 'training', 'intern', 'deployment', 'placement', 'coordinator'],
+            'internship': ['ojt', 'practicum', 'on-the-job training', 'training', 'intern', 'deployment', 'placement', 'matching', 'skill-matching'],
+            'practicum': ['ojt', 'internship', 'training', 'deployment', 'field work', 'placement'],
+            'training': ['ojt', 'internship', 'practicum', 'learning', 'skill development', 'placement'],
+            'intern': ['ojt', 'trainee', 'practicum', 'apprentice', 'internship'],
+            'placement': ['internship', 'ojt', 'deployment', 'practicum', 'matching'],
+            'coordinator': ['supervisor', 'adviser', 'mentor', 'in-charge'],
+            // â”€â”€ Food & beverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'coffee': ['cafe', 'cafeteria', 'beverage', 'brew', 'espresso', 'coffeeshop', 'coffee shop'],
+            'cafe': ['coffee', 'coffeeshop', 'coffee shop', 'bistro', 'restaurant', 'eatery'],
+            'coffeeshop': ['cafe', 'coffee shop', 'coffee', 'bistro'],
+            'restaurant': ['eatery', 'diner', 'cafe', 'bistro', 'food service', 'foodservice'],
+            'food': ['meal', 'cuisine', 'menu', 'dining', 'recipe', 'dish'],
+            'menu': ['food', 'cuisine', 'dish', 'ordering', 'catalogue', 'catalog', 'directory', 'listing'],
+            'ordering': ['menu', 'order management', 'purchase order', 'booking', 'procurement'],
+            'catalogue': ['menu', 'directory', 'catalog', 'listing', 'registry', 'index', 'inventory'],
+            'catalog': ['menu', 'directory', 'catalogue', 'listing', 'registry', 'index'],
+            'directory': ['catalogue', 'catalog', 'menu', 'listing', 'registry', 'index'],
+            'beverage': ['drink', 'coffee', 'cafe', 'food', 'refreshment'],
+            // â”€â”€ Business & commerce â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'inventory': ['stock', 'stockroom', 'warehouse', 'supply', 'goods', 'asset'],
+            'stock': ['inventory', 'supply', 'goods', 'warehouse'],
+            'sales': ['revenue', 'transaction', 'purchase', 'order', 'selling'],
+            'order': ['purchase', 'transaction', 'booking', 'request', 'sales'],
+            'payment': ['transaction', 'billing', 'invoice', 'fee', 'purchase'],
+            'transaction': ['payment', 'purchase', 'sales', 'order', 'billing'],
+            // â”€â”€ Healthcare â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'patient': ['client', 'visitor', 'person', 'individual', 'case'],
+            'appointment': ['schedule', 'booking', 'reservation', 'consultation', 'visit'],
+            'health': ['medical', 'healthcare', 'clinic', 'wellness', 'hospital'],
+            'hospital': ['clinic', 'health center', 'medical', 'healthcare'],
+            'medical': ['health', 'clinical', 'hospital', 'wellness'],
+            // â”€â”€ Education â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'grade': ['score', 'mark', 'rating', 'performance', 'evaluation'],
+            'enrollment': ['registration', 'admission', 'enrolment', 'sign-up'],
+            // â”€â”€ Logistics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'location': ['address', 'place', 'site', 'position', 'venue', 'map'],
+            'delivery': ['shipment', 'dispatch', 'courier', 'logistics', 'transport'],
+            'map': ['location', 'navigation', 'geo', 'route'],
+            // â”€â”€ IT-specific â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            'mobile': ['android', 'ios', 'phone', 'smartphone', 'handheld'],
+            'chatbot': ['bot', 'virtual assistant', 'assistant', 'automated chat'],
+            'recommendation': ['suggestion', 'advice', 'guidance', 'referral'],
+            'analytics': ['analysis', 'statistics', 'reporting', 'dashboard', 'insights'],
+            'dashboard': ['analytics', 'panel', 'overview', 'interface', 'report'],
+            'sensor': ['detector', 'device', 'monitor', 'iot', 'hardware'],
+            'iot': ['sensor', 'device', 'hardware'],
+            'facial': ['face', 'biometric', 'recognition', 'identification'],
+            'recognition': ['identification', 'detection', 'facial', 'biometric'],
+            'fingerprint': ['biometric', 'identification', 'scan', 'authentication'],
+            'authentication': ['login', 'verification', 'security', 'fingerprint', 'biometric'],
         };
+
+        /* ---- Client-side stopword filter: function words ONLY ---- */
+        /* Domain nouns (capstone, thesis, management, system, etc.)  */
+        /* are intentionally kept so highlights work correctly.       */
+        const CLIENT_STOP_WORDS = new Set([
+            // Articles
+            'the', 'a', 'an',
+            // Conjunctions
+            'and', 'or', 'but', 'nor', 'yet', 'so',
+            // Prepositions
+            'in', 'on', 'at', 'to', 'for', 'with', 'of', 'by', 'as', 'into',
+            'about', 'from', 'over', 'under', 'above', 'below', 'off', 'out',
+            // Pronouns
+            'it', 'its', 'this', 'that', 'these', 'those',
+            'we', 'you', 'your', 'our', 'they', 'their', 'he', 'she', 'him', 'her', 'us',
+            // Auxiliary / modal verbs
+            'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+            'will', 'would', 'could', 'should', 'may', 'shall', 'can', 'might',
+            'was', 'were',
+            // Short fillers
+            'not', 'also', 'such', 'each', 'all', 'any', 'both', 'few',
+            'more', 'other', 'same', 'than', 'too', 'very', 'just',
+            'while', 'where', 'when', 'which', 'who', 'how', 'what',
+            'already', 'still', 'even', 'only', 'then', 'thus', 'hence',
+            // Ordinals & numbers
+            'one', 'two', 'three', 'four', 'five',
+            'first', 'second', 'third', 'last', 'next',
+            // Pure filler verbs
+            'get', 'gets', 'got', 'put', 'set', 'run', 'runs', 'keep', 'kept',
+            'come', 'comes', 'came', 'go', 'goes', 'went', 'give', 'gives', 'given',
+            'show', 'shows', 'find', 'finds', 'need', 'needs', 'want', 'wants',
+            'make', 'makes', 'made', 'take', 'takes', 'taken',
+            // Short common words with no domain meaning
+            'are', 'per', 'main', 'real', 'own', 'low', 'new', 'old', 'big', 'key',
+            'via', 'vs', 'etc', 'ie', 'eg',
+            'based', 'using', 'used', 'use', 'uses', 'like', 'see', 'let',
+            'among', 'within', 'across', 'along', 'during', 'before', 'after', 'between',
+            'through', 'including', 'included', 'include', 'includes',
+            'part', 'parts', 'area', 'areas', 'level', 'levels', 'type', 'types',
+            'way', 'ways', 'case', 'cases', 'point', 'points', 'term', 'terms',
+            'sign', 'signed', 'view', 'views', 'post', 'posts', 'lead', 'lack',
+            'final', 'scattered', 'delayed', 'integrity', 'logic', 'backend', 'adopt', 'adopted',
+        ]);
+
+        /* Generic capstone boilerplate words to strip from similarity highlighting */
+        const GENERIC_CAPSTONE_WORDS = new Set([
+            'management', 'system', 'systems', 'web', 'web-based', 'application', 'applications',
+            'app', 'apps', 'platform', 'platforms', 'portal', 'portals', 'analytics', 'tracking',
+            'monitoring', 'automated', 'automation', 'online', 'mobile', 'digital', 'smart',
+            'information', 'database', 'capstone', 'project', 'study', 'research', 'software',
+            'tool', 'tools', 'service', 'services', 'solution', 'solutions', 'module', 'modules',
+            'team', 'teams', 'data', 'report', 'reports', 'user', 'users', 'student', 'students',
+            'using', 'used', 'use', 'based', 'development', 'design', 'implementation',
+            'evaluation', 'assessment', 'framework', 'performance'
+        ]);
+
+        /** Filter generic stopwords and boilerplate words from a word list before highlighting */
+        function filterStopWords(words) {
+            if (!Array.isArray(words)) return [];
+            return words.filter(w => {
+                if (!w) return false;
+                const low = String(w).toLowerCase().trim();
+                return low.length >= 3 && !CLIENT_STOP_WORDS.has(low) && !GENERIC_CAPSTONE_WORDS.has(low);
+            });
+        }
 
         function getBadgeStyle(level) {
             if (level === "Low Similarity") {
@@ -1214,88 +1564,118 @@
                 .replace(/'/g, "&#039;");
         }
 
-        /* 
-         * HIGHLIGHT COLOUR SCHEME
-         * orange  (#fde68a / #b45309) = direct title keyword match
-         * blue    (#bfdbfe / #1d4ed8) = abstract / definition match
-         * green   (#bbf7d0 / #15803d) = objectives match
-         * purple  (#e9d5ff / #7c3aed) = synonym / related concept match
-         */
-        const HIGHLIGHT_STYLES = {
-            title:      'background:#fde68a; color:#b45309;',
-            abstract:   'background:#bfdbfe; color:#1d4ed8;',
-            objectives: 'background:#bbf7d0; color:#15803d;',
-            synonym:    'background:#e9d5ff; color:#7c3aed;'
-        };
+        function toggleScoringGuide() {
+            const panel = document.getElementById('scoringGuidePanel');
+            if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
 
         /**
-         * Merge adjacent <mark> tags that have the same inline style so that
-         * "<mark>word1</mark> <mark>word2</mark>" becomes one continuous span.
-         * This removes the fragmented look when consecutive words are all matched.
+         * Robust, non-destructive Interval-Based Highlighter:
+         * 1. Collects all word boundary matches with their [start, end] string offsets.
+         * 2. Resolves overlaps cleanly without any regex-on-HTML or nested marks.
+         * 3. Slices text, escapes entities, and wraps matches in semantic CSS classes.
+         * 4. 100% preserves original spaces, tabs, and line breaks without leaking style strings.
          */
-        function mergeAdjacentMarks(html) {
-            // Keep running replacements until nothing changes
-            let prev;
-            do {
-                prev = html;
-                // Match </mark> then optional whitespace then <mark style="X"> — if the
-                // PRECEDING mark has the same style X, collapse them into one.
-                // We detect the preceding mark's style by looking for the closest
-                // opening <mark style="X"> before the </mark>.
-                html = html.replace(
-                    /<mark style="([^"]+)">([\s\S]*?)<\/mark>([ \t\n]?)<mark style="\1">/g,
-                    '<mark style="$1">$2$3'
-                );
-            } while (html !== prev);
-            return html;
-        }
-
-        function applyHighlight(text, words, type) {
-            if (!text || !words || words.length === 0) return text;
-            const style = HIGHLIGHT_STYLES[type] || HIGHLIGHT_STYLES.title;
-            const sorted = [...words].sort((a, b) => b.length - a.length);
-            sorted.forEach(kw => {
-                if (!kw || kw.trim().length < 3) return;
-                const escaped = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                const re = new RegExp(`\\b(${escaped})\\b`, 'gi');
-                text = text.replace(re, `<mark style="${style} padding:2px 5px; border-radius:5px; font-weight:600;">$1</mark>`);
-            });
-            // Merge adjacent marks of the same colour produced by this pass
-            return mergeAdjacentMarks(text);
-        }
-
-        /* Highlight multiple word-lists with their respective colours on the same text */
-        function highlightMulti(rawText, layers) {
+        function highlightTextWithIntervals(rawText, layers) {
             if (!rawText) return '';
-            let text = escapeHtml(rawText);
-            for (const { words, type } of layers) {
-                text = applyHighlight(text, words, type);
+            const text = String(rawText);
+            const intervals = [];
+
+            for (const { words, type, priority } of layers) {
+                if (!words || !Array.isArray(words)) continue;
+                const filtered = [...new Set(words)].filter(w => w && String(w).trim().length >= 3);
+                filtered.sort((a, b) => b.length - a.length);
+                for (const kw of filtered) {
+                    const escaped = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    const re = new RegExp(`\\b(${escaped})\\b`, 'gi');
+                    let m;
+                    while ((m = re.exec(text)) !== null) {
+                        intervals.push({
+                            start: m.index,
+                            end: m.index + m[0].length,
+                            type: type,
+                            priority: priority || 1
+                        });
+                    }
+                }
             }
-            // Final global merge in case different layers left adjacent same-colour marks
-            return mergeAdjacentMarks(text);
+
+            if (intervals.length === 0) return escapeHtml(text);
+
+            intervals.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start) || b.priority - a.priority);
+
+            const resolved = [];
+            let cur = null;
+            for (const iv of intervals) {
+                if (!cur) {
+                    cur = { ...iv };
+                    continue;
+                }
+                if (iv.start >= cur.end) {
+                    resolved.push(cur);
+                    cur = { ...iv };
+                } else {
+                    if (iv.priority > cur.priority) {
+                        if (iv.start > cur.start) {
+                            resolved.push({ start: cur.start, end: iv.start, type: cur.type, priority: cur.priority });
+                        }
+                        cur = { ...iv };
+                    } else if (iv.type === cur.type && iv.end > cur.end) {
+                        cur.end = iv.end;
+                    }
+                }
+            }
+            if (cur) resolved.push(cur);
+
+            let out = '';
+            let lastIdx = 0;
+            for (const iv of resolved) {
+                if (iv.start > lastIdx) {
+                    out += escapeHtml(text.slice(lastIdx, iv.start));
+                }
+                out += `<mark class="sim-hl sim-hl-${iv.type}">${escapeHtml(text.slice(iv.start, iv.end))}</mark>`;
+                lastIdx = iv.end;
+            }
+            if (lastIdx < text.length) {
+                out += escapeHtml(text.slice(lastIdx));
+            }
+            return out;
         }
 
-        /* Legacy wrapper — orange only */
+        function highlightMulti(rawText, layers) {
+            return highlightTextWithIntervals(rawText, (layers || []).map((l, idx) => ({
+                words: l.words,
+                type: l.type,
+                priority: l.priority || (10 - idx)
+            })));
+        }
+
         function highlightKeywords(text, keywords) {
-            if (!text || !keywords || keywords.length === 0) return escapeHtml(text);
-            return applyHighlight(escapeHtml(text), keywords, 'title');
+            return highlightTextWithIntervals(text, [{ words: keywords, type: 'title', priority: 10 }]);
         }
 
-        /* Highlight the RIGHT panel (repository text) using synonym expansion + colours */
-        function highlightRight(text, exactWords, synonymWords, type) {
+        function highlightRight(text, exactWords, repoSynonymWords, type, extraConceptWords) {
             if (!text) return '';
-            const allSynExpanded = [];
-            (exactWords || []).forEach(kw => {
-                allSynExpanded.push(kw);
-                (SYNONYMS[kw] || []).forEach(s => allSynExpanded.push(s));
+            // Filter generic stopwords and boilerplate words from lists before highlighting
+            const cleanExact = filterStopWords(exactWords || []);
+            const cleanRepoSyn = filterStopWords(repoSynonymWords || []);
+            // Orange (Concept/Semantic): expand repo synonyms and extra concept words through SYNONYMS map
+            const conceptWords = Array.isArray(extraConceptWords) ? [...extraConceptWords] : [];
+            cleanExact.forEach(kw => {
+                (SYNONYMS[kw.toLowerCase()] || []).forEach(s => conceptWords.push(s));
             });
-            let out = escapeHtml(text);
-            out = applyHighlight(out, synonymWords || [], 'synonym');
-            out = applyHighlight(out, allSynExpanded, type || 'title');
-            return mergeAdjacentMarks(out);
+            cleanRepoSyn.forEach(kw => {
+                (SYNONYMS[kw.toLowerCase()] || []).forEach(s => conceptWords.push(s));
+            });
+            const cleanConcepts = filterStopWords(conceptWords);
+            return highlightTextWithIntervals(text, [
+                { words: cleanExact,    type: type || 'title', priority: 10 }, // section colour
+                { words: cleanRepoSyn,  type: 'synonym',       priority: 9  }, // purple (repo synonym)
+                { words: cleanConcepts, type: 'semantic',      priority: 8  }, // orange (concept/semantic)
+            ]);
         }
 
-        /* ════════════════ DYNAMIC TABLE FORMATTER ════════════════ */
+        /* Ã¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•Â DYNAMIC TABLE FORMATTER Ã¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•ÂÃ¢•Â */
 
         // Clean and unwrap proposal body text so continuous sentences flow properly without artificial line breaks
         function formatProposalText(text) {
@@ -1330,50 +1710,59 @@
             return cleanedBlocks.filter(Boolean).join('\n\n').trim();
         }
 
-        function openCompareModal(proposalNumber) {
-            const proposal = titleProposals.find(item => Number(item.title_number) === proposalNumber);
-            if (!proposal) return;
+        let currentModalProposal = null;
+        let currentModalArchivedMatch = null;
+        let currentModalOngoingMatch = null;
 
-            document.getElementById("compareModalSubtitle").innerText =
-                `Title Proposal ${proposalNumber} — Matched Against Archived Study`;
+        function showScoreBadge(id, pct) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (pct !== undefined && pct !== null && pct > 0) {
+                el.textContent = `Match: ${pct}%`;
+                el.style.display = 'inline-block';
+            } else {
+                el.style.display = 'none';
+            }
+        }
 
-            const badge = document.getElementById("compareModalBadge");
-            badge.innerText = `${proposal.similarity_percentage}% Similarity — ${proposal.similarity_level}`;
-            badge.style.cssText = `font-size: 13px; padding: 7px 16px; border-radius: 20px; font-weight: 700; ${getBadgeStyle(proposal.similarity_level)}`;
-
-            // ── LEFT PANEL: Render text with highlights ──────────────────────────
+        function renderLeftPanel(activeMw) {
+            if (!currentModalProposal) return;
+            const proposal = currentModalProposal;
             const proposedContainer = document.getElementById('compareProposedContainer');
             const proposedFallback = document.getElementById('compareProposedFallback');
             const pdfLabel = document.getElementById('comparePdfLabel');
             const pdfLinkWrapper = document.getElementById('comparePdfLinkWrapper');
 
-            // Parse matching sections first so we can use `mw` for both sides
             let mw = {
                 matchedTitleWords: [],
                 matchedObjAbstractWords: [],
                 matchedObjObjectivesWords: [],
+                matchedResearchProbWords: [],
+                matchedMethodologyWords: [],
                 synonymTitleWords: [],
                 synonymAbstractWords: [],
-                synonymObjectivesWords: []
+                synonymObjectivesWords: [],
+                synonymResearchProbWords: [],
+                synonymMethodologyWords: []
             };
-            try {
-                if (proposal.matching_sections) {
-                    const parsed = JSON.parse(proposal.matching_sections);
+            if (activeMw) {
+                mw = { ...mw, ...activeMw };
+            } else if (proposal.matching_sections) {
+                try {
+                    const parsed = typeof proposal.matching_sections === 'string' ? JSON.parse(proposal.matching_sections) : proposal.matching_sections;
                     mw = { ...mw, ...parsed };
-                }
-            } catch(e) {
-                console.error('Error parsing matching sections:', e);
+                } catch(e) {}
             }
 
             const rawBody = formatProposalText(proposal.proposed_objectives || '');
             const rawTitle = proposal.proposed_title || '';
-            
+
             if (rawBody.trim() || rawTitle.trim()) {
                 proposedContainer.style.display = 'flex';
                 proposedFallback.style.display = 'none';
-                
+
                 if (proposal.file_path && String(proposal.file_path).trim()) {
-                    const pdfUrl = `http://localhost:3005${proposal.file_path}`;
+                    const pdfUrl = `${API_BASE}${proposal.file_path}`;
                     pdfLabel.innerText = proposal.file_name || 'Uploaded PDF';
                     pdfLinkWrapper.style.display = 'block';
                     document.getElementById('comparePdfLink').href = pdfUrl;
@@ -1382,57 +1771,192 @@
                     pdfLinkWrapper.style.display = 'none';
                 }
 
-                // Apply highlights to Proposed Title
                 document.getElementById('compareProposedTitle').innerHTML = highlightMulti(
                     rawTitle,
                     [
-                        { words: mw.synonymTitleWords, type: 'synonym' },
-                        { words: mw.matchedTitleWords, type: 'title' }
+                        { words: filterStopWords(mw.conceptTitleWords || mw.conceptWords), type: 'semantic', priority: 8 },
+                        { words: filterStopWords(mw.synonymTitleWords),  type: 'synonym',  priority: 9 },
+                        { words: filterStopWords(mw.matchedTitleWords),  type: 'title',    priority: 10 }
                     ]
                 );
 
-                // Highlight the body text using highlightMulti
-                const highlightedBodyHtml = highlightMulti(
+                document.getElementById('compareProposedBody').innerHTML = highlightMulti(
                     rawBody,
                     [
-                        { words: mw.synonymAbstractWords, type: 'synonym' },
-                        { words: mw.synonymObjectivesWords, type: 'synonym' },
-                        { words: mw.matchedObjAbstractWords, type: 'abstract' },
-                        { words: mw.matchedObjObjectivesWords, type: 'objectives' }
+                        { words: filterStopWords(mw.conceptWords || mw.conceptTitleWords),     type: 'semantic',   priority: 7 },
+                        { words: filterStopWords(mw.synonymAbstractWords),    type: 'synonym',    priority: 8 },
+                        { words: filterStopWords(mw.synonymObjectivesWords),   type: 'synonym',    priority: 8 },
+                        { words: filterStopWords(mw.matchedObjAbstractWords),  type: 'abstract',   priority: 10 },
+                        { words: filterStopWords(mw.matchedObjObjectivesWords),type: 'objectives', priority: 10 }
                     ]
                 );
-
-                document.getElementById('compareProposedBody').innerHTML = highlightedBodyHtml;
             } else {
                 proposedContainer.style.display = 'none';
                 proposedFallback.style.display = 'flex';
                 pdfLabel.innerText = '';
                 pdfLinkWrapper.style.display = 'none';
             }
+        }
 
-            // ── RIGHT PANEL: Archived study text with keyword highlights ─────────
-            document.getElementById('compareMatchedTitle').innerHTML = highlightRight(
-                proposal.matched_title,
-                mw.matchedTitleWords,
-                mw.synonymTitleWords,
-                'title'
-            );
+        function populateArchivedPanel(proposal, archMatch) {
+            const archRec = (archMatch && archMatch.matchedRecord) ? archMatch.matchedRecord : null;
+            const archMw = (archMatch && archMatch.matchingSections) ? archMatch.matchingSections : (proposal.matching_sections && proposal.matched_source_type !== 'approved_proposal' ? (typeof proposal.matching_sections === 'string' ? JSON.parse(proposal.matching_sections) : proposal.matching_sections) : {});
+            const ss = archMw.sectionScores || {};
 
-            document.getElementById('compareMatchedAbstract').innerHTML = highlightRight(
-                proposal.matched_abstract,
-                mw.matchedObjAbstractWords,
-                mw.synonymAbstractWords,
-                'abstract'
-            );
+            const archTitle = (archRec && archRec.title) ? archRec.title : (proposal.matched_source_type !== 'approved_proposal' ? (proposal.matched_title || '') : '');
+            const archAbstract = (archRec && archRec.abstract) ? archRec.abstract : (proposal.matched_source_type !== 'approved_proposal' ? (proposal.matched_abstract || '') : '');
+            const archObjectives = (archRec && archRec.objectives) ? archRec.objectives : (proposal.matched_source_type !== 'approved_proposal' ? (proposal.matched_objectives || '') : '');
+            const archProb = (archRec && archRec.research_problem) ? archRec.research_problem : (proposal.matched_source_type !== 'approved_proposal' ? (proposal.matched_research_problem || '') : '');
+            const archMeth = (archRec && archRec.methodology) ? archRec.methodology : (proposal.matched_source_type !== 'approved_proposal' ? (proposal.matched_methodology || '') : '');
 
-            document.getElementById('compareMatchedObjectives').innerHTML = highlightRight(
-                proposal.matched_objectives,
-                mw.matchedObjObjectivesWords,
-                mw.synonymObjectivesWords,
-                'objectives'
-            );
+            document.getElementById('compareMatchedTitle').innerHTML = archTitle
+                ? highlightRight(archTitle, archMw.matchedTitleWords || [], archMw.repoSynonymTitleWords || [], 'title', archMw.repoConceptWords || [])
+                : '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">No matching archived study.</span>';
+
+            document.getElementById('compareMatchedAbstract').innerHTML = archAbstract
+                ? highlightRight(archAbstract, archMw.matchedObjAbstractWords || [], archMw.repoSynonymAbstractWords || [], 'abstract', archMw.repoConceptWords || [])
+                : '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">Not available.</span>';
+
+            document.getElementById('compareMatchedObjectives').innerHTML = archObjectives
+                ? highlightRight(archObjectives, archMw.matchedObjObjectivesWords || [], archMw.repoSynonymObjectivesWords || [], 'objectives', archMw.repoConceptWords || [])
+                : '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">Not available.</span>';
+
+            document.getElementById('compareMatchedResearchProblem').innerHTML = archProb
+                ? highlightRight(archProb, archMw.matchedResearchProbWords || [], archMw.repoSynonymResearchProbWords || [], 'abstract', archMw.repoConceptWords || [])
+                : '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">No research problem recorded for this archived study.</span>';
+
+            document.getElementById('compareMatchedMethodology').innerHTML = archMeth
+                ? highlightRight(archMeth, archMw.matchedMethodologyWords || [], archMw.repoSynonymMethodologyWords || [], 'objectives', archMw.repoConceptWords || [])
+                : '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">No methodology recorded for this archived study.</span>';
+
+            showScoreBadge('sectionScoreTitle', ss.title);
+            showScoreBadge('sectionScoreAbstract', ss.abstract);
+            showScoreBadge('sectionScoreObjectives', ss.objectives);
+            showScoreBadge('sectionScoreResearchProblem', ss.researchProblem);
+            showScoreBadge('sectionScoreMethodology', ss.methodology);
+        }
+
+        function populateOngoingPanel(proposal, ongMatch) {
+            const ongRec = (ongMatch && ongMatch.matchedRecord) ? ongMatch.matchedRecord : null;
+            const ongMw = (ongMatch && ongMatch.matchingSections) ? ongMatch.matchingSections : (proposal.matching_sections && proposal.matched_source_type === 'approved_proposal' ? (typeof proposal.matching_sections === 'string' ? JSON.parse(proposal.matching_sections) : proposal.matching_sections) : {});
+            const ss = ongMw.sectionScores || {};
+
+            const ongTitle = (ongRec && ongRec.title) ? ongRec.title : (proposal.matched_approved_title || proposal.matched_title || '');
+            const ongGroup = (ongRec && ongRec.group_name) ? ongRec.group_name : (proposal.matched_group_name || 'Approved Group');
+            const ongBody = (ongRec && (ongRec.bodyText || ongRec.abstract)) ? (ongRec.bodyText || ongRec.abstract) : '';
+
+            document.getElementById('compareOngoingTitle').innerHTML = ongTitle
+                ? highlightRight(ongTitle, ongMw.matchedTitleWords || [], ongMw.repoSynonymTitleWords || [], 'title', ongMw.repoConceptWords || [])
+                : '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">No matching approved ongoing study found.</span>';
+
+            document.getElementById('compareOngoingGroup').textContent = ongGroup || 'Unknown Group';
+
+            showScoreBadge('sectionScoreOngoingTitle', ss.title);
+            showScoreBadge('sectionScoreOngoingBody', ss.body || ss.abstract);
+
+            const bodyEl = document.getElementById('compareOngoingBody');
+            if (ongBody && ongBody.trim()) {
+                bodyEl.innerHTML = highlightRight(ongBody, ongMw.matchedObjAbstractWords || [], ongMw.repoSynonymAbstractWords || [], 'abstract', ongMw.repoConceptWords || []);
+            } else if (ongTitle) {
+                bodyEl.innerHTML = '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Loading document text...</span>';
+                fetch(`${API_BASE}/ongoing-study-body?groupName=${encodeURIComponent(ongGroup)}&title=${encodeURIComponent(ongTitle)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.success && data.body) {
+                            bodyEl.innerHTML = highlightRight(data.body, ongMw.matchedObjAbstractWords || [], ongMw.repoSynonymAbstractWords || [], 'abstract', ongMw.repoConceptWords || []);
+                        } else {
+                            bodyEl.innerHTML = '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">Document text preview not available.</span>';
+                        }
+                    })
+                    .catch(() => {
+                        bodyEl.innerHTML = '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">Document text preview not available.</span>';
+                    });
+            } else {
+                bodyEl.innerHTML = '<span style="color:#9ca3af;font-style:italic;font-size:12.5px;">No ongoing study document content available.</span>';
+            }
+        }
+
+        function openCompareModal(proposalNumber) {
+            const proposal = titleProposals.find(item => Number(item.title_number) === proposalNumber);
+            if (!proposal) return;
+            currentModalProposal = proposal;
+
+            try {
+                currentModalArchivedMatch = typeof proposal.archived_match_details === 'string'
+                    ? JSON.parse(proposal.archived_match_details)
+                    : (proposal.archived_match_details || null);
+            } catch(e) { currentModalArchivedMatch = null; }
+
+            try {
+                currentModalOngoingMatch = typeof proposal.ongoing_match_details === 'string'
+                    ? JSON.parse(proposal.ongoing_match_details)
+                    : (proposal.ongoing_match_details || null);
+            } catch(e) { currentModalOngoingMatch = null; }
+
+            populateArchivedPanel(proposal, currentModalArchivedMatch);
+            populateOngoingPanel(proposal, currentModalOngoingMatch);
+
+            const isOngoingPrimary = proposal.matched_source_type === 'approved_proposal';
+            switchCompareTab(isOngoingPrimary ? 'ongoing' : 'archived');
 
             document.getElementById('compareModal').style.display = 'flex';
+        }
+
+        function switchCompareTab(tab) {
+            const archTab = document.getElementById('compareTabArchived');
+            const ongoingTab = document.getElementById('compareTabOngoing');
+            const btnArch = document.getElementById('tabBtnArchived');
+            const btnOngoing = document.getElementById('tabBtnOngoing');
+            const panelTitle = document.getElementById('compareRightPanelTitle');
+            const subtitleEl = document.getElementById('compareModalSubtitle');
+            const badgeEl = document.getElementById('compareModalBadge');
+
+            if (!currentModalProposal) return;
+            const num = currentModalProposal.title_number;
+
+            if (tab === 'archived') {
+                if (archTab) { archTab.style.display = 'flex'; archTab.style.flexDirection = 'column'; }
+                if (ongoingTab) ongoingTab.style.display = 'none';
+                if (btnArch) { btnArch.style.background = '#7c3aed'; btnArch.style.color = 'white'; }
+                if (btnOngoing) { btnOngoing.style.background = '#f5f3ff'; btnOngoing.style.color = '#7c3aed'; }
+                if (panelTitle) panelTitle.textContent = 'Archived Study Match';
+                if (subtitleEl) subtitleEl.innerText = `Title Proposal ${num} – Matched Against Archived Study`;
+
+                const archPct = (currentModalArchivedMatch && currentModalArchivedMatch.percentage !== undefined)
+                    ? currentModalArchivedMatch.percentage
+                    : (currentModalProposal.matched_source_type !== 'approved_proposal' ? currentModalProposal.similarity_percentage : 0);
+                const archLvl = (currentModalArchivedMatch && currentModalArchivedMatch.level)
+                    ? currentModalArchivedMatch.level
+                    : (currentModalProposal.matched_source_type !== 'approved_proposal' ? currentModalProposal.similarity_level : 'Low Similarity');
+
+                if (badgeEl) {
+                    badgeEl.innerText = `${archPct}% Similarity – ${archLvl}`;
+                    badgeEl.style.cssText = `font-size: 13px; padding: 7px 16px; border-radius: 20px; font-weight: 700; ${getBadgeStyle(archLvl)}`;
+                }
+
+                renderLeftPanel(currentModalArchivedMatch ? currentModalArchivedMatch.matchingSections : null);
+            } else {
+                if (archTab) archTab.style.display = 'none';
+                if (ongoingTab) { ongoingTab.style.display = 'flex'; ongoingTab.style.flexDirection = 'column'; }
+                if (btnArch) { btnArch.style.background = '#f5f3ff'; btnArch.style.color = '#7c3aed'; }
+                if (btnOngoing) { btnOngoing.style.background = '#7c3aed'; btnOngoing.style.color = 'white'; }
+                if (panelTitle) panelTitle.textContent = 'Approved Ongoing Study';
+                if (subtitleEl) subtitleEl.innerText = `Title Proposal ${num} – Matched Against Approved Ongoing Study`;
+
+                const ongPct = (currentModalOngoingMatch && currentModalOngoingMatch.percentage !== undefined)
+                    ? currentModalOngoingMatch.percentage
+                    : (currentModalProposal.matched_source_type === 'approved_proposal' ? currentModalProposal.similarity_percentage : 0);
+                const ongLvl = (currentModalOngoingMatch && currentModalOngoingMatch.level)
+                    ? currentModalOngoingMatch.level
+                    : (currentModalProposal.matched_source_type === 'approved_proposal' ? currentModalProposal.similarity_level : 'Low Similarity');
+
+                if (badgeEl) {
+                    badgeEl.innerText = `${ongPct}% Similarity – ${ongLvl}`;
+                    badgeEl.style.cssText = `font-size: 13px; padding: 7px 16px; border-radius: 20px; font-weight: 700; ${getBadgeStyle(ongLvl)}`;
+                }
+
+                renderLeftPanel(currentModalOngoingMatch ? currentModalOngoingMatch.matchingSections : null);
+            }
         }
 
         function closeCompareModal() {
@@ -1519,7 +2043,7 @@
                 adviserRow.innerHTML = `
                     <div class="adviser-row-main">
                         <div class="adviser-avatar">
-                            ${adviser.profile_image ? `<img src="http://localhost:3005${adviser.profile_image}" alt="Profile">` : initial}
+                            ${adviser.profile_image ? `<img src="${API_BASE}${adviser.profile_image}" alt="Profile">` : initial}
                         </div>
                         <div class="adviser-row-details">
                             <h3>${adviser.fullname}</h3>
@@ -1529,13 +2053,13 @@
 
                     <div class="adviser-row-meta">
                         <span class="badge program-badge">
-                            <i class="fa-solid fa-graduation-cap"></i> Program: ${adviser.program_cater}
+                            <i class="fa-solid fa-graduation-cap"></i> Program: ${adviser.program_cater || "All"}
                         </span>
                         <span class="badge year-badge">
-                            <i class="fa-solid fa-layer-group"></i> Year: ${adviser.year_level_cater}
+                            <i class="fa-solid fa-layer-group"></i> Year: ${adviser.year_level_cater || "All"}
                         </span>
-                        <span class="badge status-badge ${adviser.adviser_status.toLowerCase().replace(/\s+/g, '-')}">
-                            ${adviser.adviser_status}
+                        <span class="badge status-badge ${String(adviser.adviser_status || 'Unavailable').toLowerCase().replace(/\s+/g, '-')}">
+                            ${adviser.adviser_status || 'Unavailable'}
                         </span>
                     </div>
 
@@ -1604,7 +2128,7 @@
             const initial = selectedAdviser.fullname ? selectedAdviser.fullname.charAt(0).toUpperCase() : "A";
             const modalAvatar = document.getElementById("modalAvatar");
             if (selectedAdviser.profile_image) {
-                modalAvatar.innerHTML = `<img src="http://localhost:3005${selectedAdviser.profile_image}" alt="Profile">`;
+                modalAvatar.innerHTML = `<img src="${API_BASE}${selectedAdviser.profile_image}" alt="Profile">`;
             } else {
                 modalAvatar.innerText = initial;
             }
@@ -1671,7 +2195,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/request-adviser",
+                        `${API_BASE}/request-adviser`,
                         {
                             method:"POST",
 
@@ -1720,18 +2244,32 @@
         }
 
         async function initAdviserPage(){
-            await loadPageData();
-            await initStudentGroupGate({
-                requireGroup:true,
-                activeNav:"nav-adviser"
-            });
+            try {
+                await loadPageData();
+            } catch (err) {
+                console.error("loadPageData failed:", err);
+            }
+            try {
+                if (typeof initStudentGroupGate === "function") {
+                    await initStudentGroupGate({
+                        requireGroup: true,
+                        activeNav: "nav-adviser"
+                    });
+                }
+            } catch (err) {
+                console.error("initStudentGroupGate failed:", err);
+            }
         }
 
-        initAdviserPage();
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initAdviserPage);
+        } else {
+            initAdviserPage();
+        }
 
     </script>
 
-    <script src="../shared/portal-notifications.js" defer></script>
+    <script src="../shared/portal-notifications.js?v=20261114_01" defer></script>
 </body>
 
 </html>

@@ -1,21 +1,143 @@
+require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const https = require("https");
 const pdfParse = require("pdf-parse");
 const { PDFDocument } = require("pdf-lib");
+const nodemailer = require("nodemailer");
+const semEngine = require("./similarity-engine");
+// Pre-load Hugging Face model asynchronously on module load
+semEngine.loadModel().catch(() => {});
 
 const app = express();
 
+/* ================= EMAIL TRANSPORTER SETUP ================= */
+
+const mailTransporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+    }
+});
+
+async function sendCredentialEmail(recipientEmail, fullname, userId, tempPassword, roleName) {
+    if (!recipientEmail || !recipientEmail.trim()) {
+        console.log(`[Email Notice] Skipping email dispatch for ${fullname}: No email address provided.`);
+        return;
+    }
+
+    const htmlContent = `
+        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f0fa; padding: 40px 15px; color: #2d1b45;">
+            <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(109, 40, 217, 0.12), 0 4px 6px rgba(0, 0, 0, 0.04); border: 1px solid #ede9fe;">
+                
+                <!-- Purple Header -->
+                <div style="background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 55%, #7c3aed 100%); padding: 32px 25px; text-align: center; color: #ffffff;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🎓</div>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">Capstone Management System</h1>
+                    <p style="margin: 6px 0 0 0; color: #e9d5ff; font-size: 14px; font-weight: 500; letter-spacing: 0.3px;">Account Access Credentials</p>
+                </div>
+                
+                <!-- Email Body Content -->
+                <div style="padding: 35px 30px;">
+                    <p style="font-size: 16px; color: #2e1065; margin-top: 0; line-height: 1.5;">Hello <strong style="color: #6d28d9;">${fullname}</strong>,</p>
+                    <p style="font-size: 14px; color: #4c4d6d; line-height: 1.6; margin-bottom: 24px;">
+                        Your official portal account has been created for the <strong>Capstone Management System</strong> as a <strong>${roleName}</strong>. Below are your initial login credentials:
+                    </p>
+                    
+                    <!-- Purple Highlighted Box for Credentials -->
+                    <div style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-left: 5px solid #7c3aed; border-radius: 10px; padding: 20px 24px; margin: 25px 0;">
+                        <div style="margin-bottom: 14px;">
+                            <span style="font-size: 11px; text-transform: uppercase; color: #6d5f85; font-weight: 700; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">User ID / Username</span>
+                            <span style="font-size: 18px; font-weight: 700; color: #2e1065; font-family: 'Courier New', Courier, monospace; background: #ede9fe; padding: 3px 8px; border-radius: 6px; display: inline-block;">${userId}</span>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; text-transform: uppercase; color: #6d5f85; font-weight: 700; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">Temporary Password</span>
+                            <span style="font-size: 18px; font-weight: 700; color: #6d28d9; font-family: 'Courier New', Courier, monospace; background: #ede9fe; padding: 3px 8px; border-radius: 6px; display: inline-block;">${tempPassword}</span>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: 13px; color: #6d5f85; line-height: 1.5; margin-bottom: 28px;">
+                        🔒 Please log in using these credentials and update your password upon your initial sign-in for security.
+                    </p>
+                    
+                    <!-- Primary CTA Button -->
+                    <div style="text-align: center; margin-top: 30px; margin-bottom: 10px;">
+                        <a href="http://localhost:3005" style="background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);">
+                            Access Portal Login
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div style="background-color: #faf8ff; padding: 18px 20px; text-align: center; font-size: 12px; color: #7c3aed; border-top: 1px solid #ede9fe;">
+                    &copy; 2026 Capstone Management System. All rights reserved.
+                </div>
+            </div>
+        </div>
+    `;
+
+    try {
+        const mailOptions = {
+            from: `"CMS Portal System" <${process.env.GMAIL_USER}>`,
+            to: recipientEmail,
+            subject: "Your Capstone Management System Credentials",
+            html: htmlContent
+        };
+
+        const info = await mailTransporter.sendMail(mailOptions);
+        console.log(`[Email Success] Sent credentials to ${recipientEmail} (${fullname}) - Message ID: ${info.messageId}`);
+    } catch (err) {
+        console.error(`[Email Error] Failed sending email to ${recipientEmail}:`, err.message || err);
+    }
+}
+
 /* ================= MIDDLEWARE ================= */
 
-app.use(cors());
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (!origin || origin === "null") {
+        // file:// pages send Origin: "null" — allow wildcard without credentials header
+        res.header("Access-Control-Allow-Origin", "*");
+    } else {
+        // http:// or https:// origins — echo back origin and allow credentials
+        res.header("Access-Control-Allow-Origin", origin);
+        res.header("Access-Control-Allow-Credentials", "true");
+    }
+    res.header("Access-Control-Allow-Private-Network", "true");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Private-Network");
+    if (req.method === "OPTIONS") {
+        return res.status(200).end();
+    }
+    next();
+});
+
 app.use(bodyParser.json());
 
+app.use((req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    next();
+});
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.static(__dirname, {
+    etag: false,
+    lastModified: false,
+    setHeaders: (res) => {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+    }
+}));
 
 /* ================= PROFILE IMAGE UPLOAD SETUP ================= */
 
@@ -269,21 +391,47 @@ const studentDocumentUpload = multer({
 
 /* ================= DATABASE ================= */
 
-const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "capstone123",
-    database: "capx_db",
-    port: 3307
+const db = mysql.createPool({
+    host: process.env.DB_HOST || "localhost",
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || "capx_db",
+    port: Number(process.env.DB_PORT) || 3307,
+    waitForConnections: true,
+    connectionLimit: 25,
+    queueLimit: 0
 });
 
 /* ================= CONNECT ================= */
 
-db.connect((err) => {
+        db.getConnection((err, connection) => {
     if (err) {
-        console.log(err);
+        console.log("MySQL Pool Connection Error:", err);
     } else {
-        console.log("MySQL Connected");
+        console.log("MySQL Connected via Connection Pool");
+        connection.release();
+
+        const checkEmailColumnSql = `
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+            AND table_name = 'users'
+            AND column_name = 'email'
+            LIMIT 1
+        `;
+
+        db.query(checkEmailColumnSql, (checkErr, checkResult) => {
+            if (!checkErr && Array.isArray(checkResult) && checkResult.length === 0) {
+                db.query(`ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL`, (addErr) => {
+                    if (addErr) {
+                        console.error("Unable to add users.email column:", addErr);
+                    } else {
+                        console.log("users.email column created successfully");
+                    }
+                });
+            }
+        });
+
         const checkOwnershipColumnSql = `
             SELECT 1
             FROM information_schema.columns
@@ -394,6 +542,26 @@ db.connect((err) => {
             );
         });
 
+        const checkConsultationFileColSql = `
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+            AND table_name = 'consultations'
+            AND column_name = 'file_path'
+            LIMIT 1
+        `;
+
+        db.query(checkConsultationFileColSql, (colErr, colResult) => {
+            if (!colErr && (!colResult || colResult.length === 0)) {
+                db.query(`ALTER TABLE consultations ADD COLUMN file_path VARCHAR(500) NULL, ADD COLUMN file_name VARCHAR(255) NULL`, (addErr) => {
+                    if (addErr) console.error("Error adding file columns to consultations:", addErr);
+                    else console.log("consultations.file_path and file_name columns created");
+                });
+            } else {
+                console.log("consultations.file_path column already exists");
+            }
+        });
+
         const createMessagesTable = `
             CREATE TABLE IF NOT EXISTS messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -475,7 +643,10 @@ db.connect((err) => {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 student_id VARCHAR(50) NOT NULL,
                 proposed_title_id INT NOT NULL,
-                matched_repository_id INT NOT NULL,
+                matched_repository_id INT NULL,
+                matched_source_type VARCHAR(50) DEFAULT 'repository',
+                matched_approved_title VARCHAR(500) NULL,
+                matched_group_name VARCHAR(255) NULL,
                 similarity_percentage INT NOT NULL,
                 similarity_level VARCHAR(50) NOT NULL,
                 matching_sections TEXT NOT NULL,
@@ -491,6 +662,112 @@ db.connect((err) => {
                 console.error("Error creating title_similarity_results table:", tableErr);
             } else {
                 console.log("title_similarity_results table verified/created");
+            }
+            // Run column migrations for existing databases
+            const checkSimTableCols = `
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                AND table_name = 'title_similarity_results'
+            `;
+            db.query(checkSimTableCols, (errCols, colResults) => {
+                if (!errCols && Array.isArray(colResults)) {
+                    const existingCols = colResults.map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
+                    db.query(`ALTER TABLE title_similarity_results MODIFY COLUMN matched_repository_id INT NULL`, () => {});
+                    if (!existingCols.includes('matched_source_type')) {
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_source_type VARCHAR(50) DEFAULT 'repository'`, () => {});
+                    }
+                    if (!existingCols.includes('matched_approved_title')) {
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_approved_title VARCHAR(500) NULL`, () => {});
+                    }
+                    if (!existingCols.includes('matched_group_name')) {
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_group_name VARCHAR(255) NULL`, () => {});
+                    }
+                    if (!existingCols.includes('archived_match_details')) {
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN archived_match_details LONGTEXT NULL`, () => {});
+                    }
+                    if (!existingCols.includes('ongoing_match_details')) {
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN ongoing_match_details LONGTEXT NULL`, () => {});
+                    }
+                }
+            });
+        });
+
+        /* ---- env_scan_student_signatures table ---- */
+        const createEnvScanSigsTable = `
+            CREATE TABLE IF NOT EXISTS env_scan_student_signatures (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                document_id INT NOT NULL,
+                student_user_id VARCHAR(50) NOT NULL,
+                student_name VARCHAR(255) NULL,
+                student_position VARCHAR(100) NULL,
+                signed_file_path VARCHAR(500) NULL,
+                signed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_doc_student (document_id, student_user_id)
+            )
+        `;
+        db.query(createEnvScanSigsTable, (sigTableErr) => {
+            if (sigTableErr) {
+                console.error("Error creating env_scan_student_signatures table:", sigTableErr);
+            } else {
+                console.log("env_scan_student_signatures table verified/created");
+            }
+        });
+        /* ---- student_status column on users ---- */
+        const checkStudentStatusCol = `
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+            AND table_name = 'users'
+            AND column_name = 'student_status'
+            LIMIT 1
+        `;
+        db.query(checkStudentStatusCol, (stErr, stResult) => {
+            if(!stErr && !(Array.isArray(stResult) && stResult.length > 0)){
+                db.query(`ALTER TABLE users ADD COLUMN student_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'`, (addErr) => {
+                    if(addErr){ console.error("Unable to add student_status column:", addErr); }
+                    else { console.log("users.student_status column created"); }
+                });
+            }
+        });
+
+        /* ---- submission_count column on student_documents ---- */
+        const checkSubmissionCountCol = `
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+            AND table_name = 'student_documents'
+            AND column_name = 'submission_count'
+            LIMIT 1
+        `;
+        db.query(checkSubmissionCountCol, (scErr, scResult) => {
+            if(!scErr && !(Array.isArray(scResult) && scResult.length > 0)){
+                db.query(`ALTER TABLE student_documents ADD COLUMN submission_count INT DEFAULT 0`, (addErr) => {
+                    if(addErr){ console.error("Unable to add submission_count column:", addErr); }
+                    else { console.log("student_documents.submission_count column created"); }
+                });
+            }
+        });
+
+        /* ---- research_problem & methodology columns on repository ---- */
+        const checkRepoCols = `
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+            AND table_name = 'repository'
+            AND column_name IN ('research_problem', 'methodology')
+        `;
+        db.query(checkRepoCols, (rErr, rResult) => {
+            if (!rErr && Array.isArray(rResult)) {
+                const existing = rResult.map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
+                if (!existing.includes('research_problem')) {
+                    db.query("ALTER TABLE repository ADD COLUMN research_problem TEXT NULL", () => {
+                        console.log("repository.research_problem column verified/created");
+                    });
+                }
+                if (!existing.includes('methodology')) {
+                    db.query("ALTER TABLE repository ADD COLUMN methodology TEXT NULL", () => {
+                        console.log("repository.methodology column verified/created");
+                    });
+                }
             }
         });
     }
@@ -544,15 +821,22 @@ app.post("/login", (req, res) => {
 
         const user = result[0];
 
-        if(user.password !== password){
-            return res.json({
-                success:false,
-                errorType:"incorrect_password",
-                message:"Incorrect password. Please verify your password and try again."
-            });
-        }
+        const storedPwd = String(user.password || "");
+        const isBcrypt = storedPwd.startsWith("$2a$") || storedPwd.startsWith("$2b$");
+        const verifyPromise = isBcrypt
+            ? bcrypt.compare(String(password), storedPwd)
+            : Promise.resolve(storedPwd === String(password));
 
-        return res.json({
+        verifyPromise.then((isMatch) => {
+            if(!isMatch){
+                return res.json({
+                    success:false,
+                    errorType:"incorrect_password",
+                    message:"Incorrect password. Please verify your password and try again."
+                });
+            }
+
+            return res.json({
             success:true,
             message:"Login successful.",
             fullname:user.fullname,
@@ -563,6 +847,13 @@ app.post("/login", (req, res) => {
             panelist_access:user.panelist_access || 0,
             instructor_access:user.instructor_access || 0,
             forcePasswordChange:user.force_password_change || 0
+            });
+        }).catch((cmpErr) => {
+            console.error("bcrypt compare error:", cmpErr);
+            return res.json({
+                success:false,
+                message:"Error verifying password."
+            });
         });
 
     });
@@ -572,12 +863,13 @@ app.post("/login", (req, res) => {
 /* ================= ENROLL FACULTY ================= */
 
 app.post("/enroll-faculty", (req, res) => {
-    const { fullname, position } = req.body;
+    const { fullname, position, email } = req.body;
+    const year = new Date().getFullYear();
 
     const sqlLast = `
         SELECT user_id
         FROM users
-        WHERE user_id LIKE 'FAC2026-%'
+        WHERE user_id LIKE 'FAC${year}-%'
         ORDER BY CAST(SUBSTRING_INDEX(user_id, '-', -1) AS UNSIGNED) DESC
         LIMIT 1
     `;
@@ -596,9 +888,10 @@ app.post("/enroll-faculty", (req, res) => {
             nextNumber = numberPart + 1;
         }
 
-        const facultyId = `FAC2026-${String(nextNumber).padStart(4, "0")}`;
+        const facultyId = `FAC${year}-${String(nextNumber).padStart(4, "0")}`;
         const tempPassword = "FAC" + Math.floor(1000 + Math.random() * 9000);
 
+        bcrypt.hash(tempPassword, 10).then((hashedPassword) => {
         const sqlInsert = `
             INSERT INTO users
             (
@@ -606,18 +899,23 @@ app.post("/enroll-faculty", (req, res) => {
                 fullname,
                 password,
                 role,
-                position
+                position,
+                email
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
 
         db.query(
             sqlInsert,
-            [facultyId, fullname, tempPassword, "faculty", position],
+            [facultyId, fullname, hashedPassword, "faculty", position, email || null],
             (err) => {
                 if (err) {
                     console.log(err);
                     return res.json({ success: false });
+                }
+
+                if (email) {
+                    sendCredentialEmail(email, fullname, facultyId, tempPassword, "Faculty");
                 }
 
                 res.json({
@@ -627,6 +925,89 @@ app.post("/enroll-faculty", (req, res) => {
                 });
             }
         );
+        }).catch((hashErr) => {
+            console.error(hashErr);
+            res.json({ success: false });
+        });
+    });
+});
+
+/* ================= ENROLL ADMIN ================= */
+
+app.post("/enroll-admin", (req, res) => {
+    const { fullname, position, email, password: customPassword } = req.body;
+    const year = new Date().getFullYear();
+
+    const sqlLast = `
+        SELECT user_id
+        FROM users
+        WHERE user_id LIKE 'ADM${year}-%'
+        ORDER BY CAST(SUBSTRING_INDEX(user_id, '-', -1) AS UNSIGNED) DESC
+        LIMIT 1
+    `;
+
+    db.query(sqlLast, (err, result) => {
+        if (err) {
+            console.log(err);
+            return res.json({ success: false, message: "DB error generating admin ID." });
+        }
+
+        let nextNumber = 1;
+        if (result.length > 0) {
+            const lastId = result[0].user_id;
+            nextNumber = parseInt(lastId.split("-")[1]) + 1;
+        }
+
+        const adminId = `ADM${year}-${String(nextNumber).padStart(4, "0")}`;
+        const tempPassword = customPassword || ("ADM" + Math.floor(1000 + Math.random() * 9000));
+
+        // Get access flags from first existing admin as template
+        const templateSql = `
+            SELECT position, program, adviser_access, panelist_access, instructor_access
+            FROM users WHERE role = 'admin' ORDER BY id LIMIT 1
+        `;
+        db.query(templateSql, async (err2, tmpl) => {
+            try {
+                const hashedPassword = await bcrypt.hash(String(tempPassword), 10);
+                const t = (tmpl && tmpl[0]) || {};
+                const sqlInsert = `
+                    INSERT INTO users
+                    (
+                        user_id, fullname, password, role, position, program,
+                        email, adviser_access, panelist_access, instructor_access,
+                        force_password_change
+                    )
+                    VALUES (?, ?, ?, 'admin', ?, ?, ?, ?, ?, ?, 0)
+                `;
+                db.query(
+                    sqlInsert,
+                    [
+                        adminId,
+                        fullname || adminId,
+                        hashedPassword,
+                        position || t.position || "Dean",
+                        t.program || "Dean Office",
+                        email || null,
+                        t.adviser_access ?? 1,
+                        t.panelist_access ?? 1,
+                        t.instructor_access ?? 1
+                    ],
+                    (err3) => {
+                        if (err3) {
+                            console.log(err3);
+                            return res.json({ success: false, message: "Insert failed." });
+                        }
+                        if (email) {
+                            sendCredentialEmail(email, fullname || adminId, adminId, tempPassword, "Admin");
+                        }
+                        res.json({ success: true, adminId, tempPassword });
+                    }
+                );
+            } catch (hashErr) {
+                console.error(hashErr);
+                res.json({ success: false, message: "Password hashing failed." });
+            }
+        });
     });
 });
 
@@ -673,25 +1054,46 @@ app.delete("/delete-faculty/:id", (req, res) => {
 
 /* ================= EDIT FACULTY ================= */
 
-app.put("/edit-faculty", (req, res) => {
+app.put("/edit-faculty", async (req, res) => {
     const { id, position, password } = req.body;
 
-    const sql = `
-        UPDATE users
-        SET
-            position = ?,
-            password = ?
-        WHERE id = ?
-    `;
-
-    db.query(sql, [position, password, id], (err) => {
-        if (err) {
-            console.log(err);
-            return res.json({ success: false });
+    try {
+        if (password && String(password).trim() !== "") {
+            const rawPwd = String(password).trim();
+            const isBcrypt = rawPwd.startsWith("$2a$") || rawPwd.startsWith("$2b$");
+            const hashedPwd = isBcrypt ? rawPwd : await bcrypt.hash(rawPwd, 10);
+            const sql = `
+                UPDATE users
+                SET
+                    position = ?,
+                    password = ?
+                WHERE id = ?
+            `;
+            db.query(sql, [position, hashedPwd, id], (err) => {
+                if (err) {
+                    console.log(err);
+                    return res.json({ success: false });
+                }
+                res.json({ success: true });
+            });
+        } else {
+            const sql = `
+                UPDATE users
+                SET position = ?
+                WHERE id = ?
+            `;
+            db.query(sql, [position, id], (err) => {
+                if (err) {
+                    console.log(err);
+                    return res.json({ success: false });
+                }
+                res.json({ success: true });
+            });
         }
-
-        res.json({ success: true });
-    });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false });
+    }
 });
 
 /* ================= ROLE ACCESS ================= */
@@ -733,15 +1135,17 @@ app.post("/enroll-student", (req, res) => {
         program,
         year_level,
         student_position,
-        enrolledByUserId
+        enrolledByUserId,
+        email
     } = req.body;
 
     const position = student_position || "Not Assigned";
+    const year = new Date().getFullYear();
 
     const sqlLast = `
         SELECT user_id
         FROM users
-        WHERE user_id LIKE 'STU2026-%'
+        WHERE user_id LIKE 'STU${year}-%'
         ORDER BY CAST(SUBSTRING_INDEX(user_id, '-', -1) AS UNSIGNED) DESC
         LIMIT 1
     `;
@@ -760,9 +1164,10 @@ app.post("/enroll-student", (req, res) => {
             nextNumber = numberPart + 1;
         }
 
-        const studentId = `STU2026-${String(nextNumber).padStart(4, "0")}`;
+        const studentId = `STU${year}-${String(nextNumber).padStart(4, "0")}`;
         const tempPassword = Math.random().toString(36).slice(-8);
 
+        bcrypt.hash(tempPassword, 10).then((hashedPassword) => {
         const sqlInsert = `
             INSERT INTO users
             (
@@ -773,9 +1178,10 @@ app.post("/enroll-student", (req, res) => {
                 program,
                 year_level,
                 student_position,
-                enrolled_by_user_id
+                enrolled_by_user_id,
+                email
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         db.query(
@@ -783,17 +1189,22 @@ app.post("/enroll-student", (req, res) => {
             [
                 studentId,
                 fullname,
-                tempPassword,
+                hashedPassword,
                 "student",
                 program,
                 year_level,
                 position,
-                enrolledByUserId || null
+                enrolledByUserId || null,
+                email || null
             ],
             (err) => {
                 if (err) {
                     console.log(err);
                     return res.json({ success: false });
+                }
+
+                if (email) {
+                    sendCredentialEmail(email, fullname, studentId, tempPassword, "Student");
                 }
 
                 res.json({
@@ -803,6 +1214,10 @@ app.post("/enroll-student", (req, res) => {
                 });
             }
         );
+        }).catch((hashErr) => {
+            console.error(hashErr);
+            res.json({ success: false });
+        });
     });
 });
 
@@ -817,11 +1232,27 @@ app.get("/student-accounts", (req, res) => {
     const isMine = String(scope || "").toLowerCase() === "mine";
 
     const sql = `
-        SELECT *
-        FROM users
-        WHERE role = 'student'
-        ${isMine ? "AND enrolled_by_user_id = ?" : ""}
-        ORDER BY id DESC
+        SELECT
+            u.id,
+            u.user_id,
+            u.fullname,
+            u.role,
+            u.program,
+            u.year_level,
+            u.student_position,
+            u.password,
+            COALESCE(u.student_status, 'ACTIVE') AS student_status,
+            u.enrolled_by_user_id,
+            u.created_at,
+            cg.id AS group_db_id,
+            cg.group_id AS group_code,
+            cg.group_name
+        FROM users u
+        LEFT JOIN group_members gm ON u.id = gm.student_id
+        LEFT JOIN capstone_groups cg ON gm.group_id = cg.id
+        WHERE u.role = 'student'
+        ${isMine ? "AND u.enrolled_by_user_id = ?" : ""}
+        ORDER BY u.id DESC
     `;
 
     const params =
@@ -845,69 +1276,86 @@ app.get("/student-accounts", (req, res) => {
 /* ================= DELETE STUDENT ================= */
 
 app.delete("/delete-student/:id", (req, res) => {
-    const {
-        requestorRole,
-        requestorUserId
-    } = req.query;
+    const studentIdentifier = req.params.id;
+    if (!studentIdentifier) {
+        return res.json({ success: false, message: "Missing student ID." });
+    }
 
-    if (String(requestorRole || "").toLowerCase() !== "admin") {
-        const ownerSql = `
-            SELECT id
-            FROM users
-            WHERE id = ?
-            AND role = 'student'
-            AND enrolled_by_user_id = ?
+    // 1. Find student by database id or user_id (e.g. STU2026-0001)
+    const findStudentSql = `SELECT id, user_id, fullname FROM users WHERE (id = ? OR user_id = ?) AND role = 'student' LIMIT 1`;
+    db.query(findStudentSql, [studentIdentifier, studentIdentifier], (findErr, findRows) => {
+        if (findErr) {
+            console.error("Delete student lookup error:", findErr);
+            return res.json({ success: false, message: "Database error looking up student." });
+        }
+        if (!findRows || findRows.length === 0) {
+            return res.json({ success: false, message: "Student account not found or already deleted." });
+        }
+
+        const student = findRows[0];
+        const studentDbId = student.id;
+
+        // 2. Check if student is in any capstone group via group_members
+        const groupCheckSql = `
+            SELECT gm.group_id, cg.group_name, cg.group_id AS group_code
+            FROM group_members gm
+            JOIN capstone_groups cg ON gm.group_id = cg.id
+            WHERE gm.student_id = ?
             LIMIT 1
         `;
 
-        return db.query(
-            ownerSql,
-            [
-                req.params.id,
-                requestorUserId || ""
-            ],
-            (err, ownerResult) => {
-                if (err) {
-                    console.log(err);
-                    return res.json({ success: false });
+        db.query(groupCheckSql, [studentDbId], (grpErr, grpRows) => {
+            if (grpErr) {
+                console.error("Group check error:", grpErr);
+                return res.json({ success: false, message: "Database error checking group membership." });
+            }
+
+            if (grpRows && grpRows.length > 0) {
+                const gName = grpRows[0].group_name || grpRows[0].group_code || "a capstone group";
+                return res.json({
+                    success: false,
+                    message: `Cannot delete student "${student.fullname}" because they are currently enrolled in capstone group "${gName}". Students assigned to a group cannot be deleted.`
+                });
+            }
+
+            // 3. Check if student is Project Manager of any capstone group
+            const pmCheckSql = `SELECT id, group_name FROM capstone_groups WHERE project_manager_id = ? LIMIT 1`;
+            db.query(pmCheckSql, [studentDbId], (pmErr, pmRows) => {
+                if (pmErr) {
+                    console.error("PM check error:", pmErr);
+                    return res.json({ success: false, message: "Database error checking group project manager." });
                 }
 
-                if (ownerResult.length === 0) {
+                if (pmRows && pmRows.length > 0) {
                     return res.json({
                         success: false,
-                        message: "You can only delete students you enrolled."
+                        message: `Cannot delete student "${student.fullname}" because they are assigned as Project Manager of "${pmRows[0].group_name}".`
                     });
                 }
 
-                const sql = `
-                    DELETE FROM users
-                    WHERE id = ?
-                `;
+                // 4. Student has NO group. Clean up dependent/orphan records safely.
+                db.query("DELETE FROM user_notifications WHERE user_id = ?", [studentDbId], () => {});
+                db.query("DELETE FROM student_hidden_updates WHERE student_id = ?", [studentDbId], () => {});
+                db.query("DELETE FROM env_scan_student_signatures WHERE student_id = ?", [studentDbId], () => {});
+                db.query("DELETE FROM title_proposals WHERE uploaded_by = ? AND (group_id IS NULL OR group_id = 0)", [studentDbId], () => {});
+                db.query("DELETE FROM student_documents WHERE uploaded_by = ? AND (group_id IS NULL OR group_id = 0)", [studentDbId], () => {});
 
-                db.query(sql, [req.params.id], (err) => {
-                    if (err) {
-                        console.log(err);
-                        return res.json({ success: false });
+                // 5. Delete from users table
+                const delUserSql = `DELETE FROM users WHERE id = ? AND role = 'student'`;
+                db.query(delUserSql, [studentDbId], (delErr, delResult) => {
+                    if (delErr) {
+                        console.error("Delete user error:", delErr);
+                        return res.json({ success: false, message: "Failed to delete student account: " + delErr.message });
                     }
 
-                    res.json({ success: true });
+                    console.log(`[STUDENT DELETED] Student "${student.fullname}" (ID: ${student.user_id}, DB ID: ${studentDbId}) permanently deleted.`);
+                    return res.json({
+                        success: true,
+                        message: `Student "${student.fullname}" (${student.user_id}) was successfully deleted.`
+                    });
                 });
-            }
-        );
-    }
-
-    const sql = `
-        DELETE FROM users
-        WHERE id = ?
-    `;
-
-    db.query(sql, [req.params.id], (err) => {
-        if (err) {
-            console.log(err);
-            return res.json({ success: false });
-        }
-
-        res.json({ success: true });
+            });
+        });
     });
 });
 
@@ -921,9 +1369,82 @@ app.put("/edit-student", (req, res) => {
         year_level,
         student_position,
         password,
+        student_status,
         requestorRole,
         requestorUserId
     } = req.body;
+
+    if (!id) {
+        return res.json({ success: false, message: "Missing student ID." });
+    }
+
+    let validStatus = "ACTIVE";
+    if (student_status) {
+        const upper = String(student_status).trim().toUpperCase();
+        if (["ACTIVE", "INACTIVE", "DROPPED"].includes(upper)) {
+            validStatus = upper;
+        }
+    }
+
+    const handleUpdate = () => {
+        // Check if student belongs to a capstone group
+        const groupCheckSql = `
+            SELECT gm.group_id, cg.group_name
+            FROM group_members gm
+            JOIN capstone_groups cg ON gm.group_id = cg.id
+            WHERE gm.student_id = ?
+            LIMIT 1
+        `;
+
+        db.query(groupCheckSql, [id], (errGrp, grpRows) => {
+            if (errGrp) {
+                console.log(errGrp);
+                return res.json({ success: false, message: "Database error checking group membership." });
+            }
+
+            const inGroup = grpRows && grpRows.length > 0;
+
+            const resolvePasswordHash = async () => {
+                if (!password || String(password).trim() === "") return null;
+                const rawPwd = String(password).trim();
+                if (rawPwd.startsWith("$2a$") || rawPwd.startsWith("$2b$")) return rawPwd;
+                return await bcrypt.hash(rawPwd, 10);
+            };
+
+            resolvePasswordHash().then((hashedPwd) => {
+                if (inGroup) {
+                    const sql = hashedPwd
+                        ? `UPDATE users SET fullname = ?, password = ?, student_status = ? WHERE id = ?`
+                        : `UPDATE users SET fullname = ?, student_status = ? WHERE id = ?`;
+                    const params = hashedPwd ? [fullname, hashedPwd, validStatus, id] : [fullname, validStatus, id];
+                    db.query(sql, params, (err) => {
+                        if (err) {
+                            console.log(err);
+                            return res.json({ success: false, message: "Failed to update student." });
+                        }
+                        res.json({ success: true, in_group: true });
+                    });
+                } else {
+                    const sql = hashedPwd
+                        ? `UPDATE users SET fullname = ?, program = ?, year_level = ?, student_position = ?, password = ?, student_status = ? WHERE id = ?`
+                        : `UPDATE users SET fullname = ?, program = ?, year_level = ?, student_position = ?, student_status = ? WHERE id = ?`;
+                    const params = hashedPwd
+                        ? [fullname, program, year_level, student_position, hashedPwd, validStatus, id]
+                        : [fullname, program, year_level, student_position, validStatus, id];
+                    db.query(sql, params, (err) => {
+                        if (err) {
+                            console.log(err);
+                            return res.json({ success: false, message: "Failed to update student." });
+                        }
+                        res.json({ success: true, in_group: false });
+                    });
+                }
+            }).catch((hashErr) => {
+                console.error(hashErr);
+                res.json({ success: false, message: "Failed to hash student password." });
+            });
+        });
+    };
 
     if (String(requestorRole || "").toLowerCase() !== "admin") {
         const ownerSql = `
@@ -935,7 +1456,7 @@ app.put("/edit-student", (req, res) => {
             LIMIT 1
         `;
 
-        return db.query(
+        db.query(
             ownerSql,
             [
                 id,
@@ -944,7 +1465,7 @@ app.put("/edit-student", (req, res) => {
             (err, ownerResult) => {
                 if (err) {
                     console.log(err);
-                    return res.json({ success: false });
+                    return res.json({ success: false, message: "Database error." });
                 }
 
                 if (ownerResult.length === 0) {
@@ -954,70 +1475,13 @@ app.put("/edit-student", (req, res) => {
                     });
                 }
 
-                const sql = `
-                    UPDATE users
-                    SET
-                        fullname = ?,
-                        program = ?,
-                        year_level = ?,
-                        student_position = ?,
-                        password = ?
-                    WHERE id = ?
-                `;
-
-                db.query(
-                    sql,
-                    [
-                        fullname,
-                        program,
-                        year_level,
-                        student_position,
-                        password,
-                        id
-                    ],
-                    (err) => {
-                        if (err) {
-                            console.log(err);
-                            return res.json({ success: false });
-                        }
-
-                        res.json({ success: true });
-                    }
-                );
+                handleUpdate();
             }
         );
+        return;
     }
 
-    const sql = `
-        UPDATE users
-        SET
-            fullname = ?,
-            program = ?,
-            year_level = ?,
-            student_position = ?,
-            password = ?
-        WHERE id = ?
-    `;
-
-    db.query(
-        sql,
-        [
-            fullname,
-            program,
-            year_level,
-            student_position,
-            password,
-            id
-        ],
-        (err) => {
-            if (err) {
-                console.log(err);
-                return res.json({ success: false });
-            }
-
-            res.json({ success: true });
-        }
-    );
+    handleUpdate();
 });
 
 /* ================= BULK ENROLL STUDENTS (CSV -> JSON) ================= */
@@ -1039,7 +1503,8 @@ app.post("/bulk-enroll-students", (req, res) => {
         fullname: String(s.fullname || "").trim(),
         program: String(s.program || "").trim(),
         year_level: String(s.year_level || "").trim(),
-        student_position: String(s.student_position || "").trim() || "Not Assigned"
+        student_position: String(s.student_position || "").trim() || "Not Assigned",
+        email: String(s.email || s.student_email || "").trim()
     }));
 
     const invalidIndex = normalizedRows.findIndex((s) =>
@@ -1065,11 +1530,12 @@ app.post("/bulk-enroll-students", (req, res) => {
             message: `Row ${invalidYearIndex + 1} has invalid year_level. Only "3rd Year" and "4th Year" are allowed.`
         });
     }
+    const year = new Date().getFullYear();
 
     const sqlLast = `
         SELECT user_id
         FROM users
-        WHERE user_id LIKE 'STU2026-%'
+        WHERE user_id LIKE 'STU${year}-%'
         ORDER BY CAST(SUBSTRING_INDEX(user_id, '-', -1) AS UNSIGNED) DESC
         LIMIT 1
     `;
@@ -1100,9 +1566,10 @@ app.post("/bulk-enroll-students", (req, res) => {
                 program,
                 year_level,
                 student_position,
-                enrolled_by_user_id
+                enrolled_by_user_id,
+                email
             )
-            VALUES (?, ?, ?, 'student', ?, ?, ?, ?)
+            VALUES (?, ?, ?, 'student', ?, ?, ?, ?, ?)
         `;
 
         const results = [];
@@ -1116,20 +1583,22 @@ app.post("/bulk-enroll-students", (req, res) => {
             }
 
             const row = normalizedRows[idx];
-            const studentId = `STU2026-${String(nextNumber).padStart(4, "0")}`;
+            const studentId = `STU${year}-${String(nextNumber).padStart(4, "0")}`;
             nextNumber += 1;
             const tempPassword = Math.random().toString(36).slice(-8);
 
+            bcrypt.hash(tempPassword, 10).then((hashedPassword) => {
             db.query(
                 insertSql,
                 [
                     studentId,
                     row.fullname,
-                    tempPassword,
+                    hashedPassword,
                     row.program,
                     row.year_level,
                     row.student_position,
-                    enrolledByUserId || null
+                    enrolledByUserId || null,
+                    row.email || null
                 ],
                 (err) => {
                     if (err) {
@@ -1141,6 +1610,10 @@ app.post("/bulk-enroll-students", (req, res) => {
                             error: "Insert failed"
                         });
                     } else {
+                        if (row.email) {
+                            sendCredentialEmail(row.email, row.fullname, studentId, tempPassword, "Student");
+                        }
+
                         results.push({
                             rowIndex: idx + 1,
                             fullname: row.fullname,
@@ -1153,6 +1626,16 @@ app.post("/bulk-enroll-students", (req, res) => {
                     insertNext(idx + 1);
                 }
             );
+            }).catch((hashErr) => {
+                console.error(hashErr);
+                results.push({
+                    rowIndex: idx + 1,
+                    fullname: row.fullname,
+                    success: false,
+                    error: "Password hashing failed"
+                });
+                insertNext(idx + 1);
+            });
         };
 
         insertNext(0);
@@ -1167,6 +1650,8 @@ app.post("/add-repository", (req, res) => {
         title,
         abstract,
         objectives,
+        research_problem,
+        methodology,
         researchers,
         adviser,
         category,
@@ -1180,12 +1665,14 @@ app.post("/add-repository", (req, res) => {
             title,
             abstract,
             objectives,
+            research_problem,
+            methodology,
             researchers,
             adviser,
             category,
             year
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -1195,10 +1682,70 @@ app.post("/add-repository", (req, res) => {
             title,
             abstract,
             objectives,
+            research_problem || null,
+            methodology || null,
             researchers,
             adviser,
             category,
             year
+        ],
+        (err) => {
+            if (err) {
+                console.log(err);
+                return res.json({ success: false });
+            }
+
+            res.json({ success: true });
+        }
+    );
+});
+
+/* ================= UPDATE REPOSITORY ================= */
+
+app.put("/update-repository/:id", (req, res) => {
+    const {
+        program,
+        title,
+        abstract,
+        objectives,
+        research_problem,
+        methodology,
+        researchers,
+        adviser,
+        category,
+        year
+    } = req.body;
+
+    const sql = `
+        UPDATE repository
+        SET
+            program = ?,
+            title = ?,
+            abstract = ?,
+            objectives = ?,
+            research_problem = ?,
+            methodology = ?,
+            researchers = ?,
+            adviser = ?,
+            category = ?,
+            year = ?
+        WHERE id = ?
+    `;
+
+    db.query(
+        sql,
+        [
+            program,
+            title,
+            abstract,
+            objectives,
+            research_problem || null,
+            methodology || null,
+            researchers,
+            adviser,
+            category,
+            year,
+            req.params.id
         ],
         (err) => {
             if (err) {
@@ -1273,6 +1820,282 @@ app.get("/repository-titles", (req, res) => {
     });
 });
 
+/* ================= SEMANTIC REPOSITORY SEARCH ================= */
+/*
+ * GET /repository-search?q=<query>
+ *
+ * Three-tier search (fastest-first, falls back gracefully):
+ *   Tier 1 — Synonym expansion (instant, zero-network):
+ *             "ojt" → also matches internship, practicum, training, etc.
+ *   Tier 2 — Gemini text-embedding-004 semantic embedding (API call):
+ *             Scores every record by cosine similarity with the query.
+ *   Tier 3 — Safe keyword fallback if Gemini is unreachable.
+ *
+ * Returns all records ranked by relevance (score > 0 first, then rest).
+ */
+
+// ── Synonym map (expand query terms before scoring) ─────────────────
+const SYNONYM_MAP = {
+    ojt:         ["ojt", "internship", "practicum", "training", "on-the-job", "field work", "apprentice"],
+    internship:  ["internship", "ojt", "practicum", "training", "on-the-job", "placement"],
+    practicum:   ["practicum", "ojt", "internship", "training", "field work"],
+    inventory:   ["inventory", "stock", "warehouse", "supply chain", "asset tracking", "stockroom"],
+    management:  ["management", "administration", "monitoring", "tracking", "oversight", "control"],
+    tracking:    ["tracking", "monitoring", "tracing", "surveillance", "logging"],
+    monitoring:  ["monitoring", "tracking", "surveillance", "observation", "dashboard"],
+    web:         ["web", "online", "internet", "browser", "website", "web-based", "portal"],
+    mobile:      ["mobile", "android", "ios", "app", "smartphone", "handheld"],
+    system:      ["system", "platform", "application", "tool", "software", "solution"],
+    student:     ["student", "learner", "scholar", "undergraduate", "academic", "pupil"],
+    grade:       ["grade", "score", "marks", "evaluation", "assessment", "rating"],
+    attendance:  ["attendance", "presence", "time-in", "log", "absences"],
+    sales:       ["sales", "revenue", "commerce", "transaction", "ecommerce", "point-of-sale"],
+    library:     ["library", "books", "catalogue", "resources", "lending", "borrowing"],
+    health:      ["health", "medical", "clinic", "hospital", "patient", "wellness"],
+    schedule:    ["schedule", "calendar", "timetable", "appointment", "booking", "planner"],
+    ai:          ["ai", "artificial intelligence", "machine learning", "deep learning", "neural", "nlp"],
+    data:        ["data", "analytics", "statistics", "reporting", "insights", "dashboard"],
+    coffee:      ["coffee", "cafe", "beverage", "brew", "drink", "menu"],
+    shop:        ["shop", "store", "retail", "marketplace", "commerce", "business"],
+};
+
+function expandQuery(rawQuery) {
+    const lower = rawQuery.toLowerCase().trim();
+    const tokens = lower.split(/\s+/);
+    const expanded = new Set(tokens);
+    tokens.forEach(tok => {
+        if (SYNONYM_MAP[tok]) SYNONYM_MAP[tok].forEach(s => expanded.add(s));
+    });
+    return [...expanded];
+}
+
+function keywordScore(item, expandedTerms) {
+    const haystack = [
+        item.title, item.abstract, item.objectives,
+        item.research_problem, item.methodology,
+        item.category, item.researchers, item.adviser
+    ].map(v => String(v || "").toLowerCase()).join(" ");
+
+    let hits = 0;
+    expandedTerms.forEach(term => { if (haystack.includes(term)) hits++; });
+    return hits / expandedTerms.length; // 0–1
+}
+
+// ── Gemini Cloud AI (gemini-embedding-001) via HTTPS (Layer 1) ───────
+function geminiEmbed(text) {
+    return new Promise((resolve) => {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return resolve({ values: null, error: "GEMINI_API_KEY is not configured in .env" });
+        }
+
+        const truncated = String(text || "").slice(0, 2048);
+        const payload = JSON.stringify({
+            model: "models/gemini-embedding-001",
+            content: { parts: [{ text: truncated }] }
+        });
+
+        const opts = {
+            hostname: "generativelanguage.googleapis.com",
+            path: `/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(opts, (res2) => {
+            let raw = "";
+            res2.on("data", c => raw += c);
+            res2.on("end", () => {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (res2.statusCode !== 200) {
+                        const errMsg = parsed?.error?.message || `HTTP ${res2.statusCode}: ${raw.slice(0, 150)}`;
+                        return resolve({ values: null, error: errMsg });
+                    }
+                    const values = parsed?.embedding?.values;
+                    if (Array.isArray(values) && values.length > 0) {
+                        return resolve({ values, error: null });
+                    }
+                    return resolve({ values: null, error: "Empty or malformed embedding in API response" });
+                } catch (e) {
+                    return resolve({ values: null, error: `JSON parse error: ${e.message} (HTTP ${res2.statusCode})` });
+                }
+            });
+        });
+        req.on("error", (err) => resolve({ values: null, error: `Network error: ${err.message}` }));
+        req.setTimeout(6000, () => {
+            req.destroy();
+            resolve({ values: null, error: "Request timed out after 6000ms" });
+        });
+        req.write(payload);
+        req.end();
+    });
+}
+
+function cosineScore(a, b) {
+    if (!a || !b || a.length !== b.length) return 0;
+    let dot = 0, na = 0, nb = 0;
+    for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+    if (!na || !nb) return 0;
+    return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+// In-memory cache for repository study embeddings (Layer 2: Local Hugging Face)
+const hfStudyEmbeddingsCache = new Map();
+
+async function getOrComputeStudyEmbedding(record) {
+    const cacheKey = `${record.id}_${(record.title || "").slice(0, 30)}`;
+    if (hfStudyEmbeddingsCache.has(cacheKey)) {
+        return hfStudyEmbeddingsCache.get(cacheKey);
+    }
+    const textToEmbed = [
+        record.title,
+        record.abstract,
+        record.objectives,
+        record.research_problem,
+        record.methodology
+    ].filter(Boolean).join(" ");
+
+    const emb = await semEngine.embed(textToEmbed);
+    hfStudyEmbeddingsCache.set(cacheKey, emb);
+    return emb;
+}
+
+app.get("/repository-search", (req, res) => {
+    const query = String(req.query.q || "").trim();
+    if (!query) {
+        // No query → return all titles (normal load)
+        const sql = "SELECT * FROM repository ORDER BY id DESC";
+        return db.query(sql, (err, rows) => {
+            if (err) return res.json({ success: false });
+            res.json({ success: true, titles: rows, mode: "all" });
+        });
+    }
+
+    const sql = "SELECT * FROM repository ORDER BY id DESC";
+    db.query(sql, async (err, rows) => {
+        if (err) return res.json({ success: false });
+        if (!rows || rows.length === 0) return res.json({ success: true, titles: [], mode: "empty" });
+
+        const expandedTerms = expandQuery(query);
+
+        let scored = null;
+        let layerMode = "keyword";
+
+        // ══════════════════════════════════════════════════════════════════
+        // LAYER 1: Gemini Cloud AI (Google gemini-embedding-001)
+        // ══════════════════════════════════════════════════════════════════
+        try {
+            const geminiQueryRes = await geminiEmbed(query);
+            if (geminiQueryRes && geminiQueryRes.values) {
+                const queryEmbedding = geminiQueryRes.values;
+                const recordTexts = rows.map(r =>
+                    [r.title, r.abstract, r.objectives, r.research_problem, r.methodology]
+                        .filter(Boolean).join(" ").slice(0, 2048)
+                );
+
+                const batchSize = 5;
+                const embeddings = [];
+                let batchError = null;
+
+                for (let i = 0; i < recordTexts.length; i += batchSize) {
+                    const batch = recordTexts.slice(i, i + batchSize);
+                    const batchResults = await Promise.all(batch.map(t => geminiEmbed(t)));
+                    for (const bRes of batchResults) {
+                        if (!bRes || !bRes.values) {
+                            batchError = bRes ? bRes.error : "Unknown embedding failure";
+                            break;
+                        }
+                        embeddings.push(bRes.values);
+                    }
+                    if (batchError) break;
+                }
+
+                if (!batchError && embeddings.length === rows.length) {
+                    scored = rows.map((r, i) => {
+                        const semSim = cosineScore(queryEmbedding, embeddings[i]);
+                        const kwSim  = keywordScore(r, expandedTerms);
+                        const finalScore = (semSim * 0.70) + (kwSim * 0.30);
+                        return { ...r, _score: finalScore, _mode: "gemini" };
+                    });
+                    layerMode = "gemini";
+                    console.log(`[Search] Layer 1: Gemini (query: "${query}")`);
+                } else if (batchError) {
+                    console.warn(`[Search] Layer 1 (Gemini) failed: ${batchError}`);
+                }
+            } else {
+                const reason = geminiQueryRes ? geminiQueryRes.error : "Unknown error";
+                console.warn(`[Search] Layer 1 (Gemini) failed: ${reason}`);
+            }
+        } catch (geminiEx) {
+            console.warn(`[Search] Layer 1 (Gemini) failed: ${geminiEx.message}`);
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // LAYER 2: Local Hugging Face AI Backup (Xenova/all-MiniLM-L6-v2)
+        // ══════════════════════════════════════════════════════════════════
+        if (!scored) {
+            try {
+                if (!semEngine.isModelReady()) {
+                    await semEngine.loadModel();
+                }
+
+                if (semEngine.isModelReady() && typeof semEngine.embed === 'function') {
+                    const queryHfEmbed = await semEngine.embed(query);
+                    const recordHfEmbeddings = await Promise.all(rows.map(r => getOrComputeStudyEmbedding(r)));
+
+                    scored = rows.map((r, i) => {
+                        const semSim = semEngine.cosineSimilarity(queryHfEmbed, recordHfEmbeddings[i]);
+                        const kwSim  = keywordScore(r, expandedTerms);
+                        const finalScore = (semSim * 0.70) + (kwSim * 0.30);
+                        return { ...r, _score: finalScore, _mode: "huggingface" };
+                    });
+                    layerMode = "huggingface";
+                    console.log(`[Search] Layer 2: Local HuggingFace (query: "${query}")`);
+                } else {
+                    console.warn(`[Search] Layer 2 (Local HuggingFace) model not ready.`);
+                }
+            } catch (hfEx) {
+                console.warn(`[Search] Layer 2 (Local HuggingFace) failed: ${hfEx.message}`);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // LAYER 3: Synonym + Keyword Safety Net
+        // ══════════════════════════════════════════════════════════════════
+        if (!scored) {
+            scored = rows.map(r => ({
+                ...r,
+                _score: keywordScore(r, expandedTerms),
+                _mode: "keyword"
+            }));
+            layerMode = "keyword";
+            console.log(`[Search] Layer 3: Keyword Fallback (query: "${query}")`);
+        }
+
+        // Sort: highest score first; ties keep original order
+        scored.sort((a, b) => b._score - a._score);
+
+        // Always return all records (UI can show "0% match" items at bottom)
+        // But separate them: matched (score > 0) vs unmatched
+        const matched   = scored.filter(r => r._score > 0.05);
+        const unmatched = scored.filter(r => r._score <= 0.05);
+        const finalList = [...matched, ...unmatched];
+
+        finalList.forEach(r => { delete r._score; delete r._mode; });
+
+        res.json({
+            success: true,
+            titles: finalList,
+            mode: layerMode,
+            matchCount: matched.length
+        });
+    });
+});
+
 /* ================= GET SINGLE REPOSITORY TITLE BY ID ================= */
 
 app.get("/repository-title/:id", (req, res) => {
@@ -1318,11 +2141,17 @@ app.get("/student-info/:userId", (req, res) => {
             u.year_level,
             u.student_position,
             u.enrolled_by_user_id,
-            inst.fullname AS instructor_name
+            inst.fullname AS instructor_name,
+            cg.id AS existing_group_db_id,
+            cg.group_id AS existing_group_code,
+            cg.group_name AS existing_group_name
         FROM users u
         LEFT JOIN users inst ON u.enrolled_by_user_id = inst.user_id
+        LEFT JOIN group_members gm ON u.id = gm.student_id
+        LEFT JOIN capstone_groups cg ON gm.group_id = cg.id
         WHERE u.user_id = ?
         AND u.role = 'student'
+        LIMIT 1
     `;
 
     db.query(sql, [userId], (err, result) => {
@@ -1338,31 +2167,128 @@ app.get("/student-info/:userId", (req, res) => {
             });
         }
 
+        const student = result[0];
+        student.has_group = !!student.existing_group_db_id;
+
         res.json({
             success: true,
-            student: result[0]
+            student: student
+        });
+    });
+});
+
+/* ================= CHECK GROUP NAME UNIQUENESS ================= */
+
+app.get("/check-group-name", (req, res) => {
+    const rawName = String(req.query.name || "").trim();
+    const excludeGroupId = String(req.query.excludeGroupId || "").trim();
+
+    if (!rawName) {
+        return res.json({
+            success: true,
+            available: false,
+            message: "Please enter a group name."
+        });
+    }
+
+    let sql = `
+        SELECT id, group_id, group_name
+        FROM capstone_groups
+        WHERE LOWER(TRIM(group_name)) = LOWER(TRIM(?))
+    `;
+    const params = [rawName];
+
+    if (excludeGroupId) {
+        sql += ` AND group_id != ? AND id != ?`;
+        params.push(excludeGroupId, excludeGroupId);
+    }
+
+    sql += ` LIMIT 1`;
+
+    db.query(sql, params, (err, rows) => {
+        if (err) {
+            console.log(err);
+            return res.json({
+                success: false,
+                available: true,
+                message: "Error checking group name."
+            });
+        }
+
+        if (rows && rows.length > 0) {
+            return res.json({
+                success: true,
+                available: false,
+                existing_group_name: rows[0].group_name,
+                existing_group_id: rows[0].group_id,
+                message: `You cannot use "${rawName}" because another group already has this name. Please edit the group name.`
+            });
+        }
+
+        return res.json({
+            success: true,
+            available: true,
+            message: "Group name is available."
         });
     });
 });
 
 /* ================= CREATE GROUP ================= */
 
-app.post("/create-group", (req, res) => {
+app.post("/create-group", async (req, res) => {
     const {
-    groupName,
-    projectTitle,
-    groupProgram,
-    projectManagerUserId,
-    members
-} = req.body;
+        groupName,
+        projectTitle,
+        groupProgram,
+        projectManagerUserId,
+        members
+    } = req.body;
+
+    if (!groupName || !String(groupName).trim()) {
+        return res.json({
+            success: false,
+            message: "Please enter a group name."
+        });
+    }
+
+    try {
+        const dupRows = await new Promise((resolve, reject) => {
+            db.query(
+                `SELECT id, group_id, group_name FROM capstone_groups WHERE LOWER(TRIM(group_name)) = LOWER(TRIM(?)) LIMIT 1`,
+                [String(groupName).trim()],
+                (err, rows) => (err ? reject(err) : resolve(rows || []))
+            );
+        });
+        if (dupRows.length > 0) {
+            return res.json({
+                success: false,
+                duplicateName: true,
+                message: `You cannot use "${String(groupName).trim()}" because another group already has this name. Please edit the group name.`
+            });
+        }
+    } catch (dupErr) {
+        console.log("Error checking duplicate group name:", dupErr);
+    }
+
     if(members.length > 3){
+        return res.json({
+            success:false,
+            message:"Only 4 members are allowed per group, including the Project Manager."
+        });
+    }
 
-    return res.json({
-        success:false,
-        message:"Only 4 members are allowed per group, including the Project Manager."
-    });
-
-}
+    // Check position uniqueness (1 PM, 1 System Analyst, 1 System Developer)
+    const allPositions = ['Project Manager', ...members.map(m => m.memberPosition).filter(Boolean)];
+    const posCounts = {};
+    for (const pos of allPositions) {
+        posCounts[pos] = (posCounts[pos] || 0) + 1;
+        if (posCounts[pos] > 1) {
+            return res.json({
+                success: false,
+                message: `Each position role in a group must be unique. You cannot assign the role "${pos}" more than once in the same group.`
+            });
+        }
+    }
 
     const checkManagerSql = `
         SELECT id, user_id, fullname, student_position, program
@@ -1393,24 +2319,30 @@ app.post("/create-group", (req, res) => {
             });
         }
 
+        // Check if ANY student (PM or member) already belongs to a group
+        const allMemberUserIds = [projectManagerUserId, ...members.map(m => m.studentUserId).filter(Boolean)];
+
         const checkExistingGroupSql = `
-            SELECT cg.group_id
+            SELECT gm.student_id, u.user_id, u.fullname, cg.group_name, cg.group_id
             FROM group_members gm
+            JOIN users u ON gm.student_id = u.id
             JOIN capstone_groups cg ON gm.group_id = cg.id
-            WHERE gm.student_id = ?
-            LIMIT 1
+            WHERE u.user_id IN (?)
         `;
 
-        db.query(checkExistingGroupSql, [manager.id], (err, existingGroup) => {
+        db.query(checkExistingGroupSql, [allMemberUserIds], (err, existingGroups) => {
             if (err) {
                 console.log(err);
                 return res.json({ success: false });
             }
 
-            if (existingGroup.length > 0) {
+            if (existingGroups.length > 0) {
+                const existingList = existingGroups
+                    .map(m => `${m.fullname} (${m.user_id}) already belongs to group "${m.group_name || m.group_id}"`)
+                    .join("; ");
                 return res.json({
                     success: false,
-                    message: `You already belong to a group: ${existingGroup[0].group_id}`
+                    message: `Cannot create group: ${existingList}. A student can only belong to ONE group.`
                 });
             }
 
@@ -1681,7 +2613,7 @@ app.get("/group-defense-history/:groupDbId", (req, res) => {
             ds.id,
             ds.schedule_code,
             ds.room_name,
-            ds.defense_date,
+            DATE_FORMAT(ds.defense_date, '%Y-%m-%d') AS defense_date,
             ds.start_time,
             ds.end_time,
             ds.defense_type,
@@ -1728,7 +2660,7 @@ app.get("/student-defense-history/:userId", (req, res) => {
             ds.id,
             ds.schedule_code,
             ds.room_name,
-            ds.defense_date,
+            DATE_FORMAT(ds.defense_date, '%Y-%m-%d') AS defense_date,
             ds.start_time,
             ds.end_time,
             ds.defense_type,
@@ -1946,7 +2878,7 @@ app.put("/update-student-position", (req, res) => {
 
 /* ================= UPDATE GROUP ================= */
 
-app.put("/update-group", (req, res) => {
+app.put("/update-group", async (req, res) => {
     const {
         groupId,
         groupName,
@@ -1956,11 +2888,50 @@ app.put("/update-group", (req, res) => {
         members
     } = req.body;
 
+    if (!groupName || !String(groupName).trim()) {
+        return res.json({
+            success: false,
+            message: "Please enter a group name."
+        });
+    }
+
+    try {
+        const dupRows = await new Promise((resolve, reject) => {
+            db.query(
+                `SELECT id, group_id, group_name FROM capstone_groups WHERE LOWER(TRIM(group_name)) = LOWER(TRIM(?)) AND group_id != ? AND id != ? LIMIT 1`,
+                [String(groupName).trim(), String(groupId || ""), String(groupId || "")],
+                (err, rows) => (err ? reject(err) : resolve(rows || []))
+            );
+        });
+        if (dupRows.length > 0) {
+            return res.json({
+                success: false,
+                duplicateName: true,
+                message: `You cannot use "${String(groupName).trim()}" because another group already has this name. Please edit the group name.`
+            });
+        }
+    } catch (dupErr) {
+        console.log("Error checking duplicate group name:", dupErr);
+    }
+
     if(members.length > 3){
         return res.json({
             success:false,
             message:"Only 4 members are allowed per group, including the Project Manager."
         });
+    }
+
+    // Check position uniqueness (1 PM, 1 System Analyst, 1 System Developer)
+    const allPositions = ['Project Manager', ...members.map(m => m.memberPosition).filter(Boolean)];
+    const posCounts = {};
+    for (const pos of allPositions) {
+        posCounts[pos] = (posCounts[pos] || 0) + 1;
+        if (posCounts[pos] > 1) {
+            return res.json({
+                success: false,
+                message: `Each position role in a group must be unique. You cannot assign the role "${pos}" more than once in the same group.`
+            });
+        }
     }
 
     const checkManagerSql = `
@@ -3734,76 +4705,191 @@ app.put("/instructor-update-capstone-group", (req, res) => {
 /* ================= SEMANTIC SIMILARITY CHECKER ENGINE ================= */
 
 const STOP_WORDS = new Set([
-    // Articles, prepositions, conjunctions
-    'the', 'a', 'an', 'and', 'or', 'in', 'on', 'at', 'to', 'for', 'with', 'of', 'by', 'using',
-    'about', 'from', 'as', 'into', 'its', 'it', 'this', 'that', 'these', 'those', 'be', 'been',
-    'being', 'have', 'has', 'had', 'do', 'does', 'did', 'but', 'not', 'our', 'we', 'you', 'your',
-    'their', 'they', 'he', 'she', 'him', 'her', 'us', 'also', 'such', 'can', 'will', 'may', 'shall',
-    'each', 'all', 'any', 'both', 'few', 'more', 'other', 'same', 'than', 'too', 'very', 'just',
-    'while', 'where', 'when', 'which', 'who', 'how', 'what', 'was', 'were', 'would', 'could', 'should',
-    // Generic academic / tech verbs that appear in every capstone document
-    'develop', 'developed', 'developing', 'development', 'create', 'created', 'creating', 'design',
-    'designed', 'designing', 'implement', 'implemented', 'implementing', 'build', 'built', 'building',
-    'provide', 'provided', 'providing', 'enable', 'enabled', 'enabling', 'allow', 'allows', 'allowed',
-    'improve', 'improved', 'improving', 'generate', 'generated', 'generating', 'support', 'supported',
-    'use', 'used', 'uses', 'ensure', 'ensures', 'ensured', 'enhance', 'enhanced', 'enhancing',
-    'manage', 'managed', 'managing', 'make', 'makes', 'made', 'help', 'helps', 'helped',
-    'identify', 'identified', 'analyze', 'analyzed', 'process', 'processes', 'processed',
-    'collect', 'collected', 'collecting', 'access', 'accessed', 'maintain', 'maintained',
-    'integrate', 'integrated', 'track', 'tracked', 'tracking', 'conduct', 'conducted',
-    // Generic nouns that appear in every capstone
-    'system', 'systems', 'application', 'applications', 'platform', 'platforms', 'software',
-    'web', 'website', 'online', 'based', 'tool', 'tools', 'portal', 'module', 'modules',
-    'data', 'information', 'record', 'records', 'report', 'reports', 'result', 'results',
-    'process', 'procedure', 'method', 'approach', 'feature', 'features', 'function', 'functions',
-    'user', 'users', 'admin', 'administrator', 'interface', 'database',
-    'objective', 'objectives', 'general', 'specific', 'purpose', 'goal', 'goals', 'aim', 'aims',
-    'study', 'research', 'project', 'capstone', 'thesis', 'paper',
-    'figure', 'table', 'section', 'chapter', 'page', 'list', 'one', 'two', 'three',
-    'first', 'second', 'third', 'following', 'include', 'includes', 'included',
-    'through', 'within', 'between', 'different', 'various', 'multiple', 'available', 'existing',
-    'new', 'current', 'local', 'overall', 'additional', 'related', 'complete', 'completed'
+    // Articles
+    'the', 'a', 'an',
+    // Coordinating conjunctions
+    'and', 'or', 'but', 'nor', 'yet', 'so',
+    // Prepositions (short, non-semantic)
+    'in', 'on', 'at', 'to', 'for', 'with', 'of', 'by', 'as', 'into',
+    'about', 'from', 'over', 'under', 'above', 'below', 'off', 'out',
+    // Pronouns
+    'it', 'its', 'this', 'that', 'these', 'those',
+    'we', 'you', 'your', 'our', 'they', 'their', 'he', 'she', 'him', 'her', 'us',
+    // Auxiliary / modal verbs
+    'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+    'will', 'would', 'could', 'should', 'may', 'shall', 'can', 'might',
+    'was', 'were',
+    // Common short fillers
+    'not', 'also', 'such', 'each', 'all', 'any', 'both', 'few',
+    'more', 'other', 'same', 'than', 'too', 'very', 'just',
+    'while', 'where', 'when', 'which', 'who', 'how', 'what',
+    'already', 'still', 'even', 'only', 'then', 'thus', 'hence',
+    // Ordinals & numbers (never domain-significant in titles)
+    'one', 'two', 'three', 'four', 'five',
+    'first', 'second', 'third', 'last', 'next',
+    // Filler verbs with zero domain meaning
+    'get', 'gets', 'got', 'put', 'set', 'run', 'runs', 'keep', 'kept',
+    'come', 'comes', 'came', 'go', 'goes', 'went', 'give', 'gives', 'given',
+    'show', 'shows', 'shown', 'find', 'finds', 'need', 'needs', 'want', 'wants',
+    'make', 'makes', 'made', 'take', 'takes', 'taken',
+    // Short common words with no domain meaning
+    'are', 'per', 'main', 'real', 'own', 'low', 'new', 'old', 'big', 'key',
+    'via', 'vs', 'etc', 'ie', 'eg', 'e.g', 'i.e',
+    'based', 'using', 'used', 'use', 'uses', 'given', 'like', 'see', 'let',
+    'among', 'within', 'across', 'along', 'during', 'before', 'after', 'between',
+    'through', 'including', 'included', 'include', 'includes',
+    'part', 'parts', 'area', 'areas', 'level', 'levels', 'type', 'types', 'kind', 'kinds',
+    'way', 'ways', 'case', 'cases', 'point', 'points', 'term', 'terms',
+    'sign', 'signed', 'view', 'views', 'post', 'posts', 'adopt', 'adopted',
+    'lead', 'lack', 'adopt', 'final', 'ched', 'scattered', 'delayed', 'integrity',
+    'logic', 'backend',
 ]);
 
+/* ---- Generic Capstone Boilerplate Words to Strip from Topic Matching ---- */
+const GENERIC_CAPSTONE_WORDS = new Set([
+    'management', 'system', 'systems',
+    'web', 'based', 'web-based',
+    'application', 'applications', 'app', 'apps',
+    'platform', 'platforms',
+    'portal', 'portals',
+    'analytics',
+    'tracking', 'tracker',
+    'monitoring', 'monitor',
+    'automated', 'automatic',
+    'project', 'projects',
+    'study', 'studies',
+    'software', 'tool', 'tools',
+    'solution', 'solutions',
+    'information',
+    'team', 'teams',
+    'data',
+    'report', 'reports', 'reporting',
+    'using', 'used', 'use', 'uses',
+    'process', 'processes', 'processing',
+    'result', 'results',
+    'record', 'records', 'recording',
+    'service', 'services'
+]);
+
+/** Strips generic suffix words so Hugging Face embeddings focus strictly on the core domain topic */
+function cleanDomainTitle(text) {
+    if (!text) return '';
+    return String(text).toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !STOP_WORDS.has(w) && !GENERIC_CAPSTONE_WORDS.has(w))
+        .join(' ');
+}
+
 const SYNONYMS = {
-    'monitoring': ['tracking', 'surveillance', 'observation', 'checking', 'record', 'recording'],
-    'tracking': ['monitoring', 'surveillance', 'observation', 'checking', 'record', 'recording', 'tracing'],
-    'attendance': ['presence', 'roll call', 'tardy', 'absent', 'log'],
+    // ── Capstone / academic domain (CRITICAL — these must ALWAYS match) ──────
+    'capstone': ['thesis', 'dissertation', 'research project', 'final project', 'senior project'],
+    'thesis': ['capstone', 'dissertation', 'research', 'study', 'paper', 'project'],
+    'dissertation': ['thesis', 'capstone', 'research', 'study'],
+    'research': ['study', 'thesis', 'investigation', 'inquiry', 'analysis'],
+    // ── Repository / archive / library ───────────────────────────────────────
+    'repository': ['archive', 'database', 'library', 'collection', 'storage', 'catalog', 'registry'],
+    'archive': ['repository', 'database', 'library', 'collection', 'storage'],
+    'library': ['repository', 'archive', 'collection', 'catalog', 'database'],
+    'database': ['repository', 'archive', 'storage', 'records'],
+    // ── Collaborative / team ─────────────────────────────────────────────────
+    'collaborative': ['shared', 'teamwork', 'cooperative', 'joint', 'group', 'collective'],
+    'adviser': ['advisor', 'mentor', 'supervisor', 'faculty', 'instructor', 'professor'],
+    'advisor': ['adviser', 'mentor', 'supervisor', 'faculty', 'instructor'],
+    'faculty': ['adviser', 'advisor', 'instructor', 'professor', 'teacher'],
+    // ── Workload / balancer ───────────────────────────────────────────────────
+    'workload': ['load', 'tasks', 'assignments', 'capacity', 'work', 'duties'],
+    'balancer': ['scheduler', 'distribution', 'allocator'],
+    'scheduler': ['calendar', 'planner', 'timetable', 'booking', 'schedule'],
+    'schedule': ['timetable', 'calendar', 'appointment', 'booking', 'plan', 'scheduler'],
+    // ── Attendance / QR ──────────────────────────────────────────────────────
+    'attendance': ['presence', 'roll call', 'tardy', 'absent', 'log', 'dtr', 'time-in', 'time-out'],
     'qr': ['qr code', 'quick response', 'barcode', 'scan'],
     'code': ['qr', 'barcode', 'scan'],
+    // ── Student / academic context ───────────────────────────────────────────
     'class': ['student', 'classroom', 'course', 'school', 'academic'],
-    'student': ['class', 'learner', 'pupil', 'academic', 'classroom'],
-    'system': ['application', 'software', 'platform', 'app', 'tool', 'portal'],
-    'application': ['system', 'software', 'platform', 'app', 'tool', 'portal'],
-    'app': ['system', 'software', 'platform', 'application', 'tool', 'portal'],
-    'web': ['online', 'website', 'internet', 'portal', 'cloud'],
-    'mobile': ['android', 'ios', 'phone', 'smartphone', 'handheld'],
-    'automated': ['automatic', 'smart', 'intelligent', 'computerized'],
-    'smart': ['automated', 'automatic', 'intelligent', 'cognitive'],
+    'student': ['class', 'learner', 'pupil', 'academic', 'undergraduate', 'trainee', 'intern'],
+    'undergraduate': ['student', 'bsit', 'bsis', 'learner', 'pupil'],
+    // ── Notification / alert ─────────────────────────────────────────────────
     'sms': ['text message', 'notification', 'alert', 'message'],
     'alert': ['notification', 'sms', 'warning', 'alarm'],
-    'notification': ['alert', 'sms', 'warning', 'message']
+    'notification': ['alert', 'sms', 'warning', 'message'],
+    // ── OJT / internship / practicum ──────────────────────────────────────────
+    'ojt': ['internship', 'practicum', 'on-the-job training', 'training', 'intern', 'deployment', 'placement', 'trainee'],
+    'internship': ['ojt', 'practicum', 'on-the-job training', 'training', 'intern', 'deployment', 'placement', 'trainee'],
+    'practicum': ['ojt', 'internship', 'training', 'deployment', 'placement', 'trainee', 'fieldwork'],
+    'training': ['ojt', 'internship', 'practicum', 'placement', 'skill development', 'trainee'],
+    'intern': ['ojt', 'trainee', 'practicum', 'internship', 'apprentice'],
+    'placement': ['internship', 'ojt', 'practicum', 'deployment', 'matching'],
+    'trainee': ['intern', 'ojt', 'practicum', 'student', 'apprentice'],
+    'evaluation': ['assessment', 'appraisal', 'performance', 'grading', 'rating', 'feedback', 'review'],
+    'assessment': ['evaluation', 'appraisal', 'performance', 'review', 'rating'],
+    // ── Food & beverage ──────────────────────────────────────────────────────
+    'coffee': ['cafe', 'cafeteria', 'beverage', 'brew', 'espresso', 'coffeeshop', 'coffee shop'],
+    'cafe': ['coffee', 'coffeeshop', 'coffee shop', 'bistro', 'restaurant', 'eatery'],
+    'coffeeshop': ['cafe', 'coffee shop', 'coffee', 'bistro'],
+    'restaurant': ['eatery', 'diner', 'cafe', 'bistro', 'food service', 'foodservice'],
+    'food': ['meal', 'cuisine', 'menu', 'dining', 'recipe', 'dish'],
+    'menu': ['food', 'cuisine', 'dish', 'ordering', 'catalogue', 'catalog', 'directory', 'listing'],
+    'ordering': ['menu', 'order management', 'purchase order', 'booking', 'procurement'],
+    'catalogue': ['menu', 'directory', 'catalog', 'listing', 'registry', 'index', 'inventory'],
+    'catalog': ['menu', 'directory', 'catalogue', 'listing', 'registry', 'index'],
+    'directory': ['catalogue', 'catalog', 'menu', 'listing', 'registry', 'index'],
+    'beverage': ['drink', 'coffee', 'cafe', 'food', 'refreshment'],
+    // ── Business & commerce ──────────────────────────────────────────────────
+    'inventory': ['stock', 'stockroom', 'warehouse', 'supply', 'goods', 'asset'],
+    'stock': ['inventory', 'supply', 'goods', 'warehouse'],
+    'sales': ['revenue', 'transaction', 'purchase', 'order', 'selling'],
+    'order': ['purchase', 'transaction', 'booking', 'request', 'sales'],
+    'payment': ['transaction', 'billing', 'invoice', 'fee', 'purchase'],
+    'transaction': ['payment', 'purchase', 'sales', 'order', 'billing'],
+    // ── Healthcare ───────────────────────────────────────────────────────────
+    'patient': ['client', 'visitor', 'person', 'individual', 'case'],
+    'appointment': ['schedule', 'booking', 'reservation', 'consultation', 'visit'],
+    'health': ['medical', 'healthcare', 'clinic', 'wellness', 'hospital'],
+    'hospital': ['clinic', 'health center', 'medical', 'healthcare'],
+    'medical': ['health', 'clinical', 'hospital', 'wellness'],
+    // ── Education ────────────────────────────────────────────────────────────
+    'grade': ['score', 'mark', 'rating', 'performance', 'evaluation'],
+    'enrollment': ['registration', 'admission', 'enrolment', 'sign-up'],
+    // ── Logistics ────────────────────────────────────────────────────────────
+    'location': ['address', 'place', 'site', 'position', 'venue', 'map'],
+    'delivery': ['shipment', 'dispatch', 'courier', 'logistics', 'transport'],
+    'map': ['location', 'navigation', 'geo', 'route'],
+    // ── IT-specific ──────────────────────────────────────────────────────────
+    'mobile': ['android', 'ios', 'phone', 'smartphone', 'handheld'],
+    'chatbot': ['bot', 'virtual assistant', 'assistant', 'automated chat'],
+    'recommendation': ['suggestion', 'advice', 'guidance', 'referral'],
+    'sensor': ['detector', 'device', 'monitor', 'iot', 'hardware'],
+    'iot': ['sensor', 'device', 'hardware'],
+    'facial': ['face', 'biometric', 'recognition', 'identification'],
+    'recognition': ['identification', 'detection', 'facial', 'biometric'],
+    'fingerprint': ['biometric', 'identification', 'scan', 'authentication'],
+    'authentication': ['login', 'verification', 'security', 'fingerprint', 'biometric'],
 };
 
 function tokenizeText(text) {
     if (!text) return [];
     const clean = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
-    return clean.split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w));
+    return clean.split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w) && !GENERIC_CAPSTONE_WORDS.has(w));
 }
 
 function calculateMatchScore(studentText, repoText, matchType) {
     if (!studentText || !repoText) {
-        return { score: 0, matchedWords: [], matchedSynonymWords: [] };
+        return { score: 0, matchedWords: [], matchedSynonymWords: [], matchedRepoSynonymWords: [], conceptWords: [], repoConceptWords: [] };
     }
     const studentTokens = tokenizeText(studentText);
     const repoTokens = tokenizeText(repoText);
     if (studentTokens.length === 0) {
-        return { score: 0, matchedWords: [], matchedSynonymWords: [] };
+        return { score: 0, matchedWords: [], matchedSynonymWords: [], matchedRepoSynonymWords: [], conceptWords: [], repoConceptWords: [] };
     }
 
     let matches = 0;
-    const matchedWords = [];      // exact / partial exact matches
-    const matchedSynonymWords = []; // synonym-based matches
+    const matchedWords = [];           // student tokens that directly appear in repo
+    const matchedSynonymWords = [];    // student tokens whose synonym appears in repo (LEFT panel purple)
+    const matchedRepoSynonymWords = [];// actual repo-side words that matched via synonym (RIGHT panel purple)
+    const conceptWords = [];           // domain concept words (LEFT panel orange)
+    const repoConceptWords = [];       // domain concept words (RIGHT panel orange)
     const normRepo = repoText.toLowerCase();
 
     studentTokens.forEach(st => {
@@ -3815,12 +4901,18 @@ function calculateMatchScore(studentText, repoText, matchType) {
             matchedWords.push(st);
         } else {
             const related = SYNONYMS[st] || [];
+            let foundSyn = false;
             for (let rel of related) {
                 if (repoTokens.includes(rel) || normRepo.includes(rel)) {
-                    matches += 0.8;
-                    matchedSynonymWords.push(st);  // synonym hit tracked separately
+                    matches += 0.85;
+                    matchedSynonymWords.push(st);       // student-side: "ojt" → purple on left
+                    matchedRepoSynonymWords.push(rel);  // repo-side: "internship" → purple on right
+                    foundSyn = true;
                     break;
                 }
+            }
+            if (!foundSyn && related.length > 0) {
+                conceptWords.push(st);
             }
         }
     });
@@ -3828,44 +4920,194 @@ function calculateMatchScore(studentText, repoText, matchType) {
     return {
         score: Math.min(matches / studentTokens.length, 1.0),
         matchedWords: [...new Set(matchedWords)],
-        matchedSynonymWords: [...new Set(matchedSynonymWords)]
+        matchedSynonymWords: [...new Set(matchedSynonymWords)],
+        matchedRepoSynonymWords: [...new Set(matchedRepoSynonymWords)],
+        conceptWords: [...new Set(conceptWords)],
+        repoConceptWords: [...new Set(matchedRepoSynonymWords.concat(matchedWords))]
     };
 }
 
-function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryRecords) {
+async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryRecords) {
+    if (!semEngine.isModelReady()) {
+        console.log('[HF-CHECK] Model not ready yet; awaiting @huggingface/transformers loadModel()...');
+        await semEngine.loadModel();
+    }
+
+    const poolType = (repositoryRecords[0] && repositoryRecords[0].sourceType === 'approved_proposal')
+        ? 'Approved Ongoing Studies'
+        : 'Archived Studies';
+    console.log(`[HF-CHECK] Using @huggingface/transformers model: Xenova/all-MiniLM-L6-v2 (Checking "${proposedTitle}" against ${repositoryRecords.length} ${poolType})`);
+
     let highestPercentage = 0;
     let bestMatch = null;
     let bestMatchDetails = null;
 
-    repositoryRecords.forEach(repo => {
-        // Compare proposed title against repository title (weight: 40%)
-        const titleMatch = calculateMatchScore(proposedTitle, repo.title, 'title');
+    const cleanPropTitle = cleanDomainTitle(proposedTitle);
+    const hasPdfText = Boolean(proposedPdfText && proposedPdfText.trim().length > 0);
 
-        // Compare proposed objectives (PDF text) against repository abstract (weight: 30%)
-        const abstractMatch = calculateMatchScore(proposedPdfText, repo.abstract, 'abstract');
+    for (const repo of repositoryRecords) {
+        const isOngoingRecord = repo.sourceType === 'approved_proposal';
+        const bodyText = repo.bodyText || repo.abstract || '';
+        const cleanRepoTitle = cleanDomainTitle(repo.title);
 
-        // Compare proposed objectives (PDF text) against repository objectives (weight: 30%)
-        const objectivesMatch = calculateMatchScore(proposedPdfText, repo.objectives, 'objectives');
+        let semTitleScore = 0;
+        let semBodyScore = 0;
+        let semanticScore = 0;
 
-        const percentage = Math.round(
-            (titleMatch.score * 0.4 + abstractMatch.score * 0.3 + objectivesMatch.score * 0.3) * 100
-        );
+        if (isOngoingRecord) {
+            /* ══════════════════════════════════════════════════════════════════
+             * ONGOING APPROVED STUDY COMPARISON (HF SEMANTIC DOMAIN PIPELINE)
+             * ══════════════════════════════════════════════════════════════════ */
+            const titleMatch = calculateMatchScore(proposedTitle, repo.title, 'title');
+            const bodyMatch  = calculateMatchScore(proposedPdfText, bodyText, 'body');
 
-        if (percentage >= highestPercentage) {
-            highestPercentage = percentage;
-            bestMatch = repo;
-            bestMatchDetails = {
-                // Exact-match word lists per section
-                matchedTitleWords:         titleMatch.matchedWords,
-                matchedObjAbstractWords:   abstractMatch.matchedWords,
-                matchedObjObjectivesWords: objectivesMatch.matchedWords,
-                // Synonym-match word lists per section (shown in a different colour)
-                synonymTitleWords:         titleMatch.matchedSynonymWords,
-                synonymAbstractWords:      abstractMatch.matchedSynonymWords,
-                synonymObjectivesWords:    objectivesMatch.matchedSynonymWords
-            };
+            if (semEngine.isModelReady()) {
+                try {
+                    const [sTitle, sBody] = await Promise.all([
+                        semEngine.computeSemanticSimilarity(cleanPropTitle || proposedTitle, cleanRepoTitle || repo.title),
+                        (hasPdfText && bodyText) ? semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000), bodyText.slice(0, 2000)) : Promise.resolve(0)
+                    ]);
+                    semTitleScore = sTitle || 0;
+                    semBodyScore  = sBody  || 0;
+                    semanticScore = (hasPdfText && bodyText)
+                        ? (semTitleScore * 0.35 + semBodyScore * 0.65)
+                        : semTitleScore;
+                } catch (err) {
+                    console.error('[Similarity] semantic error for ongoing record', repo.id, err.message);
+                }
+            }
+
+            // Semantic cosine similarity drives the ranking, complemented by keyword/synonym match
+            const blendedTitleScore = semTitleScore > 0 ? (semTitleScore * 0.70 + titleMatch.score * 0.30) : titleMatch.score;
+            const blendedBodyScore  = semBodyScore > 0  ? (semBodyScore  * 0.70 + bodyMatch.score  * 0.30) : bodyMatch.score;
+            const blendedScore = (hasPdfText && bodyText)
+                ? (blendedTitleScore * 0.35 + blendedBodyScore * 0.65)
+                : blendedTitleScore;
+
+            const percentage = Math.round(blendedScore * 100);
+
+            if (percentage >= highestPercentage) {
+                highestPercentage = percentage;
+                bestMatch = repo;
+                bestMatchDetails = {
+                    matchedTitleWords:          titleMatch.matchedWords,
+                    matchedObjAbstractWords:    bodyMatch.matchedWords,
+                    matchedObjObjectivesWords:  [],
+                    matchedResearchProbWords:   [],
+                    matchedMethodologyWords:    [],
+                    synonymTitleWords:          titleMatch.matchedSynonymWords,
+                    synonymAbstractWords:       bodyMatch.matchedSynonymWords,
+                    synonymObjectivesWords:     [],
+                    synonymResearchProbWords:   [],
+                    synonymMethodologyWords:    [],
+                    conceptTitleWords:          titleMatch.conceptWords || [],
+                    conceptWords:               bodyMatch.conceptWords || [],
+                    repoSynonymTitleWords:         titleMatch.matchedRepoSynonymWords,
+                    repoSynonymAbstractWords:      bodyMatch.matchedRepoSynonymWords,
+                    repoSynonymObjectivesWords:    [],
+                    repoSynonymResearchProbWords:  [],
+                    repoSynonymMethodologyWords:   [],
+                    repoConceptWords:              bodyMatch.repoConceptWords || [],
+                    sectionScores: {
+                        title:          Math.round(blendedTitleScore * 100),
+                        abstract:       Math.round(blendedBodyScore  * 100),
+                        objectives:     Math.round(blendedBodyScore  * 100),
+                        researchProblem:0,
+                        methodology:    0,
+                        body:           Math.round(blendedBodyScore  * 100)
+                    },
+                    semanticScore: semEngine.isModelReady() ? Math.round(semanticScore * 100) : null
+                };
+            }
+        } else {
+            /* ══════════════════════════════════════════════════════════════════
+             * ARCHIVED REPOSITORY STUDY COMPARISON (HF SEMANTIC DOMAIN PIPELINE)
+             * ══════════════════════════════════════════════════════════════════ */
+            const titleMatch          = calculateMatchScore(proposedTitle,   repo.title,             'title');
+            const abstractMatch       = calculateMatchScore(proposedPdfText, repo.abstract,          'abstract');
+            const objectivesMatch     = calculateMatchScore(proposedPdfText, repo.objectives,        'objectives');
+            const researchProbMatch   = calculateMatchScore(proposedPdfText, repo.research_problem || '', 'research_problem');
+            const methodologyMatch    = calculateMatchScore(proposedPdfText, repo.methodology || '',      'methodology');
+
+            let semAbstractScore = 0, semObjectivesScore = 0, semResearchProbScore = 0, semMethodologyScore = 0;
+
+            if (semEngine.isModelReady()) {
+                try {
+                    [semTitleScore, semAbstractScore, semObjectivesScore,
+                     semResearchProbScore, semMethodologyScore] = await Promise.all([
+                        semEngine.computeSemanticSimilarity(cleanPropTitle || proposedTitle, cleanRepoTitle || repo.title),
+                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.abstract || '').slice(0, 2000)),
+                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.objectives || '').slice(0, 2000)),
+                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.research_problem || '').slice(0, 2000)),
+                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.methodology || '').slice(0, 2000))
+                    ]);
+
+                    semBodyScore =
+                        semAbstractScore     * 0.40 +
+                        semObjectivesScore   * 0.40 +
+                        semResearchProbScore * 0.10 +
+                        semMethodologyScore  * 0.10;
+
+                    semanticScore = (hasPdfText)
+                        ? (semTitleScore * 0.35 + semBodyScore * 0.65)
+                        : semTitleScore;
+                } catch (err) {
+                    console.error('[Similarity] semantic error for record', repo.id, err.message);
+                }
+            }
+
+            const blendedTitleScore    = semTitleScore > 0 ? (semTitleScore * 0.70 + titleMatch.score * 0.30) : titleMatch.score;
+            const blendedAbstractScore = semAbstractScore > 0 ? (semAbstractScore * 0.70 + abstractMatch.score * 0.30) : abstractMatch.score;
+            const blendedObjScore      = semObjectivesScore > 0 ? (semObjectivesScore * 0.70 + objectivesMatch.score * 0.30) : objectivesMatch.score;
+            const blendedProbScore     = semResearchProbScore > 0 ? (semResearchProbScore * 0.70 + researchProbMatch.score * 0.30) : researchProbMatch.score;
+            const blendedMethScore     = semMethodologyScore > 0 ? (semMethodologyScore * 0.70 + methodologyMatch.score * 0.30) : methodologyMatch.score;
+
+            const blendedBodyScore =
+                blendedAbstractScore * 0.40 +
+                blendedObjScore      * 0.40 +
+                blendedProbScore     * 0.10 +
+                blendedMethScore     * 0.10;
+
+            const blendedScore = (hasPdfText)
+                ? (blendedTitleScore * 0.35 + blendedBodyScore * 0.65)
+                : blendedTitleScore;
+
+            const percentage = Math.round(blendedScore * 100);
+
+            if (percentage >= highestPercentage) {
+                highestPercentage = percentage;
+                bestMatch = repo;
+                bestMatchDetails = {
+                    matchedTitleWords:          titleMatch.matchedWords,
+                    matchedObjAbstractWords:    abstractMatch.matchedWords,
+                    matchedObjObjectivesWords:  objectivesMatch.matchedWords,
+                    matchedResearchProbWords:   researchProbMatch.matchedWords,
+                    matchedMethodologyWords:    methodologyMatch.matchedWords,
+                    synonymTitleWords:          titleMatch.matchedSynonymWords,
+                    synonymAbstractWords:       abstractMatch.matchedSynonymWords,
+                    synonymObjectivesWords:     objectivesMatch.matchedSynonymWords,
+                    synonymResearchProbWords:   researchProbMatch.matchedSynonymWords,
+                    synonymMethodologyWords:    methodologyMatch.matchedSynonymWords,
+                    conceptTitleWords:          titleMatch.conceptWords || [],
+                    conceptWords:               (abstractMatch.conceptWords || []).concat(objectivesMatch.conceptWords || []),
+                    repoSynonymTitleWords:         titleMatch.matchedRepoSynonymWords,
+                    repoSynonymAbstractWords:      abstractMatch.matchedRepoSynonymWords,
+                    repoSynonymObjectivesWords:    objectivesMatch.matchedRepoSynonymWords,
+                    repoSynonymResearchProbWords:  researchProbMatch.matchedRepoSynonymWords,
+                    repoSynonymMethodologyWords:   methodologyMatch.matchedRepoSynonymWords,
+                    repoConceptWords:              (abstractMatch.repoConceptWords || []).concat(objectivesMatch.repoConceptWords || []),
+                    sectionScores: {
+                        title:          Math.round(blendedTitleScore    * 100),
+                        abstract:       Math.round(blendedAbstractScore * 100),
+                        objectives:     Math.round(blendedObjScore      * 100),
+                        researchProblem:Math.round(blendedProbScore     * 100),
+                        methodology:    Math.round(blendedMethScore     * 100)
+                    },
+                    semanticScore: semEngine.isModelReady() ? Math.round(semanticScore * 100) : null
+                };
+            }
         }
-    });
+    }
 
     let similarityLevel = "Low Similarity";
     if (highestPercentage > 25 && highestPercentage <= 50) {
@@ -3876,12 +5118,178 @@ function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryRecords) {
         similarityLevel = "Very High Similarity";
     }
 
+    console.log(`[HF-CHECK] Top Semantic Match for ${poolType}: "${bestMatch ? bestMatch.title : 'None'}" (${highestPercentage}% - ${similarityLevel})`);
+
     return {
         percentage: highestPercentage,
         level: similarityLevel,
         matchedRecord: bestMatch,
         matchingSections: bestMatchDetails
     };
+}
+
+async function runDualSimilarityCheck(proposedTitle, proposedPdfText, archivedRecords, ongoingRecords) {
+    const [archivedResult, ongoingResult] = await Promise.all([
+        runSimilarityCheck(proposedTitle, proposedPdfText, archivedRecords),
+        runSimilarityCheck(proposedTitle, proposedPdfText, ongoingRecords)
+    ]);
+
+    // Pick highest overall match as primary
+    const primaryResult = (ongoingResult.percentage > archivedResult.percentage) ? ongoingResult : archivedResult;
+
+    return {
+        primary: primaryResult,
+        archivedMatch: archivedResult,
+        ongoingMatch: ongoingResult
+    };
+}
+
+function getComparisonRecords(currentGroupId, callback) {
+    const repoSql = `SELECT id, title, abstract, objectives, research_problem, methodology FROM repository`;
+    db.query(repoSql, (err1, repoRows) => {
+        if (err1) {
+            console.error("Error fetching repository records for similarity:", err1);
+            repoRows = [];
+        }
+
+        const archivedRecords = (repoRows || []).map(r => ({
+            sourceType: 'repository',
+            id: r.id,
+            title: r.title || '',
+            abstract: r.abstract || '',
+            objectives: r.objectives || '',
+            research_problem: r.research_problem || '',
+            methodology: r.methodology || '',
+            group_name: null
+        }));
+
+        // Fetch Approved Concept Papers from student_documents (Concept Presentation • Proposed concept paper 1-3)
+        // These are the approved ongoing studies that must be checked against
+        const conceptDocsSql = `
+            SELECT 
+                sd.id,
+                sd.group_id,
+                cg.group_name,
+                sd.document_type,
+                sd.document_title AS title,
+                sd.file_name,
+                sd.file_path,
+                tp.proposed_title,
+                tp.proposed_objectives AS cached_text
+            FROM student_documents sd
+            JOIN capstone_groups cg ON sd.group_id = cg.id
+            LEFT JOIN title_proposals tp ON (
+                tp.group_id = sd.group_id
+                AND (
+                    (sd.document_type LIKE '%(1)%' AND tp.title_number = 1)
+                    OR (sd.document_type LIKE '%(2)%' AND tp.title_number = 2)
+                    OR (sd.document_type LIKE '%(3)%' AND tp.title_number = 3)
+                    OR (tp.file_path IS NOT NULL AND tp.file_path = sd.file_path)
+                )
+            )
+            WHERE sd.group_id != ?
+              AND sd.document_status = 'Approved'
+              AND (
+                  sd.document_type LIKE '%Proposed concept paper%'
+                  OR sd.document_type LIKE '%concept paper%'
+              )
+            ORDER BY sd.id DESC
+        `;
+
+        db.query(conceptDocsSql, [currentGroupId || 0], async (errDoc, docRows) => {
+            if (errDoc) {
+                console.error("Error fetching approved concept papers for similarity:", errDoc);
+                docRows = [];
+            }
+
+            const ongoingRecords = [];
+            const seenTitles = new Set();
+
+            for (const doc of (docRows || [])) {
+                const cleanTitle = (doc.proposed_title || doc.title || "").trim();
+                if (!cleanTitle) continue;
+                const dedupKey = (cleanTitle + '|' + (doc.group_name || '')).toLowerCase();
+                if (seenTitles.has(dedupKey)) continue;
+                seenTitles.add(dedupKey);
+
+                let bodyText = (doc.cached_text && doc.cached_text.trim()) ? doc.cached_text.trim() : '';
+                if (!bodyText && doc.file_path) {
+                    const cleanPath = doc.file_path.replace(/^\//, '');
+                    const fullPath = path.join(__dirname, cleanPath);
+                    if (fs.existsSync(fullPath)) {
+                        try {
+                            bodyText = await extractTextFromPdf(fullPath);
+                        } catch (pErr) {
+                            console.error("Error extracting text from approved concept paper PDF:", pErr);
+                        }
+                    }
+                }
+
+                ongoingRecords.push({
+                    sourceType: 'approved_proposal',
+                    id: doc.id,
+                    title: cleanTitle,
+                    abstract: bodyText,
+                    objectives: bodyText,
+                    research_problem: '',
+                    methodology: '',
+                    bodyText: bodyText,
+                    group_name: doc.group_name || "Approved Group",
+                    file_path: doc.file_path || ''
+                });
+            }
+
+            // Also check for any approved title_proposals from other groups
+            const propSql = `
+                SELECT 
+                    tp.id,
+                    tp.proposed_title AS title,
+                    tp.proposed_objectives AS cached_text,
+                    tp.group_id,
+                    cg.group_name
+                FROM title_proposals tp
+                JOIN capstone_groups cg ON tp.group_id = cg.id
+                WHERE tp.group_id != ?
+                  AND tp.status = 'Approved'
+                  AND tp.proposed_title IS NOT NULL
+                  AND TRIM(tp.proposed_title) != ''
+            `;
+
+            db.query(propSql, [currentGroupId || 0], (err3, propRows) => {
+                if (err3) {
+                    console.error("Error fetching title_proposals for similarity:", err3);
+                    propRows = [];
+                }
+
+                (propRows || []).forEach(p => {
+                    const cleanTitle = (p.title || "").trim();
+                    if (!cleanTitle) return;
+                    const dedupKey = (cleanTitle + '|' + (p.group_name || '')).toLowerCase();
+                    if (seenTitles.has(dedupKey)) return;
+                    seenTitles.add(dedupKey);
+
+                    const bodyText = (p.cached_text && p.cached_text.trim()) ? p.cached_text.trim() : cleanTitle;
+                    ongoingRecords.push({
+                        sourceType: 'approved_proposal',
+                        id: p.id,
+                        title: cleanTitle,
+                        abstract: bodyText,
+                        objectives: bodyText,
+                        research_problem: '',
+                        methodology: '',
+                        bodyText: bodyText,
+                        group_name: p.group_name || "Approved Group"
+                    });
+                });
+
+                callback({
+                    archivedRecords,
+                    ongoingRecords,
+                    allRecords: [...archivedRecords, ...ongoingRecords]
+                });
+            });
+        });
+    });
 }
 async function extractTextFromPdf(filePath) {
     try {
@@ -3933,6 +5341,25 @@ async function extractTextFromPdf(filePath) {
         }
 
         /* ══════════════════════════════════════════════════════════════════
+         * PHASE 1b — Strip inline team/author metadata labels
+         * Removes "Project Manager: Juan Dela Cruz" style labels that
+         * sometimes run inline rather than on their own line.
+         * ══════════════════════════════════════════════════════════════════ */
+        const ROLE_SCRUB = [
+            /project\s+manager\s*:\s*[^\n]*/gi,
+            /project\s+analyst\s*:\s*[^\n]*/gi,
+            /(?:team\s+)?members?\s*:\s*[^\n]*/gi,
+            /(?:lead|leader|programmer|developer|designer|analyst|documentarian|tester)\s*:\s*[^\n]*/gi,
+            /submitted\s+(?:by|to)\s*:\s*[^\n]*/gi,
+            /prepared\s+by\s*:\s*[^\n]*/gi,
+            /presented\s+(?:by|to)\s*:\s*[^\n]*/gi,
+            /(?:instructor|professor|adviser|advisor|faculty|course|subject)\s*:\s*[^\n]*/gi,
+        ];
+        for (const re of ROLE_SCRUB) {
+            rawText = rawText.replace(re, ' ');
+        }
+
+        /* ══════════════════════════════════════════════════════════════════
          * PHASE 2 — References removal + line-level filtering
          * ══════════════════════════════════════════════════════════════════ */
         const rawLines = rawText.split(/\r?\n/);
@@ -3965,6 +5392,14 @@ async function extractTextFromPdf(filePath) {
             /^running\s+head:/i,
             /^\s*[-\u2013]?\s*\d{1,4}\s*[-\u2013]?\s*$/,
             /^\s*\d+\s+of\s+\d+\s*$/,
+            // Strip team/author metadata lines from proposals
+            /^project\s+manager\s*:/i,
+            /^project\s+analyst\s*:/i,
+            /^(members?|team\s+members?)\s*:/i,
+            /^(lead|leader|programmer|developer|designer|analyst|documentarian|tester)\s*:/i,
+            /^(submitted\s+by|prepared\s+by|presented\s+by|submitted\s+to|presented\s+to)\s*:/i,
+            /^(course|subject|instructor|professor|adviser|advisor|faculty)\s*:/i,
+            /^(date\s+submitted|submission\s+date|school\s+year|academic\s+year)\s*:/i,
         ];
 
         const filteredLines = bodyLines
@@ -4019,6 +5454,78 @@ async function extractTextFromPdf(filePath) {
     }
 }
 
+/* ================= ONGOING STUDY BODY LIVE FETCH ================= */
+/* Returns the latest extracted text (PDF body text) for a matched ongoing group.
+   Called by the frontend compare modal when displaying an ongoing study. */
+app.get("/ongoing-study-body", (req, res) => {
+    const { groupName, title } = req.query;
+    if (!groupName && !title) {
+        return res.json({ success: false, body: null });
+    }
+
+    // 1. Try to find real PDF text from title_proposals first
+    const sql = `
+        SELECT
+            tp.proposed_objectives,
+            tp.proposed_title,
+            cg.group_name
+        FROM title_proposals tp
+        JOIN capstone_groups cg ON tp.group_id = cg.id
+        WHERE
+            tp.proposed_objectives IS NOT NULL
+            AND TRIM(tp.proposed_objectives) != ''
+            AND (
+                (? IS NOT NULL AND cg.group_name = ?)
+                OR (? IS NOT NULL AND LOWER(TRIM(tp.proposed_title)) = LOWER(TRIM(?)))
+            )
+        ORDER BY LENGTH(tp.proposed_objectives) DESC
+        LIMIT 1
+    `;
+
+    db.query(sql, [groupName || null, groupName || null, title || null, title || null], (err, rows) => {
+        if (!err && rows && rows.length > 0 && rows[0].proposed_objectives && rows[0].proposed_objectives.trim()) {
+            return res.json({ success: true, body: rows[0].proposed_objectives.trim() });
+        }
+
+        // 2. Fallback to student_documents approved concept papers
+        const docSql = `
+            SELECT 
+                sd.file_path,
+                sd.document_title,
+                cg.group_name
+            FROM student_documents sd
+            JOIN capstone_groups cg ON sd.group_id = cg.id
+            WHERE (
+                (? IS NOT NULL AND cg.group_name = ?)
+                OR (? IS NOT NULL AND LOWER(TRIM(sd.document_title)) = LOWER(TRIM(?)))
+            )
+            AND (sd.document_type LIKE '%Proposed concept paper%' OR sd.document_type LIKE '%concept paper%')
+            AND sd.document_status = 'Approved'
+            ORDER BY sd.id DESC
+            LIMIT 1
+        `;
+
+        db.query(docSql, [groupName || null, groupName || null, title || null, title || null], async (errDoc, docRows) => {
+            if (!errDoc && docRows && docRows.length > 0 && docRows[0].file_path) {
+                const cleanPath = docRows[0].file_path.replace(/^\//, '');
+                const fullPath = path.join(__dirname, cleanPath);
+                if (fs.existsSync(fullPath)) {
+                    try {
+                        const extracted = await extractTextFromPdf(fullPath);
+                        if (extracted && extracted.trim()) {
+                            return res.json({ success: true, body: extracted.trim() });
+                        }
+                    } catch (e) {
+                        console.error("Error reading PDF in ongoing-study-body:", e);
+                    }
+                }
+            }
+
+            return res.json({ success: false, body: null });
+        });
+    });
+});
+
 /* ================= LOAD TITLE PROPOSALS ================= */
 
 app.get("/title-proposals/:userId", (req, res) => {
@@ -4066,9 +5573,17 @@ app.get("/title-proposals/:userId", (req, res) => {
                 tsr.similarity_percentage,
                 tsr.similarity_level,
                 tsr.matching_sections,
-                r.title AS matched_title,
-                r.abstract AS matched_abstract,
-                r.objectives AS matched_objectives
+                tsr.matched_source_type,
+                tsr.matched_approved_title,
+                tsr.matched_group_name,
+                tsr.matched_repository_id,
+                tsr.archived_match_details,
+                tsr.ongoing_match_details,
+                COALESCE(r.title, tsr.matched_approved_title) AS matched_title,
+                COALESCE(r.abstract, tsr.matched_approved_title) AS matched_abstract,
+                COALESCE(r.objectives, tsr.matched_approved_title) AS matched_objectives,
+                r.research_problem AS matched_research_problem,
+                r.methodology AS matched_methodology
             FROM title_proposals tp
             LEFT JOIN title_similarity_results tsr ON tp.id = tsr.proposed_title_id
             LEFT JOIN repository r ON tsr.matched_repository_id = r.id
@@ -4206,50 +5721,80 @@ app.post("/save-title-proposal", (req, res) => {
 
                     const proposedTitleId = proposalResult[0].id;
 
-                    // Fetch all repository records for comparison
-                    const getRepositorySql = `SELECT * FROM repository`;
-                    db.query(getRepositorySql, (err4, repoResult) => {
-                        if (err4 || !repoResult || repoResult.length === 0) {
+                    // Fetch repository records & approved group titles for comparison
+                    getComparisonRecords(groupDbId, async (compRecords) => {
+                        const dualResult = await runDualSimilarityCheck(
+                            proposedTitle.trim(),
+                            proposedObjectives ? proposedObjectives.trim() : "",
+                            compRecords.archivedRecords,
+                            compRecords.ongoingRecords
+                        );
+
+                        const primaryResult = dualResult.primary;
+                        const archivedMatch = dualResult.archivedMatch;
+                        const ongoingMatch = dualResult.ongoingMatch;
+
+                        if (primaryResult && primaryResult.percentage >= 90) {
+                            const matchedRec = primaryResult.matchedRecord;
+                            const matchedTitleStr = matchedRec.sourceType === 'approved_proposal'
+                                ? `${matchedRec.title} (Approved Title from ${matchedRec.group_name})`
+                                : matchedRec.title;
+
                             return res.json({
-                                success:true,
-                                message:`Title proposal ${titleNumber} saved.`
+                                success: false,
+                                isSimilarityRejection: true,
+                                similarityPercentage: primaryResult.percentage,
+                                matchedTitle: matchedRec ? matchedRec.title : '',
+                                matchedGroupName: matchedRec ? matchedRec.group_name : null,
+                                matchedSourceType: matchedRec ? matchedRec.sourceType : 'repository',
+                                message: `Automatically Rejected: This title proposal has a similarity score of ${primaryResult.percentage}% (matches "${matchedTitleStr}"), which exceeds the maximum allowable threshold of 90%. You are required to submit another concept.`
                             });
                         }
 
-                        const similarityResult = runSimilarityCheck(
-                            proposedTitle.trim(),
-                            proposedObjectives ? proposedObjectives.trim() : "",
-                            repoResult
-                        );
-
-                        if (similarityResult && similarityResult.matchedRecord) {
+                        if (primaryResult) {
                             const insertSimSql = `
                                 INSERT INTO title_similarity_results
                                 (
                                     student_id,
                                     proposed_title_id,
                                     matched_repository_id,
+                                    matched_source_type,
+                                    matched_approved_title,
+                                    matched_group_name,
                                     similarity_percentage,
                                     similarity_level,
-                                    matching_sections
+                                    matching_sections,
+                                    archived_match_details,
+                                    ongoing_match_details
                                 )
-                                VALUES (?, ?, ?, ?, ?, ?)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 ON DUPLICATE KEY UPDATE
                                     matched_repository_id = VALUES(matched_repository_id),
+                                    matched_source_type = VALUES(matched_source_type),
+                                    matched_approved_title = VALUES(matched_approved_title),
+                                    matched_group_name = VALUES(matched_group_name),
                                     similarity_percentage = VALUES(similarity_percentage),
                                     similarity_level = VALUES(similarity_level),
                                     matching_sections = VALUES(matching_sections),
+                                    archived_match_details = VALUES(archived_match_details),
+                                    ongoing_match_details = VALUES(ongoing_match_details),
                                     updated_at = CURRENT_TIMESTAMP
                             `;
+                            const matchedRec = primaryResult.matchedRecord;
                             db.query(
                                 insertSimSql,
                                 [
                                     studentUserId,
                                     proposedTitleId,
-                                    similarityResult.matchedRecord.id,
-                                    similarityResult.percentage,
-                                    similarityResult.level,
-                                    JSON.stringify(similarityResult.matchingSections)
+                                    matchedRec && matchedRec.sourceType === 'repository' ? matchedRec.id : null,
+                                    matchedRec ? (matchedRec.sourceType || 'repository') : 'repository',
+                                    matchedRec && matchedRec.sourceType === 'approved_proposal' ? matchedRec.title : null,
+                                    matchedRec && matchedRec.sourceType === 'approved_proposal' ? matchedRec.group_name : null,
+                                    primaryResult.percentage,
+                                    primaryResult.level,
+                                    JSON.stringify(primaryResult.matchingSections),
+                                    JSON.stringify(archivedMatch),
+                                    JSON.stringify(ongoingMatch)
                                 ],
                                 (err5) => {
                                     if (err5) {
@@ -4343,23 +5888,19 @@ app.post(
                 console.error("Error parsing objectives from uploaded PDF:", e);
             }
 
-            const getRepositorySql = `SELECT * FROM repository`;
-            db.query(getRepositorySql, (errR, repoResult) => {
-                if (errR) {
-                    console.log(errR);
-                    return res.json({
-                        success: false,
-                        message: "Database error while fetching repository records."
-                    });
-                }
-
-                const similarityResult = runSimilarityCheck(
+            getComparisonRecords(groupDbId, async (compRecords) => {
+                const dualResult = await runDualSimilarityCheck(
                     proposedTitle.trim(),
                     parsedObjectives.trim(),
-                    repoResult || []
+                    compRecords.archivedRecords,
+                    compRecords.ongoingRecords
                 );
 
-                if (similarityResult && similarityResult.percentage >= 90) {
+                const primaryResult = dualResult.primary;
+                const archivedMatch = dualResult.archivedMatch;
+                const ongoingMatch = dualResult.ongoingMatch;
+
+                if (primaryResult && primaryResult.percentage >= 90) {
                     // Automatically reject and delete the uploaded file
                     try {
                         fs.unlinkSync(physicalPath);
@@ -4367,12 +5908,19 @@ app.post(
                         console.error("Error deleting rejected file:", unlinkErr);
                     }
 
+                    const matchedRec = primaryResult.matchedRecord;
+                    const matchedTitleStr = matchedRec && matchedRec.sourceType === 'approved_proposal'
+                        ? `${matchedRec.title} (Approved Title from ${matchedRec.group_name})`
+                        : (matchedRec ? matchedRec.title : '');
+
                     return res.json({
                         success: false,
                         isSimilarityRejection: true,
-                        similarityPercentage: similarityResult.percentage,
-                        matchedTitle: similarityResult.matchedRecord.title,
-                        message: `Automatically Rejected: This title proposal has a similarity score of ${similarityResult.percentage}% (matches "${similarityResult.matchedRecord.title}"), which exceeds the maximum allowable threshold of 90%. You are required to submit another concept.`
+                        similarityPercentage: primaryResult.percentage,
+                        matchedTitle: matchedRec ? matchedRec.title : '',
+                        matchedGroupName: matchedRec ? matchedRec.group_name : null,
+                        matchedSourceType: matchedRec ? matchedRec.sourceType : 'repository',
+                        message: `Automatically Rejected: This title proposal has a similarity score of ${primaryResult.percentage}% (matches "${matchedTitleStr}"), which exceeds the maximum allowable threshold of 90%. You are required to submit another concept.`
                     });
                 }
 
@@ -4431,32 +5979,48 @@ app.post(
                         db.query(getProposalIdSql, [groupDbId, titleNumber], (errP, proposalResult) => {
                             if (!errP && proposalResult.length > 0) {
                                 const proposedTitleId = proposalResult[0].id;
-                                if (similarityResult && similarityResult.matchedRecord) {
+                                if (primaryResult) {
                                     const insertSimSql = `
                                         INSERT INTO title_similarity_results
                                         (
                                             student_id,
                                             proposed_title_id,
                                             matched_repository_id,
+                                            matched_source_type,
+                                            matched_approved_title,
+                                            matched_group_name,
                                             similarity_percentage,
                                             similarity_level,
-                                            matching_sections
+                                            matching_sections,
+                                            archived_match_details,
+                                            ongoing_match_details
                                         )
-                                        VALUES (?, ?, ?, ?, ?, ?)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                         ON DUPLICATE KEY UPDATE
                                             matched_repository_id = VALUES(matched_repository_id),
+                                            matched_source_type = VALUES(matched_source_type),
+                                            matched_approved_title = VALUES(matched_approved_title),
+                                            matched_group_name = VALUES(matched_group_name),
                                             similarity_percentage = VALUES(similarity_percentage),
                                             similarity_level = VALUES(similarity_level),
                                             matching_sections = VALUES(matching_sections),
+                                            archived_match_details = VALUES(archived_match_details),
+                                            ongoing_match_details = VALUES(ongoing_match_details),
                                             updated_at = CURRENT_TIMESTAMP
                                     `;
+                                    const matchedRec = primaryResult.matchedRecord;
                                     db.query(insertSimSql, [
                                         studentUserId,
                                         proposedTitleId,
-                                        similarityResult.matchedRecord.id,
-                                        similarityResult.percentage,
-                                        similarityResult.level,
-                                        JSON.stringify(similarityResult.matchingSections)
+                                        matchedRec && matchedRec.sourceType === 'repository' ? matchedRec.id : null,
+                                        matchedRec ? (matchedRec.sourceType || 'repository') : 'repository',
+                                        matchedRec && matchedRec.sourceType === 'approved_proposal' ? matchedRec.title : null,
+                                        matchedRec && matchedRec.sourceType === 'approved_proposal' ? matchedRec.group_name : null,
+                                        primaryResult.percentage,
+                                        primaryResult.level,
+                                        JSON.stringify(primaryResult.matchingSections),
+                                        JSON.stringify(archivedMatch),
+                                        JSON.stringify(ongoingMatch)
                                     ]);
                                 }
                             }
@@ -4685,9 +6249,17 @@ app.get("/adviser-requests/:adviserUserId", (req, res) => {
                     tsr.similarity_percentage,
                     tsr.similarity_level,
                     tsr.matching_sections,
-                    r.title AS matched_title,
-                    r.abstract AS matched_abstract,
-                    r.objectives AS matched_objectives
+                    tsr.matched_source_type,
+                    tsr.matched_approved_title,
+                    tsr.matched_group_name,
+                    tsr.matched_repository_id,
+                    tsr.archived_match_details,
+                    tsr.ongoing_match_details,
+                    COALESCE(r.title, tsr.matched_approved_title) AS matched_title,
+                    COALESCE(r.abstract, tsr.matched_approved_title) AS matched_abstract,
+                    COALESCE(r.objectives, tsr.matched_approved_title) AS matched_objectives,
+                    r.research_problem AS matched_research_problem,
+                    r.methodology AS matched_methodology
                 FROM title_proposals tp
                 LEFT JOIN title_similarity_results tsr ON tp.id = tsr.proposed_title_id
                 LEFT JOIN repository r ON tsr.matched_repository_id = r.id
@@ -5281,8 +6853,12 @@ app.get("/student-documents/:userId", (req, res) => {
             cg.group_name,
             cg.project_title,
             cg.program,
+            adviser.id AS adviser_db_id,
             adviser.user_id AS adviser_user_id,
-            instructor.user_id AS instructor_user_id
+            adviser.fullname AS adviser_name,
+            instructor.id AS instructor_db_id,
+            instructor.user_id AS instructor_user_id,
+            instructor.fullname AS instructor_name
         FROM group_members gm
 
         JOIN capstone_groups cg
@@ -5425,9 +7001,9 @@ app.get("/student-documents/:userId", (req, res) => {
                             latestVerdictByType[defType] = resVal;
                         }
                     });
-                    // Determine re-defense phases: latest verdict is Conditional Passed or For Re-Defense
+                    // Determine re-defense phases: latest verdict is Conditional Passed, For Formal Defense, or For Re-Defense
                     Object.entries(latestVerdictByType).forEach(([defType, resVal]) => {
-                        if (resVal === "Conditional Passed" || resVal === "Conditional Pass" || resVal === "For Re-Defense") {
+                        if (resVal === "Conditional Passed" || resVal === "Conditional Pass" || resVal === "For Formal Defense" || resVal === "For Re-Defense") {
                             redefensePhases.add(defType);
                         }
                     });
@@ -5493,12 +7069,63 @@ app.get("/student-documents/:userId", (req, res) => {
                         console.log(err2);
                     }
 
-                    res.json({
-                        success:true,
-                        group,
-                        documents,
-                        title_proposals:proposalsResult || [],
-                        defense_verdicts:defenseVerdicts || []
+                    const checkGradedSchedulesSql = `
+                        SELECT ds.id, ds.defense_type, ds.defense_status, ds.score, ds.panel_result,
+                               COUNT(dpe.id) AS eval_count
+                        FROM defense_schedules ds
+                        LEFT JOIN defense_panel_evaluations dpe ON ds.id = dpe.schedule_id
+                        WHERE ds.group_id = ?
+                          AND ds.defense_status != 'Cancelled'
+                        GROUP BY ds.id
+                    `;
+
+                    db.query(checkGradedSchedulesSql, [group.group_db_id], (errGraded, gradedRows) => {
+                        const gradedSet = new Set();
+
+                        (gradedRows || []).forEach(row => {
+                            const defType = String(row.defense_type || "").trim();
+                            const isGraded = row.defense_status === 'Completed'
+                                || row.score != null
+                                || row.panel_result != null
+                                || Number(row.eval_count || 0) >= 2;
+                            if (isGraded && defType) {
+                                gradedSet.add(defType);
+                            }
+                        });
+
+                        (verdictRows || []).forEach(v => {
+                            if (v.defense_type && v.panel_result) {
+                                gradedSet.add(String(v.defense_type).trim());
+                            }
+                        });
+
+                        const stageStr = String(group.stage || '').toLowerCase().trim();
+                        const progressVal = Number(group.progress || 0);
+
+                        if (progressVal >= 25 || stageStr.includes('stage 2') || stageStr.includes('outline') || stageStr.includes('stage 3') || stageStr.includes('pre-final') || stageStr.includes('stage 4') || stageStr.includes('final')) {
+                            gradedSet.add("Concept Presentation");
+                        }
+                        if (progressVal >= 50 || stageStr.includes('stage 3') || stageStr.includes('pre-final') || stageStr.includes('stage 4') || stageStr.includes('final')) {
+                            gradedSet.add("Outline Defense");
+                        }
+                        if (progressVal >= 75 || stageStr.includes('stage 4') || stageStr.includes('final')) {
+                            gradedSet.add("Pre-Final Defense");
+                        }
+
+                        const isConceptGraded = gradedSet.has("Concept Presentation") || Array.from(gradedSet).some(t => t.toLowerCase().includes("concept"));
+
+                        res.json({
+                            success:true,
+                            group:{
+                                ...group,
+                                concept_presentation_graded: isConceptGraded
+                            },
+                            documents,
+                            title_proposals:proposalsResult || [],
+                            defense_verdicts:defenseVerdicts || [],
+                            concept_presentation_graded: isConceptGraded,
+                            graded_defense_types: Array.from(gradedSet)
+                        });
                     });
 
                 });
@@ -5569,6 +7196,7 @@ function syncTitleProposalFromStudentDocument(groupDbId, documentType, documentT
     );
 
 }
+
 
 
 /* ================= UPLOAD STUDENT DOCUMENT ================= */
@@ -5688,11 +7316,14 @@ app.post(
                                     file_path = ?,
                                     file_format = ?,
                                     document_status = 'Uploaded',
+                                    signed_file_path = NULL,
                                     is_sent = 0,
                                     uploaded_by = ?,
                                     updated_at = CURRENT_TIMESTAMP
                                 WHERE id = ?
                             `;
+
+                            db.query("DELETE FROM env_scan_student_signatures WHERE document_id = ?", [existingResult[0].id], () => {});
 
                             return db.query(
                                 updateSql,
@@ -5845,7 +7476,7 @@ app.post(
                                 db.query(checkVerdictSql, [groupDbId, matchDefenseType], (verdictErr, verdictResult) => {
                                     if (!verdictErr && verdictResult.length > 0) {
                                         const resVal = String(verdictResult[0].panel_result || "").trim();
-                                        if (resVal === "Conditional Passed" || resVal === "Conditional Pass" || resVal === "For Re-Defense") {
+                                        if (resVal === "Conditional Passed" || resVal === "Conditional Pass" || resVal === "For Formal Defense" || resVal === "For Re-Defense") {
                                             saveAndSync();
                                             return;
                                         }
@@ -6978,7 +8609,14 @@ app.put("/change-student-password", (req, res) => {
 
         }
 
-        if(result[0].password !== currentPassword){
+        const storedPwd = String(result[0].password || "");
+        const isBcrypt = storedPwd.startsWith("$2a$") || storedPwd.startsWith("$2b$");
+        const verifyPromise = isBcrypt
+            ? bcrypt.compare(String(currentPassword), storedPwd)
+            : Promise.resolve(storedPwd === String(currentPassword));
+
+        verifyPromise.then(async (isMatch) => {
+        if(!isMatch){
 
             return res.json({
                 success:false,
@@ -6986,6 +8624,8 @@ app.put("/change-student-password", (req, res) => {
             });
 
         }
+
+        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
         const updateSql = `
             UPDATE users
@@ -6997,7 +8637,7 @@ app.put("/change-student-password", (req, res) => {
         db.query(
             updateSql,
             [
-                newPassword,
+                hashedNewPassword,
                 studentUserId
             ],
             (err) => {
@@ -7027,6 +8667,13 @@ app.put("/change-student-password", (req, res) => {
 
             }
         );
+        }).catch((errHash) => {
+            console.error(errHash);
+            res.json({
+                success:false,
+                message:"Failed to process password change."
+            });
+        });
 
     });
 
@@ -7267,20 +8914,37 @@ app.post("/send-student-document", (req, res) => {
         studentUserId,
         documentId,
         recipientIds,
+        recipients,
         submissionMessage
     } = req.body;
+
+    const rawList = recipients || recipientIds;
 
     if(
         !studentUserId ||
         !documentId ||
-        !recipientIds ||
-        recipientIds.length === 0
+        !rawList ||
+        !Array.isArray(rawList) ||
+        rawList.length === 0
     ){
         return res.json({
             success:false,
             message:"Please select at least one recipient."
         });
     }
+
+    const normalizedRecipients = rawList.map(item => {
+        if(item && typeof item === "object"){
+            return {
+                receiverId: item.receiverId || item.id || item.user_id,
+                targetRole: item.targetRole || item.role || null
+            };
+        }
+        return {
+            receiverId: item,
+            targetRole: null
+        };
+    }).filter(item => !!item.receiverId);
 
     const senderSql = `
         SELECT id
@@ -7380,15 +9044,18 @@ app.post("/send-student-document", (req, res) => {
                 }
 
                 const processSubmission = (idx, callback) => {
-                    if (idx >= recipientIds.length) {
+                    if (idx >= normalizedRecipients.length) {
                         return callback(null);
                     }
 
-                    const receiverId = recipientIds[idx];
+                    const targetObj = normalizedRecipients[idx];
+                    const receiverId = targetObj.receiverId;
+                    const targetRole = targetObj.targetRole;
 
                     const checkExistSql = `
                         SELECT id FROM document_submissions
                         WHERE document_id = ? AND receiver_id = ?
+                        ORDER BY id DESC
                         LIMIT 1
                     `;
 
@@ -7408,10 +9075,11 @@ app.post("/send-student-document", (req, res) => {
                                     reviewed_by = NULL,
                                     reviewed_at = NULL,
                                     submission_status = 'Sent',
+                                    target_role = COALESCE(?, target_role),
                                     sent_at = NOW()
                                 WHERE id = ?
                             `;
-                            db.query(updateSubmissionSql, [submissionMessage || "", existResult[0].id], (errUpdate) => {
+                            db.query(updateSubmissionSql, [submissionMessage || "", targetRole, existResult[0].id], (errUpdate) => {
                                 if (errUpdate) {
                                     return callback(errUpdate);
                                 }
@@ -7425,13 +9093,14 @@ app.post("/send-student-document", (req, res) => {
                                     document_id,
                                     sender_id,
                                     receiver_id,
-                                    submission_message
+                                    submission_message,
+                                    target_role
                                 )
-                                VALUES (?, ?, ?, ?)
+                                VALUES (?, ?, ?, ?, ?)
                             `;
                             db.query(
                                 insertSubmissionSql,
-                                [documentId, senderId, receiverId, submissionMessage || ""],
+                                [documentId, senderId, receiverId, submissionMessage || "", targetRole],
                                 (errInsert) => {
                                     if (errInsert) {
                                         return callback(errInsert);
@@ -7686,7 +9355,14 @@ app.put("/change-faculty-password", (req, res) => {
 
         }
 
-        if(result[0].password !== currentPassword){
+        const storedPwd = String(result[0].password || "");
+        const isBcrypt = storedPwd.startsWith("$2a$") || storedPwd.startsWith("$2b$");
+        const verifyPromise = isBcrypt
+            ? bcrypt.compare(String(currentPassword), storedPwd)
+            : Promise.resolve(storedPwd === String(currentPassword));
+
+        verifyPromise.then(async (isMatch) => {
+        if(!isMatch){
 
             return res.json({
                 success:false,
@@ -7694,6 +9370,8 @@ app.put("/change-faculty-password", (req, res) => {
             });
 
         }
+
+        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
         const updateSql = `
             UPDATE users
@@ -7705,7 +9383,7 @@ app.put("/change-faculty-password", (req, res) => {
         db.query(
             updateSql,
             [
-                newPassword,
+                hashedNewPassword,
                 facultyUserId
             ],
             (err) => {
@@ -7735,6 +9413,13 @@ app.put("/change-faculty-password", (req, res) => {
 
             }
         );
+        }).catch((errHash) => {
+            console.error(errHash);
+            res.json({
+                success:false,
+                message:"Failed to process password change."
+            });
+        });
 
     });
 
@@ -8067,7 +9752,14 @@ app.put("/change-admin-password", (req, res) => {
 
         }
 
-        if(result[0].password !== currentPassword){
+        const storedPwd = String(result[0].password || "");
+        const isBcrypt = storedPwd.startsWith("$2a$") || storedPwd.startsWith("$2b$");
+        const verifyPromise = isBcrypt
+            ? bcrypt.compare(String(currentPassword), storedPwd)
+            : Promise.resolve(storedPwd === String(currentPassword));
+
+        verifyPromise.then(async (isMatch) => {
+        if(!isMatch){
 
             return res.json({
                 success:false,
@@ -8075,6 +9767,8 @@ app.put("/change-admin-password", (req, res) => {
             });
 
         }
+
+        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
         const updateSql = `
             UPDATE users
@@ -8086,7 +9780,7 @@ app.put("/change-admin-password", (req, res) => {
         db.query(
             updateSql,
             [
-                newPassword,
+                hashedNewPassword,
                 adminUserId
             ],
             (err) => {
@@ -8116,6 +9810,13 @@ app.put("/change-admin-password", (req, res) => {
 
             }
         );
+        }).catch((errHash) => {
+            console.error(errHash);
+            res.json({
+                success:false,
+                message:"Failed to process password change."
+            });
+        });
 
     });
 
@@ -8748,10 +10449,16 @@ app.get("/defense-schedule-data", (req, res) => {
             cg.group_name,
             cg.project_title,
             cg.program,
-            GROUP_CONCAT(DISTINCT u.enrolled_by_user_id) AS instructor_ids
+            GROUP_CONCAT(DISTINCT u.enrolled_by_user_id) AS instructor_ids,
+            GROUP_CONCAT(DISTINCT ins.id) AS instructor_db_ids,
+            adviser.id AS adviser_db_id,
+            adviser.user_id AS adviser_user_id,
+            adviser.fullname AS adviser_name
         FROM capstone_groups cg
         LEFT JOIN group_members gm ON cg.id = gm.group_id
         LEFT JOIN users u ON gm.student_id = u.id
+        LEFT JOIN users ins ON u.enrolled_by_user_id = ins.user_id
+        LEFT JOIN users adviser ON cg.adviser_id = adviser.id
         GROUP BY cg.id
         ORDER BY cg.group_id ASC
     `;
@@ -8861,7 +10568,8 @@ app.get("/defense-group-members/:groupDbId", (req, res) => {
 app.get("/defense-schedules", (req, res) => {
 
     const loggedInUserId =
-        req.query.userId || "";
+        req.query.userId || req.query.instructorUserId || "";
+    console.log(`[REQUEST] GET /defense-schedules userId=${loggedInUserId}`);
 
     const schedulesSql = `
         SELECT
@@ -8871,7 +10579,7 @@ app.get("/defense-schedules", (req, res) => {
             ds.panelist_id,
             ds.created_by,
             ds.room_name,
-            ds.defense_date,
+            DATE_FORMAT(ds.defense_date, '%Y-%m-%d') AS defense_date,
             ds.start_time,
             ds.end_time,
             ds.defense_type,
@@ -9005,8 +10713,8 @@ app.get("/defense-schedules", (req, res) => {
                                 Number(countRow?.evaluation_count || 0);
 
                             const evaluationsComplete =
-                                evaluationsRequired > 0
-                                && evaluationsSubmitted >= evaluationsRequired;
+                                (evaluationsRequired > 0 && evaluationsSubmitted >= evaluationsRequired)
+                                || (schedule.defense_status === 'Completed' && evaluationsSubmitted >= 2);
 
                             return {
                                 ...schedule,
@@ -9163,10 +10871,11 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
             instructorResult[0].id;
 
         const ownerCheckSql = `
-            SELECT id
-            FROM defense_schedules
-            WHERE id = ?
-            AND created_by = ?
+            SELECT ds.*, cg.group_name
+            FROM defense_schedules ds
+            LEFT JOIN capstone_groups cg ON ds.group_id = cg.id
+            WHERE ds.id = ?
+            AND ds.created_by = ?
             LIMIT 1
         `;
 
@@ -9196,216 +10905,337 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
 
                 }
 
-                const conflictSql = `
-                    SELECT id
-                    FROM defense_schedules
-                    WHERE defense_date = ?
-                    AND room_name = ?
-                    AND id != ?
-                    AND (
-                        (? < end_time AND ? > start_time)
-                    )
-                    LIMIT 1
+                const existingSchedule = ownerResult[0];
+
+                // Check if defense is already happening (in progress)
+                const existingDate = existingSchedule.defense_date ? String(existingSchedule.defense_date).slice(0, 10) : "";
+                const existingStart = existingSchedule.start_time ? String(existingSchedule.start_time).slice(0, 5) : "";
+                const existingEnd = existingSchedule.end_time ? String(existingSchedule.end_time).slice(0, 5) : "";
+                const now = new Date();
+                const startDt = new Date(`${existingDate}T${existingStart}:00`);
+                const endDt = new Date(`${existingDate}T${existingEnd}:00`);
+                const isHappening = (now >= startDt && now <= endDt);
+
+                if (isHappening) {
+                    const inputDate = String(defenseDate).slice(0, 10);
+                    const inputStart = String(startTime).slice(0, 5);
+                    const inputEnd = String(endTime).slice(0, 5);
+                    const inputRoom = String(roomName).trim();
+                    const existingRoom = String(existingSchedule.room_name).trim();
+
+                    if (inputDate !== existingDate || inputStart !== existingStart || inputEnd !== existingEnd || inputRoom !== existingRoom) {
+                        return res.json({
+                            success: false,
+                            message: "Cannot modify date, time, or room while the defense is currently in progress."
+                        });
+                    }
+                }
+
+                // Check adviser and instructor restrictions: student group adviser & instructors cannot be panelists
+                const groupRestrictionsSql = `
+                    SELECT cg.adviser_id, GROUP_CONCAT(DISTINCT ins.id) AS instructor_ids_str
+                    FROM capstone_groups cg
+                    LEFT JOIN group_members gm ON cg.id = gm.group_id
+                    LEFT JOIN users u ON gm.student_id = u.id
+                    LEFT JOIN users ins ON u.enrolled_by_user_id = ins.user_id
+                    WHERE cg.id = ?
+                    GROUP BY cg.id
                 `;
+                db.query(groupRestrictionsSql, [groupDbId], (grpErr, grpRows) => {
+                    if (grpErr) {
+                        console.log(grpErr);
+                        return res.json({
+                            success: false,
+                            message: "Database error while validating group restrictions."
+                        });
+                    }
 
-                db.query(
-                    conflictSql,
-                    [
-                        defenseDate,
-                        roomName,
-                        scheduleId,
-                        startTime,
-                        endTime
-                    ],
-                    (err, conflictResult) => {
-
-                        if(err){
-                            console.log(err);
-
-                            return res.json({
-                                success:false,
-                                message:"Database error while checking room conflict."
+                    if (grpRows && grpRows.length > 0) {
+                        const forbiddenIds = new Set();
+                        if (grpRows[0].adviser_id) forbiddenIds.add(Number(grpRows[0].adviser_id));
+                        if (grpRows[0].instructor_ids_str) {
+                            grpRows[0].instructor_ids_str.split(',').forEach(id => {
+                                if (id) forbiddenIds.add(Number(id));
                             });
                         }
+                        forbiddenIds.add(Number(instructorDbId));
 
-                        if(conflictResult.length > 0){
-
+                        const hasForbidden = panelistIds.some(pid => forbiddenIds.has(Number(pid)));
+                        if (hasForbidden) {
                             return res.json({
-                                success:false,
-                                message:"This room is already scheduled during the selected time."
+                                success: false,
+                                message: "The student group's adviser and instructors cannot be selected as panelists for this group."
                             });
-
                         }
+                    }
 
-                        const panelistSql = `
-                            SELECT id
-                            FROM users
-                            WHERE id IN (?)
-                            AND role IN ('faculty', 'admin')
-                            AND panelist_access = 1
-                        `;
+                    const conflictSql = `
+                        SELECT id
+                        FROM defense_schedules
+                        WHERE defense_date = ?
+                        AND room_name = ?
+                        AND id != ?
+                        AND (
+                            (? < end_time AND ? > start_time)
+                        )
+                        LIMIT 1
+                    `;
 
-                        db.query(panelistSql, [panelistIds], (err, panelistResult) => {
+                    db.query(
+                        conflictSql,
+                        [
+                            defenseDate,
+                            roomName,
+                            scheduleId,
+                            startTime,
+                            endTime
+                        ],
+                        (err, conflictResult) => {
 
                             if(err){
                                 console.log(err);
 
                                 return res.json({
                                     success:false,
-                                    message:"Database error while checking panelists."
+                                    message:"Database error while checking room conflict."
                                 });
                             }
 
-                            if(panelistResult.length !== panelistIds.length){
+                            if(conflictResult.length > 0){
 
                                 return res.json({
                                     success:false,
-                                    message:"One or more selected panelists are invalid."
+                                    message:"This room is already scheduled during the selected time."
                                 });
 
                             }
 
-                            const primaryPanelistId =
-                                panelistIds[0];
-
-                            const updateSql = `
-                                UPDATE defense_schedules
-                                SET
-                                    group_id = ?,
-                                    panelist_id = ?,
-                                    room_name = ?,
-                                    defense_date = ?,
-                                    start_time = ?,
-                                    end_time = ?,
-                                    defense_type = ?,
-                                    defense_status = ?,
-                                    notes = ?
-                                WHERE id = ?
-                                AND created_by = ?
+                            const panelistSql = `
+                                SELECT id, fullname
+                                FROM users
+                                WHERE id IN (?)
+                                AND role IN ('faculty', 'admin')
+                                AND panelist_access = 1
                             `;
 
-                            db.query(
-                                updateSql,
-                                [
-                                    groupDbId,
-                                    primaryPanelistId,
-                                    roomName,
-                                    defenseDate,
-                                    startTime,
-                                    endTime,
-                                    defenseType || "Capstone Defense",
-                                    defenseStatus,
-                                    notes || "",
-                                    scheduleId,
-                                    instructorDbId
-                                ],
-                                (err, result) => {
+                            db.query(panelistSql, [panelistIds], (err, panelistResult) => {
 
-                                    if(err){
-                                        console.log(err);
+                                if(err){
+                                    console.log(err);
 
-                                        return res.json({
-                                            success:false,
-                                            message:"Failed to update defense schedule."
-                                        });
-                                    }
+                                    return res.json({
+                                        success:false,
+                                        message:"Database error while checking panelists."
+                                    });
+                                }
 
-                                    if(result.affectedRows === 0){
+                                if(panelistResult.length !== panelistIds.length){
 
-                                        return res.json({
-                                            success:false,
-                                            message:"No defense schedule was updated."
-                                        });
-
-                                    }
-
-                                    const deleteOldPanelistsSql = `
-                                        DELETE FROM defense_schedule_panelists
-                                        WHERE schedule_id = ?
-                                    `;
-
-                                    db.query(deleteOldPanelistsSql, [scheduleId], (err) => {
-
-                                        if(err){
-                                            console.log(err);
-
-                                            return res.json({
-                                                success:false,
-                                                message:"Schedule updated, but failed to reset panelists."
-                                            });
-                                        }
-
-                                        const panelistValues =
-                                            panelistIds.map(panelistId => [
-                                                scheduleId,
-                                                panelistId
-                                            ]);
-
-                                        const insertPanelistsSql = `
-                                            INSERT INTO defense_schedule_panelists
-                                            (
-                                                schedule_id,
-                                                panelist_id
-                                            )
-                                            VALUES ?
-                                        `;
-
-                                        db.query(insertPanelistsSql, [panelistValues], (err) => {
-
-                                            if(err){
-                                                console.log(err);
-
-                                                return res.json({
-                                                    success:false,
-                                                    message:"Schedule updated, but failed to save panelists."
-                                                });
-                                            }
-
-                                            notifyDefenseUsersWithDetails(
-                                                groupDbId,
-                                                panelistIds,
-                                                "Defense Schedule Updated",
-                                                "updated",
-                                                defenseDate,
-                                                startTime,
-                                                endTime,
-                                                roomName
-                                            );
-
-                                            if (defenseStatus === 'Completed') {
-                                                const membersSql = `
-                                                    SELECT student_id
-                                                    FROM group_members
-                                                    WHERE group_id = ?
-                                                `;
-                                                db.query(membersSql, [groupDbId], (memberErr, memberRows) => {
-                                                    if (!memberErr && memberRows) {
-                                                        insertUserNotificationsByDbIds(
-                                                            memberRows.map(row => row.student_id),
-                                                            "Defense Completed",
-                                                            `Your ${defenseType || "defense"} has been marked as Completed.`,
-                                                            "Defense Evaluation"
-                                                        );
-                                                    }
-                                                });
-                                            }
-
-                                            res.json({
-                                                success:true,
-                                                message:"Defense schedule updated successfully."
-                                            });
-
-                                        });
-
+                                    return res.json({
+                                        success:false,
+                                        message:"One or more selected panelists are invalid."
                                     });
 
                                 }
-                            );
 
-                        });
+                                // Check panelist time conflicts with other defense schedules
+                                const panelistConflictSql = `
+                                    SELECT dsp.panelist_id, u.fullname
+                                    FROM defense_schedule_panelists dsp
+                                    JOIN defense_schedules ds ON dsp.schedule_id = ds.id
+                                    JOIN users u ON dsp.panelist_id = u.id
+                                    WHERE dsp.panelist_id IN (?)
+                                    AND ds.id != ?
+                                    AND ds.defense_date = ?
+                                    AND ds.defense_status != 'Cancelled'
+                                    AND (? < ds.end_time AND ? > ds.start_time)
+                                    LIMIT 1
+                                `;
 
-                    }
-                );
+                                db.query(panelistConflictSql, [panelistIds, scheduleId, defenseDate, startTime, endTime], (panConfErr, panConfResult) => {
+                                    if (panConfErr) {
+                                        console.log(panConfErr);
+                                        return res.json({ success: false, message: "Database error checking panelist availability." });
+                                    }
+                                    if (panConfResult && panConfResult.length > 0) {
+                                        return res.json({
+                                            success: false,
+                                            message: `Panelist ${panConfResult[0].fullname} is already scheduled for another defense at this date and time.`
+                                        });
+                                    }
+
+                                    // Fetch existing panelists to detect replacements
+                                    const existingPanelistsSql = `SELECT panelist_id FROM defense_schedule_panelists WHERE schedule_id = ?`;
+                                    db.query(existingPanelistsSql, [scheduleId], (exPanErr, exPanRows) => {
+                                        const oldPanelistIds = (exPanRows || []).map(r => Number(r.panelist_id));
+                                        const newPanelistIds = panelistIds.map(id => Number(id));
+                                        const removedPanelistIds = oldPanelistIds.filter(id => !newPanelistIds.includes(id));
+                                        const addedPanelistIds = newPanelistIds.filter(id => !oldPanelistIds.includes(id));
+
+                                        const primaryPanelistId = panelistIds[0];
+
+                                        const updateSql = `
+                                            UPDATE defense_schedules
+                                            SET
+                                                group_id = ?,
+                                                panelist_id = ?,
+                                                room_name = ?,
+                                                defense_date = ?,
+                                                start_time = ?,
+                                                end_time = ?,
+                                                defense_type = ?,
+                                                defense_status = ?,
+                                                notes = ?
+                                            WHERE id = ?
+                                            AND created_by = ?
+                                        `;
+
+                                        db.query(
+                                            updateSql,
+                                            [
+                                                groupDbId,
+                                                primaryPanelistId,
+                                                roomName,
+                                                defenseDate,
+                                                startTime,
+                                                endTime,
+                                                defenseType || "Capstone Defense",
+                                                defenseStatus,
+                                                notes || "",
+                                                scheduleId,
+                                                instructorDbId
+                                            ],
+                                            (err, result) => {
+
+                                                if(err){
+                                                    console.log(err);
+
+                                                    return res.json({
+                                                        success:false,
+                                                        message:"Failed to update defense schedule."
+                                                    });
+                                                }
+
+                                                if(result.affectedRows === 0){
+
+                                                    return res.json({
+                                                        success:false,
+                                                        message:"No defense schedule was updated."
+                                                    });
+
+                                                }
+
+                                                const deleteOldPanelistsSql = `
+                                                    DELETE FROM defense_schedule_panelists
+                                                    WHERE schedule_id = ?
+                                                `;
+
+                                                db.query(deleteOldPanelistsSql, [scheduleId], (err) => {
+
+                                                    if(err){
+                                                        console.log(err);
+
+                                                        return res.json({
+                                                            success:false,
+                                                            message:"Schedule updated, but failed to reset panelists."
+                                                        });
+                                                    }
+
+                                                    const panelistValues =
+                                                        panelistIds.map(panelistId => [
+                                                            scheduleId,
+                                                            panelistId
+                                                        ]);
+
+                                                    const insertPanelistsSql = `
+                                                        INSERT INTO defense_schedule_panelists
+                                                        (
+                                                            schedule_id,
+                                                            panelist_id
+                                                        )
+                                                        VALUES ?
+                                                    `;
+
+                                                    db.query(insertPanelistsSql, [panelistValues], (err) => {
+
+                                                        if(err){
+                                                            console.log(err);
+
+                                                            return res.json({
+                                                                success:false,
+                                                                message:"Schedule updated, but failed to save panelists."
+                                                            });
+                                                        }
+
+                                                        // Notify removed panelists about cancellation
+                                                        if (removedPanelistIds.length > 0) {
+                                                            insertUserNotificationsByDbIds(
+                                                                removedPanelistIds,
+                                                                "Defense Panel Assignment Cancelled",
+                                                                `Your assignment as a panelist for group ${existingSchedule.group_name || ""} defense presentation (${defenseType || "defense"}) on ${defenseDate} has been cancelled.`,
+                                                                "Defense Schedule"
+                                                            );
+                                                        }
+
+                                                        // Notify added panelists about assignment
+                                                        if (addedPanelistIds.length > 0) {
+                                                            insertUserNotificationsByDbIds(
+                                                                addedPanelistIds,
+                                                                "New Defense Panelist Assignment",
+                                                                `You have been assigned as a panelist for group ${existingSchedule.group_name || ""} defense schedule (${defenseType || "defense"}) on ${defenseDate} from ${startTime} to ${endTime} in ${roomName}.`,
+                                                                "Defense Schedule"
+                                                            );
+                                                        }
+
+                                                        notifyDefenseUsersWithDetails(
+                                                            groupDbId,
+                                                            panelistIds,
+                                                            "Defense Schedule Updated",
+                                                            "updated",
+                                                            defenseDate,
+                                                            startTime,
+                                                            endTime,
+                                                            roomName
+                                                        );
+
+                                                        if (defenseStatus === 'Completed') {
+                                                            const membersSql = `
+                                                                SELECT student_id
+                                                                FROM group_members
+                                                                WHERE group_id = ?
+                                                            `;
+                                                            db.query(membersSql, [groupDbId], (memberErr, memberRows) => {
+                                                                if (!memberErr && memberRows) {
+                                                                    insertUserNotificationsByDbIds(
+                                                                        memberRows.map(row => row.student_id),
+                                                                        "Defense Completed",
+                                                                        `Your ${defenseType || "defense"} has been marked as Completed.`,
+                                                                        "Defense Evaluation"
+                                                                    );
+                                                                }
+                                                            });
+                                                        }
+
+                                                        res.json({
+                                                            success:true,
+                                                            message:"Defense schedule updated successfully."
+                                                        });
+
+                                                    });
+
+                                                });
+
+                                            }
+                                        );
+
+                                    });
+                                });
+
+                            });
+
+                        }
+                    );
+                });
 
             }
         );
@@ -9423,7 +11253,9 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
         req.params.scheduleId;
 
     const {
-        instructorUserId
+        instructorUserId,
+        reason,
+        notes
     } = req.body;
 
     if(!scheduleId || !instructorUserId){
@@ -9510,13 +11342,38 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
                 const schedule =
                     scheduleResult[0];
 
-                const panelistsSql = `
-                    SELECT panelist_id
-                    FROM defense_schedule_panelists
+                // Prevent deletion if schedule already received any grades/evaluations from panel
+                const checkEvalsSql = `
+                    SELECT COUNT(*) AS evalCount
+                    FROM defense_panel_evaluations
                     WHERE schedule_id = ?
                 `;
 
-                db.query(panelistsSql, [scheduleId], (err, panelistResult) => {
+                db.query(checkEvalsSql, [scheduleId], (evalErr, evalRows) => {
+
+                    if(evalErr){
+                        console.log(evalErr);
+                        return res.json({
+                            success:false,
+                            message:"Database error while checking evaluations."
+                        });
+                    }
+
+                    const evalCount = evalRows?.[0]?.evalCount || 0;
+                    if(evalCount > 0){
+                        return res.json({
+                            success:false,
+                            message:"Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this schedule."
+                        });
+                    }
+
+                    const panelistsSql = `
+                        SELECT panelist_id
+                        FROM defense_schedule_panelists
+                        WHERE schedule_id = ?
+                    `;
+
+                    db.query(panelistsSql, [scheduleId], (err, panelistResult) => {
 
                     if(err){
                         console.log(err);
@@ -9564,15 +11421,18 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
                             }
 
+                            const cancelReasonText = [reason, notes].filter(Boolean).join(" - ");
+
                             notifyDefenseUsersWithDetails(
                                 schedule.group_id,
                                 panelistIds,
-                                "Defense Schedule Deleted",
-                                "deleted",
+                                "Defense Schedule Cancelled",
+                                "cancelled",
                                 schedule.defense_date,
                                 schedule.start_time,
                                 schedule.end_time,
-                                schedule.room_name
+                                schedule.room_name,
+                                cancelReasonText
                             );
 
                             res.json({
@@ -9585,11 +11445,114 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
                 });
 
+                });
+
             }
         );
 
     });
 
+});
+
+
+/* ================= FORCE COMPLETE DEFENSE SCHEDULE ================= */
+
+app.post("/force-complete-defense-schedule/:scheduleId", (req, res) => {
+    const scheduleId = req.params.scheduleId;
+    const { instructorUserId } = req.body;
+
+    if (!scheduleId || !instructorUserId) {
+        return res.json({ success: false, message: "Missing schedule or instructor information." });
+    }
+
+    const instructorSql = `
+        SELECT id
+        FROM users
+        WHERE user_id = ?
+        AND role IN ('faculty', 'admin')
+        AND instructor_access = 1
+        LIMIT 1
+    `;
+
+    db.query(instructorSql, [instructorUserId], (insErr, insRows) => {
+        if (insErr || !insRows || insRows.length === 0) {
+            return res.json({ success: false, message: "Instructor account not found or no instructor access." });
+        }
+        const instructorDbId = insRows[0].id;
+
+        const schedSql = `SELECT * FROM defense_schedules WHERE id = ? AND created_by = ? LIMIT 1`;
+        db.query(schedSql, [scheduleId, instructorDbId], (schedErr, schedRows) => {
+            if (schedErr || !schedRows || schedRows.length === 0) {
+                return res.json({ success: false, message: "You can only force complete defense schedules you created." });
+            }
+            const schedule = schedRows[0];
+
+            if (schedule.defense_status === 'Completed') {
+                return res.json({ success: false, message: "This defense schedule is already completed." });
+            }
+
+            const evalsSql = `SELECT * FROM defense_panel_evaluations WHERE schedule_id = ?`;
+            db.query(evalsSql, [scheduleId], (evalErr, evaluations) => {
+                if (evalErr) {
+                    console.log(evalErr);
+                    return res.json({ success: false, message: "Database error fetching panel evaluations." });
+                }
+                const count = (evaluations || []).length;
+                if (count < 2) {
+                    return res.json({
+                        success: false,
+                        message: `Force Complete requires at least 2 submitted panel evaluations (currently ${count}/3 submitted).`
+                    });
+                }
+
+                const compiledResult = aggregateCompiledPanelResult(evaluations);
+                const compiledScore = aggregateCompiledScore(evaluations);
+                const compiledApprovedTitleId = pickCompiledApprovedTitleId(evaluations);
+                const compiledComments = (evaluations || []).map((row, idx) => `Panelist ${idx + 1}: ${row.comments || "None"}`).join("\n");
+                const compiledRecommendations = (evaluations || []).map((row, idx) => `Panelist ${idx + 1}: ${row.recommendations || "None"}`).join("\n");
+                const compiledConceptDetails = (evaluations || []).map(r => r.concept_evaluation_details).find(v => v) || null;
+                const compiledOutlineDetails = (evaluations || []).map(r => r.outline_evaluation_details).find(v => v) || null;
+
+                const updateSql = `
+                    UPDATE defense_schedules
+                    SET score = ?, panel_result = ?, comments = ?, recommendations = ?, approved_title_id = ?,
+                        concept_evaluation_details = ?, outline_evaluation_details = ?, defense_status = 'Completed'
+                    WHERE id = ?
+                `;
+                db.query(updateSql, [
+                    compiledScore, compiledResult, compiledComments, compiledRecommendations,
+                    compiledApprovedTitleId, compiledConceptDetails, compiledOutlineDetails, scheduleId
+                ], (updErr) => {
+                    if (updErr) {
+                        console.log(updErr);
+                        return res.json({ success: false, message: "Failed to force complete defense schedule." });
+                    }
+
+                    const nextStage = getGroupStageAfterDefense(schedule.defense_type, compiledResult);
+                    if (nextStage && schedule.group_id) {
+                        db.query("UPDATE capstone_groups SET stage = ?, progress = ? WHERE id = ?", [nextStage, getProgressPercentForStage(nextStage), schedule.group_id], () => {});
+                    }
+
+                    const memberSql = `SELECT student_id FROM group_members WHERE group_id = ?`;
+                    db.query(memberSql, [schedule.group_id], (mErr, mRows) => {
+                        if (!mErr && mRows) {
+                            insertUserNotificationsByDbIds(
+                                mRows.map(r => r.student_id),
+                                "Defense Completed",
+                                `Your ${schedule.defense_type} has been completed with ${count} panel evaluations. Result: ${compiledResult}.`,
+                                "Defense Evaluation"
+                            );
+                        }
+                    });
+
+                    res.json({
+                        success: true,
+                        message: `Defense schedule force-completed successfully with ${count} panel evaluations.`
+                    });
+                });
+            });
+        });
+    });
 });
 
 
@@ -9605,18 +11568,32 @@ app.post("/update-environmental-scanning-status", (req, res) => {
         });
     }
 
-    const findStudentSql = `
-        SELECT u.id, u.user_id, u.fullname, u.program,
-               COALESCE(u.group_id, gm.group_id) AS group_id,
-               cg.group_name, cg.instructor_id
-        FROM users u
-        LEFT JOIN group_members gm ON u.id = gm.student_id
-        LEFT JOIN capstone_groups cg ON COALESCE(u.group_id, gm.group_id) = cg.id
-        WHERE u.user_id = ? OR u.id = ?
-        LIMIT 1
-    `;
+    // Determine if the studentUserId value is a numeric DB id or a string user_id
+    const numericId = /^\d+$/.test(String(studentUserId || '').trim()) ? Number(studentUserId) : null;
 
-    db.query(findStudentSql, [studentUserId, studentUserId], (errStudent, studentRows) => {
+    const findStudentSql = numericId
+        ? `
+            SELECT u.id, u.user_id, u.fullname, u.program, u.enrolled_by_user_id,
+                   gm.group_id AS group_id,
+                   cg.group_name, cg.stage, cg.progress
+            FROM users u
+            LEFT JOIN group_members gm ON u.id = gm.student_id
+            LEFT JOIN capstone_groups cg ON gm.group_id = cg.id
+            WHERE u.id = ?
+            LIMIT 1
+        `
+        : `
+            SELECT u.id, u.user_id, u.fullname, u.program, u.enrolled_by_user_id,
+                   gm.group_id AS group_id,
+                   cg.group_name, cg.stage, cg.progress
+            FROM users u
+            LEFT JOIN group_members gm ON u.id = gm.student_id
+            LEFT JOIN capstone_groups cg ON gm.group_id = cg.id
+            WHERE u.user_id = ?
+            LIMIT 1
+        `;
+
+    db.query(findStudentSql, [numericId !== null ? numericId : studentUserId], (errStudent, studentRows) => {
         if (errStudent || !studentRows || studentRows.length === 0) {
             return res.json({
                 success: false,
@@ -9629,7 +11606,7 @@ app.post("/update-environmental-scanning-status", (req, res) => {
         const groupDbId = student.group_id;
         const studentName = student.fullname || student.user_id || "Student";
         const groupName = student.group_name || `Group ${groupDbId || ''}`;
-        const instructorDbId = student.instructor_id;
+        const enrolledBy = student.enrolled_by_user_id;
 
         const findDocSql = `
             SELECT id, document_type, document_title, group_id
@@ -9646,86 +11623,125 @@ app.post("/update-environmental-scanning-status", (req, res) => {
                 });
             }
 
-            const doc = docRows[0];
-            const docTitle = doc.document_title || doc.document_type || "Environmental Scanning";
-            const fullReason = reasonCategory + (reasonText && reasonText.trim() ? ` - ${reasonText.trim()}` : "");
-            const statusToSet = newStatus || "Declined by Organization";
-
-            const updateDocSql = `
-                UPDATE student_documents
-                SET document_status = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+            // Check if group is already graded in Concept Presentation
+            const checkConceptGradedSql = `
+                SELECT ds.id
+                FROM defense_schedules ds
+                LEFT JOIN defense_panel_evaluations dpe ON ds.id = dpe.schedule_id
+                WHERE ds.group_id = ?
+                  AND (
+                      LOWER(TRIM(ds.defense_type)) LIKE '%concept%'
+                      OR LOWER(TRIM(ds.defense_type)) = 'concept presentation'
+                  )
+                  AND (
+                      ds.defense_status = 'Completed'
+                      OR ds.score IS NOT NULL
+                      OR ds.panel_result IS NOT NULL
+                      OR dpe.id IS NOT NULL
+                  )
+                LIMIT 1
             `;
 
-            db.query(updateDocSql, [statusToSet, documentId], (errUpdate) => {
-                if (errUpdate) {
-                    console.log("Failed to update environmental scanning status:", errUpdate);
+            db.query(checkConceptGradedSql, [groupDbId], (errGraded, gradedRows) => {
+                const isConceptGraded = Boolean(
+                    (!errGraded && gradedRows && gradedRows.length > 0) ||
+                    (student.stage && !['Stage 1', 'Concept Presentation', '1'].includes(String(student.stage).trim())) ||
+                    (Number(student.progress || 0) >= 25)
+                );
+
+                if (isConceptGraded) {
                     return res.json({
                         success: false,
-                        message: "Failed to update environmental scanning status in database."
+                        message: "Cannot report decline. Your group has already finished and been graded in Concept Presentation."
                     });
                 }
 
-                const updateSubmissionsSql = `
-                    UPDATE document_submissions
-                    SET review_status = ?,
-                        review_comment = ?,
-                        reviewed_at = NOW()
-                    WHERE document_id = ?
-                `;
-                db.query(updateSubmissionsSql, [statusToSet, `Declined by Organization: ${fullReason}`, documentId], () => {});
+                const doc = docRows[0];
+                const docTitle = doc.document_title || doc.document_type || "Environmental Scanning";
+                const fullReason = reasonCategory + (reasonText && reasonText.trim() ? ` - ${reasonText.trim()}` : "");
+                const statusToSet = newStatus || "Declined by Organization";
 
-                const prog = String(student.program || "").toUpperCase();
-                let chairPosition = 'Program Chairperson IT';
-                if (prog.includes("IS")) {
-                    chairPosition = 'Program Chairperson IS';
-                }
-
-                const findRecipientsSql = `
-                    SELECT id, role, position FROM users
-                    WHERE (id = ?)
-                       OR (role = 'admin' AND position = ?)
-                       OR (position = 'Dean')
-                       OR (role = 'admin' AND position LIKE 'Program Chairperson%')
+                const updateDocSql = `
+                    UPDATE student_documents
+                    SET document_status = ?,
+                        signed_file_path = NULL,
+                        is_sent = 0,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
                 `;
 
-                db.query(findRecipientsSql, [instructorDbId || 0, chairPosition], (errRecip, recipientRows) => {
-                    const notifyUserIds = new Set();
-                    if (recipientRows && recipientRows.length > 0) {
-                        recipientRows.forEach(r => notifyUserIds.add(r.id));
-                    }
-
-                    if (notifyUserIds.size === 0) {
+                db.query(updateDocSql, [statusToSet, documentId], (errUpdate) => {
+                    if (errUpdate) {
+                        console.log("Failed to update environmental scanning status:", errUpdate);
                         return res.json({
-                            success: true,
-                            message: "Status updated successfully."
+                            success: false,
+                            message: "Failed to update environmental scanning status in database."
                         });
                     }
 
-                    const notifyTitle = "Environmental Scanning Declined by Organization";
-                    const notifyMessage = `${groupName} (${studentName}) updated status for ${docTitle}: The organization declined the proposed system. Reason: ${fullReason}`;
+                    // Reset student signatures so that a new file can be signed cleanly
+                    db.query("DELETE FROM env_scan_student_signatures WHERE document_id = ?", [documentId], () => {});
 
-                    const notificationValues = Array.from(notifyUserIds).map(uid => [
-                        uid,
-                        notifyTitle,
-                        notifyMessage,
-                        "Document Review"
-                    ]);
+                    const updateSubmissionsSql = `
+                        UPDATE document_submissions
+                        SET review_status = ?,
+                            review_comment = ?,
+                            reviewed_at = NOW()
+                        WHERE document_id = ?
+                    `;
+                    db.query(updateSubmissionsSql, [statusToSet, `Declined by Organization: ${fullReason}`, documentId], () => {});
 
-                    const insertNotifSql = `
-                        INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
-                        VALUES ?
+                    const prog = String(student.program || "").toUpperCase();
+                    let chairPosition = 'Program Chairperson IT';
+                    if (prog.includes("IS")) {
+                        chairPosition = 'Program Chairperson IS';
+                    }
+
+                    const findRecipientsSql = `
+                        SELECT id, role, position FROM users
+                        WHERE (user_id = ?)
+                           OR (role = 'admin' AND position = ?)
+                           OR (position = 'Dean')
+                           OR (role = 'admin' AND position LIKE 'Program Chairperson%')
                     `;
 
-                    db.query(insertNotifSql, [notificationValues], (errNotif) => {
-                        if (errNotif) {
-                            console.log("Error sending decline notifications:", errNotif);
+                    db.query(findRecipientsSql, [enrolledBy || '', chairPosition], (errRecip, recipientRows) => {
+                        const notifyUserIds = new Set();
+                        if (recipientRows && recipientRows.length > 0) {
+                            recipientRows.forEach(r => notifyUserIds.add(r.id));
                         }
 
-                        res.json({
-                            success: true,
-                            message: "Environmental scanning status updated and rationale sent to Instructor, Chairperson, and Dean."
+                        if (notifyUserIds.size === 0) {
+                            return res.json({
+                                success: true,
+                                message: "Status updated successfully."
+                            });
+                        }
+
+                        const notifyTitle = "Environmental Scanning Declined by Organization";
+                        const notifyMessage = `${groupName} (${studentName}) updated status for ${docTitle}: The organization declined the proposed system. Reason: ${fullReason}`;
+
+                        const notificationValues = Array.from(notifyUserIds).map(uid => [
+                            uid,
+                            notifyTitle,
+                            notifyMessage,
+                            "Document Review"
+                        ]);
+
+                        const insertNotifSql = `
+                            INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                            VALUES ?
+                        `;
+
+                        db.query(insertNotifSql, [notificationValues], (errNotif) => {
+                            if (errNotif) {
+                                console.log("Error sending decline notifications:", errNotif);
+                            }
+
+                            res.json({
+                                success: true,
+                                message: "Environmental scanning status updated and rationale sent to Instructor, Chairperson, and Dean."
+                            });
                         });
                     });
                 });
@@ -9752,7 +11768,6 @@ const CONSULTATION_CATALOG = [
         items:[
             { label:"Chapter 1 and 2", slots:1 },
             { label:"Recommendation for outline defense", slots:1 },
-            { label:"Outline defense evaluation sheet", slots:1 },
             { label:"Defense minutes", slots:1 }
         ]
     },
@@ -9760,13 +11775,15 @@ const CONSULTATION_CATALOG = [
         category:"Pre-Final Defense",
         items:[
             { label:"Chapter 3-4", slots:1 },
+            { label:"Recommendation letter", slots:1 },
             { label:"Defense minutes", slots:1 }
         ]
     },
     {
         category:"Final Defense",
         items:[
-            { label:"Chapter 3-4", slots:1 },
+            { label:"Chapter 1-4", slots:1 },
+            { label:"Recommendation letter", slots:1 },
             { label:"Defense minutes", slots:1 }
         ]
     }
@@ -9801,6 +11818,23 @@ function getConsultationSlotTypeCandidates(category, baseLabel, slotIndex, total
 
     if(totalSlots === 1){
         candidates.push(`${category} • ${baseLabel}`);
+    }
+
+    // Flexible aliases for chapter documents and recommendation letters
+    const lowerLabel = String(baseLabel || "").toLowerCase();
+    if(lowerLabel.includes("chapter 1 and 2") || lowerLabel.includes("chapter 1-2")){
+        candidates.push(`${category} • Chapter 1 and 2`);
+        candidates.push(`${category} • Chapter 1-2`);
+        candidates.push(`${category} • Chapter 1 to 2`);
+    } else if(lowerLabel.includes("chapter 1-4") || lowerLabel.includes("chapter 1 to 4") || lowerLabel.includes("chapter 3-4")){
+        candidates.push(`${category} • Chapter 1-4`);
+        candidates.push(`${category} • Chapter 1 to 4`);
+        candidates.push(`${category} • Chapter 3-4`);
+    }
+    if(lowerLabel.includes("recommendation")){
+        candidates.push(`${category} • Recommendation letter`);
+        candidates.push(`${category} • Recommendation for outline defense`);
+        candidates.push(`${category} • Recommendation for concept presentation`);
     }
 
     return candidates;
@@ -9969,6 +12003,9 @@ function buildPhaseApprovalSummary(documents, phase, options){
     const excludeDefenseMinutes =
         options && options.excludeDefenseMinutesFromSchedule;
 
+    // For BSIT programs, skip Environmental Scanning requirement entirely
+    const isBSIT = options && options.isBSIT;
+
     const missing = [];
     let approvedCount = 0;
     let requiredSlots = 0;
@@ -9989,6 +12026,11 @@ function buildPhaseApprovalSummary(documents, phase, options){
                 excludeDefenseMinutes
                 && isDefenseMinutesCatalogItem(item.label, documentType)
             ){
+                continue;
+            }
+
+            // BSIT programs do not require Environmental Scanning
+            if(isBSIT && String(item.label || '').toLowerCase().includes('environmental')){
                 continue;
             }
 
@@ -10065,6 +12107,31 @@ function buildMissingApprovedForDefenseSchedule(documents, defenseType, options)
 
 }
 
+function buildMissingApprovedForDefenseScheduleWithProgram(documents, defenseType, options, groupProgram){
+
+    const isBSIT = (String(groupProgram || '').trim().toUpperCase() === 'IT' || String(groupProgram || '').trim().toUpperCase() === 'BSIT');
+
+    const phases =
+        getCatalogPhasesForScheduleCheck(
+            defenseType,
+            options && options.requireAllPhases
+        );
+
+    const summaries =
+        phases.map(phase =>
+            buildPhaseApprovalSummary(documents, phase, { ...(options || {}), isBSIT })
+        );
+
+    const missing =
+        summaries.flatMap(phase => phase.missing);
+
+    return {
+        summaries,
+        missing
+    };
+
+}
+
 function fetchGroupStudentDocuments(groupDbId, callback){
 
     const sql = `
@@ -10096,10 +12163,6 @@ function getPriorDefenseTypeForSchedule(defenseType){
 
     if(value.includes("pre-final") || value.includes("prefinal")){
         return "Outline Defense";
-    }
-
-    if(value.includes("outline")){
-        return "Concept Presentation";
     }
 
     if(value.includes("final") && !value.includes("pre")){
@@ -10195,18 +12258,70 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
                             Number(evaluationRows[0]?.evaluation_count || 0);
 
                         const ok =
-                            evaluationsRequired > 0
-                            && evaluationsSubmitted >= evaluationsRequired;
+                            (evaluationsRequired > 0 && evaluationsSubmitted >= evaluationsRequired)
+                            || (priorSchedule.defense_status === 'Completed' && evaluationsSubmitted >= 2);
 
-                        callback(null, {
-                            ok,
-                            prior_defense_type:priorDefenseType,
-                            evaluations_submitted:evaluationsSubmitted,
-                            evaluations_required:evaluationsRequired,
-                            message:ok
-                                ? null
-                                : `${priorDefenseType} panel evaluations are incomplete (${evaluationsSubmitted}/${evaluationsRequired}). All panelists must submit grades before scheduling ${defenseType}.`
-                        });
+                        if(!ok){
+                            return callback(null, {
+                                ok:false,
+                                prior_defense_type:priorDefenseType,
+                                evaluations_submitted:evaluationsSubmitted,
+                                evaluations_required:evaluationsRequired,
+                                message:`${priorDefenseType} panel evaluations are incomplete (${evaluationsSubmitted}/${evaluationsRequired}). All panelists must submit grades before scheduling ${defenseType}.`
+                            });
+                        }
+
+                        // Check if the prior defense phase requires defense minutes approval before scheduling the next phase
+                        const priorRequiresMinutes = priorDefenseType === "Outline Defense" || priorDefenseType === "Pre-Final Defense";
+                        if(priorRequiresMinutes){
+                            const minutesPattern = priorDefenseType === "Outline Defense" ? "%outline%defense minutes%" : "%pre-final%defense minutes%";
+                            const minutesAltPattern = priorDefenseType === "Outline Defense" ? "%outline%minutes%" : "%prefinal%defense minutes%";
+
+                            const checkPriorMinutesSql = `
+                                SELECT id, document_status
+                                FROM student_documents
+                                WHERE group_id = ?
+                                  AND (
+                                      LOWER(document_type) LIKE LOWER(?)
+                                      OR LOWER(document_type) LIKE LOWER(?)
+                                      OR LOWER(document_title) LIKE LOWER(?)
+                                  )
+                                  AND document_status = 'Approved'
+                                LIMIT 1
+                            `;
+
+                            db.query(checkPriorMinutesSql, [groupDbId, minutesPattern, minutesAltPattern, minutesPattern], (minErr, minRows) => {
+                                if(minErr){
+                                    return callback(minErr);
+                                }
+
+                                if(!minRows || minRows.length === 0){
+                                    return callback(null, {
+                                        ok:false,
+                                        prior_defense_type:priorDefenseType,
+                                        evaluations_submitted:evaluationsSubmitted,
+                                        evaluations_required:evaluationsRequired,
+                                        message:`Cannot create defense schedule for ${defenseType}. The group's ${priorDefenseType} minutes must be uploaded and approved by the adviser first.`
+                                    });
+                                }
+
+                                callback(null, {
+                                    ok:true,
+                                    prior_defense_type:priorDefenseType,
+                                    evaluations_submitted:evaluationsSubmitted,
+                                    evaluations_required:evaluationsRequired,
+                                    message:null
+                                });
+                            });
+                        } else {
+                            callback(null, {
+                                ok:true,
+                                prior_defense_type:priorDefenseType,
+                                evaluations_submitted:evaluationsSubmitted,
+                                evaluations_required:evaluationsRequired,
+                                message:null
+                            });
+                        }
 
                     }
                 );
@@ -10220,31 +12335,39 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
 
 function validateGroupDocumentsForScheduleCreate(groupDbId, defenseType, options, callback){
 
-    fetchGroupStudentDocuments(groupDbId, (docErr, documents) => {
+    // Fetch group program first to handle BSIT vs BSIS document requirements
+    db.query('SELECT program FROM capstone_groups WHERE id = ? LIMIT 1', [groupDbId], (progErr, progRows) => {
 
-        if(docErr){
-            return callback(docErr);
-        }
+        const groupProgram = (!progErr && progRows && progRows[0]) ? progRows[0].program : null;
 
-        const scheduleOptions = {
-            excludeDefenseMinutesFromSchedule:true,
-            requireAllPhases:
-                options && options.requireAllPhases
-        };
+        fetchGroupStudentDocuments(groupDbId, (docErr, documents) => {
 
-        const approvalResult =
-            buildMissingApprovedForDefenseSchedule(
-                documents || [],
-                defenseType,
-                scheduleOptions
-            );
+            if(docErr){
+                return callback(docErr);
+            }
 
-        callback(null, {
-            documents:documents || [],
-            summaries:approvalResult.summaries,
-            missing:approvalResult.missing,
-            documents_ready_for_schedule:
-                approvalResult.missing.length === 0
+            const scheduleOptions = {
+                excludeDefenseMinutesFromSchedule:true,
+                requireAllPhases:
+                    options && options.requireAllPhases
+            };
+
+            const approvalResult =
+                buildMissingApprovedForDefenseScheduleWithProgram(
+                    documents || [],
+                    defenseType,
+                    scheduleOptions,
+                    groupProgram
+                );
+
+            callback(null, {
+                documents:documents || [],
+                summaries:approvalResult.summaries,
+                missing:approvalResult.missing,
+                documents_ready_for_schedule:
+                    approvalResult.missing.length === 0
+            });
+
         });
 
     });
@@ -10271,9 +12394,10 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
 
         const rows = scheduleRows || [];
 
-        // 1. Check for ongoing/pending schedules (Scheduled or Ongoing)
+        // 1. Check for ongoing/pending schedules (Scheduled or Ongoing) for this presentation type
         const ongoingSchedule = rows.find(row => 
             (row.defense_status === 'Scheduled' || row.defense_status === 'Ongoing') &&
+            defenseTypesMatch(row.defense_type, defenseType) &&
             (!excludeScheduleId || Number(row.id) !== excludeScheduleId)
         );
 
@@ -10356,10 +12480,30 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
                             // If not all panelists graded, ensure readyForSchedule is false
                         }
 
+                        // Check if group has a completed schedule for this defense type (re-defense scenario)
+                        const priorCompletedForType = rows.find(row =>
+                            row.defense_status === 'Completed' &&
+                            defenseTypesMatch(row.defense_type, defenseType)
+                        );
+                        let isRedefense = false;
+                        let redefenseVerdict = null;
+                        if(priorCompletedForType){
+                            const res = String(priorCompletedForType.panel_result || "").trim();
+                            if(res === "Conditional Passed" || res === "Conditional Pass"){
+                                isRedefense = true;
+                                redefenseVerdict = "Conditional Passed";
+                            }else if(res === "For Formal Defense" || res === "For Re-Defense"){
+                                isRedefense = true;
+                                redefenseVerdict = "For Formal Defense";
+                            }
+                        }
+
                         callback(null, {
                             ...documentResult,
                             prior_panel_evaluations:priorPanel,
                             ready_for_schedule:readyForSchedule,
+                            is_redefense:isRedefense,
+                            redefense_verdict:redefenseVerdict,
                             message
                         });
 
@@ -10450,7 +12594,9 @@ app.get("/group-consultation-approval-status/:groupDbId", (req, res) => {
                 message:result.message,
                 missing_for_schedule:result.missing || [],
                 required_phase_summaries:result.summaries || [],
-                prior_panel_evaluations:result.prior_panel_evaluations || null
+                prior_panel_evaluations:result.prior_panel_evaluations || null,
+                is_redefense:result.is_redefense || false,
+                redefense_verdict:result.redefense_verdict || null
             });
 
         }
@@ -10518,30 +12664,7 @@ app.post("/create-defense-schedule", (req, res) => {
 
             }
 
-            const groupInstructorSql = `
-                SELECT u.enrolled_by_user_id
-                FROM group_members gm
-                JOIN users u ON gm.student_id = u.id
-                WHERE gm.group_id = ?
-            `;
-            db.query(groupInstructorSql, [groupDbId], (groupInsErr, groupInsResult) => {
-                if (groupInsErr) {
-                    console.log(groupInsErr);
-                    return res.json({
-                        success: false,
-                        message: "Database error while validating group instructor."
-                    });
-                }
-
-                const instructorIds = (groupInsResult || []).map(r => r.enrolled_by_user_id);
-                if (!instructorIds.includes(instructorUserId)) {
-                    return res.json({
-                        success: false,
-                        message: "You cannot create a defense schedule for this group because you are not their instructor."
-                    });
-                }
-
-                const instructorSql = `
+            const instructorSql = `
         SELECT id
         FROM users
         WHERE user_id = ?
@@ -10571,71 +12694,166 @@ app.post("/create-defense-schedule", (req, res) => {
         const createdBy =
             instructorResult[0].id;
 
-        const panelistSql = `
-            SELECT id
-            FROM users
-            WHERE id IN (?)
-            AND role IN ('faculty', 'admin')
-            AND panelist_access = 1
+        // Check adviser and instructor restrictions: student group adviser & instructors cannot be panelists
+        const groupRestrictionsSql = `
+            SELECT cg.adviser_id, GROUP_CONCAT(DISTINCT ins.id) AS instructor_ids_str
+            FROM capstone_groups cg
+            LEFT JOIN group_members gm ON cg.id = gm.group_id
+            LEFT JOIN users u ON gm.student_id = u.id
+            LEFT JOIN users ins ON u.enrolled_by_user_id = ins.user_id
+            WHERE cg.id = ?
+            GROUP BY cg.id
         `;
-
-        db.query(panelistSql, [panelistIds], (err, panelistResult) => {
-
-            if(err){
-                console.log(err);
-
+        db.query(groupRestrictionsSql, [groupDbId], (grpErr, grpRows) => {
+            if (grpErr) {
+                console.log(grpErr);
                 return res.json({
-                    success:false,
-                    message:"Database error while checking panelists."
+                    success: false,
+                    message: "Database error while validating group restrictions."
                 });
             }
 
-            if(panelistResult.length !== panelistIds.length){
-                return res.json({
-                    success:false,
-                    message:"One or more selected panelists are invalid."
-                });
+            if (grpRows && grpRows.length > 0) {
+                const forbiddenIds = new Set();
+                if (grpRows[0].adviser_id) forbiddenIds.add(Number(grpRows[0].adviser_id));
+                if (grpRows[0].instructor_ids_str) {
+                    grpRows[0].instructor_ids_str.split(',').forEach(id => {
+                        if (id) forbiddenIds.add(Number(id));
+                    });
+                }
+                forbiddenIds.add(Number(createdBy));
+
+                const hasForbidden = panelistIds.some(pid => forbiddenIds.has(Number(pid)));
+                if (hasForbidden) {
+                    return res.json({
+                        success: false,
+                        message: "The student group's adviser and instructors cannot be selected as panelists for this group."
+                    });
+                }
             }
 
-            const conflictSql = `
+            const panelistSql = `
                 SELECT id
-                FROM defense_schedules
-                WHERE defense_date = ?
-                AND room_name = ?
-                AND (
-                    (? < end_time AND ? > start_time)
-                )
-                LIMIT 1
+                FROM users
+                WHERE id IN (?)
+                AND role IN ('faculty', 'admin')
+                AND panelist_access = 1
             `;
 
-            db.query(
-                conflictSql,
-                [
-                    defenseDate,
-                    roomName,
-                    startTime,
-                    endTime
-                ],
-                (err, conflictResult) => {
+            db.query(panelistSql, [panelistIds], (err, panelistResult) => {
 
-                    if(err){
-                        console.log(err);
+                if(err){
+                    console.log(err);
 
+                    return res.json({
+                        success:false,
+                        message:"Database error while checking panelists."
+                    });
+                }
+
+                if(panelistResult.length !== panelistIds.length){
+                    return res.json({
+                        success:false,
+                        message:"One or more selected panelists are invalid."
+                    });
+                }
+
+                // Check if group already has an active defense schedule for this defense type
+                const groupDupSql = `
+                    SELECT id FROM defense_schedules
+                    WHERE group_id = ?
+                    AND defense_type = ?
+                    AND defense_status IN ('Scheduled', 'Ongoing')
+                    LIMIT 1
+                `;
+
+                db.query(groupDupSql, [groupDbId, defenseType || "Concept Presentation"], (dupErr, dupRows) => {
+
+                    if(dupErr){
+                        console.log(dupErr);
                         return res.json({
                             success:false,
-                            message:"Database error while checking room conflict."
+                            message:"Database error while checking group schedule."
                         });
                     }
 
-                    if(conflictResult.length > 0){
+                    if(dupRows && dupRows.length > 0){
                         return res.json({
                             success:false,
-                            message:"This room is already scheduled during the selected time."
+                            message:`This group already has an active defense schedule for ${defenseType || 'this defense type'}.`
                         });
                     }
 
-                    const scheduleCode =
-                        "DEF2026-" + Date.now();
+                    const conflictSql = `
+                        SELECT id
+                        FROM defense_schedules
+                        WHERE defense_date = ?
+                        AND room_name = ?
+                        AND defense_status != 'Cancelled'
+                        AND (
+                            (? < end_time AND ? > start_time)
+                        )
+                        LIMIT 1
+                    `;
+
+                    db.query(
+                        conflictSql,
+                        [
+                            defenseDate,
+                            roomName,
+                            startTime,
+                            endTime
+                        ],
+                        (err, conflictResult) => {
+
+                            if(err){
+                                console.log(err);
+
+                                return res.json({
+                                    success:false,
+                                    message:"Database error while checking room conflict."
+                                });
+                            }
+
+                            if(conflictResult.length > 0){
+                                return res.json({
+                                    success:false,
+                                    message:"This room is already scheduled during the selected time."
+                                });
+                            }
+
+                            // Check panelist conflicts with other defense schedules
+                            const panelistConflictSql = `
+                                SELECT dsp.panelist_id, u.fullname
+                                FROM defense_schedule_panelists dsp
+                                JOIN defense_schedules ds ON dsp.schedule_id = ds.id
+                                JOIN users u ON dsp.panelist_id = u.id
+                                WHERE dsp.panelist_id IN (?)
+                                AND ds.defense_date = ?
+                                AND ds.defense_status != 'Cancelled'
+                                AND (? < ds.end_time AND ? > ds.start_time)
+                                LIMIT 1
+                            `;
+
+                            db.query(panelistConflictSql, [panelistIds, defenseDate, startTime, endTime], (panConfErr, panConfResult) => {
+
+                                if(panConfErr){
+                                    console.log(panConfErr);
+                                    return res.json({
+                                        success:false,
+                                        message:"Database error checking panelist availability."
+                                    });
+                                }
+
+                                if(panConfResult && panConfResult.length > 0){
+                                    return res.json({
+                                        success:false,
+                                        message:`Panelist ${panConfResult[0].fullname} is already scheduled for another defense at this date and time.`
+                                    });
+                                }
+
+                                const scheduleCode =
+                                    "DEF2026-" + Date.now();
 
                     const primaryPanelistId =
                         panelistIds[0];
@@ -10732,14 +12950,18 @@ app.post("/create-defense-schedule", (req, res) => {
                         }
                     );
 
+                });
+
+                });
+
                 }
             );
 
         });
 
-    });
+        });
 
-            });
+    });
 
         }
     );
@@ -11096,13 +13318,38 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
         const schedule =
             scheduleResult[0];
 
-        const panelistsSql = `
-            SELECT panelist_id
-            FROM defense_schedule_panelists
+        // Prevent deletion if schedule already received any grades/evaluations from panel
+        const checkEvalsSql = `
+            SELECT COUNT(*) AS evalCount
+            FROM defense_panel_evaluations
             WHERE schedule_id = ?
         `;
 
-        db.query(panelistsSql, [scheduleId], (err, panelistResult) => {
+        db.query(checkEvalsSql, [scheduleId], (evalErr, evalRows) => {
+
+            if(evalErr){
+                console.log(evalErr);
+                return res.json({
+                    success:false,
+                    message:"Database error while checking evaluations."
+                });
+            }
+
+            const evalCount = evalRows?.[0]?.evalCount || 0;
+            if(evalCount > 0){
+                return res.json({
+                    success:false,
+                    message:"Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this schedule."
+                });
+            }
+
+            const panelistsSql = `
+                SELECT panelist_id
+                FROM defense_schedule_panelists
+                WHERE schedule_id = ?
+            `;
+
+            db.query(panelistsSql, [scheduleId], (err, panelistResult) => {
 
             if(err){
                 console.log(err);
@@ -11181,6 +13428,8 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
         });
 
+        });
+
     });
 
 });
@@ -11233,10 +13482,11 @@ function getPanelistNamesText(panelistIds, callback){
 
 }
 
-function buildDefenseNotificationMessage(action, defenseDate, startTime, endTime, roomName, panelistNamesText){
+function buildDefenseNotificationMessage(action, defenseDate, startTime, endTime, roomName, panelistNamesText, cancelReason){
 
     const panelLine =
         `Panel: ${panelistNamesText || "No panelists listed"}.`;
+    const reasonLine = cancelReason ? ` Reason: ${cancelReason}.` : "";
 
     if(action === "created"){
 
@@ -11250,17 +13500,17 @@ function buildDefenseNotificationMessage(action, defenseDate, startTime, endTime
 
     }
 
-    if(action === "deleted"){
+    if(action === "deleted" || action === "cancelled"){
 
-        return `A defense schedule on ${defenseDate} from ${startTime} to ${endTime} at ${roomName} has been deleted. ${panelLine}`;
+        return `A defense schedule on ${defenseDate} from ${startTime} to ${endTime} at ${roomName} has been cancelled.${reasonLine} ${panelLine}`;
 
     }
 
-    return `${panelLine}`;
+    return `${panelLine}${reasonLine}`;
 
 }
 
-function notifyDefenseUsersWithDetails(groupDbId, panelistIds, title, action, defenseDate, startTime, endTime, roomName){
+function notifyDefenseUsersWithDetails(groupDbId, panelistIds, title, action, defenseDate, startTime, endTime, roomName, cancelReason){
 
     getPanelistNamesText(panelistIds, (panelistNamesText) => {
 
@@ -11271,7 +13521,8 @@ function notifyDefenseUsersWithDetails(groupDbId, panelistIds, title, action, de
                 startTime,
                 endTime,
                 roomName,
-                panelistNamesText
+                panelistNamesText,
+                cancelReason
             );
 
         notifyDefenseUsers(
@@ -12580,7 +14831,7 @@ app.get("/panelist-dashboard/:userId", (req, res) => {
                 ds.id,
                 ds.schedule_code,
                 ds.room_name,
-                ds.defense_date,
+                DATE_FORMAT(ds.defense_date, '%Y-%m-%d') AS defense_date,
                 ds.start_time,
                 ds.end_time,
                 ds.defense_type,
@@ -12788,7 +15039,7 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                 ds.schedule_code,
                 ds.panelist_id,
                 ds.room_name,
-                ds.defense_date,
+                DATE_FORMAT(ds.defense_date, '%Y-%m-%d') AS defense_date,
                 ds.start_time,
                 ds.end_time,
                 ds.defense_type,
@@ -12843,7 +15094,8 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                     u.fullname,
                     u.program,
                     u.year_level,
-                    u.student_position
+                    u.student_position,
+                    COALESCE(u.student_status, 'ACTIVE') AS student_status
                 FROM group_members gm
 
                 JOIN users u
@@ -12911,7 +15163,8 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                         proposals,
                         documents,
                         myEvaluations,
-                        evaluationCounts
+                        evaluationCounts,
+                        priorSchedules
                     ) => {
 
                         const schedulesWithDetails =
@@ -12922,6 +15175,19 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                         Number(panelistItem.schedule_id)
                                         === Number(schedule.id)
                                     );
+
+                                const priorMatches = (priorSchedules || []).filter(p =>
+                                    Number(p.group_id) === Number(schedule.group_db_id)
+                                    && Number(p.id) < Number(schedule.id)
+                                    && defenseTypesMatch(p.defense_type, schedule.defense_type)
+                                );
+                                const lastPrior = priorMatches.length > 0 ? priorMatches[priorMatches.length - 1] : null;
+                                const isFormalDef = lastPrior && (lastPrior.panel_result === 'For Formal Defense' || lastPrior.panel_result === 'For Re-Defense');
+                                const isCondPass = lastPrior && (lastPrior.panel_result === 'Conditional Passed' || lastPrior.panel_result === 'Conditional Pass');
+
+                                const is_redefense = Boolean(isFormalDef || isCondPass);
+                                const prior_verdict = isFormalDef ? 'For Formal Defense' : (isCondPass ? 'Conditional Passed' : null);
+                                const max_grade = isFormalDef ? 75 : null;
 
                                 const titleProposals =
                                     (proposals || [])
@@ -13011,7 +15277,11 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
                                     evaluations_complete:
                                         evaluationsRequired > 0
-                                        && evaluationsSubmitted >= evaluationsRequired
+                                        && evaluationsSubmitted >= evaluationsRequired,
+
+                                    is_redefense:is_redefense,
+                                    prior_verdict:prior_verdict,
+                                    max_grade:max_grade
                                 };
 
                             });
@@ -13186,11 +15456,28 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                                 });
                                             }
 
-                                            finishPanelistResponse(
-                                                proposals,
-                                                documents,
-                                                myEvaluations,
-                                                evaluationCounts
+                                            const priorSchedulesSql = `
+                                                SELECT id, group_id, defense_type, panel_result
+                                                FROM defense_schedules
+                                                WHERE group_id IN (?)
+                                                  AND defense_status = 'Completed'
+                                                ORDER BY id ASC
+                                            `;
+
+                                            db.query(
+                                                priorSchedulesSql,
+                                                [groupDbIds],
+                                                (priorErr, priorSchedules) => {
+
+                                                    finishPanelistResponse(
+                                                        proposals,
+                                                        documents,
+                                                        myEvaluations,
+                                                        evaluationCounts,
+                                                        priorSchedules || []
+                                                    );
+
+                                                }
                                             );
 
                                         }
@@ -13311,6 +15598,104 @@ app.get("/panelist-documents/:userId", (req, res) => {
 
 });
 
+/* ================= ARCHIVE / DELETE LATE PANELIST DEFENSE ================= */
+
+app.post("/archive-panelist-defense", (req, res) => {
+    const { schedule_id, panelist_user_id, action } = req.body;
+
+    if (!schedule_id || !panelist_user_id) {
+        return res.json({ success: false, message: "Missing schedule ID or panelist user ID." });
+    }
+
+    const findPanelistSql = `
+        SELECT id, user_id, fullname
+        FROM users
+        WHERE (user_id = ? OR id = ?) AND role IN ('faculty', 'admin')
+        LIMIT 1
+    `;
+
+    db.query(findPanelistSql, [panelist_user_id, panelist_user_id], (errUser, userRows) => {
+        if (errUser) {
+            console.error("Lookup panelist error:", errUser);
+            return res.json({ success: false, message: "Database error finding panelist." });
+        }
+        if (!userRows || userRows.length === 0) {
+            return res.json({ success: false, message: "Panelist account not found." });
+        }
+
+        const panelistDbId = userRows[0].id;
+
+        if (action === "delete") {
+            const delAssignmentSql = `DELETE FROM defense_schedule_panelists WHERE schedule_id = ? AND panelist_id = ?`;
+            db.query(delAssignmentSql, [schedule_id, panelistDbId], (delAssignErr) => {
+                if (delAssignErr) {
+                    console.error("Delete panelist assignment error:", delAssignErr);
+                    return res.json({ success: false, message: "Failed to remove defense assignment." });
+                }
+
+                db.query(
+                    `DELETE FROM defense_panel_evaluations WHERE schedule_id = ? AND panelist_id = ?`,
+                    [schedule_id, panelistDbId],
+                    () => {}
+                );
+
+                console.log(`[DEFENSE ASSIGNMENT DELETED] Schedule ${schedule_id} removed for panelist ${panelistDbId}`);
+                return res.json({
+                    success: true,
+                    message: "Defense assignment has been permanently deleted from your assigned defenses."
+                });
+            });
+        } else if (action === "restore") {
+            const restoreSql = `
+                DELETE FROM defense_panel_evaluations
+                WHERE schedule_id = ? AND panelist_id = ? AND panel_result IN ('Did Not Evaluate', 'Archived (Did Not Evaluate)')
+            `;
+            db.query(restoreSql, [schedule_id, panelistDbId], (resErr) => {
+                if (resErr) {
+                    console.error("Restore defense error:", resErr);
+                    return res.json({ success: false, message: "Failed to restore defense." });
+                }
+                return res.json({
+                    success: true,
+                    message: "Defense restored to active defense list."
+                });
+            });
+        } else {
+            const archiveSql = `
+                INSERT INTO defense_panel_evaluations
+                (
+                    schedule_id,
+                    panelist_id,
+                    score,
+                    panel_result,
+                    comments,
+                    recommendations,
+                    evaluated_at
+                )
+                VALUES (?, ?, 'N/A', 'Did Not Evaluate', 'Archived by panelist (Did not attend/evaluate).', '', NOW())
+                ON DUPLICATE KEY UPDATE
+                    score = 'N/A',
+                    panel_result = 'Did Not Evaluate',
+                    comments = 'Archived by panelist (Did not attend/evaluate).',
+                    updated_at = NOW()
+            `;
+
+            db.query(archiveSql, [schedule_id, panelistDbId], (archErr) => {
+                if (archErr) {
+                    console.error("Archive defense error:", archErr);
+                    return res.json({ success: false, message: "Failed to archive defense: " + archErr.message });
+                }
+
+                console.log(`[DEFENSE ARCHIVED] Schedule ${schedule_id} archived as Did Not Evaluate for panelist ${panelistDbId}`);
+                return res.json({
+                    success: true,
+                    message: "Defense archived successfully and moved to History."
+                });
+            });
+        }
+    });
+});
+
 /* ================= PANEL EVALUATION SUBMIT / VIEW ================= */
 
 function insertUserNotificationsByDbIds(
@@ -13364,7 +15749,7 @@ function aggregateCompiledPanelResult(evaluations){
     const results =
         (evaluations || [])
         .map(row => String(row.panel_result || "").trim())
-        .filter(Boolean);
+        .filter(r => r && !r.toLowerCase().includes("did not evaluate") && !r.toLowerCase().includes("archived"));
 
     if(results.length === 0){
         return "Pending";
@@ -13374,8 +15759,8 @@ function aggregateCompiledPanelResult(evaluations){
         return "Failed";
     }
 
-    if(results.some(result => result === "For Re-Defense")){
-        return "For Re-Defense";
+    if(results.some(result => result === "For Formal Defense" || result === "For Re-Defense")){
+        return "For Formal Defense";
     }
 
     if(results.some(result => result === "Conditional Passed" || result === "Conditional Pass")){
@@ -13416,7 +15801,7 @@ function aggregateCompiledScore(evaluations){
 function getGroupStageAfterDefense(defenseType, panelResult){
 
     const resultStr = String(panelResult || "").trim();
-    if(resultStr === "Failed" || resultStr === "For Re-Defense" || resultStr === "Conditional Passed" || resultStr === "Conditional Pass"){
+    if(resultStr === "Failed" || resultStr === "For Formal Defense" || resultStr === "For Re-Defense" || resultStr === "Conditional Passed" || resultStr === "Conditional Pass"){
         return null;
     }
 
@@ -13441,11 +15826,17 @@ function getProgressPercentForStage(stage){
         "Stage 2":25,
         "Stage 3":50,
         "Stage 4":75,
-        "Final":100
+        "Stage 5":100,
+        "Final":100,
+        "Completed":100
     };
 
     return progressMap[stage] ?? 0;
 
+}
+
+function getProgressForStage(stage){
+    return getProgressPercentForStage(stage);
 }
 
 function pickCompiledApprovedTitleId(evaluations){
@@ -13648,7 +16039,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
                                     if(!memberErr && memberRows){
 
                                         let studentMsg = `Your ${schedule.defense_type} panel evaluations are complete. Final result: ${compiledResult}.`;
-                                        if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Re-Defense") {
+                                        if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense") {
                                             studentMsg += ` Feedback: ${compiledComments}\nRecommendations: ${compiledRecommendations}`;
                                         }
 
@@ -13664,7 +16055,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
                                     if(schedule.created_by){
 
                                         let instructorMsg = `All panelists submitted evaluations for ${schedule.defense_type}. Final result: ${compiledResult}.`;
-                                        if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Re-Defense") {
+                                        if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense") {
                                             instructorMsg += ` Please create schedule again.`;
                                         }
 
@@ -13838,8 +16229,8 @@ app.get("/defense-panel-evaluations/:scheduleId", (req, res) => {
                     scheduleRows[0] || {};
 
                 const evaluationsComplete =
-                    evaluationsRequired > 0
-                    && evaluationsSubmitted >= evaluationsRequired;
+                    (evaluationsRequired > 0 && evaluationsSubmitted >= evaluationsRequired)
+                    || (schedule.defense_status === 'Completed' && evaluationsSubmitted >= 2);
 
                 res.json({
                     success:true,
@@ -13906,7 +16297,7 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
 
     }
 
-    if((panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Re-Defense") && (!comments || String(comments).trim() === "")){
+    if((panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense") && (!comments || String(comments).trim() === "")){
 
         return res.json({
             success:false,
@@ -13915,7 +16306,7 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
 
     }
 
-    const isScoreOptional = panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Re-Defense";
+    const isScoreOptional = panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense";
     if(!isScoreOptional && (score === undefined || score === null || String(score).trim() === "")){
 
         return res.json({
@@ -14023,45 +16414,128 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
 
                     }
 
-                    const upsertSql = `
-                        INSERT INTO defense_panel_evaluations
-                        (
-                            schedule_id,
-                            panelist_id,
-                            score,
-                            panel_result,
-                            comments,
-                            recommendations,
-                            approved_title_id,
-                            concept_evaluation_details,
-                            outline_evaluation_details
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON DUPLICATE KEY UPDATE
-                            score = VALUES(score),
-                            panel_result = VALUES(panel_result),
-                            comments = VALUES(comments),
-                            recommendations = VALUES(recommendations),
-                            approved_title_id = VALUES(approved_title_id),
-                            concept_evaluation_details = VALUES(concept_evaluation_details),
-                            outline_evaluation_details = VALUES(outline_evaluation_details),
-                            updated_at = CURRENT_TIMESTAMP
+                    // Check if this schedule is a re-defense following For Formal Defense (max grade 75)
+                    const checkPriorVerdictSql = `
+                        SELECT id, panel_result, defense_type
+                        FROM defense_schedules
+                        WHERE group_id = ?
+                          AND defense_status = 'Completed'
+                          AND id < ?
+                        ORDER BY id DESC
                     `;
+                    db.query(checkPriorVerdictSql, [schedule.group_id, schedule.id], (priorVerdictErr, priorVerdictRows) => {
+                        const priorMatches = (priorVerdictRows || []).filter(p => defenseTypesMatch(p.defense_type, schedule.defense_type));
+                        const lastPrior = priorMatches.length > 0 ? priorMatches[0] : null;
+                        const wasFormalDefense = lastPrior && (lastPrior.panel_result === 'For Formal Defense' || lastPrior.panel_result === 'For Re-Defense');
 
-                    db.query(
-                        upsertSql,
-                        [
-                            scheduleId,
-                            panelistDbId,
-                            String(score),
-                            panel_result,
-                            comments || "",
-                            recommendations || "",
-                            approved_title_id || null,
-                            concept_evaluation_details || null,
-                            outline_evaluation_details || null
-                        ],
-                        (upsertErr) => {
+                        if (wasFormalDefense && score && !isScoreOptional) {
+                            const numScore = parseFloat(score);
+                            if (!isNaN(numScore)) {
+                                if (numScore > 5 && numScore > 75) {
+                                    return res.json({
+                                        success: false,
+                                        message: "The highest grade allowed for this re-defense is 75 because the previous verdict was For Formal Defense."
+                                    });
+                                }
+                                if (numScore >= 1.00 && numScore < 3.00) {
+                                    return res.json({
+                                        success: false,
+                                        message: "The highest grade allowed for this re-defense is 75 (GPA 3.00) because the previous verdict was For Formal Defense."
+                                    });
+                                }
+                            }
+                        }
+
+                    // Defense grading safeguard: block INACTIVE or DROPPED students from receiving points
+                    const groupMembersStatusSql = `
+                        SELECT u.id, u.user_id, COALESCE(u.student_status, 'ACTIVE') AS student_status
+                        FROM group_members gm
+                        JOIN users u ON gm.student_id = u.id
+                        WHERE gm.group_id = ?
+                    `;
+                    db.query(groupMembersStatusSql, [schedule.group_id], (gmErr, gmRows) => {
+                        const inactiveIds = new Set();
+                        (gmRows || []).forEach(r => {
+                            if (String(r.student_status || "").toUpperCase() !== "ACTIVE") {
+                                inactiveIds.add(String(r.id));
+                                inactiveIds.add(String(r.user_id));
+                            }
+                        });
+
+                        let finalConceptDetails = concept_evaluation_details;
+                        let finalOutlineDetails = outline_evaluation_details;
+
+                        if (finalConceptDetails && inactiveIds.size > 0) {
+                            try {
+                                const parsed = typeof finalConceptDetails === 'string' ? JSON.parse(finalConceptDetails) : finalConceptDetails;
+                                if (Array.isArray(parsed.presenters)) {
+                                    parsed.presenters.forEach(p => {
+                                        if (inactiveIds.has(String(p.student_id)) || inactiveIds.has(String(p.id))) {
+                                            p.disposition_score = null;
+                                            p.delivery_score = null;
+                                            p.status = "NOT_GRADED";
+                                        }
+                                    });
+                                    finalConceptDetails = JSON.stringify(parsed);
+                                }
+                            } catch (e) {}
+                        }
+
+                        if (finalOutlineDetails && inactiveIds.size > 0) {
+                            try {
+                                const parsed = typeof finalOutlineDetails === 'string' ? JSON.parse(finalOutlineDetails) : finalOutlineDetails;
+                                if (Array.isArray(parsed.presenters)) {
+                                    parsed.presenters.forEach(p => {
+                                        if (inactiveIds.has(String(p.student_id)) || inactiveIds.has(String(p.id))) {
+                                            p.disposition_score = null;
+                                            p.delivery_score = null;
+                                            p.status = "NOT_GRADED";
+                                        }
+                                    });
+                                    finalOutlineDetails = JSON.stringify(parsed);
+                                }
+                            } catch (e) {}
+                        }
+
+                        const upsertSql = `
+                            INSERT INTO defense_panel_evaluations
+                            (
+                                schedule_id,
+                                panelist_id,
+                                score,
+                                panel_result,
+                                comments,
+                                recommendations,
+                                approved_title_id,
+                                concept_evaluation_details,
+                                outline_evaluation_details
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE
+                                score = VALUES(score),
+                                panel_result = VALUES(panel_result),
+                                comments = VALUES(comments),
+                                recommendations = VALUES(recommendations),
+                                approved_title_id = VALUES(approved_title_id),
+                                concept_evaluation_details = VALUES(concept_evaluation_details),
+                                outline_evaluation_details = VALUES(outline_evaluation_details),
+                                updated_at = CURRENT_TIMESTAMP
+                        `;
+
+                        db.query(
+                            upsertSql,
+                            [
+                                scheduleId,
+                                panelistDbId,
+                                String(score),
+                                panel_result,
+                                comments || "",
+                                recommendations || "",
+                                approved_title_id || null,
+                                finalConceptDetails || null,
+                                finalOutlineDetails || null
+                            ],
+                            (upsertErr) => {
 
                             if(upsertErr){
                                 console.log(upsertErr);
@@ -14167,6 +16641,10 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
                     );
 
                 });
+
+            });
+
+            });
 
             }
         );
@@ -14279,11 +16757,19 @@ app.get("/instructor-document-review/:userId", (req, res) => {
                 ON ds.reviewed_by = reviewer.id
 
             WHERE ds.receiver_id = ?
+            AND (ds.target_role = 'instructor' OR ds.target_role IS NULL)
+            AND ds.id IN (
+                SELECT MAX(inner_ds.id)
+                FROM document_submissions inner_ds
+                WHERE inner_ds.receiver_id = ?
+                AND (inner_ds.target_role = 'instructor' OR inner_ds.target_role IS NULL)
+                GROUP BY inner_ds.document_id
+            )
 
             ORDER BY ds.sent_at DESC
         `;
 
-        db.query(receivedSql, [instructorDbId], (err, receivedDocuments) => {
+        db.query(receivedSql, [instructorDbId, instructorDbId], (err, receivedDocuments) => {
 
             if(err){
                 console.log(err);
@@ -14380,17 +16866,31 @@ app.get("/instructor-document-review/:userId", (req, res) => {
                             item.review_status === "Subject to Change"
                         ).length;
 
+                    /* Sanitize text fields that may contain control characters */
+                    const sanitizeStr = (v) => v == null ? null : String(v).replace(/[\x00-\x1F\x7F]/g, ' ').trim();
+                    const cleanReceived = receivedDocuments.map(doc => ({
+                        ...doc,
+                        submission_message: sanitizeStr(doc.submission_message),
+                        review_comment: sanitizeStr(doc.review_comment),
+                        document_title: sanitizeStr(doc.document_title),
+                        document_type: sanitizeStr(doc.document_type),
+                        project_title: sanitizeStr(doc.project_title),
+                        group_name: sanitizeStr(doc.group_name),
+                        sender_name: sanitizeStr(doc.sender_name),
+                        reviewer_name: sanitizeStr(doc.reviewer_name),
+                    }));
+
                     res.json({
                         success:true,
                         instructor,
                         stats:{
-                            receivedDocuments:receivedDocuments.length,
+                            receivedDocuments:cleanReceived.length,
                             sentDocuments:sentDocuments.length,
                             pendingCount,
                             approvedCount,
                             subjectToChangeCount
                         },
-                        receivedDocuments,
+                        receivedDocuments: cleanReceived,
                         sentDocuments,
                         recipients
                     });
@@ -14956,11 +17456,19 @@ app.get("/adviser-documents/:userId", (req, res) => {
                 ON ds.reviewed_by = reviewer.id
 
             WHERE ds.receiver_id = ?
+            AND (ds.target_role = 'adviser' OR ds.target_role IS NULL)
+            AND ds.id IN (
+                SELECT MAX(inner_ds.id)
+                FROM document_submissions inner_ds
+                WHERE inner_ds.receiver_id = ?
+                AND (inner_ds.target_role = 'adviser' OR inner_ds.target_role IS NULL)
+                GROUP BY inner_ds.document_id
+            )
 
             ORDER BY ds.sent_at DESC
         `;
 
-        db.query(receivedSql, [adviserDbId], (err, receivedDocuments) => {
+        db.query(receivedSql, [adviserDbId, adviserDbId], (err, receivedDocuments) => {
 
             if(err){
                 console.log(err);
@@ -15309,6 +17817,10 @@ function isAdviserSigningDocumentType(documentType, documentTitle){
         || docTitle.includes("acceptance for advisory")
         || docType.includes("recommendation for concept")
         || docTitle.includes("recommendation for concept")
+        || docType.includes("recommendation for outline")
+        || docTitle.includes("recommendation for outline")
+        || docType.includes("recommendation letter")
+        || docTitle.includes("recommendation letter")
         || docType.includes("environmental scanning")
         || docTitle.includes("environmental scanning");
 
@@ -15428,6 +17940,282 @@ async function embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement){
     return pdfDoc.save();
 
 }
+
+/* ================= ENVIRONMENTAL SCANNING STUDENT SIGNATURES ================= */
+
+app.get("/env-scan-student-signatures/:documentId", (req, res) => {
+    const documentId = req.params.documentId;
+    const studentUserId = req.query.studentUserId;
+
+    if (!documentId) {
+        return res.json({ success: false, message: "Missing documentId parameter." });
+    }
+
+    const docSql = `
+        SELECT id, group_id, document_title, document_type, document_status, file_path, signed_file_path
+        FROM student_documents
+        WHERE id = ?
+        LIMIT 1
+    `;
+
+    db.query(docSql, [documentId], (err, docRows) => {
+        if (err) {
+            console.error("Error fetching student document for env scan:", err);
+            return res.json({ success: false, message: "Database error fetching document." });
+        }
+        if (!docRows || docRows.length === 0) {
+            return res.json({ success: false, message: "Environmental scanning document not found." });
+        }
+
+        const doc = docRows[0];
+        const groupId = doc.group_id;
+
+        const membersSql = `
+            SELECT u.id, u.user_id, u.fullname,
+                   COALESCE(gm.member_position, u.student_position, 'Member') AS student_position,
+                   COALESCE(u.student_status, 'ACTIVE') AS student_status
+            FROM group_members gm
+            JOIN users u ON gm.student_id = u.id
+            WHERE gm.group_id = ?
+            ORDER BY u.id ASC
+        `;
+
+        db.query(membersSql, [groupId], (err2, memberRows) => {
+            if (err2) {
+                console.error("Error fetching group members for env scan:", err2);
+                return res.json({ success: false, message: "Failed to fetch group members." });
+            }
+
+            const sigsSql = `
+                SELECT student_user_id, student_name, student_position, signed_file_path, signed_at
+                FROM env_scan_student_signatures
+                WHERE document_id = ?
+            `;
+
+            db.query(sigsSql, [documentId], (err3, sigRows) => {
+                if (err3) {
+                    console.error("Error fetching env scan signatures:", err3);
+                    return res.json({ success: false, message: "Failed to fetch signatures." });
+                }
+
+                const sigMap = {};
+                (sigRows || []).forEach(s => {
+                    sigMap[s.student_user_id] = s;
+                });
+
+                const members = (memberRows || []).map(m => {
+                    const sig = sigMap[m.user_id];
+                    return {
+                        id: m.id,
+                        user_id: m.user_id,
+                        fullname: m.fullname,
+                        student_position: m.student_position,
+                        student_status: m.student_status,
+                        has_signed: !!sig,
+                        signed_at: sig ? sig.signed_at : null
+                    };
+                });
+
+                const activeMembers = members.filter(m => m.student_status === "ACTIVE");
+                const totalMembers = activeMembers.length;
+                const totalSigned = activeMembers.filter(m => m.has_signed).length;
+                const allSigned = totalMembers > 0 && totalSigned >= totalMembers;
+
+                const normFilePath = doc.file_path && !doc.file_path.startsWith('/') ? '/' + doc.file_path : doc.file_path;
+                const normSignedPath = doc.signed_file_path && !doc.signed_file_path.startsWith('/') ? '/' + doc.signed_file_path : doc.signed_file_path;
+
+                res.json({
+                    success: true,
+                    document_id: doc.id,
+                    document_title: doc.document_title,
+                    file_path: normFilePath,
+                    signed_file_path: normSignedPath || null,
+                    total_members: totalMembers,
+                    total_signed: totalSigned,
+                    all_signed: allSigned,
+                    members: members
+                });
+            });
+        });
+    });
+});
+
+app.post("/student-apply-env-scan-signature", async (req, res) => {
+    const { studentUserId, documentId, signatureImage, signatureType, placement } = req.body;
+
+    if (!studentUserId || !documentId || !placement) {
+        return res.json({ success: false, message: "Missing required signing information." });
+    }
+
+    const studentSql = `
+        SELECT id, user_id, fullname, student_position, COALESCE(student_status, 'ACTIVE') AS student_status, digital_signature
+        FROM users
+        WHERE user_id = ? AND role = 'student'
+        LIMIT 1
+    `;
+
+    db.query(studentSql, [studentUserId], async (err, studentRows) => {
+        if (err) {
+            console.error("Error fetching student for env scan signing:", err);
+            return res.json({ success: false, message: "Database error." });
+        }
+        if (!studentRows || studentRows.length === 0) {
+            return res.json({ success: false, message: "Student account not found." });
+        }
+
+        const student = studentRows[0];
+        if (student.student_status !== "ACTIVE") {
+            return res.json({ success: false, message: `Your account is marked as ${student.student_status}. Only active members can sign documents.` });
+        }
+
+        const docSql = `
+            SELECT id, group_id, document_title, document_type, document_status, file_path, signed_file_path
+            FROM student_documents
+            WHERE id = ?
+            LIMIT 1
+        `;
+
+        db.query(docSql, [documentId], async (errDoc, docRows) => {
+            if (errDoc) {
+                console.error("Error fetching document for env scan signing:", errDoc);
+                return res.json({ success: false, message: "Database error." });
+            }
+            if (!docRows || docRows.length === 0) {
+                return res.json({ success: false, message: "Document not found." });
+            }
+
+            const doc = docRows[0];
+
+            // Verify membership in doc.group_id
+            const memberSql = `
+                SELECT id, member_position FROM group_members WHERE group_id = ? AND student_id = ? LIMIT 1
+            `;
+            db.query(memberSql, [doc.group_id, student.id], async (errMem, memRows) => {
+                if (errMem || !memRows || memRows.length === 0) {
+                    return res.json({ success: false, message: "You are not an active member of this capstone group." });
+                }
+
+                const studentPos = (memRows[0].member_position || student.student_position || "Member");
+
+                // Check if already signed
+                const checkSigSql = `
+                    SELECT id FROM env_scan_student_signatures WHERE document_id = ? AND student_user_id = ? LIMIT 1
+                `;
+                db.query(checkSigSql, [documentId, studentUserId], async (errCheck, existingSig) => {
+                    if (errCheck) {
+                        return res.json({ success: false, message: "Database error checking signature." });
+                    }
+                    if (existingSig && existingSig.length > 0) {
+                        return res.json({ success: false, message: "You have already signed this document." });
+                    }
+
+                    // Resolve source PDF
+                    const srcRelative = doc.signed_file_path || doc.file_path;
+                    if (!srcRelative) {
+                        return res.json({ success: false, message: "No PDF file attached to this document." });
+                    }
+                    const cleanRelative = String(srcRelative).replace(/^\/uploads\//, "uploads/").replace(/^\//, "");
+                    const sourcePath = path.join(__dirname, cleanRelative);
+
+                    if (!fs.existsSync(sourcePath)) {
+                        return res.json({ success: false, message: "Source document PDF was not found on the server." });
+                    }
+
+                    // Resolve signature buffer
+                    let signatureBuffer = null;
+                    try {
+                        if (signatureType === "saved" && student.digital_signature) {
+                            const localSigPath = path.join(__dirname, student.digital_signature.replace(/^\//, ""));
+                            if (fs.existsSync(localSigPath)) {
+                                signatureBuffer = fs.readFileSync(localSigPath);
+                            }
+                        }
+                        if (!signatureBuffer && typeof signatureImage === "string") {
+                            if (signatureImage.startsWith("data:")) {
+                                signatureBuffer = decodeSignatureImageData(signatureImage);
+                            } else if (signatureImage.includes("/uploads/")) {
+                                const relSig = "uploads/" + signatureImage.split("/uploads/")[1];
+                                const localPath = path.join(__dirname, relSig);
+                                if (fs.existsSync(localPath)) {
+                                    signatureBuffer = fs.readFileSync(localPath);
+                                }
+                            }
+                        }
+                    } catch (sigErr) {
+                        console.error("Error reading signature image:", sigErr);
+                    }
+
+                    if (!signatureBuffer || signatureBuffer.length === 0) {
+                        return res.json({ success: false, message: "Invalid signature image. Please sign again." });
+                    }
+
+                    // Embed signature on PDF
+                    try {
+                        const signedBytes = await embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement);
+                        const signedDir = path.join(__dirname, "uploads", "signed_documents");
+                        if (!fs.existsSync(signedDir)) {
+                            fs.mkdirSync(signedDir, { recursive: true });
+                        }
+                        const newFileName = `env_scan_signed_${documentId}_${Date.now()}.pdf`;
+                        const destPath = path.join(signedDir, newFileName);
+                        fs.writeFileSync(destPath, signedBytes);
+                        const newSignedFilePath = `/uploads/signed_documents/${newFileName}`;
+
+                        // Update student_documents with new signed_file_path
+                        db.query("UPDATE student_documents SET signed_file_path = ? WHERE id = ?", [newSignedFilePath, documentId], (errUp) => {
+                            if (errUp) console.error("Error updating signed_file_path on student_documents:", errUp);
+
+                            // Insert into env_scan_student_signatures
+                            const insertSigSql = `
+                                INSERT INTO env_scan_student_signatures
+                                (document_id, student_user_id, student_name, student_position, signed_file_path)
+                                VALUES (?, ?, ?, ?, ?)
+                                ON DUPLICATE KEY UPDATE signed_file_path = VALUES(signed_file_path), signed_at = CURRENT_TIMESTAMP
+                            `;
+                            db.query(insertSigSql, [documentId, studentUserId, student.fullname, studentPos, newSignedFilePath], (errIns) => {
+                                if (errIns) {
+                                    console.error("Error inserting into env_scan_student_signatures:", errIns);
+                                    return res.json({ success: false, message: "Failed to record signature in database." });
+                                }
+
+                                // Check if all active members signed
+                                const checkAllMembersSql = `
+                                    SELECT u.user_id, COALESCE(u.student_status, 'ACTIVE') AS student_status
+                                    FROM group_members gm
+                                    JOIN users u ON gm.student_id = u.id
+                                    WHERE gm.group_id = ?
+                                `;
+                                db.query(checkAllMembersSql, [doc.group_id], (errMems, allMems) => {
+                                    const activeList = (allMems || []).filter(m => m.student_status === "ACTIVE");
+                                    db.query("SELECT student_user_id FROM env_scan_student_signatures WHERE document_id = ?", [documentId], (errSigs, allSigs) => {
+                                        const signedSet = new Set((allSigs || []).map(s => s.student_user_id));
+                                        const allSigned = activeList.length > 0 && activeList.every(m => signedSet.has(m.user_id));
+
+                                        if (allSigned) {
+                                            db.query("UPDATE student_documents SET document_status = 'Students Signed' WHERE id = ?", [documentId], () => {});
+                                        }
+
+                                        return res.json({
+                                            success: true,
+                                            all_signed: allSigned,
+                                            signed_file_path: newSignedFilePath,
+                                            message: allSigned
+                                                ? "Signature applied! All group members have signed. Document is ready to send."
+                                                : "Signature applied! Waiting for remaining group members."
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    } catch (embedErr) {
+                        console.error("Error embedding signature on PDF:", embedErr);
+                        return res.json({ success: false, message: "Failed to stamp signature onto PDF." });
+                    }
+                });
+            });
+        });
+    });
+});
 
 /* ================= ADVISER SIGNING DOCUMENT FILE ================= */
 
@@ -18134,7 +20922,14 @@ app.post("/force-change-password", (req, res) => {
         const user =
             result[0];
 
-        if(user.password !== currentPassword){
+        const storedPwd = String(user.password || "");
+        const isBcrypt = storedPwd.startsWith("$2a$") || storedPwd.startsWith("$2b$");
+        const verifyPromise = isBcrypt
+            ? bcrypt.compare(String(currentPassword), storedPwd)
+            : Promise.resolve(storedPwd === String(currentPassword));
+
+        verifyPromise.then(async (isMatch) => {
+        if(!isMatch){
 
             return res.json({
                 success:false,
@@ -18142,6 +20937,8 @@ app.post("/force-change-password", (req, res) => {
             });
 
         }
+
+        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
         const updateSql = `
             UPDATE users
@@ -18151,7 +20948,7 @@ app.post("/force-change-password", (req, res) => {
             WHERE user_id = ?
         `;
 
-        db.query(updateSql, [newPassword, userId], (err) => {
+        db.query(updateSql, [hashedNewPassword, userId], (err) => {
 
             if(err){
                 console.log(err);
@@ -18177,6 +20974,13 @@ app.post("/force-change-password", (req, res) => {
                 role:user.role
             });
 
+        });
+        }).catch((errHash) => {
+            console.error(errHash);
+            res.json({
+                success:false,
+                message:"Failed to update password."
+            });
         });
 
     });
@@ -18210,6 +21014,29 @@ const chatFileUpload = multer({
     storage: chatFileStorage,
     limits: {
         fileSize: 25 * 1024 * 1024 // 25 MB
+    }
+});
+
+/* ── Consultation document upload ─────────────────────────────────────── */
+const consultationDocStorage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        const uploadPath = path.join(__dirname, "uploads", "consultation_documents");
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: function(req, file, cb) {
+        const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(null, unique + path.extname(file.originalname));
+    }
+});
+const consultationUpload = multer({
+    storage: consultationDocStorage,
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: function(req, file, cb) {
+        if (file.mimetype === "application/pdf") cb(null, true);
+        else cb(new Error("Only PDF files are allowed for consultation documents."), false);
     }
 });
 
@@ -18378,8 +21205,18 @@ app.get("/consultation-context/:userId", (req, res) => {
     });
 });
 
-app.post("/student-consultations", (req, res) => {
+app.post("/student-consultations", (req, res, next) => {
+    consultationUpload.single("consultationFile")(req, res, (uploadErr) => {
+        if (uploadErr) {
+            return res.status(400).json({ success: false, message: uploadErr.message || "File upload error." });
+        }
+        next();
+    });
+}, (req, res) => {
     const { studentUserId, assignedFacultyId, consultationType, topic, concernMessage } = req.body;
+    const uploadedFile = req.file || null;
+    const filePath  = uploadedFile ? `/uploads/consultation_documents/${uploadedFile.filename}` : null;
+    const fileName  = uploadedFile ? uploadedFile.originalname : null;
 
     if (!studentUserId || !assignedFacultyId || !consultationType || !concernMessage) {
         return res.json({ success: false, message: "Missing required fields." });
@@ -18445,8 +21282,8 @@ app.post("/student-consultations", (req, res) => {
 
                     const insertSql = `
                         INSERT INTO consultations
-                        (consultation_code, student_id, group_id, assigned_faculty_id, assigned_role, consultation_type, topic, concern_message, status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+                        (consultation_code, student_id, group_id, assigned_faculty_id, assigned_role, consultation_type, topic, concern_message, file_path, file_name, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
                     `;
                     const insertParams = [
                         consultationCode,
@@ -18456,7 +21293,9 @@ app.post("/student-consultations", (req, res) => {
                         assignedRole,
                         consultationType,
                         topic || null,
-                        concernMessage
+                        concernMessage,
+                        filePath,
+                        fileName
                     ];
 
                     db.query(insertSql, insertParams, (err) => {
@@ -18495,7 +21334,7 @@ app.get("/student-consultations/:userId", (req, res) => {
         SELECT c.id, c.consultation_code, c.consultation_type, c.topic, c.concern_message, c.status,
                DATE_FORMAT(c.scheduled_date, '%Y-%m-%d') AS scheduled_date,
                c.scheduled_start_time, c.scheduled_end_time, c.consultation_mode, c.location_or_link,
-               c.created_at, u.fullname AS faculty_name, c.assigned_role
+               c.created_at, c.file_path, c.file_name, u.fullname AS faculty_name, c.assigned_role
         FROM consultations c
         JOIN users u ON c.assigned_faculty_id = u.id
         JOIN users s ON c.student_id = s.id
@@ -18523,7 +21362,8 @@ app.get("/faculty-consultations", (req, res) => {
         SELECT c.id, c.consultation_code, c.consultation_type, c.topic, c.concern_message, c.status,
                DATE_FORMAT(c.scheduled_date, '%Y-%m-%d') AS scheduled_date,
                c.scheduled_start_time, c.scheduled_end_time, c.consultation_mode, c.location_or_link,
-               c.schedule_notes, c.created_at, s.fullname AS student_name, s.user_id AS student_user_id
+               c.schedule_notes, c.created_at, c.file_path, c.file_name,
+               s.fullname AS student_name, s.user_id AS student_user_id
         FROM consultations c
         JOIN users s ON c.student_id = s.id
         JOIN users f ON c.assigned_faculty_id = f.id
@@ -19306,9 +22146,359 @@ app.put("/admin-review-student-document/:submissionId", (req, res) => {
     });
 });
 
+
+/* ================= DEFENSE MINUTES PICTURE UPLOAD & APPROVAL ================= */
+
+const defenseMinutesStorage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        const uploadPath = path.join(__dirname, "uploads", "defense_minutes");
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: function(req, file, cb) {
+        const uniqueName =
+            Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+        cb(null, uniqueName);
+    }
+});
+
+const defenseMinutesUpload = multer({
+    storage: defenseMinutesStorage,
+    fileFilter: function(req, file, cb) {
+        const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+        const ext = path.extname(file.originalname || "").toLowerCase();
+        const allowedExt = [".jpg", ".jpeg", ".png", ".webp"];
+        if (!allowedTypes.includes(file.mimetype) && !allowedExt.includes(ext)) {
+            return cb(new Error("Only JPG, PNG, and WEBP image files are allowed."));
+        }
+        cb(null, true);
+    },
+    limits: {
+        fileSize: 15 * 1024 * 1024
+    }
+});
+
+app.post(
+    "/upload-defense-minutes-picture",
+    defenseMinutesUpload.single("documentFile"),
+    (req, res) => {
+        const { studentUserId, documentType, documentTitle } = req.body;
+
+        if (!studentUserId || !documentType || !documentTitle || !req.file) {
+            return res.json({ success: false, message: "Missing required fields or file." });
+        }
+
+        const groupSql = `
+            SELECT cg.id AS group_db_id, u.id AS uploaded_by
+            FROM group_members gm
+            JOIN capstone_groups cg ON gm.group_id = cg.id
+            JOIN users u ON gm.student_id = u.id
+            WHERE u.user_id = ?
+            LIMIT 1
+        `;
+
+        db.query(groupSql, [studentUserId], (err, groupResult) => {
+            if (err || !groupResult || groupResult.length === 0) {
+                return res.json({ success: false, message: "Student group not found." });
+            }
+
+            const groupDbId  = groupResult[0].group_db_id;
+            const uploadedBy = groupResult[0].uploaded_by;
+            const filePath   = "/uploads/defense_minutes/" + req.file.filename;
+            const fileFormat = path.extname(req.file.originalname).replace(".", "").toUpperCase();
+
+            /* Check maximum 5 pictures for defense minutes */
+            const checkLimitSql = `
+                SELECT COUNT(*) AS total
+                FROM student_documents
+                WHERE group_id = ? AND document_type = ?
+            `;
+            db.query(checkLimitSql, [groupDbId, documentType], (errLim, limResult) => {
+                if (!errLim && limResult && limResult[0].total >= 5) {
+                    if (req.file && req.file.path) {
+                        try { fs.unlinkSync(req.file.path); } catch (e) {}
+                    }
+                    return res.json({ success: false, message: "Maximum of 5 defense minutes photos already uploaded." });
+                }
+
+                /* Generate next document code */
+                const lastDocSql = `
+                    SELECT document_code FROM student_documents
+                    WHERE document_code LIKE 'DOC2026-%'
+                    ORDER BY CAST(SUBSTRING_INDEX(document_code, '-', -1) AS UNSIGNED) DESC
+                    LIMIT 1
+                `;
+
+                db.query(lastDocSql, (err2, lastResult) => {
+                    if (err2) {
+                        return res.json({ success: false, message: "Failed to generate document code." });
+                    }
+
+                    let nextNumber = 1;
+                    if (lastResult && lastResult.length > 0) {
+                        nextNumber = parseInt(lastResult[0].document_code.split("-")[1], 10) + 1;
+                    }
+                    const documentCode = `DOC2026-${String(nextNumber).padStart(4, "0")}`;
+
+                    /* Always INSERT a new row (each picture is a separate record) */
+                    const insertSql = `
+                        INSERT INTO student_documents
+                            (document_code, group_id, uploaded_by, document_type, document_title,
+                             file_name, file_path, file_format, document_status, is_sent)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Uploaded', 0)
+                    `;
+
+                    db.query(
+                        insertSql,
+                        [documentCode, groupDbId, uploadedBy, documentType, documentTitle,
+                         req.file.originalname, filePath, fileFormat],
+                        (err3) => {
+                            if (err3) {
+                                console.error(err3);
+                                return res.json({ success: false, message: "Failed to save picture record." });
+                            }
+                            return res.json({ success: true, message: "Picture uploaded successfully." });
+                        }
+                    );
+                });
+            });
+        });
+    }
+);
+
+/* ================= SEND DEFENSE MINUTES PICTURES TO ADVISER ================= */
+
+app.post("/send-defense-minutes-pictures", (req, res) => {
+    const { studentUserId, docType, adviserUserId } = req.body;
+
+    if (!studentUserId || !docType || !adviserUserId) {
+        return res.json({ success: false, message: "Missing required fields." });
+    }
+
+    const groupSql = `
+        SELECT cg.id AS group_db_id
+        FROM group_members gm
+        JOIN capstone_groups cg ON gm.group_id = cg.id
+        JOIN users u ON gm.student_id = u.id
+        WHERE u.user_id = ?
+        LIMIT 1
+    `;
+
+    db.query(groupSql, [studentUserId], (err, groupResult) => {
+        if (err || !groupResult || groupResult.length === 0) {
+            return res.json({ success: false, message: "Student group not found." });
+        }
+
+        const groupDbId = groupResult[0].group_db_id;
+
+        const countSql = `
+            SELECT COUNT(*) AS pic_count
+            FROM student_documents
+            WHERE group_id = ? AND document_type = ?
+        `;
+
+        db.query(countSql, [groupDbId, docType], (err2, countResult) => {
+            if (err2) {
+                return res.json({ success: false, message: "Database error." });
+            }
+
+            const picCount = countResult[0].pic_count;
+            if (picCount < 1) {
+                return res.json({ success: false, message: "Please upload at least 1 defense minutes photo before sending." });
+            }
+            if (picCount > 5) {
+                return res.json({ success: false, message: `Maximum of 5 photos allowed. Currently: ${picCount}` });
+            }
+
+            const updateSql = `
+                UPDATE student_documents
+                SET is_sent = 1,
+                    submission_count = COALESCE(submission_count, 0) + 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE group_id = ? AND document_type = ?
+            `;
+
+            db.query(updateSql, [groupDbId, docType], (err3) => {
+                if (err3) {
+                    return res.json({ success: false, message: "Failed to mark pictures as sent." });
+                }
+
+                const adviserSql = `SELECT id FROM users WHERE user_id = ? OR id = ? LIMIT 1`;
+                db.query(adviserSql, [adviserUserId, adviserUserId], (err4, adviserResult) => {
+                    if (!err4 && adviserResult && adviserResult.length > 0) {
+                        const adviserDbId = adviserResult[0].id;
+                        const notifSql = `
+                            INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                            VALUES (?, ?, ?, ?)
+                        `;
+                        db.query(notifSql, [
+                            adviserDbId,
+                            "Defense Minutes Photos Submitted",
+                            `A student group has submitted ${picCount} defense minutes photo(s) (${docType}) for your review and approval.`,
+                            "Document Review"
+                        ], () => {});
+                    }
+                });
+
+                return res.json({ success: true, message: `${picCount} defense minutes photo(s) sent to adviser for approval.` });
+            });
+        });
+    });
+});
+
+/* ================= ADVISER APPROVE DEFENSE MINUTES PICTURES ================= */
+
+app.put("/approve-defense-minutes-pictures", (req, res) => {
+    const { adviserUserId, groupId, docType, reviewStatus, reviewComment } = req.body;
+
+    if (!adviserUserId || !groupId || !docType) {
+        return res.json({ success: false, message: "Missing required fields." });
+    }
+
+    const checkSql = `
+        SELECT cg.id AS group_db_id, cg.group_name, u.fullname AS adviser_name
+        FROM capstone_groups cg
+        JOIN users u ON cg.adviser_id = u.id
+        WHERE (cg.group_id = ? OR cg.id = ?) AND (u.user_id = ? OR u.id = ?)
+        LIMIT 1
+    `;
+
+    db.query(checkSql, [groupId, groupId, adviserUserId, adviserUserId], (err, result) => {
+        if (err || !result || result.length === 0) {
+            return res.json({ success: false, message: "Not authorized to approve this group's defense minutes." });
+        }
+
+        const groupDbId = result[0].group_db_id;
+        const adviserName = result[0].adviser_name || "Adviser";
+        const isRevision = reviewStatus === "Subject to Change" || reviewStatus === "Rejected";
+        const targetStatus = isRevision ? reviewStatus : "Approved";
+        const nextIsSent = isRevision ? 0 : 1;
+
+        const updateSql = `
+            UPDATE student_documents
+            SET document_status = ?,
+                is_sent = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE group_id = ? AND document_type = ?
+        `;
+
+        db.query(updateSql, [targetStatus, nextIsSent, groupDbId, docType], (err2) => {
+            if (err2) {
+                return res.json({ success: false, message: "Failed to update defense minutes status." });
+            }
+
+            /* Notify group members */
+            db.query(`SELECT student_id FROM group_members WHERE group_id = ?`, [groupDbId], (mErr, members) => {
+                if (!mErr && members && members.length > 0) {
+                    const title = isRevision ? "Defense Minutes Photos Returned" : "Defense Minutes Photos Approved";
+                    const msg = isRevision
+                        ? `${adviserName} requested updated photos for "${docType}". Reason: ${reviewComment || "Please upload clearer photos."}`
+                        : `${adviserName} approved your defense minutes photos for "${docType}".`;
+                    insertUserNotificationsByDbIds(
+                        members.map(m => m.student_id),
+                        title,
+                        msg,
+                        "Document Review"
+                    );
+                }
+            });
+
+            return res.json({
+                success: true,
+                message: isRevision
+                    ? "Requested new defense minutes photos from the group."
+                    : "Defense minutes photos approved successfully."
+            });
+        });
+    });
+});
+
+/* ================= ADVISER LOAD DEFENSE MINUTES PICTURES ================= */
+
+app.get("/adviser-defense-minutes/:adviserUserId", (req, res) => {
+    const adviserUserId = req.params.adviserUserId;
+
+    const groupsSql = `
+        SELECT
+            cg.id AS group_db_id,
+            cg.group_id,
+            cg.group_name,
+            cg.project_title,
+            cg.program
+        FROM capstone_groups cg
+        JOIN users u ON cg.adviser_id = u.id
+        WHERE u.user_id = ? OR u.id = ?
+    `;
+
+    db.query(groupsSql, [adviserUserId, adviserUserId], (err, groups) => {
+        if (err) {
+            return res.json({ success: false, message: "Database error." });
+        }
+
+        if (!groups || groups.length === 0) {
+            return res.json({ success: true, defenseMinutesList: [] });
+        }
+
+        const groupDbIds = groups.map(g => g.group_db_id);
+
+        const picSql = `
+            SELECT sd.*, cg.group_id, cg.group_name, cg.project_title, cg.program
+            FROM student_documents sd
+            JOIN capstone_groups cg ON sd.group_id = cg.id
+            WHERE sd.group_id IN (?)
+            AND sd.document_type LIKE '% • Defense minutes'
+            ORDER BY sd.group_id, sd.document_type, sd.id ASC
+        `;
+
+        db.query(picSql, [groupDbIds], (err2, pictures) => {
+            if (err2) {
+                return res.json({ success: false, message: "Database error." });
+            }
+
+            const grouped = {};
+            (pictures || []).forEach(pic => {
+                const key = `${pic.group_id}||${pic.document_type}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        group_id: pic.group_id,
+                        group_db_id: pic.group_id,
+                        group_name: pic.group_name,
+                        project_title: pic.project_title,
+                        program: pic.program,
+                        doc_type: pic.document_type,
+                        pictures: [],
+                        is_approved: false,
+                        is_sent: false
+                    };
+                }
+                grouped[key].pictures.push(pic);
+                if (String(pic.document_status || "") === "Approved") {
+                    grouped[key].is_approved = true;
+                }
+                if (Number(pic.is_sent) === 1 || Number(pic.submission_count || 0) > 0) {
+                    grouped[key].is_sent = true;
+                }
+            });
+
+            return res.json({
+                success: true,
+                defenseMinutesList: Object.values(grouped)
+            });
+        });
+    });
+});
+
 /* ================= SERVER ================= */
 
 app.listen(3005, () => {
     console.log("Server running on port 3005");
+    console.log("[HF-CHECK] Loading @huggingface/transformers model: Xenova/all-MiniLM-L6-v2...");
+    semEngine.loadModel().then(() => {
+        console.log("[HF-CHECK] Using @huggingface/transformers model: Xenova/all-MiniLM-L6-v2 (READY - Semantic similarity active)");
+    }).catch(err => {
+        console.error("[HF-CHECK] Failed to initialize model:", err);
+    });
     runConsultationStatusSync(); /* Run once on startup */
 });

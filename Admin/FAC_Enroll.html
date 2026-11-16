@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -384,6 +384,7 @@
         async function enrollFaculty() {
             const fullname = document.getElementById("facultyName").value.trim();
             const position = document.getElementById("facultyPosition").value;
+            const email = document.getElementById("facultyEmail") ? document.getElementById("facultyEmail").value.trim() : "";
 
             if (!fullname || !position) {
                 alert("Complete all fields.");
@@ -398,7 +399,8 @@
                     },
                     body: JSON.stringify({
                         fullname,
-                        position
+                        position,
+                        email
                     })
                 });
 
@@ -410,8 +412,11 @@
 
                     document.getElementById("facultyName").value = "";
                     document.getElementById("facultyPosition").value = "";
+                    if (document.getElementById("facultyEmail")) {
+                        document.getElementById("facultyEmail").value = "";
+                    }
 
-                    alert("Faculty enrolled successfully!");
+                    alert("Faculty enrolled successfully! Credentials sent to email if provided.");
 
                     loadFaculty();
                 } else {

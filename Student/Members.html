@@ -445,15 +445,22 @@
 
             <div class="input-group">
 
-                <label>
-                    Group Name
+                <label style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Group Name</span>
+                    <span style="font-size: 11px; color: #a78bfa; font-weight: 500;"><i class="fa-solid fa-pen"></i> Editable</span>
                 </label>
 
                 <input
                     type="text"
                     id="groupName"
-                    placeholder="Example: Group 1"
+                    placeholder="Example: Dela Cruz Group"
+                    oninput="checkGroupNameAvailability()"
                 >
+
+                <div
+                    id="groupNameNotice"
+                    style="display: none; margin-top: 6px; padding: 8px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 500; line-height: 1.4;"
+                ></div>
 
             </div>
 
@@ -611,6 +618,78 @@
 
         }
 
+        /* ================= CHECK GROUP NAME UNIQUENESS ================= */
+
+        let groupNameCheckTimer = null;
+        let isCurrentGroupNameTaken = false;
+
+        async function checkGroupNameAvailability(isInitialSuggestion = false) {
+            const nameInput = document.getElementById("groupName");
+            const noticeEl = document.getElementById("groupNameNotice");
+            if (!nameInput || !noticeEl) return true;
+
+            nameInput.readOnly = false;
+            nameInput.disabled = false;
+
+            const rawName = nameInput.value.trim();
+            if (!rawName) {
+                isCurrentGroupNameTaken = false;
+                nameInput.style.borderColor = "";
+                noticeEl.style.display = "none";
+                return false;
+            }
+
+            if (groupNameCheckTimer) clearTimeout(groupNameCheckTimer);
+
+            const runCheck = async () => {
+                try {
+                    const excludeParam = currentGroupId ? `&excludeGroupId=${encodeURIComponent(currentGroupId)}` : "";
+                    const res = await fetch(`http://localhost:3005/check-group-name?name=${encodeURIComponent(rawName)}${excludeParam}`);
+                    const data = await res.json();
+
+                    if (nameInput.value.trim() !== rawName) return true;
+
+                    if (data.success && data.available === false) {
+                        isCurrentGroupNameTaken = true;
+                        nameInput.style.borderColor = "#ef4444";
+                        noticeEl.style.display = "block";
+                        noticeEl.style.background = "rgba(239, 68, 68, 0.14)";
+                        noticeEl.style.border = "1px solid rgba(239, 68, 68, 0.45)";
+                        noticeEl.style.color = "#f87171";
+                        noticeEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> You cannot use "<strong>${rawName}</strong>" since another group already has this name. Please edit the group name above.`;
+
+                        if (isInitialSuggestion) {
+                            alert(`Notice: The suggested group name "${rawName}" is already taken by another group. You cannot use this name — please edit the Group Name field.`);
+                            setTimeout(() => {
+                                nameInput.focus();
+                                nameInput.select();
+                            }, 50);
+                        }
+                        return false;
+                    } else {
+                        isCurrentGroupNameTaken = false;
+                        nameInput.style.borderColor = "#10b981";
+                        noticeEl.style.display = "block";
+                        noticeEl.style.background = "rgba(16, 185, 129, 0.12)";
+                        noticeEl.style.border = "1px solid rgba(16, 185, 129, 0.35)";
+                        noticeEl.style.color = "#34d399";
+                        noticeEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Group name "<strong>${rawName}</strong>" is available. (You can still edit it if you wish.)`;
+                        return true;
+                    }
+                } catch (err) {
+                    console.log("Group name check error:", err);
+                    return true;
+                }
+            };
+
+            if (isInitialSuggestion) {
+                return await runCheck();
+            } else {
+                groupNameCheckTimer = setTimeout(runCheck, 220);
+                return !isCurrentGroupNameTaken;
+            }
+        }
+
         /* ================= LOAD GROUP INTO MODAL ================= */
 
         async function loadGroupIntoModal(){
@@ -629,9 +708,20 @@
                     currentGroupId =
                         null;
 
-                    document.getElementById(
-                        "groupName"
-                    ).value = "";
+                    let suggestedName = "";
+                    if (currentStudent && currentStudent.fullname) {
+                        const nameParts = currentStudent.fullname.trim().split(/\s+/);
+                        const lastName = nameParts[nameParts.length - 1];
+                        if (lastName) {
+                            const formattedLastName = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
+                            suggestedName = `${formattedLastName} Group`;
+                        }
+                    }
+
+                    const groupNameEl = document.getElementById("groupName");
+                    groupNameEl.readOnly = false;
+                    groupNameEl.disabled = false;
+                    groupNameEl.value = suggestedName;
 
                     let progCode = "";
                     let progText = "—";
@@ -647,6 +737,10 @@
 
                     resetMemberInputs();
 
+                    if (suggestedName) {
+                        await checkGroupNameAvailability(true);
+                    }
+
                     return;
 
                 }
@@ -657,10 +751,13 @@
                 currentGroupId =
                     group.group_id;
 
-                document.getElementById(
-                    "groupName"
-                ).value =
+                const groupNameEl = document.getElementById("groupName");
+                groupNameEl.readOnly = false;
+                groupNameEl.disabled = false;
+                groupNameEl.value =
                     group.group_name || "";
+
+                await checkGroupNameAvailability(false);
 
                 const existingProg = group.program || "";
                 const existingProgText = existingProg === "IS" ? "BSIS" : existingProg === "IT" ? "BSIT" : existingProg || "—";
@@ -885,6 +982,15 @@
                 const data = await response.json();
                 if (data.success) {
                     const student = data.student;
+
+                    // Check if student already belongs to another group
+                    if (student.has_group && String(student.existing_group_db_id) !== String(currentGroupId)) {
+                        previewEl.style.display = 'block';
+                        previewEl.style.color = '#ef4444';
+                        previewEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <strong>${student.fullname}</strong> already belongs to group "${student.existing_group_name || student.existing_group_code}". A student can only belong to ONE group.`;
+                        return;
+                    }
+
                     const pmProgram = currentStudent?.program || '';
                     const programMatch = student.program === pmProgram;
                     const instructorText = student.instructor_name ? `${student.instructor_name} (${student.enrolled_by_user_id})` : 'None';
@@ -970,6 +1076,46 @@
 
                 return;
 
+            }
+
+            // Verify group name uniqueness before saving
+            try {
+                const excludeParam = currentGroupId ? `&excludeGroupId=${encodeURIComponent(currentGroupId)}` : "";
+                const nameCheckRes = await fetch(`http://localhost:3005/check-group-name?name=${encodeURIComponent(groupName)}${excludeParam}`);
+                const nameCheckData = await nameCheckRes.json();
+                if (nameCheckData.success && nameCheckData.available === false) {
+                    await checkGroupNameAvailability(false);
+                    alert(`You cannot use "${groupName}" since another group already has this name. Please edit the group name.`);
+                    const groupNameEl = document.getElementById("groupName");
+                    if (groupNameEl) {
+                        groupNameEl.focus();
+                        groupNameEl.select();
+                    }
+                    return;
+                }
+            } catch (e) {
+                console.log("Group name pre-save check error:", e);
+            }
+
+            // Role Uniqueness Check across all members including existing rows and PM
+            const allPositions = ['Project Manager'];
+            document.querySelectorAll(".existing-member-row").forEach(row => {
+                const pos = row.querySelector(".memberPosition")?.value;
+                if (pos && pos !== "Project Manager") allPositions.push(pos);
+            });
+            members.forEach(m => {
+                if (m.memberPosition && m.memberPosition !== "Project Manager") {
+                    allPositions.push(m.memberPosition);
+                }
+            });
+
+            const posCounts = {};
+            for (const pos of allPositions) {
+                posCounts[pos] = (posCounts[pos] || 0) + 1;
+                if (posCounts[pos] > 1) {
+                    alert(`Each position role in a group must be unique. You cannot assign the role "${pos}" more than once in the same group.`);
+                    return;
+                }
             }
 
             const existingCount = document.querySelectorAll(".existing-member-row").length;
@@ -1068,6 +1214,14 @@
                     alert(
                         data.message || "Failed to save group."
                     );
+
+                    if (data.duplicateName) {
+                        const groupNameEl = document.getElementById("groupName");
+                        if (groupNameEl) {
+                            groupNameEl.focus();
+                            groupNameEl.select();
+                        }
+                    }
 
                 }
 
@@ -1183,9 +1337,34 @@
                 "Stage 2": 1,
                 "Stage 3": 2,
                 "Stage 4": 3,
-                "Final": 4
+                "Stage 5": 4,
+                "Final":   5,
+                "Completed": 5
             };
             return map[stage] ?? 0;
+        }
+
+        function isAllDefenseCompleted(group, defenses) {
+            if (!group) return false;
+            const stageStr = String(group.stage || "").trim().toLowerCase();
+            if (stageStr === "final" || stageStr === "completed" || Number(group.progress || 0) >= 100) {
+                return true;
+            }
+            const finalDef = (defenses || []).find(d => d.defense_type === "Final Defense");
+            if (finalDef) {
+                const res = String(finalDef.panel_result || "").trim().toLowerCase();
+                const stat = String(finalDef.defense_status || "").trim().toLowerCase();
+                if (
+                    res === "passed" ||
+                    res === "passed with revisions" ||
+                    res === "conditional pass" ||
+                    res === "conditional passed" ||
+                    stat === "completed"
+                ) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         function formatDefenseDate(dateStr) {
@@ -1200,12 +1379,25 @@
             });
         }
 
-        function buildStepHtml(stageObj, state, defenseRecord, isLast) {
+        function buildStepHtml(stageObj, state, defenseRecord, isLast, allDefensesMap) {
             let badgeClass = "not-started";
             let badgeLabel = "Not Started";
             let remark = stageObj.pendingRemark;
 
-            if (state === "completed") {
+            if (stageObj.key === "Completed") {
+                if (state === "completed" || state === "active") {
+                    badgeClass = "approved";
+                    badgeLabel = "Completed";
+                    const finalDef = allDefensesMap ? allDefensesMap["Final Defense"] : null;
+                    remark = finalDef?.defense_date
+                        ? `All defense stages completed • Finished ${formatDefenseDate(finalDef.defense_date)}`
+                        : "All defense stages completed successfully";
+                } else {
+                    badgeClass = "not-started";
+                    badgeLabel = "Pending";
+                    remark = "Pending Final Defense completion";
+                }
+            } else if (state === "completed") {
                 const result = defenseRecord?.panel_result || "";
 
                 if (result === "Passed") {
@@ -1234,6 +1426,20 @@
                             badgeClass = "for-revision";
                             badgeLabel = "For Revision";
                             remark = `Result: ${result} — ${formatDefenseDate(defenseRecord.defense_date)}`;
+                        } else if (result === "Conditional Passed" || result === "Conditional Pass") {
+                            badgeClass = "conditional-pass";
+                            badgeLabel = "Conditional Passed";
+                            remark = `Result: Conditional Passed — ${formatDefenseDate(defenseRecord.defense_date)}`;
+                            if (defenseRecord.comments) {
+                                remark += `<br/><span style="font-size:10px;color:#6d28d9;font-weight:500;">Feedback: ${escapeHtml(defenseRecord.comments)}</span>`;
+                            }
+                        } else if (result === "For Re-Defense" || result === "For Formal Defense") {
+                            badgeClass = "re-defense";
+                            badgeLabel = "For Formal Defense";
+                            remark = `Result: For Formal Defense — ${formatDefenseDate(defenseRecord.defense_date)}`;
+                            if (defenseRecord.comments) {
+                                remark += `<br/><span style="font-size:10px;color:#db2777;font-weight:500;">Feedback: ${escapeHtml(defenseRecord.comments)}</span>`;
+                            }
                         } else {
                             badgeClass = "approved";
                             badgeLabel = "Evaluated";
@@ -1297,11 +1503,15 @@
             const defenseMap = {};
 
             (defenses || []).forEach(defense => {
-                defenseMap[defense.defense_type] = defense;
+                if (!defenseMap[defense.defense_type] || Number(defense.id) >= Number(defenseMap[defense.defense_type].id)) {
+                    defenseMap[defense.defense_type] = defense;
+                }
             });
 
-            const completedCount =
-                stageToCompletedIndex(group.stage || "Stage 1");
+            const isAllFinished = isAllDefenseCompleted(group, defenses);
+            const completedCount = isAllFinished
+                ? 5
+                : stageToCompletedIndex(group.stage || "Stage 1");
 
             const stageNames = [
                 "Concept Presentation",
@@ -1314,10 +1524,24 @@
             const currentStageName =
                 stageNames[completedCount] || "Concept Presentation";
 
-            badgeEl.textContent =
-                completedCount >= 4
-                ? "All Stages Completed"
-                : `Active: ${currentStageName}`;
+            const activeDefense = defenseMap[currentStageName];
+            const isForFormalDefense = !isAllFinished
+                && activeDefense
+                && activeDefense.defense_status === "Completed"
+                && (activeDefense.panel_result === "For Formal Defense" || activeDefense.panel_result === "For Re-Defense");
+
+            if (badgeEl) {
+                if (completedCount >= 5) {
+                    badgeEl.textContent = "All Stages Completed";
+                    badgeEl.className = "status-badge-tracker current-stage-badge approved";
+                } else if (isForFormalDefense) {
+                    badgeEl.textContent = `Active: ${currentStageName} — For Formal Defense`;
+                    badgeEl.className = "status-badge-tracker current-stage-badge re-defense";
+                } else {
+                    badgeEl.textContent = `Active: ${currentStageName}`;
+                    badgeEl.className = "status-badge-tracker current-stage-badge";
+                }
+            }
 
             let stepsHtml = "";
 
@@ -1333,19 +1557,37 @@
                 const defRec = defenseMap[stageObj.key] || null;
                 const isLast = (idx === STAGES.length - 1);
 
-                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast);
+                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast, defenseMap);
             });
 
             stepsEl.innerHTML = stepsHtml;
 
-            const pct = Number(group.progress || 0);
+            const pct = isAllFinished ? 100 : Math.min(Number(group.progress || 0), 100);
 
             if (fill) {
                 fill.style.width = `${pct}%`;
+                if (isForFormalDefense) {
+                    fill.style.background = "linear-gradient(135deg, #f43f5e 0%, #db2777 100%)";
+                } else {
+                    fill.style.background = "";
+                }
             }
 
             if (pctLabel) {
-                pctLabel.textContent = `${pct}%`;
+                if (isForFormalDefense) {
+                    pctLabel.innerHTML = `${pct}% <span style="font-size:11px;font-weight:600;color:#db2777;background:#fdf2f8;padding:2px 8px;border-radius:12px;border:1px solid #fbcfe8;margin-left:6px;display:inline-block;">For Formal Defense</span>`;
+                } else {
+                    pctLabel.textContent = `${pct}%`;
+                }
+            }
+
+            const groupProgressCard = document.getElementById("groupProgress");
+            if (groupProgressCard) {
+                if (isForFormalDefense) {
+                    groupProgressCard.innerHTML = `${pct}% <span style="font-size:11px;font-weight:600;color:#db2777;display:block;margin-top:2px;">For Formal Defense</span>`;
+                } else {
+                    groupProgressCard.textContent = isAllFinished ? "100%" : `${pct}%`;
+                }
             }
         }
 
@@ -1450,9 +1692,9 @@ async function loadStudentGroup(){
             data.group;
 
         const programText =
-            group.program === "IS"
+            (group.program === "IS" || group.program === "BSIS")
             ? "BSIS"
-            : group.program === "IT"
+            : (group.program === "IT" || group.program === "BSIT")
             ? "BSIT"
             : "Not Set";
 
@@ -1483,15 +1725,17 @@ async function loadStudentGroup(){
         ).innerText =
             group.members.length;
 
+        const isFinished = isAllDefenseCompleted(group, defenses);
+
         document.getElementById(
             "groupStage"
         ).innerText =
-            group.stage || "Stage 1";
+            isFinished ? "Completed" : (group.stage || "Stage 1");
 
         document.getElementById(
             "groupProgress"
         ).innerText =
-            `${group.progress || 0}%`;
+            isFinished ? "100%" : `${group.progress || 0}%`;
 
         renderStageTracker(group, defenses);
 

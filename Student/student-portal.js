@@ -1,5 +1,13 @@
 (function () {
-    const API_BASE = "http://localhost:3005";
+    const API_BASE = (function() {
+        if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
+            if (window.location.port === "3005" || window.location.host.endsWith(":3005")) {
+                return "";
+            }
+            return `${window.location.protocol}//${window.location.hostname}:3005`;
+        }
+        return "http://localhost:3005";
+    })();
 
     let cachedGroup = null;
     let cachedGroupUserId = null;

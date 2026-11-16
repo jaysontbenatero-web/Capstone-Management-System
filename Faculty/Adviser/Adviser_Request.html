@@ -4,6 +4,9 @@
 <head>
 
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
     <meta
         name="viewport"
@@ -25,10 +28,62 @@
 
     <link
         rel="stylesheet"
-        href="Adviser_Request.css"
+        href="Adviser_Request.css?v=20261112_02"
     >
 
-    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css?v=20261112_02">
+    <style>
+        /* Clean Semantic Highlighter Classes */
+        mark.sim-hl {
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-weight: 600;
+            display: inline;
+            line-height: inherit;
+        }
+        mark.sim-hl-title {
+            background: #fde68a;
+            color: #b45309;
+        }
+        mark.sim-hl-abstract {
+            background: #bfdbfe;
+            color: #1d4ed8;
+        }
+        mark.sim-hl-objectives {
+            background: #bbf7d0;
+            color: #15803d;
+        }
+        mark.sim-hl-semantic {
+            background: #fed7aa;
+            color: #9a3412;
+            border: 1px solid #f97316;
+        }
+        mark.sim-hl-synonym {
+            background: #e9d5ff;
+            color: #7c3aed;
+        }
+        .compare-paragraph {
+            margin-bottom: 14px;
+            line-height: 1.8;
+            font-size: 13.5px;
+            color: #2e1065;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .compare-list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            line-height: 1.75;
+            font-size: 13.5px;
+        }
+        .compare-list-bullet {
+            color: #7c3aed;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 
 <body class="admin-portal">
@@ -506,82 +561,189 @@
     </div>
 
     <!-- COMPARISON MODAL -->
-    <div class="modal-overlay" id="compareModal" style="display: none; z-index: 10000;">
-        <div class="modal-box" style="width: 900px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
+    <div class="modal-overlay" id="compareModal" style="display: none; z-index: 10000; align-items: flex-start; padding-top: 20px; overflow-y: auto;">
+        <div class="modal-box" style="width: 1200px; max-width: 97vw; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; padding: 28px 30px 20px; border-radius: 24px;">
+            <!-- Header Row -->
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 16px; flex-shrink: 0;">
                 <div>
-                    <h2>Side-by-Side Similarity Comparison</h2>
-                    <p id="compareModalSubtitle">Comparing Proposal 1 against Matched Repository Record</p>
+                    <h2 style="margin: 0 0 4px; font-size: 1.3rem;">Side-by-Side Similarity Comparison</h2>
+                    <p id="compareModalSubtitle" style="margin: 0; color: #6d5f85; font-size: 13px;">Comparing Proposal 1 against Matched Repository Record</p>
                 </div>
-                <button class="close-modal-btn" onclick="closeCompareModal()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+                    <button onclick="toggleScoringGuide()" title="View Similarity Weight Breakdown" style="display:flex; align-items:center; gap:6px; background:#f5f3ff; border:1px solid #ece3ff; color:#7c3aed; font-size:12px; font-weight:600; padding:7px 14px; border-radius:20px; cursor:pointer; white-space:nowrap; font-family:inherit;">
+                        <i class="fa-solid fa-calculator"></i> How Scoring Works
+                    </button>
+                    <span id="compareModalBadge" style="font-size: 13px; padding: 7px 16px; border-radius: 20px; font-weight: 700; white-space: nowrap;"></span>
+                    <button class="close-modal-btn" onclick="closeCompareModal()" style="flex-shrink:0;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
-            
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 14px; background: #faf8ff; border: 1px solid #ece3ff; padding: 12px 18px; border-radius: 18px; flex-wrap: wrap;">
-                <span id="compareModalBadge" style="font-size: 13px; padding: 6px 12px; border-radius: 14px; font-weight: 700;"></span>
-                <span style="color: #6d5f85; font-size: 13px;">
-                    <i class="fa-solid fa-circle-info"></i> Similarity check provides guidance and transparency only. It does not block your decision.
-                </span>
+
+            <!-- Scoring Guide Panel (collapsed by default) -->
+            <div id="scoringGuidePanel" style="display:none; margin-bottom:12px; background:#faf8ff; border:1px solid #ece3ff; border-radius:16px; padding:16px 18px; flex-shrink:0;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                    <i class="fa-solid fa-calculator" style="color:#7c3aed;"></i>
+                    <strong style="font-size:13px; color:#2e1065;">How the Similarity Score is Calculated</strong>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:10px;">
+                    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#b45309;">35%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#92400e; margin-top:2px;">Title</div>
+                        <div style="font-size:10.5px; color:#78350f; margin-top:4px; line-height:1.4;">Exact &amp; synonym keyword matches in the capstone title.</div>
+                    </div>
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#1d4ed8;">25%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#1e40af; margin-top:2px;">Abstract</div>
+                        <div style="font-size:10.5px; color:#1e3a8a; margin-top:4px; line-height:1.4;">Matching terms found in the abstract or project summary.</div>
+                    </div>
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#15803d;">25%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#166534; margin-top:2px;">Objectives</div>
+                        <div style="font-size:10.5px; color:#14532d; margin-top:4px; line-height:1.4;">Shared keywords in the objectives and goals section.</div>
+                    </div>
+                    <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#c2410c;">10%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#9a3412; margin-top:2px;">Research Problem</div>
+                        <div style="font-size:10.5px; color:#7c2d12; margin-top:4px; line-height:1.4;">Overlapping terms in the research problem or statement.</div>
+                    </div>
+                    <div style="background:#fdf4ff; border:1px solid #e9d5ff; border-radius:12px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:22px; font-weight:800; color:#7c3aed;">5%</div>
+                        <div style="font-size:11.5px; font-weight:700; color:#6d28d9; margin-top:2px;">Methodology</div>
+                        <div style="font-size:10.5px; color:#5b21b6; margin-top:4px; line-height:1.4;">Method and approach keywords found in both studies.</div>
+                    </div>
+                </div>
+                <p style="font-size:11px; color:#9ca3af; margin:0;"><i class="fa-solid fa-circle-info"></i> Scores are weighted and blended using keyword matching + semantic similarity. Results are for guidance only.</p>
+            </div>
+
+            <!-- Info bar -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: #faf8ff; border: 1px solid #ece3ff; padding: 10px 16px; border-radius: 14px; flex-wrap: wrap; flex-shrink: 0;">
+                <i class="fa-solid fa-circle-info" style="color: #7c3aed;"></i>
+                <span style="color: #6d5f85; font-size: 12.5px;">Weighted score: <strong>Title (35%)</strong>, <strong>Objectives (25%)</strong>, <strong>Abstract (25%)</strong>, <strong>Problem (10%)</strong>, <strong>Methodology (5%)</strong>. Guidance only — does not block your decision.</span>
             </div>
 
             <!-- Colour Legend -->
-            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; padding: 10px 16px; background: #f5f3ff; border: 1px solid #ece3ff; border-radius: 14px; align-items: center;">
-                <span style="font-size: 12px; font-weight: 700; color: #4b5563; margin-right: 4px;">Highlight Key:</span>
-                <span style="background: #fde68a; color: #b45309; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Title Match</span>
-                <span style="background: #bfdbfe; color: #1d4ed8; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Definition / Abstract</span>
-                <span style="background: #bbf7d0; color: #15803d; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Objectives</span>
-                <span style="background: #e9d5ff; color: #7c3aed; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Synonym / Related</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding: 9px 14px; background: #f5f3ff; border: 1px solid #ece3ff; border-radius: 12px; align-items: center; flex-shrink: 0;">
+                <span style="font-size: 12px; font-weight: 700; color: #4b5563; margin-right: 4px;">Highlight Key (Both Panels):</span>
+                <span style="background: #fde68a; color: #b45309; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Title Match</span>
+                <span style="background: #bfdbfe; color: #1d4ed8; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Abstract Match</span>
+                <span style="background: #bbf7d0; color: #15803d; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Objectives Match</span>
+                <span style="background: #fed7aa; color: #9a3412; border: 1px solid #f97316; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;" title="Phrases that share the same concept or meaning even if phrased differently"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Concept / Semantic</span>
+                <span style="background: #e9d5ff; color: #7c3aed; padding: 2px 9px; border-radius: 8px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size:9px;"></i> Synonym / Related</span>
             </div>
 
-            <div class="comparison-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 20px;">
+            <div class="comparison-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; overflow: hidden; min-height: 0;">
                 <!-- Left Side: Student Proposal -->
-                <div style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 20px; padding: 20px; text-align: left;">
-                    <h3 style="color: #7c3aed; margin-bottom: 14px; border-bottom: 2px solid #ece3ff; padding-bottom: 8px;">
-                        <i class="fa-solid fa-graduation-cap"></i> Student Proposal
-                    </h3>
-                    
-                    <div style="margin-bottom: 18px;">
-                        <strong style="display: block; color: #2e1065; font-size: 13px; margin-bottom: 6px;">Proposed Title</strong>
-                        <div id="compareProposedTitle" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 12px; font-size: 14px; color: #2e1065; line-height: 1.6; min-height: 50px; word-break: break-word;"></div>
+                <div style="display:flex; flex-direction:column; background: #faf8ff; border: 2px solid #ddd6fe; border-radius: 20px; overflow: hidden;">
+                    <div style="padding: 14px 18px 10px; border-bottom: 1px solid #ece3ff; flex-shrink: 0;">
+                        <h3 style="color: #7c3aed; margin: 0; font-size: 15px;">
+                            <i class="fa-solid fa-graduation-cap"></i> Student Proposal
+                        </h3>
                     </div>
-
-                    <div>
-                        <strong style="display: block; color: #2e1065; font-size: 13px; margin-bottom: 6px;">Proposed Objectives</strong>
-                        <div id="compareProposedObjectives" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 12px; font-size: 13px; color: #2e1065; line-height: 1.8; min-height: 120px; max-height: 340px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;"></div>
-                    </div>
-                </div>
-
-                <!-- Right Side: Repository Match -->
-                <div style="background: #faf8ff; border: 1px solid #ece3ff; border-radius: 20px; padding: 20px; text-align: left;">
-                    <h3 style="color: #6d28d9; margin-bottom: 14px; border-bottom: 2px solid #ece3ff; padding-bottom: 8px;">
-                        <i class="fa-solid fa-box-archive"></i> Archived Study Match
-                    </h3>
-
-                    <div style="margin-bottom: 18px;">
-                        <strong style="display: block; color: #2e1065; font-size: 13px; margin-bottom: 6px;">Matched Title</strong>
-                        <div id="compareMatchedTitle" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 12px; font-size: 14px; color: #2e1065; line-height: 1.6; min-height: 50px; word-break: break-word;"></div>
-                    </div>
-
-                    <div style="margin-bottom: 18px;">
-                        <strong style="display: block; color: #2e1065; font-size: 13px; margin-bottom: 6px;">Abstract</strong>
-                        <div id="compareMatchedAbstract" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 12px; font-size: 13px; color: #2e1065; line-height: 1.8; min-height: 80px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;"></div>
-                    </div>
-
-                    <div>
-                        <strong style="display: block; color: #2e1065; font-size: 13px; margin-bottom: 6px;">Objectives</strong>
-                        <div id="compareMatchedObjectives" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 12px; font-size: 14px; color: #2e1065; line-height: 1.6; min-height: 80px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;"></div>
+                    <div style="flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:18px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #7c3aed; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">PROPOSED TITLE</span>
+                            </div>
+                            <div id="compareProposedTitle" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 14.5px; font-weight: 600; color: #2e1065; line-height: 1.65; word-break: break-word;"></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #6d28d9; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">PROPOSAL BODY / OBJECTIVES</span>
+                            </div>
+                            <div id="compareProposedObjectives" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <!-- Right Side: Archived / Ongoing tabs -->
+                <div style="display:flex; flex-direction:column; background: #faf8ff; border: 2px solid #ddd6fe; border-radius: 20px; overflow: hidden;">
+                    <!-- Tab buttons -->
+                    <div style="padding: 10px 18px 0; border-bottom: 1px solid #ece3ff; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <h3 style="margin: 0; color: #6d28d9; font-size: 14px; white-space: nowrap;">
+                            <i class="fa-solid fa-box-archive"></i> <span id="compareRightPanelTitle">Archived Study Match</span>
+                        </h3>
+                        <div style="display: flex; gap: 6px; padding-bottom: 4px;">
+                            <button id="tabBtnArchived" onclick="switchCompareTab('archived')" style="font-size:11px; font-weight:700; padding:5px 12px; border-radius:20px; border:1px solid #ece3ff; cursor:pointer; font-family:inherit; background:#7c3aed; color:white;">
+                                <i class="fa-solid fa-box-archive" style="font-size:9px;"></i> Archived Study
+                            </button>
+                            <button id="tabBtnOngoing" onclick="switchCompareTab('ongoing')" style="font-size:11px; font-weight:700; padding:5px 12px; border-radius:20px; border:1px solid #ece3ff; cursor:pointer; font-family:inherit; background:#f5f3ff; color:#7c3aed;">
+                                <i class="fa-solid fa-circle-check" style="font-size:9px;"></i> Approved Ongoing Study
+                            </button>
+                        </div>
+                    </div>
+                    <!-- ARCHIVED TAB -->
+                    <div id="compareTabArchived" style="flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:18px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #7c3aed; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">TITLE</span>
+                            </div>
+                            <div id="compareMatchedTitle" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 14.5px; font-weight: 600; color: #2e1065; line-height: 1.65;"></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #1d4ed8; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">ABSTRACT</span>
+                            </div>
+                            <div id="compareMatchedAbstract" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #15803d; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">OBJECTIVES</span>
+                            </div>
+                            <div id="compareMatchedObjectives" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #c2410c; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">RESEARCH PROBLEM</span>
+                            </div>
+                            <div id="compareMatchedResearchProblem" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="background: #6d28d9; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;">METHODOLOGY</span>
+                            </div>
+                            <div id="compareMatchedMethodology" style="background: white; border: 1px solid #ece3ff; border-radius: 12px; padding: 14px 16px; font-size: 13.5px; color: #2e1065; line-height: 1.8; white-space: pre-wrap; word-break: break-word; font-family: 'Poppins', 'Inter', system-ui, sans-serif;"></div>
+                        </div>
+                    </div>
+                    <!-- ONGOING TAB -->
+                    <div id="compareTabOngoing" style="display:none; flex:1; overflow-y:auto; padding:18px; flex-direction:column; gap:18px;">
+                        <div style="background:#fdf4ff; border:1px solid #e9d5ff; border-radius:16px; padding:18px;">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                                <i class="fa-solid fa-circle-check" style="color:#7c3aed; font-size:18px;"></i>
+                                <strong style="color:#2e1065; font-size:14px;">Approved Ongoing Study</strong>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span style="background:#7c3aed; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:0.5px;">APPROVED TITLE</span>
+                            </div>
+                            <div id="compareOngoingTitle" style="background:white; border:1px solid #e9d5ff; border-radius:12px; padding:14px 16px; font-size:14px; font-weight:600; color:#2e1065; line-height:1.65; margin-bottom:12px;"></div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span style="background:#6d28d9; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:0.5px;">GROUP</span>
+                            </div>
+                            <div id="compareOngoingGroup" style="background:white; border:1px solid #e9d5ff; border-radius:12px; padding:12px 16px; font-size:13px; color:#4b5563; line-height:1.6;"></div>
+                            <p style="margin:14px 0 0; font-size:11.5px; color:#9ca3af; font-style:italic;">
+                                <i class="fa-solid fa-circle-info"></i> This is an ongoing approved study. Detailed content is not publicly available.
+                            </p>
+                        </div>
+                    </div>
+                </div>            </div>
+
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; flex-shrink: 0;">
                 <button class="cancel-btn" style="border: none; padding: 12px 18px; border-radius: 12px; cursor: pointer; font-weight: 600; background: #faf8ff; color: #7c3aed; border: 1px solid #ece3ff;" onclick="closeCompareModal()">Close Comparison</button>
             </div>
         </div>
     </div>
 
     <script>
+
+        const API_BASE = (function() {
+            if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
+                if (window.location.port === "3005" || window.location.host.endsWith(":3005")) {
+                    return "";
+                }
+                return `${window.location.protocol}//${window.location.hostname}:3005`;
+            }
+            return "http://localhost:3005";
+        })();
 
         const loggedInUserId =
             localStorage.getItem("userId");
@@ -595,7 +757,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/adviser-requests/${loggedInUserId}`
+                        `${API_BASE}/adviser-requests/${loggedInUserId}`
                     );
 
                 const data =
@@ -935,7 +1097,7 @@
                         <div class="member-row">
 
                             <div class="member-avatar">
-                                ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : (member.fullname ? member.fullname.charAt(0).toUpperCase() : "S")}
+                                ${member.profile_image ? `<img src="${API_BASE}${member.profile_image}" alt="Profile">` : (member.fullname ? member.fullname.charAt(0).toUpperCase() : "S")}
                             </div>
 
                             <div>
@@ -998,77 +1160,107 @@
             'notification': ['alert', 'sms', 'warning', 'message']
         };
 
-        /*
-         * HIGHLIGHT COLOUR SCHEME
-         * orange  (#fde68a / #b45309) = direct title keyword match
-         * blue    (#bfdbfe / #1d4ed8) = abstract / definition match
-         * green   (#bbf7d0 / #15803d) = objectives match
-         * purple  (#e9d5ff / #7c3aed) = synonym / related concept match
-         */
-        const HIGHLIGHT_STYLES = {
-            title:      'background:#fde68a; color:#b45309;',
-            abstract:   'background:#bfdbfe; color:#1d4ed8;',
-            objectives: 'background:#bbf7d0; color:#15803d;',
-            synonym:    'background:#e9d5ff; color:#7c3aed;'
-        };
+        function toggleScoringGuide() {
+            const panel = document.getElementById('scoringGuidePanel');
+            if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
 
         /**
-         * Merge adjacent <mark> tags that share the same inline style so that
-         * consecutive matched words appear as one continuous highlight.
+         * Robust, non-destructive Interval-Based Highlighter:
+         * 1. Collects all word boundary matches with their [start, end] string offsets.
+         * 2. Resolves overlaps cleanly without any regex-on-HTML or nested marks.
+         * 3. Slices text, escapes entities, and wraps matches in semantic CSS classes.
+         * 4. 100% preserves original spaces, tabs, and line breaks without leaking style strings.
          */
-        function mergeAdjacentMarks(html) {
-            let prev;
-            do {
-                prev = html;
-                html = html.replace(
-                    /<mark style="([^"]+)">([\/\S\s]*?)<\/mark>([ \t\n]?)<mark style="\1">/g,
-                    '<mark style="$1">$2$3'
-                );
-            } while (html !== prev);
-            return html;
-        }
-
-        function applyHighlight(text, words, type) {
-            if (!text || !words || words.length === 0) return text;
-            const style = HIGHLIGHT_STYLES[type] || HIGHLIGHT_STYLES.title;
-            const sorted = [...words].sort((a, b) => b.length - a.length);
-            sorted.forEach(kw => {
-                if (!kw || kw.trim().length < 3) return;
-                const escaped = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                const re = new RegExp(`\\b(${escaped})\\b`, 'gi');
-                text = text.replace(re, `<mark style="${style} padding:2px 5px; border-radius:5px; font-weight:600;">$1</mark>`);
-            });
-            return mergeAdjacentMarks(text);
-        }
-
-        /* Highlight multiple word-lists with their respective colours on the same text */
-        function highlightMulti(rawText, layers) {
+        function highlightTextWithIntervals(rawText, layers) {
             if (!rawText) return '';
-            let text = escapeHtml(rawText);
-            for (const { words, type } of layers) {
-                text = applyHighlight(text, words, type);
+            const text = String(rawText);
+            const intervals = [];
+
+            for (const { words, type, priority } of layers) {
+                if (!words || !Array.isArray(words)) continue;
+                const filtered = [...new Set(words)].filter(w => w && String(w).trim().length >= 3);
+                filtered.sort((a, b) => b.length - a.length);
+                for (const kw of filtered) {
+                    const escaped = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    const re = new RegExp(`\\b(${escaped})\\b`, 'gi');
+                    let m;
+                    while ((m = re.exec(text)) !== null) {
+                        intervals.push({
+                            start: m.index,
+                            end: m.index + m[0].length,
+                            type: type,
+                            priority: priority || 1
+                        });
+                    }
+                }
             }
-            return mergeAdjacentMarks(text);
+
+            if (intervals.length === 0) return escapeHtml(text);
+
+            intervals.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start) || b.priority - a.priority);
+
+            const resolved = [];
+            let cur = null;
+            for (const iv of intervals) {
+                if (!cur) {
+                    cur = { ...iv };
+                    continue;
+                }
+                if (iv.start >= cur.end) {
+                    resolved.push(cur);
+                    cur = { ...iv };
+                } else {
+                    if (iv.priority > cur.priority) {
+                        if (iv.start > cur.start) {
+                            resolved.push({ start: cur.start, end: iv.start, type: cur.type, priority: cur.priority });
+                        }
+                        cur = { ...iv };
+                    } else if (iv.type === cur.type && iv.end > cur.end) {
+                        cur.end = iv.end;
+                    }
+                }
+            }
+            if (cur) resolved.push(cur);
+
+            let out = '';
+            let lastIdx = 0;
+            for (const iv of resolved) {
+                if (iv.start > lastIdx) {
+                    out += escapeHtml(text.slice(lastIdx, iv.start));
+                }
+                out += `<mark class="sim-hl sim-hl-${iv.type}">${escapeHtml(text.slice(iv.start, iv.end))}</mark>`;
+                lastIdx = iv.end;
+            }
+            if (lastIdx < text.length) {
+                out += escapeHtml(text.slice(lastIdx));
+            }
+            return out;
         }
 
-        /* Legacy wrapper — orange only */
+        function highlightMulti(rawText, layers) {
+            return highlightTextWithIntervals(rawText, (layers || []).map((l, idx) => ({
+                words: l.words,
+                type: l.type,
+                priority: l.priority || (10 - idx)
+            })));
+        }
+
         function highlightKeywords(text, keywords) {
-            if (!text || !keywords || keywords.length === 0) return escapeHtml(text);
-            return applyHighlight(escapeHtml(text), keywords, 'title');
+            return highlightTextWithIntervals(text, [{ words: keywords, type: 'title', priority: 10 }]);
         }
 
-        /* Highlight the RIGHT panel (repository text) using synonym expansion + colours */
         function highlightRight(text, exactWords, synonymWords, type) {
             if (!text) return '';
             const allSynExpanded = [];
             (exactWords || []).forEach(kw => {
-                allSynExpanded.push(kw);
                 (SYNONYMS[kw] || []).forEach(s => allSynExpanded.push(s));
             });
-            let out = escapeHtml(text);
-            out = applyHighlight(out, synonymWords || [], 'synonym');
-            out = applyHighlight(out, allSynExpanded, type || 'title');
-            return mergeAdjacentMarks(out);
+            return highlightTextWithIntervals(text, [
+                { words: exactWords || [], type: type || 'title', priority: 10 },
+                { words: allSynExpanded, type: 'semantic', priority: 7 },
+                { words: synonymWords || [], type: 'synonym', priority: 5 }
+            ]);
         }
 
         // Clean and unwrap proposal body text so continuous sentences flow properly without artificial line breaks
@@ -1110,7 +1302,10 @@
             const proposal = request.proposals.find(item => Number(item.title_number) === Number(proposalNumber));
             if (!proposal) return;
 
-            document.getElementById("compareModalSubtitle").innerText = `Comparing Title Proposal ${proposalNumber} against Matched Archived Study`;
+            const srcTypeForLabel = proposal.matched_source_type || 'repository';
+            document.getElementById("compareModalSubtitle").innerText = srcTypeForLabel === 'approved_proposal'
+                ? `Comparing Title Proposal ${proposalNumber} against Approved Ongoing Study`
+                : `Comparing Title Proposal ${proposalNumber} against Matched Archived Study`;
             
             const badge = document.getElementById("compareModalBadge");
             badge.innerText = `${proposal.similarity_percentage}% - ${proposal.similarity_level}`;
@@ -1172,7 +1367,56 @@
                 'objectives'
             );
 
+            // ── RIGHT PANEL: source-type aware ──
+            const sourceType = proposal.matched_source_type || 'archived';
+            const isOngoing = sourceType === 'approved_proposal';
+            if (isOngoing) {
+                document.getElementById("compareOngoingTitle").innerHTML = highlightRight(
+                    proposal.matched_title || proposal.matched_approved_title || '',
+                    mw.matchedTitleWords, mw.synonymTitleWords, 'title'
+                );
+                document.getElementById("compareOngoingGroup").textContent = proposal.matched_group_name || 'Unknown Group';
+                const lockedMsg = (txt) => `<span style="color:#9ca3af;font-style:italic;font-size:12.5px;"><i class="fa-solid fa-lock" style="margin-right:6px;"></i>${txt}</span>`;
+                document.getElementById("compareMatchedAbstract").innerHTML = lockedMsg('Abstract not available for ongoing approved studies.');
+                document.getElementById("compareMatchedObjectives").innerHTML = lockedMsg('Objectives not available for ongoing approved studies.');
+                document.getElementById("compareMatchedResearchProblem").innerHTML = lockedMsg('Not available for ongoing approved studies.');
+                document.getElementById("compareMatchedMethodology").innerHTML = lockedMsg('Not available for ongoing approved studies.');
+                switchCompareTab('ongoing');
+            } else {
+                document.getElementById("compareMatchedAbstract").innerHTML = highlightRight(proposal.matched_abstract || '', mw.matchedObjAbstractWords, mw.synonymAbstractWords, 'abstract');
+                document.getElementById("compareMatchedObjectives").innerHTML = highlightRight(proposal.matched_objectives || '', mw.matchedObjObjectivesWords, mw.synonymObjectivesWords, 'objectives');
+                const naMsg = (txt) => `<span style="color:#9ca3af;font-style:italic;font-size:12.5px;"><i class="fa-solid fa-minus-circle" style="margin-right:6px;"></i>${txt}</span>`;
+                document.getElementById("compareMatchedResearchProblem").innerHTML = proposal.matched_research_problem
+                    ? highlightRight(proposal.matched_research_problem, mw.matchedResearchProbWords || [], mw.synonymResearchProbWords || [], 'abstract')
+                    : naMsg('No research problem recorded for this archived study.');
+                document.getElementById("compareMatchedMethodology").innerHTML = proposal.matched_methodology
+                    ? highlightRight(proposal.matched_methodology, mw.matchedMethodologyWords || [], mw.synonymMethodologyWords || [], 'objectives')
+                    : naMsg('No methodology recorded for this archived study.');
+                switchCompareTab('archived');
+            }
+
             document.getElementById("compareModal").style.display = "flex";
+        }
+
+        function switchCompareTab(tab) {
+            const archTab = document.getElementById('compareTabArchived');
+            const ongoingTab = document.getElementById('compareTabOngoing');
+            const btnArch = document.getElementById('tabBtnArchived');
+            const btnOngoing = document.getElementById('tabBtnOngoing');
+            const panelTitle = document.getElementById('compareRightPanelTitle');
+            if (tab === 'archived') {
+                if (archTab) { archTab.style.display = 'flex'; archTab.style.flexDirection = 'column'; }
+                if (ongoingTab) ongoingTab.style.display = 'none';
+                if (btnArch) { btnArch.style.background = '#7c3aed'; btnArch.style.color = 'white'; }
+                if (btnOngoing) { btnOngoing.style.background = '#f5f3ff'; btnOngoing.style.color = '#7c3aed'; }
+                if (panelTitle) panelTitle.textContent = 'Archived Study Match';
+            } else {
+                if (archTab) archTab.style.display = 'none';
+                if (ongoingTab) { ongoingTab.style.display = 'flex'; ongoingTab.style.flexDirection = 'column'; }
+                if (btnArch) { btnArch.style.background = '#f5f3ff'; btnArch.style.color = '#7c3aed'; }
+                if (btnOngoing) { btnOngoing.style.background = '#7c3aed'; btnOngoing.style.color = 'white'; }
+                if (panelTitle) panelTitle.textContent = 'Approved Ongoing Study';
+            }
         }
 
         function closeCompareModal() {
@@ -1251,7 +1495,7 @@
                                     </p>
 
                                     <a
-                                        href="http://localhost:3005${proposal.file_path}"
+                                        href="${API_BASE}${proposal.file_path}"
                                         target="_blank"
                                         style="font-size: 12px; color: #7c3aed; text-decoration: none; font-weight: 600;"
                                     >
@@ -1384,7 +1628,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/respond-adviser-request",
+                        `${API_BASE}/respond-adviser-request`,
                         {
                             method:"POST",
 
@@ -1449,7 +1693,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/remove-adviser-assignment",
+                        `${API_BASE}/remove-adviser-assignment`,
                         {
                             method:"PUT",
 

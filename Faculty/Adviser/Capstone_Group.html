@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -486,13 +486,42 @@
                 "Stage 2": 1,
                 "Stage 3": 2,
                 "Stage 4": 3,
-                "Final": 4
+                "Stage 5": 4,
+                "Final": 5,
+                "Completed": 5
             };
 
             return map[stage] ?? 0;
         }
 
-        function getActiveStageLabel(stage){
+        function isAllDefenseCompleted(group, defenses){
+            if (!group) return false;
+            const stageStr = String(group.stage || "").trim().toLowerCase();
+            if (stageStr === "final" || stageStr === "completed" || Number(group.progress ?? group.capstone_progress ?? 0) >= 100) {
+                return true;
+            }
+            const defenseList = defenses || group.defenses || [];
+            const finalDef = defenseList.find(d => d.defense_type === "Final Defense");
+            if (finalDef) {
+                const res = String(finalDef.panel_result || "").trim().toLowerCase();
+                const stat = String(finalDef.defense_status || "").trim().toLowerCase();
+                if (
+                    res === "passed" ||
+                    res === "passed with revisions" ||
+                    res === "conditional pass" ||
+                    res === "conditional passed" ||
+                    stat === "completed"
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function getActiveStageLabel(stage, group){
+            if (isAllDefenseCompleted(group) || stage === "Final" || stage === "Completed") {
+                return "Completed";
+            }
             const labels = [
                 "Concept Presentation",
                 "Outline Defense",
@@ -503,6 +532,8 @@
 
             const index =
                 stageToCompletedIndex(stage || "Stage 1");
+
+            if (index >= 4) return "Completed";
 
             return labels[index] || "Concept Presentation";
         }
@@ -532,12 +563,25 @@
             return defenseMap;
         }
 
-        function buildTrackerStepHtml(stageObj, state, defenseRecord, isLast){
+        function buildTrackerStepHtml(stageObj, state, defenseRecord, isLast, allDefensesMap){
             let badgeClass = "not-started";
             let badgeLabel = "Not Started";
             let remark = stageObj.pendingRemark;
 
-            if(state === "completed"){
+            if(stageObj.key === "Completed"){
+                if(state === "completed" || state === "active"){
+                    badgeClass = "approved";
+                    badgeLabel = "Completed";
+                    const finalDef = allDefensesMap ? allDefensesMap["Final Defense"] : null;
+                    remark = finalDef?.defense_date
+                        ? `All defense stages completed • Finished ${formatTrackerDate(finalDef.defense_date)}`
+                        : "All defense stages completed successfully";
+                }else{
+                    badgeClass = "not-started";
+                    badgeLabel = "Pending";
+                    remark = "Pending Final Defense completion";
+                }
+            }else if(state === "completed"){
                 const result = defenseRecord?.panel_result || "";
 
                 if(result === "Passed"){
@@ -636,8 +680,11 @@
             const defenseMap =
                 buildDefenseMap(group.defenses);
 
-            const completedCount =
-                stageToCompletedIndex(group.stage || "Stage 1");
+            const isFinished = isAllDefenseCompleted(group, group.defenses);
+
+            const completedCount = isFinished
+                ? 5
+                : stageToCompletedIndex(group.stage || "Stage 1");
 
             let stepsHtml = "";
 
@@ -661,7 +708,8 @@
                         stageObj,
                         state,
                         defenseRecord,
-                        isLast
+                        isLast,
+                        defenseMap
                     );
             });
 
@@ -779,14 +827,16 @@
                     ? "BSIT"
                     : "Not Set";
 
+                const isFinished = isAllDefenseCompleted(group, group.defenses);
+
                 const capstoneProgress =
-                    Number(group.capstone_progress ?? group.progress ?? 0);
+                    isFinished ? 100 : Number(group.capstone_progress ?? group.progress ?? 0);
 
                 const documentProgress =
                     Number(group.document_progress || 0);
 
                 const activeStage =
-                    getActiveStageLabel(group.stage);
+                    isFinished ? "Completed" : getActiveStageLabel(group.stage, group);
 
                 const card =
                     document.createElement("div");
@@ -993,11 +1043,13 @@
             document.getElementById("modalStatus").innerText =
                 group.status || "Active";
 
+            const isFinished = isAllDefenseCompleted(group, group.defenses);
+
             document.getElementById("modalStage").innerText =
-                `${group.stage || "Stage 1"} — ${getActiveStageLabel(group.stage)}`;
+                isFinished ? "Completed" : `${group.stage || "Stage 1"} — ${getActiveStageLabel(group.stage, group)}`;
 
             document.getElementById("modalProgress").innerText =
-                `${group.capstone_progress ?? group.progress ?? 0}%`;
+                `${isFinished ? 100 : (group.capstone_progress ?? group.progress ?? 0)}%`;
 
             renderWorkflowTracker(group);
 

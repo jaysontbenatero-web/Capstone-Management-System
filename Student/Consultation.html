@@ -86,16 +86,12 @@
                     </select>
                 </div>
             </div>
-            <div class="input-group" id="topicGroup">
-                <label>Document / Topic</label>
-                <input type="text" id="consultationTopic" list="topicOptions" placeholder="Search or enter topic...">
-                <datalist id="topicOptions">
-                    <option value="Chapter 1"></option>
-                    <option value="Proposal Manuscript"></option>
-                    <option value="Defense Requirements"></option>
-                    <option value="Revision Notes"></option>
-                    <option value="Final Documentation"></option>
-                </datalist>
+            <div class="input-group" id="docUploadGroup">
+                <label><i class="fa-solid fa-file-pdf" style="color:#ef4444;margin-right:6px;"></i>Upload Document (PDF only) <span style="color:#ef4444;">*</span></label>
+                <input type="file" id="consultationFile" accept=".pdf,application/pdf">
+                <p style="font-size:12px;color:#6d5f85;margin-top:5px;line-height:1.4;">
+                    Upload the PDF document you want your assigned faculty to review before the consultation.
+                </p>
             </div>
             <div class="input-group">
                 <label>Concern / Message</label>
@@ -149,6 +145,9 @@
 
     <script src="student-portal.js"></script>
     <script>
+        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+            ? `${window.location.protocol}//${window.location.hostname}:3005`
+            : `${window.location.protocol}//${window.location.hostname}:3005`;
         const userId = localStorage.getItem("userId");
         let consultations = [];
         let signingDocuments = [];
@@ -183,7 +182,10 @@
 
         function toggleTopicField(){
             const type = document.getElementById("consultationType").value;
-            document.getElementById("topicGroup").style.display = type === "Document Consultation" ? "block" : "none";
+            const docGroup = document.getElementById("docUploadGroup");
+            if(docGroup){
+                docGroup.style.display = (type === "Document Consultation") ? "block" : "none";
+            }
         }
 
         function toggleHistory(){
@@ -199,7 +201,7 @@
         }
 
         async function loadContext(){
-            const res = await fetch(`http://localhost:3005/consultation-context/${encodeURIComponent(userId)}`);
+            const res = await fetch(`${API_BASE}/consultation-context/${encodeURIComponent(userId)}`);
             const data = await res.json();
             const select = document.getElementById("facultySelect");
             select.innerHTML = "";
@@ -230,6 +232,16 @@
                 </div>
             ` : "";
 
+            const docBlock = item.file_path ? `
+                <div style="margin: 8px 0 10px 0;">
+                    <a href="${API_BASE}${item.file_path}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#f8f5ff;border:1.5px solid #d8b4fe;border-radius:12px;color:#6d28d9;text-decoration:none;font-weight:600;font-size:13px;transition:all 0.2s;">
+                        <i class="fa-solid fa-file-pdf" style="color:#ef4444;font-size:16px;"></i>
+                        <span>${item.file_name || 'View Uploaded PDF'}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px;opacity:0.7;"></i>
+                    </a>
+                </div>
+            ` : "";
+
             return `
                 <article class="request-card ${isHistory ? "history-card" : ""}">
                     <h3>${item.consultation_code || "Consultation Request"}</h3>
@@ -237,7 +249,8 @@
                         <span class="badge ${statusClass(status)}">${status}</span>
                         <span class="badge">${item.consultation_type}</span>
                     </div>
-                    <p><strong>Topic:</strong> ${item.topic || "N/A"}</p>
+                    ${item.file_name ? `<p><strong>Document:</strong> ${item.file_name}</p>` : (item.topic ? `<p><strong>Topic:</strong> ${item.topic}</p>` : "")}
+                    ${docBlock}
                     <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
                     <p><strong>Faculty:</strong> ${item.faculty_name || "N/A"} (${item.assigned_role || "-"})</p>
                     <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
@@ -470,7 +483,7 @@
 
         async function loadSigningDocuments(){
             try{
-                const res = await fetch(`http://localhost:3005/student-signing-documents/${encodeURIComponent(userId)}`);
+                const res = await fetch(`${API_BASE}/student-signing-documents/${encodeURIComponent(userId)}`);
                 const data = await res.json();
                 signingDocuments = data.success ? (data.documents || []) : [];
             }catch(error){
@@ -481,7 +494,7 @@
         }
 
         async function loadConsultations(){
-            const res = await fetch(`http://localhost:3005/student-consultations/${encodeURIComponent(userId)}`);
+            const res = await fetch(`${API_BASE}/student-consultations/${encodeURIComponent(userId)}`);
             const data = await res.json();
             consultations = data.success ? (data.consultations || []) : [];
             renderConsultations();
@@ -490,25 +503,60 @@
         async function submitConsultation(){
             const assignedFacultyId  = document.getElementById("facultySelect").value;
             const consultationType   = document.getElementById("consultationType").value;
-            const topic              = document.getElementById("consultationTopic").value.trim();
             const concernMessage     = document.getElementById("consultationMessage").value.trim();
+            const fileInput          = document.getElementById("consultationFile");
 
             if(!assignedFacultyId){ alert("No assigned faculty available yet."); return; }
-            if(consultationType === "Document Consultation" && !topic){ alert("Please enter/select a topic."); return; }
+            if(consultationType === "Document Consultation"){
+                if(!fileInput || !fileInput.files || fileInput.files.length === 0){
+                    alert("Please select and upload a PDF document for your consultation.");
+                    return;
+                }
+                const file = fileInput.files[0];
+                if(!file.name.toLowerCase().endsWith(".pdf")){
+                    alert("Only PDF documents (.pdf) are allowed.");
+                    return;
+                }
+            }
             if(!concernMessage){ alert("Please enter your concern/message."); return; }
 
-            const res = await fetch("http://localhost:3005/student-consultations", {
-                method:"POST",
-                headers:{ "Content-Type":"application/json" },
-                body: JSON.stringify({ studentUserId:userId, assignedFacultyId, consultationType, topic, concernMessage })
-            });
-            const data = await res.json();
-            alert(data.message || "Request processed.");
-            if(data.success){
-                document.getElementById("consultationTopic").value = "";
-                document.getElementById("consultationMessage").value = "";
-                await loadConsultations();
-                if(window.PortalNotifications){ window.PortalNotifications.refresh(false); }
+            const submitBtn = document.querySelector("#formSection .submit-btn");
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+            if(submitBtn){
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append("studentUserId", userId);
+                formData.append("assignedFacultyId", assignedFacultyId);
+                formData.append("consultationType", consultationType);
+                formData.append("concernMessage", concernMessage);
+                if(fileInput && fileInput.files && fileInput.files.length > 0){
+                    formData.append("consultationFile", fileInput.files[0]);
+                }
+
+                const res = await fetch(`${API_BASE}/student-consultations`, {
+                    method:"POST",
+                    body: formData
+                });
+                const data = await res.json();
+                alert(data.message || "Request processed.");
+                if(data.success){
+                    if(fileInput) fileInput.value = "";
+                    document.getElementById("consultationMessage").value = "";
+                    await loadConsultations();
+                    if(window.PortalNotifications){ window.PortalNotifications.refresh(false); }
+                }
+            } catch(err) {
+                console.error("Consultation submit error:", err);
+                alert("Failed to submit consultation request. Please try again.");
+            } finally {
+                if(submitBtn){
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
             }
         }
 
@@ -516,6 +564,7 @@
             await loadContext();
             await loadSigningDocuments();
             await loadConsultations();
+            toggleTopicField();
         }
 
         function openTrackingModal(index) {
@@ -749,7 +798,7 @@
                 + '</div>'
                 + stepsHtml
                 + '<div style="margin-top:24px;padding-top:16px;border-top:1px solid #f1f5f9;">'
-                +   '<a href="http://localhost:3005' + viewPath + '" target="_blank" '
+                +   '<a href="" + API_BASE + "' + viewPath + '" target="_blank" '
                 +      'style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 18px;'
                 +      'background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border-radius:14px;'
                 +      'font-weight:700;font-size:14px;text-decoration:none;transition:opacity 0.2s;box-sizing:border-box;"'

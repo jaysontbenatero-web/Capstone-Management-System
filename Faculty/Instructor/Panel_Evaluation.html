@@ -78,6 +78,10 @@
                     <i class="fa-solid fa-clipboard-list"></i>
                     <span>Panel Evaluation</span>
                 </div>
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Repository</span>
+                </div>
             </div>
         </div>
 
@@ -125,7 +129,7 @@
                 </div>
                 <div>
                     <h2 id="revisionCount">0</h2>
-                    <p>Revisions / Re-Defense</p>
+                    <p>Passed with Revisions</p>
                 </div>
             </div>
             <div class="stat-card">
@@ -149,6 +153,10 @@
                     onkeyup="applyFilters()"
                 >
             </div>
+            <select id="scheduleScopeFilter" onchange="applyFilters()">
+                <option value="All">All</option>
+                <option value="Created">Created Schedule</option>
+            </select>
             <select id="typeFilter" onchange="applyFilters()">
                 <option value="All">All Defense Types</option>
             </select>
@@ -157,7 +165,6 @@
                 <option value="In Progress">In Progress</option>
                 <option value="Passed">Passed</option>
                 <option value="Passed with Revisions">Passed with Revisions</option>
-                <option value="For Re-Defense">For Re-Defense</option>
                 <option value="Failed">Failed</option>
             </select>
         </section>
@@ -232,15 +239,42 @@
             }
         }
 
+        function isNonFinalReDefenseVerdict(verdict) {
+            const v = String(verdict || "").trim();
+            return (
+                v === "Conditional Passed" ||
+                v === "Conditional Pass" ||
+                v === "For Formal Defense" ||
+                v === "For Re-Defense"
+            );
+        }
+
+        function scheduleHasNonFinalVerdict(sched) {
+            if (!sched) return false;
+            if (isNonFinalReDefenseVerdict(sched.panel_result)) return true;
+            if (sched.evaluation && isNonFinalReDefenseVerdict(sched.evaluation.panel_result)) return true;
+            if (Array.isArray(sched.panel_evaluations) && sched.panel_evaluations.some(pe => isNonFinalReDefenseVerdict(pe.panel_result))) {
+                return true;
+            }
+            return false;
+        }
+
+        function isCreatedByLoggedInInstructor(sched) {
+            const userId = String(localStorage.getItem("userId") || "").trim();
+            if (!sched || !userId) return false;
+            if (sched.is_owner === true || Number(sched.is_owner) === 1) return true;
+            const creatorUid = String(sched.creator_user_id || sched.created_by_user_id || "").trim();
+            return creatorUid !== "" && creatorUid === userId;
+        }
+
         function updateStats(list) {
-            const complete = list.filter(s => s.evaluations_complete).length;
             const passed = list.filter(s =>
                 s.evaluations_complete && String(s.panel_result || "").trim() === "Passed"
             ).length;
             const revision = list.filter(s => {
                 if (!s.evaluations_complete) return false;
                 const r = String(s.panel_result || "").trim();
-                return r === "Passed with Revisions" || r === "For Re-Defense";
+                return r === "Passed with Revisions";
             }).length;
             const failed = list.filter(s =>
                 s.evaluations_complete && String(s.panel_result || "").trim() === "Failed"
@@ -280,13 +314,37 @@
             `;
 
             try {
-                const response = await fetch("http://localhost:3005/defense-schedules");
+                const userId = localStorage.getItem("userId") || "";
+                const response = await fetch(`http://localhost:3005/defense-schedules?userId=${encodeURIComponent(userId)}`);
                 const data = await response.json();
 
                 if (data.success) {
-                    allSchedules = (data.schedules || []).filter(sched =>
-                        Number(sched.evaluations_submitted || 0) > 0
+                    const candidates = (data.schedules || []).filter(sched =>
+                        Number(sched.evaluations_submitted || 0) > 0 &&
+                        !scheduleHasNonFinalVerdict(sched)
                     );
+
+                    // Fetch individual panel evaluations for each candidate to ensure no panelist gave Conditional Passed / For Formal Defense
+                    await Promise.all(
+                        candidates.map(async (sched) => {
+                            try {
+                                const evalRes = await fetch(`http://localhost:3005/defense-panel-evaluations/${sched.id}`);
+                                const evalData = await evalRes.json();
+                                if (evalData.success) {
+                                    sched.panel_evaluations = evalData.panel_evaluations || [];
+                                    if (evalData.evaluations_complete && evalData.panel_result) {
+                                        sched.panel_result = evalData.panel_result;
+                                    }
+                                }
+                            } catch (err) {
+                                console.warn("Could not pre-check panel evaluations for schedule", sched.id, err);
+                            }
+                        })
+                    );
+
+                    // Exclude any schedule whose compiled or panelist verdict is Conditional Passed or For Formal Defense
+                    allSchedules = candidates.filter(sched => !scheduleHasNonFinalVerdict(sched));
+
                     populateTypeFilter(allSchedules);
                     updateStats(allSchedules);
                     applyFilters();
@@ -313,7 +371,7 @@
             const val = String(outcome || "").trim();
             if (val === "Passed") return "badge-passed";
             if (val === "Passed with Revisions") return "badge-revision";
-            if (val === "For Re-Defense") return "badge-redefense";
+            if (val === "For Formal Defense" || val === "For Re-Defense") return "badge-redefense";
             if (val === "Failed") return "badge-failed";
             if (val === "In Progress") return "badge-pending";
             return "badge-pending";
@@ -321,15 +379,27 @@
 
         function applyFilters() {
             const q = document.getElementById("evalSearch").value.toLowerCase().trim();
+            const scopeVal = document.getElementById("scheduleScopeFilter") ? document.getElementById("scheduleScopeFilter").value : "All";
             const typeVal = document.getElementById("typeFilter").value;
             const outcomeVal = document.getElementById("outcomeFilter").value;
 
-            filteredSchedules = allSchedules.filter(sched => {
+            const scopeFiltered = allSchedules.filter(sched => {
+                if (scheduleHasNonFinalVerdict(sched)) return false;
+                if (scopeVal === "Created") {
+                    return isCreatedByLoggedInInstructor(sched);
+                }
+                return true;
+            });
+
+            updateStats(scopeFiltered);
+
+            filteredSchedules = scopeFiltered.filter(sched => {
                 const haystack = [
                     sched.group_name,
                     sched.schedule_code,
                     sched.project_title,
-                    sched.defense_type
+                    sched.defense_type,
+                    sched.creator_name
                 ].map(v => String(v || "").toLowerCase()).join(" ");
 
                 const matchesSearch = !q || haystack.includes(q);
@@ -394,6 +464,11 @@
                     ? (sched.panel_result || "Pending")
                     : "In Progress";
 
+                const isMine = isCreatedByLoggedInInstructor(sched);
+                const creatorBadge = isMine
+                    ? `<span class="badge" style="background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe;"><i class="fa-solid fa-calendar-check" style="margin-right:3px;"></i>Created Schedule</span>`
+                    : (sched.creator_name ? `<span class="badge" style="background:#f3f4f6;color:#4b5563;">By: ${escapeHtml(sched.creator_name)}</span>` : "");
+
                 item.innerHTML = `
                     <div class="eval-info">
                         <h3>${escapeHtml(sched.group_name)}</h3>
@@ -401,6 +476,7 @@
                         <div class="eval-meta">
                             <span class="badge ${getOutcomeClass(outcomeLabel)}">${escapeHtml(outcomeLabel)}</span>
                             <span class="badge badge-type">${escapeHtml(sched.defense_type || "Defense")}</span>
+                            ${creatorBadge}
                             <span>${escapeHtml(progressText)}</span>
                         </div>
                     </div>
@@ -501,6 +577,15 @@
             const sheetLabel = getSystemDocSheetShortLabel(defenseType);
 
             const presentersHtml = (details.presenters || []).map((p, pIdx) => {
+                const isNotGraded = p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED';
+                if (isNotGraded) {
+                    return `
+                        <p style="font-size:12px;color:#6d5f85;margin-bottom:4px;">
+                            Student ${pIdx + 1} (${escapeHtml(p.fullname)}):
+                            <span style="color:#ef4444;font-weight:600;"><i class="fa-solid fa-ban" style="margin-right:3px;"></i>Not Graded (${escapeHtml(p.student_status || "Inactive/Dropped")})</span>
+                        </p>
+                    `;
+                }
                 const indWeighted = (Number(p.disposition_score) * 0.20 + Number(p.delivery_score) * 0.80).toFixed(1);
                 const indGpa = convert100ToGpa(indWeighted);
                 return `
@@ -587,6 +672,20 @@
                 }
             } catch (e) {
                 console.error("Failed to refresh panel evaluations:", e);
+            }
+
+            if (scheduleHasNonFinalVerdict(sched)) {
+                actions.style.display = "none";
+                allSchedules = allSchedules.filter(s => Number(s.id) !== Number(id));
+                applyFilters();
+                viewport.innerHTML = `
+                    <div class="empty-receipt">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                        <h3>Evaluation Not Generated Yet</h3>
+                        <p>This presentation received a <strong>Conditional Passed</strong> or <strong>For Formal Defense</strong> verdict, which is not the final verdict yet. The evaluation sheet will be generated after the re-defense is completed with a final verdict.</p>
+                    </div>
+                `;
+                return;
             }
 
             viewport.innerHTML = "";
@@ -693,11 +792,15 @@
             // ── Presenters Lineup ────────────────────────────────────────────
             if (allPresenters.length) {
                 html += `
-                    <p style="font-weight:600;font-size:0.85rem;margin-bottom:6px;">Presenters' Names</p>
-                    <div style="font-size:0.8rem;line-height:1.6;margin-bottom:16px;padding-left:8px;color:#374151;">
-                        ${allPresenters.map((p, i) =>
-                            `<p>${i + 1}. <strong>${escapeHtml(p.fullname)}</strong> (${escapeHtml(p.role)})</p>`
-                        ).join("")}
+                    <div class="receipt-presenters-wrap">
+                        <p class="receipt-presenters-title" style="font-weight:600;font-size:0.85rem;margin-bottom:6px;">Presenters' Names</p>
+                        <div class="receipt-presenters-list" style="font-size:0.8rem;line-height:1.6;margin-bottom:16px;padding-left:8px;color:#374151;">
+                            ${allPresenters.map((p, i) => {
+                                const isNotGraded = p.status === 'NOT_GRADED' || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED' || (p.disposition_score === null && p.delivery_score === null);
+                                const badge = isNotGraded ? ` <span style="font-size:0.72rem;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:4px;">Not Graded</span>` : '';
+                                return `<p>${i + 1}. <strong>${escapeHtml(p.fullname)}</strong> (${escapeHtml(p.role)})${badge}</p>`;
+                            }).join("")}
+                        </div>
                     </div>
                 `;
             }
@@ -752,17 +855,25 @@
 
                     const dispositionCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
-                        return p ? `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>` : `<td class="score-col">—</td>`;
+                        if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                            return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
+                        }
+                        return `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>`;
                     }).join("");
 
                     const deliveryCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
-                        return p ? `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>` : `<td class="score-col">—</td>`;
+                        if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                            return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
+                        }
+                        return `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>`;
                     }).join("");
 
                     const weightedCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
-                        if (!p) return `<td class="score-col">—</td>`;
+                        if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                            return `<td class="score-col" style="color:#9ca3af;font-size:0.75rem;">—</td>`;
+                        }
                         const w = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
                         return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${w}<br><small>(${convert100ToGpa(w)})</small></td>`;
                     }).join("");
@@ -876,17 +987,25 @@
 
                     const dispositionCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
-                        return p ? `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>` : `<td class="score-col">—</td>`;
+                        if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                            return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
+                        }
+                        return `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>`;
                     }).join("");
 
                     const deliveryCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
-                        return p ? `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>` : `<td class="score-col">—</td>`;
+                        if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                            return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
+                        }
+                        return `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>`;
                     }).join("");
 
                     const weightedCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
-                        if (!p) return `<td class="score-col">—</td>`;
+                        if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                            return `<td class="score-col" style="color:#9ca3af;font-size:0.75rem;">—</td>`;
+                        }
                         const w = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
                         return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${w}<br><small>(${convert100ToGpa(w)})</small></td>`;
                     }).join("");
@@ -1032,14 +1151,21 @@
             let studentTotals = "";
 
             (details.presenters || []).forEach((p, idx) => {
-                presenterNamesHtml += `<p>${idx + 1}. <strong>${escapeHtml(p.fullname)}</strong> (${escapeHtml(p.role)})</p>`;
+                const isNotGraded = p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED';
+                const badge = isNotGraded ? ` <span style="font-size:0.72rem;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:4px;">Not Graded</span>` : '';
+                presenterNamesHtml += `<p>${idx + 1}. <strong>${escapeHtml(p.fullname)}</strong> (${escapeHtml(p.role)})${badge}</p>`;
                 tableHeaderPresenters += `<th class="score-col">${idx + 1}</th>`;
-                dispositionCells += `<td class="score-col">${escapeHtml(p.disposition_score)}</td>`;
-                deliveryCells += `<td class="score-col">${escapeHtml(p.delivery_score)}</td>`;
-
-                const individualWeighted = p.disposition_score * 0.20 + p.delivery_score * 0.80;
-                const individualGpa = convert100ToGpa(individualWeighted);
-                studentTotals += `<td class="score-col" style="background:#f9fafb;font-weight:bold;color:#7c3aed;">${individualWeighted.toFixed(1)} (${individualGpa})</td>`;
+                if (isNotGraded) {
+                    dispositionCells += `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
+                    deliveryCells += `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
+                    studentTotals += `<td class="score-col" style="background:#f9fafb;color:#9ca3af;font-size:0.75rem;">—</td>`;
+                } else {
+                    dispositionCells += `<td class="score-col">${escapeHtml(p.disposition_score)}</td>`;
+                    deliveryCells += `<td class="score-col">${escapeHtml(p.delivery_score)}</td>`;
+                    const individualWeighted = p.disposition_score * 0.20 + p.delivery_score * 0.80;
+                    const individualGpa = convert100ToGpa(individualWeighted);
+                    studentTotals += `<td class="score-col" style="background:#f9fafb;font-weight:bold;color:#7c3aed;">${individualWeighted.toFixed(1)} (${individualGpa})</td>`;
+                }
             });
 
             for (let i = (details.presenters || []).length; i < 3; i++) {

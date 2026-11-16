@@ -4,12 +4,45 @@ Thumbs.db
 # dependencies
 node_modules/
 
-# uploads (runtime)
-uploads/
-
-# local env
+# environment & credentials
 .env
 .env.*
+*.pem
+*.key
+credentials*.json
+client_secret*.json
+
+# uploads & generated PDFs/media (runtime)
+uploads/
+*.pdf
+
+# AI / Hugging Face local model caches
+.cache/
+.transformers-cache/
+models/
+onnx/
+
+# database backups & dumps
+backups/
+*.sql
+*.sqlite
+*.db
+
+# temporary migration & debug scripts
+hash-existing-passwords.js
+replace_3005.js
+check-submissions.js
+check_lint.js
+debug_similarity.js
+fix_missing_similarity.js
+fix_similarity_clean.js
+retrigger_similarity_fix.js
+test_sched_eval.js
+verify_similarity.js
+_check_smart.js
+_test_submit.js
+scripts/clean-db-keep-repo-admin.js
+scripts/reset-db.js
 
 # logs
 *.log
@@ -20,4 +53,3 @@ yarn-error.log*
 # editor
 .vscode/*
 !.vscode/settings.json
-

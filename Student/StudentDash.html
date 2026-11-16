@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -515,16 +515,41 @@
                'Stage 2'         = Concept done, Outline active
                'Stage 3'         = Concept+Outline done, Pre-Final active
                'Stage 4'         = Concept+Outline+Pre-Final done, Final active
-               'Final'           = all 4 done → Completed active
+               'Final' / 'Completed' = all done
             */
             const map = {
                 "Stage 1": 0,
                 "Stage 2": 1,
                 "Stage 3": 2,
                 "Stage 4": 3,
-                "Final":   4
+                "Stage 5": 4,
+                "Final":   5,
+                "Completed": 5
             };
             return map[stage] ?? 0;
+        }
+
+        function isAllDefenseCompleted(group, defenses) {
+            if (!group) return false;
+            const stageStr = String(group.stage || "").trim().toLowerCase();
+            if (stageStr === "final" || stageStr === "completed" || Number(group.progress || 0) >= 100) {
+                return true;
+            }
+            const finalDef = (defenses || []).find(d => d.defense_type === "Final Defense");
+            if (finalDef) {
+                const res = String(finalDef.panel_result || "").trim().toLowerCase();
+                const stat = String(finalDef.defense_status || "").trim().toLowerCase();
+                if (
+                    res === "passed" ||
+                    res === "passed with revisions" ||
+                    res === "conditional pass" ||
+                    res === "conditional passed" ||
+                    stat === "completed"
+                ) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         function formatDate(dateStr) {
@@ -533,13 +558,26 @@
             return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         }
 
-        function buildStepHtml(stageObj, state, defenseRecord, isLast) {
+        function buildStepHtml(stageObj, state, defenseRecord, isLast, allDefensesMap) {
             /* state: 'completed' | 'active' | 'pending' */
             let badgeClass = "not-started";
             let badgeLabel = "Not Started";
             let remark = stageObj.pendingRemark;
 
-            if (state === "completed") {
+            if (stageObj.key === "Completed") {
+                if (state === "completed" || state === "active") {
+                    badgeClass = "approved";
+                    badgeLabel = "Completed";
+                    const finalDef = allDefensesMap ? allDefensesMap["Final Defense"] : null;
+                    remark = finalDef?.defense_date
+                        ? `All defense stages completed • Finished ${formatDate(finalDef.defense_date)}`
+                        : "All defense stages completed successfully";
+                } else {
+                    badgeClass = "not-started";
+                    badgeLabel = "Pending";
+                    remark = "Pending Final Defense completion";
+                }
+            } else if (state === "completed") {
                 const result = defenseRecord?.panel_result || "";
                 if (result === "Passed") {
                     badgeClass = "approved"; badgeLabel = "Passed";
@@ -564,9 +602,9 @@
                             if (defenseRecord.comments) {
                                 remark += `<br/><span style="font-size:10px;color:#6d28d9;font-weight:500;">Feedback: ${escapeHtml(defenseRecord.comments)}</span>`;
                             }
-                        } else if (result === "For Re-Defense") {
-                            badgeClass = "re-defense"; badgeLabel = "For Re-Defense";
-                            remark = `Result: For Re-Defense — ${formatDate(defenseRecord.defense_date)}`;
+                        } else if (result === "For Re-Defense" || result === "For Formal Defense") {
+                            badgeClass = "re-defense"; badgeLabel = "For Formal Defense";
+                            remark = `Result: For Formal Defense — ${formatDate(defenseRecord.defense_date)}`;
                             if (defenseRecord.comments) {
                                 remark += `<br/><span style="font-size:10px;color:#db2777;font-weight:500;">Feedback: ${escapeHtml(defenseRecord.comments)}</span>`;
                             }
@@ -761,8 +799,9 @@
             });
 
             if (tasks.length === 0) {
+                const isFinished = isAllDefenseCompleted(group, defenses);
                 container.innerHTML =
-                    `<p style="color:#7b6f96;font-size:13px;">No upcoming tasks. You're on track for ${escapeHtml(group.stage || "your current stage")}.</p>`;
+                    `<p style="color:#7b6f96;font-size:13px;">${isFinished ? "No upcoming tasks. All capstone stages completed successfully." : `No upcoming tasks. You're on track for ${escapeHtml(group.stage || "your current stage")}.`}</p>`;
                 return;
             }
 
@@ -795,13 +834,15 @@
                 return;
             }
 
-            const completedCount =
-                stageToCompletedIndex(group.stage || "Stage 1");
+            const isAllFinished = isAllDefenseCompleted(group, defenses);
+            const completedCount = isAllFinished
+                ? 5
+                : stageToCompletedIndex(group.stage || "Stage 1");
 
             document.getElementById("statStageValue").textContent =
-                completedCount >= 4
-                ? "Final"
-                : (group.stage || "Stage 1");
+                completedCount >= 5
+                ? "Completed"
+                : (completedCount === 4 ? "Final" : (group.stage || "Stage 1"));
 
             document.getElementById("statMemberCount").textContent =
                 String((group.members || []).length);
@@ -823,7 +864,7 @@
             document.getElementById("statDefenseDate").textContent =
                 nextDefense
                 ? formatDateShort(nextDefense.defense_date)
-                : "None";
+                : (isAllFinished ? "Completed" : "None");
         }
 
         function updateProjectCard(group) {
@@ -842,9 +883,9 @@
 
             const statusInfo = normalizeProjectStatus(group.status);
             const programLabel =
-                group.program === "IS"
+                (group.program === "IS" || group.program === "BSIS")
                 ? "BSIS"
-                : group.program === "IT"
+                : (group.program === "IT" || group.program === "BSIT")
                 ? "BSIT"
                 : (group.program || "Not Set");
 
@@ -857,8 +898,12 @@
                 ? `Adviser: ${group.adviser_name}`
                 : "Adviser: Not assigned yet";
 
+            const displayStage = (group.stage === "Final" || group.stage === "Completed" || Number(group.progress || 0) >= 100)
+                ? "Completed"
+                : (group.stage || "Stage 1");
+
             descEl.textContent =
-                `${group.group_name || "Group"} (${group.group_id || "—"}) • ${programLabel} • ${adviserLine} • Stage: ${group.stage || "Stage 1"}`;
+                `${group.group_name || "Group"} (${group.group_id || "—"}) • ${programLabel} • ${adviserLine} • Stage: ${displayStage}`;
 
             statusEl.textContent = statusInfo.label;
             statusEl.className = `status ${statusInfo.className}`;
@@ -874,11 +919,15 @@
 
             const defenseMap = {};
             (defenses || []).forEach(defense => {
-                defenseMap[defense.defense_type] = defense;
+                if (!defenseMap[defense.defense_type] || Number(defense.id) >= Number(defenseMap[defense.defense_type].id)) {
+                    defenseMap[defense.defense_type] = defense;
+                }
             });
 
-            const completedCount =
-                stageToCompletedIndex(group.stage || "Stage 1");
+            const isAllFinished = isAllDefenseCompleted(group, defenses);
+            const completedCount = isAllFinished
+                ? 5
+                : stageToCompletedIndex(group.stage || "Stage 1");
 
             const stageNames = [
                 "Concept Presentation",
@@ -891,10 +940,25 @@
             const currentStageName =
                 stageNames[completedCount] || "Concept Presentation";
 
-            document.getElementById("currentStageBadge").textContent =
-                completedCount >= 4
-                ? "All Stages Completed"
-                : `Active: ${currentStageName}`;
+            const activeDefense = defenseMap[currentStageName];
+            const isForFormalDefense = !isAllFinished
+                && activeDefense
+                && activeDefense.defense_status === "Completed"
+                && (activeDefense.panel_result === "For Formal Defense" || activeDefense.panel_result === "For Re-Defense");
+
+            const badgeEl = document.getElementById("currentStageBadge");
+            if (badgeEl) {
+                if (completedCount >= 5) {
+                    badgeEl.textContent = "All Stages Completed";
+                    badgeEl.className = "status-badge-tracker current-stage-badge approved";
+                } else if (isForFormalDefense) {
+                    badgeEl.textContent = `Active: ${currentStageName} — For Formal Defense`;
+                    badgeEl.className = "status-badge-tracker current-stage-badge re-defense";
+                } else {
+                    badgeEl.textContent = `Active: ${currentStageName}`;
+                    badgeEl.className = "status-badge-tracker current-stage-badge";
+                }
+            }
 
             let stepsHtml = "";
 
@@ -910,21 +974,30 @@
                 const defRec = defenseMap[stageObj.key] || null;
                 const isLast = (idx === STAGES.length - 1);
 
-                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast);
+                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast, defenseMap);
             });
 
             document.getElementById("workflowSteps").innerHTML = stepsHtml;
 
-            const pct = Number(group.progress || 0);
+            const pct = isAllFinished ? 100 : Math.min(Number(group.progress || 0), 100);
             const fill = document.getElementById("progressFill");
             const pctLabel = document.getElementById("progressPercent");
 
             if (fill) {
                 fill.style.width = `${pct}%`;
+                if (isForFormalDefense) {
+                    fill.style.background = "linear-gradient(135deg, #f43f5e 0%, #db2777 100%)";
+                } else {
+                    fill.style.background = "";
+                }
             }
 
             if (pctLabel) {
-                pctLabel.textContent = `${pct}%`;
+                if (isForFormalDefense) {
+                    pctLabel.innerHTML = `${pct}% <span style="font-size:11px;font-weight:600;color:#db2777;background:#fdf2f8;padding:2px 8px;border-radius:12px;border:1px solid #fbcfe8;margin-left:6px;display:inline-block;">For Formal Defense</span>`;
+                } else {
+                    pctLabel.textContent = `${pct}%`;
+                }
             }
         }
 

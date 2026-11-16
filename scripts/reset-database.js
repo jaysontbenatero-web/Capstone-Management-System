@@ -1,3 +1,4 @@
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 /**
  * Reset CapstoneX database to a clean state.
  * Keeps only admin user(s). Clears groups, defenses, documents, messages, etc.
@@ -12,7 +13,7 @@ const mysql = require("mysql2/promise");
 const DB_CONFIG = {
     host: "localhost",
     user: "root",
-    password: "capstone123",
+    password: process.env.DB_PASSWORD,
     database: "capx_db",
     port: 3307,
     multipleStatements: true

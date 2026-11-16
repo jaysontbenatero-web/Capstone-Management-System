@@ -1,6 +1,14 @@
 (function () {
 
-    const API_BASE = "http://localhost:3005";
+    const API_BASE = (function() {
+        if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
+            if (window.location.port === "3005" || window.location.host.endsWith(":3005")) {
+                return "";
+            }
+            return `${window.location.protocol}//${window.location.hostname}:3005`;
+        }
+        return "http://localhost:3005";
+    })();
     const POLL_MS = 4000;
     const POLL_HIDDEN_MS = 45000;
     const DROPDOWN_LIMIT = 5;
@@ -161,16 +169,27 @@
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
             if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
             if (role === "faculty") {
-                if (position.includes("instructor") || position.includes("chairperson") || facultyRole === "instructor") {
-                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
-                }
-                if (position.includes("adviser") || facultyRole === "adviser") {
+                const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
+                const sessionRole = String(sessionStorage.getItem("active_faculty_role") || "").toLowerCase();
+
+                // If message specifically indicates adviser or user is currently inside Adviser portal
+                if (combined.includes("adviser") || facultyRole === "adviser" || sessionRole === "adviser" || activePath.includes("/adviser/")) {
                     return resolveRelativeUrl("Faculty/Adviser/Documents.html");
                 }
-                if (position.includes("panelist") || facultyRole === "panelist") {
-                    return resolveRelativeUrl("Faculty/Panelist/Defense_Document.html");
+
+                if (combined.includes("instructor") || facultyRole === "instructor" || sessionRole === "instructor" || activePath.includes("/instructor/")) {
+                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
                 }
-                return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+
+                if (position.includes("adviser") && !position.includes("instructor")) {
+                    return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+                }
+
+                if (position.includes("instructor") || position.includes("chairperson")) {
+                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+                }
+
+                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
             }
         }
 

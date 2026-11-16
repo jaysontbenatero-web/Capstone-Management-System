@@ -1,21 +1,15 @@
+require("dotenv").config();
 const mysql = require('mysql2');
 const db = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "capstone123",
+    password: process.env.DB_PASSWORD,
     database: "capx_db",
     port: 3307
 });
 
-// Check defense_panels table
-db.query("DESCRIBE defense_panels", (err, res) => {
-    if (err) console.log("defense_panels:", err.message);
-    else console.log("defense_panels columns:", res.map(r => r.Field).join(', '));
-});
-
-// Check defense_schedules table
-db.query("DESCRIBE defense_schedules", (err, res) => {
-    if (err) console.log("defense_schedules:", err.message);
-    else console.log("defense_schedules columns:", res.map(r => r.Field).join(', '));
+db.query("ALTER TABLE document_submissions ADD COLUMN target_role VARCHAR(50) NULL DEFAULT NULL", (err, res) => {
+    if (err) console.log("ALTER result:", err.message);
+    else console.log("ALTER successful! target_role column added.");
     db.end();
 });

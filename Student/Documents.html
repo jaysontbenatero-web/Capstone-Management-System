@@ -30,6 +30,9 @@
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
     <link rel="stylesheet" href="student-portal.css">
+
+    <!-- PDF.js for env scan student signature viewer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -303,195 +306,7 @@
                 </div>
             </div>
 
-        </section>
-
-        <!-- UPLOAD FORM -->
-        <section class="upload-card">
-
-            <div class="section-header">
-
-                <div>
-                    <h2>
-                        General Consultation Upload
-                    </h2>
-
-                    <p>
-                        Use this for general consultations (drafts, notes, extra files). You can still pick “Other” here too.
-                    </p>
-                </div>
-
-                <div class="header-icon">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                </div>
-
-            </div>
-
-            <div class="upload-form">
-
-                <div class="input-group">
-                    <label>
-                        Document Type
-                    </label>
-
-                    <select
-                        id="documentType"
-                        onchange="setDefaultDocumentTitle()"
-                    >
-                        <option value="">
-                            Select document type
-                        </option>
-
-                        <option value="Proposed Title">
-                            Proposed Title
-                        </option>
-
-                        <option value="Environmental Scanning">
-                            Environmental Scanning
-                        </option>
-
-                        <option value="Chapter 1">
-                            Chapter 1
-                        </option>
-
-                        <option value="Chapter 2">
-                            Chapter 2
-                        </option>
-
-                        <option value="Chapter 3">
-                            Chapter 3
-                        </option>
-
-                        <option value="Chapter 1-3">
-                            Chapter 1-3
-                        </option>
-
-                        <option value="Adviser Signing">
-                            Adviser Signing
-                        </option>
-
-                        <option value="Panel Signing">
-                            Panel Signing
-                        </option>
-
-                        <option value="Final Manuscript">
-                            Final Manuscript
-                        </option>
-
-                        <option value="Final Documents">
-                            Final Documents
-                        </option>
-
-                        <option value="Other">
-                            Other
-                        </option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label>
-                        Document Title
-                    </label>
-
-                    <input
-                        type="text"
-                        id="documentTitle"
-                        placeholder="Document title will appear here"
-                    >
-                </div>
-
-                <div class="input-group">
-                    <label>
-                        File Upload
-                    </label>
-
-                    <input
-                        type="file"
-                        id="documentFile"
-                        accept=".pdf,.doc,.docx"
-                    >
-                </div>
-
-                <button
-                    class="upload-btn"
-                    onclick="uploadStudentDocument()"
-                >
-                    <i class="fa-solid fa-upload"></i>
-                    Upload Document
-                </button>
-
-            </div>
-
-            <div class="note-box">
-                <i class="fa-solid fa-circle-info"></i>
-
-                <p>
-                    Only your assigned adviser's approval locks a requirement file. Reviews from instructors or other faculty do not lock the file — you can still upload, edit, or send again.
-                </p>
-            </div>
-
-        </section>
-
-        <!-- DOCUMENTS LIST -->
-        <section class="documents-card">
-
-            <div class="table-header">
-
-                <div>
-                    <h2>
-                        General Consultation Files
-                    </h2>
-
-                    <p>
-                        Files uploaded through General Consultation Upload only. Category requirements are managed above per slot.
-                    </p>
-                </div>
-
-                <div class="toolbar">
-
-                    <div class="search-box">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-
-                        <input
-                            type="text"
-                            id="searchDocument"
-                            placeholder="Search document..."
-                            onkeyup="filterDocuments()"
-                        >
-                    </div>
-
-                    <select
-                        id="statusFilter"
-                        onchange="filterDocuments()"
-                    >
-                        <option value="All">
-                            All Status
-                        </option>
-
-                        <option value="Not Sent">
-                            Not Sent
-                        </option>
-
-                        <option value="Sent">
-                            Sent
-                        </option>
-                    </select>
-
-                </div>
-
-            </div>
-
-            <div
-                class="document-grid"
-                id="documentGrid"
-            >
-                <div class="empty-card">
-                    Loading documents...
-                </div>
-            </div>
-
-        </section>
-
-        <!-- DOCUMENTS RECEIVED FROM FACULTY -->
+        </section>        <!-- DOCUMENTS RECEIVED FROM FACULTY -->
         <section class="received-docs-card">
 
             <div class="table-header">
@@ -534,6 +349,79 @@
 
     </main>
 
+    <!-- DEFENSE MINUTES PICTURE UPLOAD MODAL -->
+    <div class="modal-overlay" id="defMinPictureModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:20px;">
+        <div class="modal-box" style="width:520px; max-width:95%; background:#fff; border-radius:24px; padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.22);">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <div>
+                    <h2 style="color:#2e1065; font-size:20px; margin:0; display:flex; align-items:center; gap:9px;">
+                        <i class="fa-solid fa-camera" style="color:#7c3aed;"></i>
+                        Upload Defense Minutes Photos
+                    </h2>
+                    <p style="margin-top:6px; color:#6d5f85; font-size:13px; line-height:1.5;">
+                        Upload photos of your signed defense minutes (<strong>minimum 1, maximum 5 photos</strong>) — ensure all panelist signatures are clearly visible. Adviser will review and approve.
+                    </p>
+                </div>
+                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesPictureModal()" style="border:none; background:#f1f5f9; color:#6d5f85; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="defMinPictureCategory">
+            <input type="hidden" id="defMinPictureLabel">
+
+            <div style="background:#faf5ff; border:2px dashed #c4b5fd; border-radius:16px; padding:20px; text-align:center; margin-bottom:18px;">
+                <i class="fa-solid fa-images" style="font-size:32px; color:#7c3aed; margin-bottom:10px; display:block;"></i>
+                <p style="color:#6d5f85; font-size:13px; margin:0 0 12px;">Select photos (1 to 5 photos total; JPG, PNG, WEBP)</p>
+                <input type="file" id="defMinPictureFile" accept="image/jpeg,image/jpg,image/png,image/webp" multiple
+                    onchange="previewDefMinPictures(this)"
+                    style="display:block; margin:0 auto; font-size:13px; cursor:pointer;">
+            </div>
+
+            <div id="defMinPicturePreview" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; min-height:0;"></div>
+
+            <div style="background:#fef9c3; border:1px solid #fde047; border-radius:12px; padding:10px 14px; font-size:12px; color:#854d0e; margin-bottom:18px; display:flex; gap:8px; align-items:flex-start;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#d97706; margin-top:2px;"></i>
+                <span>Defense minutes are done <strong>physically/face-to-face</strong>. You must upload photos showing all panelists' signatures. This requires adviser approval before the next phase unlocks.</span>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" onclick="closeDefenseMinutesPictureModal()"
+                    style="padding:11px 20px; border-radius:12px; border:none; background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer; font-size:13px;">
+                    Cancel
+                </button>
+                <button type="button" onclick="uploadDefenseMinutesPictures()"
+                    style="padding:11px 22px; border-radius:12px; border:none; background:linear-gradient(135deg,#6d28d9,#7c3aed); color:#fff; font-weight:700; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-upload"></i> Upload Photos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEFENSE MINUTES PICTURE GALLERY MODAL -->
+    <div class="modal-overlay" id="defMinGalleryModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:20px;">
+        <div class="modal-box" style="width:700px; max-width:95%; background:#fff; border-radius:24px; padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.22);">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <div>
+                    <h2 id="defMinGalleryTitle" style="color:#2e1065; font-size:20px; margin:0; display:flex; align-items:center; gap:9px;">
+                        <i class="fa-solid fa-images" style="color:#7c3aed;"></i>
+                        Defense Minutes Photos
+                    </h2>
+                    <p id="defMinGalleryStatus" style="margin-top:5px; color:#6d5f85; font-size:13px;"></p>
+                </div>
+                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesPictureGallery()" style="border:none; background:#f1f5f9; color:#6d5f85; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="defMinGalleryGrid" style="display:flex; flex-wrap:wrap; gap:12px; max-height:420px; overflow-y:auto; padding:4px;"></div>
+            <div style="display:flex; justify-content:flex-end; margin-top:18px;">
+                <button type="button" onclick="closeDefenseMinutesPictureGallery()"
+                    style="padding:11px 20px; border-radius:12px; border:none; background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- OTHER FILE TYPE MODAL -->
     <div class="modal-overlay" id="otherUploadModal">
@@ -619,7 +507,124 @@
             </div>
     </div>
 
+    <!-- ENV SCAN STUDENT E-SIGNATURE WORKSPACE -->
+    <div class="stu-esign-overlay" id="envScanSignModalOverlay" style="display:none;">
+        <div class="stu-esign-modal">
+
+            <!-- Header -->
+            <div class="stu-esign-header">
+                <div>
+                    <h2 id="envScanESignTitle">Environmental Scanning — Student Signature</h2>
+                    <p id="envScanESignSubtitle">Review the document, place your signature, then apply.</p>
+                </div>
+                <button class="stu-esign-close-btn" onclick="closeEnvScanSignModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Workspace grid: PDF left, controls right -->
+            <div class="stu-esign-grid">
+
+                <!-- PDF Panel -->
+                <div class="stu-esign-pdf-panel">
+                    <div class="stu-esign-pdf-toolbar">
+                        <span id="envScanPageInfo">Page 1 of 1</span>
+                        <div class="stu-esign-page-nav">
+                            <button type="button" class="stu-esign-nav-btn" onclick="envScanChangePage(-1)">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <button type="button" class="stu-esign-nav-btn" onclick="envScanChangePage(1)">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="stu-esign-pdf-viewport" id="envScanPdfViewport">
+                        <canvas id="envScanPdfCanvas"></canvas>
+                        <div id="envScanSigPlacementLayer" class="stu-signature-placement-layer"></div>
+                    </div>
+                </div>
+
+                <!-- Side Panel -->
+                <div class="stu-esign-side-panel">
+
+                    <!-- Member signing progress -->
+                    <div id="envScanSignStatus" style="margin-bottom:4px;"></div>
+
+                    <!-- Already signed message -->
+                    <div id="envScanSignPanelMsg"
+                        style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;color:#16a34a;font-weight:600;font-size:13px;"></div>
+
+                    <!-- Sign panel -->
+                    <div id="envScanSignPanel">
+
+                        <!-- Signature mode tabs -->
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <button type="button" id="envScanTabSaved" class="stu-esign-tab active"
+                                onclick="setEnvScanSigMode('saved')">
+                                <i class="fa-solid fa-signature"></i> Saved Signature
+                            </button>
+                            <button type="button" id="envScanTabDraw" class="stu-esign-tab"
+                                onclick="setEnvScanSigMode('draw')">
+                                <i class="fa-solid fa-pen"></i> Draw Signature
+                            </button>
+                        </div>
+
+                        <!-- Saved signature wrapper -->
+                        <div id="envScanSavedWrapper" class="stu-esign-canvas-wrapper" style="display:none;text-align:center;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <div>
+                                    <h3 style="color:#2e1065;font-size:15px;font-weight:700;margin:0;">Saved Signature</h3>
+                                    <p style="color:#6d5f85;font-size:12px;margin:3px 0 0;">From your Settings upload.</p>
+                                </div>
+                            </div>
+                            <div style="background:#fff;border-radius:12px;border:1.5px solid #ddd6fe;padding:12px;display:inline-block;min-width:180px;margin-bottom:10px;">
+                                <img id="envScanSavedSigPreview" src="" alt="Saved Signature"
+                                    style="max-height:70px;max-width:100%;display:block;margin:0 auto;">
+                            </div>
+                            <button type="button" class="stu-esign-place-btn" onclick="envScanPlaceSavedSig()">
+                                <i class="fa-solid fa-file-signature"></i> Place Saved Signature
+                            </button>
+                        </div>
+
+                        <!-- Draw signature wrapper -->
+                        <div id="envScanDrawWrapper" class="stu-esign-canvas-wrapper" style="display:block;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <div>
+                                    <h3 style="color:#2e1065;font-size:15px;font-weight:700;margin:0;">Draw Signature</h3>
+                                    <p style="color:#6d5f85;font-size:12px;margin:3px 0 0;">Use mouse or touch screen.</p>
+                                </div>
+                                <button class="stu-esign-clear-btn" onclick="clearEnvScanCanvas()" type="button">
+                                    <i class="fa-solid fa-eraser"></i> Clear
+                                </button>
+                            </div>
+                            <canvas id="envScanSigCanvas" class="stu-signature-canvas" width="320" height="120"></canvas>
+                            <button type="button" class="stu-esign-place-btn" onclick="envScanPlaceDrawnSig()">
+                                <i class="fa-solid fa-file-signature"></i> Place Signature on Document
+                            </button>
+                        </div>
+
+                        <!-- Info note -->
+                        <div style="font-size:11px;color:#6d5f85;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;margin-top:4px;line-height:1.5;">
+                            <i class="fa-solid fa-circle-info" style="color:#7c3aed;margin-right:5px;"></i>
+                            After placing, drag the signature to your desired position on the document. All members must sign before you can send.
+                        </div>
+
+                        <!-- Apply button -->
+                        <div style="margin-top:12px;">
+                            <button id="envScanSignSubmitBtn" type="button" onclick="submitEnvScanStudentSignature()"
+                                style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+                                <i class="fa-solid fa-check"></i>
+                                Apply & Save Signature
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ENVIRONMENTAL SCANNING DECLINE REASON MODAL -->
+
     <div class="modal-overlay" id="envScanDeclineModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px); padding:20px;">
         <div class="modal-box" style="width:650px; max-width:95%; background:white; border-radius:24px; padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.18);">
             <div class="modal-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
@@ -717,7 +722,7 @@
                     </h2>
 
                     <p>
-                        Send to your assigned adviser and instructor. Only adviser approval locks the file for defense panel review.
+                        Review the approval route and recipient notice for this document before submitting.
                     </p>
                 </div>
 
@@ -743,24 +748,11 @@
 
             </div>
 
-            <div class="input-group">
-                <label>
-                    Search Recipient
-                </label>
-
-                <input
-                    type="text"
-                    id="recipientSearch"
-                    placeholder="Search faculty or admin..."
-                    onkeyup="filterRecipients()"
-                >
-            </div>
-
-            <div
-                class="recipient-list"
-                id="recipientList"
-            >
-                Loading recipients...
+            <!-- Dynamic Recipient & Routing Notice Container -->
+            <div id="sendRoutingNoticeContainer">
+                <div class="routing-notice-box">
+                    <p style="color:#64748b;font-size:13px;margin:0;">Loading route details...</p>
+                </div>
             </div>
 
             <div class="input-group">
@@ -786,11 +778,12 @@
 
                 <button
                     class="save-btn"
+                    id="confirmSendDocBtn"
                     onclick="sendStudentDocument()"
                     type="button"
                 >
                     <i class="fa-solid fa-paper-plane"></i>
-                    Send Document
+                    <span id="confirmSendDocText">Send Document</span>
                 </button>
 
             </div>
@@ -803,18 +796,34 @@
 
     <script>
 
+        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+            ? `${window.location.protocol}//${window.location.hostname}:3005`
+            : `${window.location.protocol}//${window.location.hostname}:3005`;
+
         const loggedInUserId =
             localStorage.getItem("userId");
 
         let studentDocuments = [];
         let titleProposals = [];
         let defenseVerdicts = []; // Latest verdict per defense_type from the server
+        let conceptPresentationGraded = false; // Flag: whether group is already graded in Concept Presentation
+        let gradedDefenseTypes = []; // List of defense types that have been graded
         let recipients = [];
         let selectedDocumentId = null;
+        let currentGroup = null;
+        let selectedTargetRecipient = null;
         let pinnedRecipients = {
             adviserUserId:null,
             instructorUserId:null
         };
+
+        /* ---------- Environmental Scanning student-sig state ---------- */
+        let envScanSigDocId = null;          // document_id being signed
+        let envScanSigCanvas = null;         // Canvas element reference
+        let envScanSigCtx = null;            // 2D context
+        let envScanSigDrawing = false;       // mouse/touch down flag
+        let envScanSigHasSavedSig = false;   // Whether user has a saved digital sig
+        let envScanSigCache = {};            // cache: docId -> { members, all_signed }
 
         const defaultTitles = {
             "Proposed Title":"Proposed Title Document",
@@ -866,11 +875,11 @@
                     studentDocuments =
                         [];
 
+                    currentGroup = null;
+
                     updateStats();
 
                     renderConsultationHub();
-
-                    renderDocuments([]);
 
                     return;
 
@@ -878,6 +887,8 @@
 
                 const group =
                     data.group;
+
+                currentGroup = group;
 
                 studentDocuments =
                     data.documents || [];
@@ -888,15 +899,21 @@
                 defenseVerdicts =
                     data.defense_verdicts || [];
 
+                conceptPresentationGraded =
+                    Boolean(data.concept_presentation_graded);
+
+                gradedDefenseTypes =
+                    data.graded_defense_types || [];
+
                 pinnedRecipients = {
                     adviserUserId: group.adviser_user_id || null,
                     instructorUserId: group.instructor_user_id || null
                 };
 
                 const programText =
-                    group.program === "IS"
+                    (group.program === "IS" || group.program === "BSIS")
                     ? "BSIS"
-                    : group.program === "IT"
+                    : (group.program === "IT" || group.program === "BSIT")
                     ? "BSIT"
                     : "Not Set";
 
@@ -913,16 +930,37 @@
 
                 renderConsultationHub();
 
-                filterDocuments();
-
             }catch(error){
 
-                console.log(error);
-
-                alert("Cannot connect to server.");
+                console.error("loadStudentDocuments error:", error);
+                const gName = document.getElementById("groupName");
+                if(gName && gName.innerText.includes("Loading")){
+                    gName.innerText = "Connection Error";
+                    const gDetails = document.getElementById("groupDetails");
+                    if(gDetails){
+                        gDetails.innerHTML = 'Unable to connect to server. Please check your connection and <a href="javascript:void(0)" onclick="loadStudentDocuments()" style="color:#7c3aed;text-decoration:underline;font-weight:600;">click here to retry</a>.';
+                    }
+                }
 
             }
 
+        }
+
+        function isConceptPresentationGraded(){
+            if(conceptPresentationGraded) return true;
+            if(Array.isArray(defenseVerdicts) && defenseVerdicts.some(v => String(v.defense_type || '').toLowerCase().includes('concept'))){
+                return true;
+            }
+            if(currentGroup){
+                const stage = String(currentGroup.stage || '').toLowerCase().trim();
+                if(stage.includes('stage 2') || stage.includes('stage 3') || stage.includes('stage 4') || stage.includes('outline') || stage.includes('pre-final') || stage.includes('final')){
+                    return true;
+                }
+                if(Number(currentGroup.progress || 0) >= 25){
+                    return true;
+                }
+            }
+            return false;
         }
 
         async function loadRecipients(){
@@ -1099,6 +1137,10 @@
 
             const grid =
                 document.getElementById("documentGrid");
+
+            if(!grid){
+                return;
+            }
 
             grid.innerHTML = "";
 
@@ -1278,11 +1320,17 @@
 
         function filterDocuments(){
 
+            const searchInput = document.getElementById("searchDocument");
+            const statusSelect = document.getElementById("statusFilter");
+            if(!searchInput || !statusSelect){
+                return;
+            }
+
             const keyword =
-                document.getElementById("searchDocument").value.toLowerCase();
+                searchInput.value.toLowerCase();
 
             const status =
-                document.getElementById("statusFilter").value;
+                statusSelect.value;
 
             const filtered =
                 getGeneralDocuments().filter(documentItem => {
@@ -1337,58 +1385,32 @@
                 documentItem.id;
 
             document.getElementById("sendDocumentTitle").innerText =
-                documentItem.document_title;
+                documentItem.document_title || "Document Submission";
 
             document.getElementById("sendDocumentDetails").innerText =
-                `${documentItem.document_code} • ${documentItem.document_type} • ${documentItem.file_name}`;
+                `${documentItem.document_code || "No Code"} • ${documentItem.document_type || "General Document"} • ${documentItem.file_name || "File attached"}`;
 
             document.getElementById("submissionMessage").value =
                 "";
 
-            document.getElementById("recipientSearch").value =
-                "";
-
-            const recipientList =
-                document.getElementById("recipientList");
-
-            recipientList.innerHTML =
-                `
-                    <p class="empty-text">
-                        Loading recipients...
-                    </p>
+            const noticeContainer =
+                document.getElementById("sendRoutingNoticeContainer");
+            if(noticeContainer){
+                noticeContainer.innerHTML = `
+                    <div class="routing-notice-box">
+                        <p style="color:#64748b;font-size:13px;margin:0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading routing details...</p>
+                    </div>
                 `;
+            }
 
             document.getElementById("sendModal").style.display =
                 "flex";
 
-            await loadRecipients();
-
-            const isSigningDoc = isAdviserSigningDocument(documentItem) ||
-                                 String(documentItem.document_type || "").toLowerCase().includes("environmental scanning") ||
-                                 String(documentItem.document_title || "").toLowerCase().includes("environmental scanning");
-
-            const sendList =
-                isSigningDoc
-                ? recipients.filter(user =>
-                    user.recipient_type === "adviser"
-                    || user.recipient_type === "instructor"
-                    || (
-                        pinnedRecipients.adviserUserId
-                        && user.user_id === pinnedRecipients.adviserUserId
-                    )
-                    || (
-                        pinnedRecipients.instructorUserId
-                        && user.user_id === pinnedRecipients.instructorUserId
-                    )
-                )
-                : recipients;
-
-            if(isSigningDoc){
-                document.getElementById("sendDocumentDetails").innerText =
-                    `${documentItem.document_code} • ${documentItem.document_type} • Sent to your adviser or instructor for e-signature`;
+            if(!recipients || recipients.length === 0){
+                await loadRecipients();
             }
 
-            renderRecipients(sendList);
+            renderSendRoutingNotice(documentItem);
 
         }
 
@@ -1400,226 +1422,326 @@
             selectedDocumentId =
                 null;
 
-        }
+            selectedTargetRecipient =
+                null;
 
-        function renderRecipients(list){
+            pendingDefMinSendCategory =
+                null;
 
-            const recipientList =
-                document.getElementById("recipientList");
-
-            recipientList.innerHTML =
-                "";
-
-            if(list.length === 0){
-
-                recipientList.innerHTML =
-                    `
-                        <p class="empty-text">
-                            No faculty recipients available. Make sure you are in a group with an assigned adviser, and that your account was enrolled by an instructor. Try refreshing the page after restarting the server.
-                        </p>
-                    `;
-
-                return;
-
-            }
-
-            const adviserFirst = [];
-            const instructorFirst = [];
-            const deanFirst = [];
-            const chairpersonFirst = [];
-            const rest = [];
-
-            list.forEach(user => {
-                // If this user is BOTH adviser and instructor, duplicate them for each section
-                const matchesAdviser = user.recipient_type === "adviser" || (pinnedRecipients.adviserUserId && user.user_id === pinnedRecipients.adviserUserId);
-                const matchesInstructor = user.recipient_type === "instructor" || (pinnedRecipients.instructorUserId && user.user_id === pinnedRecipients.instructorUserId);
-
-                if (matchesAdviser && matchesInstructor) {
-                    adviserFirst.push({ ...user, display_role: "adviser" });
-                    instructorFirst.push({ ...user, display_role: "instructor" });
-                    return;
-                }
-
-                if (matchesAdviser) {
-                    adviserFirst.push({ ...user, display_role: "adviser" });
-                    return;
-                }
-                if (matchesInstructor) {
-                    instructorFirst.push({ ...user, display_role: "instructor" });
-                    return;
-                }
-                if(user.position === "Dean"){
-                    deanFirst.push(user);
-                    return;
-                }
-                if(user.position === "Program Chairperson IS" || user.position === "Program Chairperson IT"){
-                    chairpersonFirst.push(user);
-                    return;
-                }
-                rest.push(user);
-            });
-
-            function renderUserRow(user) {
-                const roleText =
-                    user.role === "admin"
-                    ? "Admin"
-                    : "Faculty";
-
-                let accessText =
-                    "";
-
-                if(user.display_role === "adviser" || user.recipient_type === "adviser"){
-                    accessText = "Your Adviser";
-                }else if(user.display_role === "instructor" || user.recipient_type === "instructor"){
-                    accessText = "Your Instructor";
-                }else{
-
-                    if(Number(user.adviser_access) === 1){
-                        accessText += "Adviser ";
-                    }
-
-                    if(Number(user.panelist_access) === 1){
-                        accessText += "Panelist ";
-                    }
-
-                    if(Number(user.instructor_access) === 1){
-                        accessText += "Instructor ";
-                    }
-
-                    if(!accessText){
-                        accessText =
-                            user.position || roleText;
-                    }
-
-                }
-
-                const isPrimary =
-                    user.recipient_type === "adviser"
-                    || user.recipient_type === "instructor"
-                    || user.display_role === "adviser"
-                    || user.display_role === "instructor"
-                    || user.position === "Dean"
-                    || user.position === "Program Chairperson IS"
-                    || user.position === "Program Chairperson IT"
-                    || (
-                        pinnedRecipients.adviserUserId
-                        && user.user_id === pinnedRecipients.adviserUserId
-                    )
-                    || (
-                        pinnedRecipients.instructorUserId
-                        && user.user_id === pinnedRecipients.instructorUserId
-                    );
-
-                const displayName =
-                    String(user.fullname || user.user_id || "Faculty").trim();
-
-                return `
-                    <label class="recipient-row">
-
-                        <input
-                            type="checkbox"
-                            class="recipient-checkbox"
-                            value="${user.id}"
-                        >
-
-                        <div class="recipient-avatar">
-                            ${displayName.charAt(0).toUpperCase()}
-                        </div>
-
-                        <div>
-                            <h4>
-                                ${displayName}
-                            </h4>
-
-                            <p>
-                                ${user.user_id} • ${roleText} • ${user.position || accessText}
-                            </p>
-                        </div>
-
-                    </label>
-                `;
-            }
-
-            let html = "";
-
-            if(adviserFirst.length > 0){
-                html += `
-                    <div class="recipient-section-title">
-                        Your Adviser
-                    </div>
-                `;
-                adviserFirst.forEach(user => {
-                    html += renderUserRow(user);
-                });
-            }
-
-            if(instructorFirst.length > 0){
-                html += `
-                    <div class="recipient-section-title">
-                        Your Instructor
-                    </div>
-                `;
-                instructorFirst.forEach(user => {
-                    html += renderUserRow(user);
-                });
-            }
-
-            if(deanFirst.length > 0){
-                html += `
-                    <div class="recipient-section-title">
-                        Dean
-                    </div>
-                `;
-                deanFirst.forEach(user => {
-                    html += renderUserRow(user);
-                });
-            }
-
-            if(chairpersonFirst.length > 0){
-                html += `
-                    <div class="recipient-section-title">
-                        Program Chairperson
-                    </div>
-                `;
-                chairpersonFirst.forEach(user => {
-                    html += renderUserRow(user);
-                });
-            }
-
-            if(rest.length > 0){
-                html += `
-                    <div class="recipient-section-title">
-                        Other recipients
-                    </div>
-                `;
-                rest.forEach(user => {
-                    html += renderUserRow(user);
-                });
-            }
-
-            recipientList.innerHTML = html;
+            pendingDefMinSendLabel =
+                null;
 
         }
 
-        function filterRecipients(){
+        function renderSendRoutingNotice(documentItem){
 
-            const keyword =
-                document.getElementById("recipientSearch")
-                .value
-                .toLowerCase();
+            const noticeContainer =
+                document.getElementById("sendRoutingNoticeContainer");
+            const sendBtn =
+                document.getElementById("confirmSendDocBtn");
+            const sendBtnText =
+                document.getElementById("confirmSendDocText");
 
-            const filtered =
-                recipients.filter(user =>
-                    String(user.fullname || "").toLowerCase().includes(keyword)
-                    ||
-                    String(user.user_id || "").toLowerCase().includes(keyword)
-                    ||
-                    String(user.role || "").toLowerCase().includes(keyword)
-                    ||
-                    String(user.position || "").toLowerCase().includes(keyword)
+            if(!noticeContainer) return;
+
+            const docType =
+                String(documentItem.document_type || "").toLowerCase();
+            const docTitle =
+                String(documentItem.document_title || "").toLowerCase();
+
+            const isEnvScan =
+                docType.includes("environmental scanning") || docTitle.includes("environmental scanning");
+            const isAdviserAcceptance =
+                docType.includes("adviser acceptance") || docTitle.includes("adviser acceptance") ||
+                docType.includes("acceptance for advisory") || docTitle.includes("acceptance for advisory");
+
+            // 1. Resolve Adviser
+            let adviser =
+                recipients.find(u =>
+                    u.recipient_type === "adviser" ||
+                    (pinnedRecipients.adviserUserId && u.user_id === pinnedRecipients.adviserUserId)
                 );
+            if(!adviser && currentGroup && (currentGroup.adviser_db_id || currentGroup.adviser_user_id)){
+                adviser = {
+                    id: currentGroup.adviser_db_id,
+                    user_id: currentGroup.adviser_user_id,
+                    fullname: currentGroup.adviser_name || "Assigned Adviser",
+                    position: "Capstone Adviser"
+                };
+            }
 
-            renderRecipients(filtered);
+            // 2. Resolve Instructor
+            let instructor =
+                recipients.find(u =>
+                    u.recipient_type === "instructor" ||
+                    (pinnedRecipients.instructorUserId && u.user_id === pinnedRecipients.instructorUserId)
+                );
+            if(!instructor && currentGroup && (currentGroup.instructor_db_id || currentGroup.instructor_user_id)){
+                instructor = {
+                    id: currentGroup.instructor_db_id,
+                    user_id: currentGroup.instructor_user_id,
+                    fullname: currentGroup.instructor_name || "Capstone Instructor",
+                    position: "Capstone Instructor"
+                };
+            }
+            if(!instructor){
+                instructor = recipients.find(u => Number(u.instructor_access) === 1);
+            }
+
+            // 3. Resolve Program Chairperson based on group's program
+            const groupProg =
+                String((currentGroup && currentGroup.program) || "").toUpperCase();
+            // Normalise: "BSIT" → "IT", "BSIS" → "IS"
+            const groupProgNorm = groupProg === "BSIT" ? "IT" : groupProg === "BSIS" ? "IS" : groupProg;
+            let chairperson = null;
+            if(groupProgNorm === "IS"){
+                chairperson = recipients.find(u => /chairperson.*is/i.test(u.position || "") || /chairperson.*bsis/i.test(u.position || ""));
+            }else if(groupProgNorm === "IT"){
+                chairperson = recipients.find(u => /chairperson.*it/i.test(u.position || "") || /chairperson.*bsit/i.test(u.position || ""));
+            }
+            if(!chairperson){
+                chairperson = recipients.find(u => /chairperson/i.test(u.position || ""));
+            }
+
+            // 4. Resolve Dean
+            const dean =
+                recipients.find(u => /dean/i.test(u.position || ""));
+
+            const adviserName = adviser ? adviser.fullname : "Assigned Adviser";
+            const instructorName = instructor ? instructor.fullname : "Assigned Instructor";
+            const chairpersonName = chairperson ? chairperson.fullname : (groupProgNorm === "IT" ? "Reban Cliff A. Fajardo (Program Chairperson - BSIT)" : "Jovito P. Bolacoy Junior (Program Chairperson IS)");
+            const deanName = dean ? dean.fullname : "Mark Van Buladaco (Dean)";
+
+            // CASE 1: Environmental Scanning (Multi-stage: Instructor -> Program Chair -> Dean)
+            if(isEnvScan){
+                if(!instructor){
+                    selectedTargetRecipient = null;
+                    if(sendBtn) sendBtn.disabled = true;
+                    if(sendBtnText) sendBtnText.innerText = "Instructor Not Assigned";
+                    noticeContainer.innerHTML = `
+                        <div class="routing-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <div>
+                                <strong>Instructor Account Missing:</strong> No instructor account is currently linked to your group or enrollment.
+                                Please ensure your account was enrolled by an instructor before sending the Environmental Scanning document.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                selectedTargetRecipient = {
+                    receiverId: instructor.id,
+                    targetRole: "instructor",
+                    name: instructorName,
+                    roleName: "Instructor"
+                };
+
+                if(sendBtn) sendBtn.disabled = false;
+                if(sendBtnText) sendBtnText.innerText = `Send to Instructor (${instructorName})`;
+
+                noticeContainer.innerHTML = `
+                    <div class="routing-notice-box">
+                        <div class="routing-notice-header">
+                            <i class="fa-solid fa-route"></i>
+                            <span>Multi-Stage Review & Signing Workflow</span>
+                        </div>
+
+                        <div class="routing-summary-banner">
+                            <i class="fa-solid fa-paper-plane" style="color:#7c3aed;font-size:16px;"></i>
+                            <div>
+                                You are sending this Environmental Scanning document to your Instructor: <strong>${instructorName}</strong>.
+                            </div>
+                        </div>
+
+                        <div class="routing-pipeline-label">Signing & Approval Route:</div>
+
+                        <div class="routing-stepper">
+                            <div class="routing-step active">
+                                <div class="routing-step-num active">1</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Instructor (First Recipient)</div>
+                                    <div class="routing-step-name">${instructorName} • ${instructor.position || "Capstone Instructor"}</div>
+                                </div>
+                                <span class="routing-step-badge current">Current Target</span>
+                            </div>
+
+                            <div class="routing-step-arrow">
+                                <i class="fa-solid fa-arrow-down"></i>
+                            </div>
+
+                            <div class="routing-step">
+                                <div class="routing-step-num pending">2</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Program Chairperson</div>
+                                    <div class="routing-step-name">${chairpersonName}</div>
+                                </div>
+                                <span class="routing-step-badge pending">Routes automatically next</span>
+                            </div>
+
+                            <div class="routing-step-arrow">
+                                <i class="fa-solid fa-arrow-down"></i>
+                            </div>
+
+                            <div class="routing-step">
+                                <div class="routing-step-num pending">3</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Dean (Final Sign-off)</div>
+                                    <div class="routing-step-name">${deanName}</div>
+                                </div>
+                                <span class="routing-step-badge pending">Final Endorsement</span>
+                            </div>
+                        </div>
+
+                        <div class="routing-flow-summary">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <div>
+                                Once your Instructor reviews and applies their e-signature, this document will automatically route to the Program Chairperson and Dean. All updates will appear here in your Records Management.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // CASE 2: Adviser Acceptance for Advisory (Two-stage: Adviser -> Dean)
+            if(isAdviserAcceptance){
+                if(!adviser){
+                    selectedTargetRecipient = null;
+                    if(sendBtn) sendBtn.disabled = true;
+                    if(sendBtnText) sendBtnText.innerText = "Adviser Not Assigned";
+                    noticeContainer.innerHTML = `
+                        <div class="routing-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <div>
+                                <strong>No Adviser Assigned:</strong> Your capstone group does not have an assigned adviser yet.
+                                Please submit your title proposals in <strong>Request Adviser</strong> to get an adviser assigned before sending.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                selectedTargetRecipient = {
+                    receiverId: adviser.id,
+                    targetRole: "adviser",
+                    name: adviserName,
+                    roleName: "Adviser"
+                };
+
+                if(sendBtn) sendBtn.disabled = false;
+                if(sendBtnText) sendBtnText.innerText = `Send to Adviser (${adviserName})`;
+
+                noticeContainer.innerHTML = `
+                    <div class="routing-notice-box">
+                        <div class="routing-notice-header">
+                            <i class="fa-solid fa-route"></i>
+                            <span>Two-Stage Advisory Endorsement Route</span>
+                        </div>
+
+                        <div class="routing-summary-banner">
+                            <i class="fa-solid fa-paper-plane" style="color:#7c3aed;font-size:16px;"></i>
+                            <div>
+                                You are sending this Acceptance for Advisory document to your Adviser: <strong>${adviserName}</strong>.
+                            </div>
+                        </div>
+
+                        <div class="routing-pipeline-label">Signing & Approval Route:</div>
+
+                        <div class="routing-stepper">
+                            <div class="routing-step active">
+                                <div class="routing-step-num active">1</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Adviser (First Recipient)</div>
+                                    <div class="routing-step-name">${adviserName} • ${adviser.position || "Capstone Adviser"}</div>
+                                </div>
+                                <span class="routing-step-badge current">Current Target</span>
+                            </div>
+
+                            <div class="routing-step-arrow">
+                                <i class="fa-solid fa-arrow-down"></i>
+                            </div>
+
+                            <div class="routing-step">
+                                <div class="routing-step-num pending">2</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Dean (Final Endorsement)</div>
+                                    <div class="routing-step-name">${deanName}</div>
+                                </div>
+                                <span class="routing-step-badge pending">Endorsement</span>
+                            </div>
+                        </div>
+
+                        <div class="routing-flow-summary">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <div>
+                                After your Adviser signs this Acceptance for Advisory, the document will automatically be routed to the Dean for official administrative endorsement.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // CASE 3: Standard Consultation / Defense Documents (Concept Paper, Manuscripts, Consultation Logs, Recommendations, Turnitin, Prototype, Action Matrix, Other)
+            if(!adviser){
+                selectedTargetRecipient = null;
+                if(sendBtn) sendBtn.disabled = true;
+                if(sendBtnText) sendBtnText.innerText = "Adviser Not Assigned";
+                noticeContainer.innerHTML = `
+                    <div class="routing-warning">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <div>
+                            <strong>No Adviser Assigned:</strong> Your group does not have an assigned adviser yet.
+                            Please go to <strong>Request Adviser</strong> in the sidebar to submit your 3 title concepts and be assigned an adviser before sending files.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            selectedTargetRecipient = {
+                receiverId: adviser.id,
+                receiverUserId: adviser.user_id,
+                targetRole: "adviser",
+                name: adviserName,
+                roleName: "Adviser"
+            };
+
+            if(sendBtn) sendBtn.disabled = false;
+            if(sendBtnText) sendBtnText.innerText = `Send to Adviser (${adviserName})`;
+
+            const isDefMinutes = docType.includes("defense minutes") || docTitle.includes("defense minutes");
+            const summaryText = isDefMinutes
+                ? `You are sending defense minutes photo(s) to your Adviser: <strong>${adviserName}</strong> for physical defense verification and approval. Once approved, the next defense phase will unlock.`
+                : `You are sending this document to your Adviser: <strong>${adviserName}</strong> for consultation review and evaluation. Approved documents unlock defense stage requirements.`;
+
+            noticeContainer.innerHTML = `
+                <div class="routing-notice-box">
+                    <div class="routing-notice-header">
+                        <i class="fa-solid fa-user-check"></i>
+                        <span>Document Recipient Notice</span>
+                    </div>
+
+                    <div class="routing-target-card">
+                        <div class="routing-target-avatar">
+                            ${adviserName.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="routing-target-info">
+                            <h4>${adviserName}</h4>
+                            <p>${adviser.user_id ? (adviser.user_id + ' • ') : ''}${adviser.position || "Capstone Adviser"}</p>
+                            <span class="routing-target-role-badge"><i class="fa-solid fa-shield"></i> Your Adviser</span>
+                        </div>
+                    </div>
+
+                    <div class="routing-flow-summary">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <div>
+                            ${summaryText}
+                        </div>
+                    </div>
+                </div>
+            `;
 
         }
 
@@ -1639,24 +1761,64 @@
 
         async function sendStudentDocument(){
 
-            const selectedRecipients =
-                Array.from(
-                    document.querySelectorAll(".recipient-checkbox:checked")
-                ).map(input =>
-                    input.value
-                );
+            if(!selectedTargetRecipient || !selectedTargetRecipient.receiverId){
+                alert("Cannot send: Required recipient could not be found or is not assigned.");
+                return;
+            }
 
             const submissionMessage =
                 document.getElementById("submissionMessage")
                 .value
                 .trim();
 
-            if(selectedRecipients.length === 0){
+            const sendBtn =
+                document.getElementById("confirmSendDocBtn");
+            const originalBtnHtml =
+                sendBtn ? sendBtn.innerHTML : "";
 
-                alert("Please select at least one recipient.");
+            if(sendBtn){
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            }
 
+            // Defense Minutes Photos submission through the same modal
+            if(pendingDefMinSendCategory && pendingDefMinSendLabel){
+                const category = pendingDefMinSendCategory;
+                const baseLabel = pendingDefMinSendLabel;
+                const docType = `${category} • ${baseLabel}`;
+                const adviserUserId = (selectedTargetRecipient && (selectedTargetRecipient.receiverUserId || selectedTargetRecipient.user_id))
+                    || pinnedRecipients.adviserUserId
+                    || (currentGroup && (currentGroup.adviser_user_id || currentGroup.adviser_id));
+
+                try{
+                    const response = await fetch("http://localhost:3005/send-defense-minutes-pictures", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            studentUserId: loggedInUserId,
+                            docType: docType,
+                            adviserUserId: adviserUserId,
+                            submissionMessage: submissionMessage
+                        })
+                    });
+                    const data = await response.json();
+                    if(data.success){
+                        alert(data.message || `Defense minutes successfully sent to ${selectedTargetRecipient.name}!`);
+                        closeSendModal();
+                        await loadStudentDocuments();
+                    }else{
+                        alert(data.message || "Failed to send defense minutes.");
+                    }
+                }catch(err){
+                    console.error("sendDefenseMinutes error:", err);
+                    alert("Cannot send defense minutes. Please try again.");
+                }finally{
+                    if(sendBtn){
+                        sendBtn.disabled = false;
+                        sendBtn.innerHTML = originalBtnHtml || '<i class="fa-solid fa-paper-plane"></i> Send Document';
+                    }
+                }
                 return;
-
             }
 
             try{
@@ -1674,8 +1836,12 @@
                             body:JSON.stringify({
                                 studentUserId:loggedInUserId,
                                 documentId:selectedDocumentId,
-                                recipientIds:selectedRecipients,
-                                submissionMessage
+                                recipientIds:[selectedTargetRecipient.receiverId],
+                                recipients:[{
+                                    receiverId: selectedTargetRecipient.receiverId,
+                                    targetRole: selectedTargetRecipient.targetRole
+                                }],
+                                submissionMessage: submissionMessage
                             })
                         }
                     );
@@ -1683,23 +1849,36 @@
                 const data =
                     await response.json();
 
-                alert(
-                    data.message || "Send processed."
-                );
-
                 if(data.success){
+
+                    alert(
+                        data.message || `Document successfully sent to ${selectedTargetRecipient.name}!`
+                    );
 
                     closeSendModal();
 
-                    loadStudentDocuments();
+                    await loadStudentDocuments();
+
+                }else{
+
+                    alert(
+                        data.message || "Failed to send document."
+                    );
 
                 }
 
             }catch(error){
 
-                console.log(error);
+                console.error("sendStudentDocument error:", error);
 
-                alert("Cannot send document.");
+                alert("Cannot send document. Please try again.");
+
+            }finally{
+
+                if(sendBtn){
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = originalBtnHtml || '<i class="fa-solid fa-paper-plane"></i> Send Document';
+                }
 
             }
 
@@ -1805,32 +1984,33 @@
                 category: "Outline Defense",
                 icon: "fa-clipboard-check",
                 iconClass: "yellow",
-                description: "Upload early chapters and defense requirements.",
+                description: "Upload early chapters and defense requirements. Defense minutes must be submitted as photos (1–5 photos) showing panelist signatures, and require adviser approval.",
                 items: [
                     { label: "Chapter 1 and 2", slots: 1 },
                     { label: "Recommendation for outline defense", slots: 1 },
-                    { label: "Outline defense evaluation sheet", slots: 1 },
-                    { label: "Defense minutes", slots: 1 }
+                    { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
                 ]
             },
             {
                 category: "Pre-Final Defense",
                 icon: "fa-person-chalkboard",
                 iconClass: "blue",
-                description: "Upload mid chapters, defense minutes, and supporting files.",
+                description: "Upload mid chapters, defense minutes, and supporting files. Defense minutes must be submitted as photos (1–5 photos) showing panelist signatures, and require adviser approval.",
                 items: [
                     { label: "Chapter 3-4", slots: 1 },
-                    { label: "Defense minutes", slots: 1 }
+                    { label: "Recommendation letter", slots: 1 },
+                    { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
                 ]
             },
             {
                 category: "Final Defense",
                 icon: "fa-graduation-cap",
                 iconClass: "purple",
-                description: "Upload final chapters, defense minutes, and supporting files.",
+                description: "Upload final chapters, defense minutes, and supporting files. Defense minutes must be submitted as photos (1–5 photos) showing panelist signatures, and require adviser approval.",
                 items: [
-                    { label: "Chapter 3-4", slots: 1 },
-                    { label: "Defense minutes", slots: 1 }
+                    { label: "Chapter 1-4", slots: 1 },
+                    { label: "Recommendation letter", slots: 1 },
+                    { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
                 ]
             }
         ];
@@ -1916,6 +2096,91 @@
             return String(label || "").trim().toLowerCase() === "defense minutes";
         }
 
+        function isRecommendationLabel(label){
+            const l = String(label || "").trim().toLowerCase();
+            return l === "recommendation for concept presentation"
+                || l === "recommendation for outline defense"
+                || l === "recommendation letter";
+        }
+
+        /* Get the catalog item object for a given category+label */
+        function getCatalogItem(category, baseLabel){
+            const phase = CONSULTATION_CATALOG.find(p => p.category === category);
+            if(!phase) return null;
+            return phase.items.find(i => i.label === baseLabel) || null;
+        }
+
+        function isDefenseMinutesPictureLabel(category, baseLabel){
+            const item = getCatalogItem(category, baseLabel);
+            return !!(item && item.isDefenseMinutesPicture);
+        }
+
+        /* Defense minutes (picture) are approved when ANY record with matching docType is Approved */
+        function isDefenseMinutesPictureApproved(category, baseLabel){
+            if(!isDefenseMinutesPictureLabel(category, baseLabel)) return false;
+            const docType = `${category} \u2022 ${baseLabel}`;
+            const pictures = studentDocuments.filter(doc =>
+                String(doc.document_type || "") === docType
+            );
+            if(pictures.length === 0) return false;
+            return pictures.some(doc =>
+                String(doc.document_status || "").trim() === "Approved" || isAdviserLocked(doc)
+            );
+        }
+
+        /* Legacy/plain defense minutes document approved check */
+        function isDefenseMinutesApproved(category, baseLabel){
+            const docType = `${category} • ${baseLabel}`;
+            return (studentDocuments || []).some(doc => {
+                const typeStr = String(doc.document_type || "");
+                const match = typeStr === docType || (typeStr.toLowerCase().includes(category.toLowerCase()) && typeStr.toLowerCase().includes("defense minutes"));
+                return match && (String(doc.document_status || "").trim() === "Approved" || isAdviserLocked(doc));
+            });
+        }
+
+        /* Check if the defense presentation for a specific phase has been completed & graded by the panel */
+        function isDefenseGradedForPhase(category){
+            const cat = String(category || "").toLowerCase().trim();
+
+            // 1. From server's graded_defense_types
+            if(Array.isArray(gradedDefenseTypes) && gradedDefenseTypes.some(t => {
+                const tLower = String(t || "").toLowerCase().trim();
+                return tLower.includes(cat) || cat.includes(tLower);
+            })){
+                return true;
+            }
+
+            // 2. From defenseVerdicts
+            if(Array.isArray(defenseVerdicts) && defenseVerdicts.some(v => {
+                const vLower = String(v.defense_type || "").toLowerCase().trim();
+                return (vLower.includes(cat) || cat.includes(vLower)) && v.latest_result;
+            })){
+                return true;
+            }
+
+            // 3. Fallback for concept presentation if conceptPresentationGraded flag is set
+            if(cat.includes("concept") && conceptPresentationGraded){
+                return true;
+            }
+
+            // 4. Fallback based on stage/progress
+            if(currentGroup){
+                const stage = String(currentGroup.stage || '').toLowerCase().trim();
+                const prog = Number(currentGroup.progress || 0);
+                if(cat.includes("concept") && (prog >= 25 || stage.includes('stage 2') || stage.includes('outline') || stage.includes('stage 3') || stage.includes('pre-final') || stage.includes('stage 4') || stage.includes('final'))){
+                    return true;
+                }
+                if(cat.includes("outline") && (prog >= 50 || stage.includes('stage 3') || stage.includes('pre-final') || stage.includes('stage 4') || stage.includes('final'))){
+                    return true;
+                }
+                if(cat.includes("pre-final") && (prog >= 75 || stage.includes('stage 4') || stage.includes('final'))){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         function isAdviserSigningDocument(documentItem){
             if(!documentItem){
                 return false;
@@ -1934,12 +2199,12 @@
         }
 
         function isAdviserLocked(documentItem){
+            if(!documentItem) return false;
+            const status = String(documentItem.document_status || "").trim();
+            if(status === "Declined by Organization") return false;
             return !!(
-                documentItem
-                && (
-                    documentItem.adviser_locked === true
-                    || documentItem.adviser_locked === 1
-                )
+                documentItem.adviser_locked === true
+                || documentItem.adviser_locked === 1
             );
         }
 
@@ -1985,6 +2250,13 @@
             const documentStatus =
                 String(documentItem.document_status || "").trim();
 
+            if(documentStatus === "Declined by Organization"){
+                return {
+                    text: "Declined by Organization — Upload New Proposal",
+                    className: "rejected"
+                };
+            }
+
             if(isAdviserLocked(documentItem)){
                 return {
                     text: "Approved by adviser — locked",
@@ -2003,6 +2275,27 @@
                 return {
                     text: "Rejected",
                     className: "rejected"
+                };
+            }
+
+            if(documentStatus === "Students Signed"){
+                return {
+                    text: "All Students Signed — Ready to Send",
+                    className: "approved"
+                };
+            }
+
+            if(documentStatus === "Instructor Signed"){
+                return {
+                    text: "Instructor Signed — Pending Chairperson",
+                    className: "pending"
+                };
+            }
+
+            if(documentStatus === "Chairperson Signed"){
+                return {
+                    text: "Chairperson Signed — Pending Dean",
+                    className: "pending"
                 };
             }
 
@@ -2041,10 +2334,24 @@
             }
 
             if(slotHasFile(documentItem)){
+                /* For env scan docs not yet fully signed, give a specific message */
+                const docType = String(documentItem.document_type || "").toLowerCase();
+                const docTitle = String(documentItem.document_title || "").toLowerCase();
+                if(
+                    (docType.includes("environmental scanning") || docTitle.includes("environmental scanning"))
+                    && documentStatus !== "Students Signed"
+                    && !['Instructor Signed','Chairperson Signed','Approved'].includes(documentStatus)
+                ){
+                    return {
+                        text: "Pending Student Signatures",
+                        className: "not-sent"
+                    };
+                }
                 return {
                     text: "Not Sent",
                     className: "not-sent"
                 };
+
             }
 
             return {
@@ -2155,7 +2462,13 @@
         }
 
         function isCatalogSlotApproved(category, baseLabel, slotIndex, totalSlots){
-            if(isDefenseMinutesLabel(baseLabel)){
+            // Defense minutes pictures require adviser approval to count as complete
+            if(isDefenseMinutesPictureLabel(category, baseLabel)){
+                return isDefenseMinutesPictureApproved(category, baseLabel);
+            }
+
+            // Legacy: plain "Defense minutes" label (non-picture) always passes
+            if(isDefenseMinutesLabel(baseLabel) && !isDefenseMinutesPictureLabel(category, baseLabel)){
                 return true;
             }
 
@@ -2166,18 +2479,6 @@
         }
 
         function isPhaseComplete(category){
-            // If the defense verdict already says they passed, consider this phase complete
-            const verdictPassed = isPhasePassedByVerdict(category);
-            if(verdictPassed === true){
-                return true;
-            }
-
-            // If verdict exists but they haven't passed (Conditional/Re-Defense), not complete
-            if(verdictPassed === false){
-                return false;
-            }
-
-            // No verdict yet — fall back to document approval logic
             const phase =
                 CONSULTATION_CATALOG.find(item =>
                     item.category === category
@@ -2187,9 +2488,22 @@
                 return true;
             }
 
-            return phase.items.every(item => {
-                if(isDefenseMinutesLabel(item.label)){
-                    return true;
+            // For IT groups: Environmental Scanning is not required — exclude from completeness check
+            // DB may store "IT" or "BSIT"; normalise to check both
+            const groupProgram = (currentGroup && currentGroup.program)
+                ? String(currentGroup.program).toUpperCase()
+                : "";
+            const isITGroup = groupProgram === "IT" || groupProgram === "BSIT";
+            const effectiveItems = isITGroup
+                ? phase.items.filter(item =>
+                    !String(item.label || "").toLowerCase().includes("environmental scanning")
+                  )
+                : phase.items;
+
+            // 1. All non-defense-minutes consultation documents in this phase must be approved
+            const standardDocsApproved = effectiveItems.every(item => {
+                if(isDefenseMinutesLabel(item.label) || isDefenseMinutesPictureLabel(category, item.label)){
+                    return true; // defense minutes checked separately below
                 }
 
                 const totalSlots =
@@ -2203,6 +2517,42 @@
 
                 return true;
             });
+
+            if(!standardDocsApproved){
+                return false;
+            }
+
+            // 2. Defense presentation verdict/grading check
+            const verdictPassed = isPhasePassedByVerdict(category);
+            const isGraded = isDefenseGradedForPhase(category);
+
+            // If a verdict exists and they haven't passed (e.g. Conditional Passed or For Re-Defense), phase is NOT complete
+            if(verdictPassed === false){
+                return false;
+            }
+
+            // For phases that have defense schedules, must have been completed/graded
+            if(!isGraded && !verdictPassed){
+                return false;
+            }
+
+            // 3. For phases that include Defense Minutes (Outline Defense, Pre-Final Defense, Final Defense):
+            // The next part unlocks ONLY if defense minutes for this phase are approved!
+            const hasDefenseMinutes = phase.items.some(item =>
+                isDefenseMinutesLabel(item.label) || isDefenseMinutesPictureLabel(category, item.label)
+            );
+
+            if(hasDefenseMinutes){
+                const defMinutesApproved =
+                    isDefenseMinutesPictureApproved(category, "Defense minutes")
+                    || isDefenseMinutesApproved(category, "Defense minutes");
+
+                if(!defMinutesApproved){
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         function getActivePhaseIndex(){
@@ -2216,10 +2566,13 @@
         }
 
         function isCatalogPhaseLocked(category, baseLabel){
-            if(isDefenseMinutesLabel(baseLabel)){
-                return false;  // phase-lock bypassed for defense minutes
+            // Defense minutes (picture) are phase-gated differently — handled separately
+            // Plain defense minutes label bypass
+            if(isDefenseMinutesLabel(baseLabel) && !isDefenseMinutesPictureLabel(category, baseLabel)){
+                return false;
             }
 
+            // Defense minutes pictures: only locked by phase lock, not bypassed
             const phaseIndex =
                 getPhaseIndexByCategory(category);
 
@@ -2231,11 +2584,10 @@
         }
 
         /**
-         * Defense Minutes prerequisite check.
-         * A student may only UPLOAD defense minutes for a phase once the
-         * PREVIOUS phase is considered complete (passed verdict or all
-         * non-minutes documents approved).  The first phase has no
-         * prerequisite, so its minutes are always uploadable.
+         * Defense Minutes (picture) prerequisite check.
+         * A student may only UPLOAD defense minutes pictures for a phase once the
+         * PREVIOUS phase is considered complete (including defence minutes approval).
+         * The first phase (Concept Presentation) has no prerequisite.
          */
         function isPreviousPhaseComplete(category){
             const phaseIndex = getPhaseIndexByCategory(category);
@@ -2249,40 +2601,49 @@
 
         function getPhaseStatusLabel(category){
             if(isCatalogPhaseLocked(category)){
+                const phaseIndex = getPhaseIndexByCategory(category);
+                const prevCat = phaseIndex > 0 ? CONSULTATION_CATALOG[phaseIndex - 1].category : "";
                 return {
-                    text: "Locked — complete previous phase first",
+                    text: prevCat ? `Locked — complete & approve ${prevCat} minutes first` : "Locked — complete previous phase first",
                     className: "phase-locked"
                 };
             }
 
-            // Show verdict-specific status when defense is done
             const verdict = getLatestVerdictForPhase(category);
+            const isGraded = isDefenseGradedForPhase(category);
+            const phase = CONSULTATION_CATALOG.find(p => p.category === category);
+            const hasDefenseMinutes = phase && phase.items.some(i => isDefenseMinutesLabel(i.label) || isDefenseMinutesPictureLabel(category, i.label));
+            const defMinutesApproved = hasDefenseMinutes ? (isDefenseMinutesPictureApproved(category, "Defense minutes") || isDefenseMinutesApproved(category, "Defense minutes")) : true;
+
+            if(isPhaseComplete(category)){
+                return {
+                    text: "Phase completed ✓ — next phase unlocked",
+                    className: "phase-complete"
+                };
+            }
+
             if(verdict){
-                if(verdict === "Passed" || verdict === "Passed with Revisions"){
-                    return {
-                        text: `Defense ${verdict} ✓ — next phase unlocked`,
-                        className: "phase-complete"
-                    };
-                }
                 if(verdict === "Conditional Passed" || verdict === "Conditional Pass"){
                     return {
                         text: "Conditional Passed — re-defense required before next phase",
                         className: "phase-active"
                     };
                 }
-                if(verdict === "For Re-Defense"){
+                if(verdict === "For Re-Defense" || verdict === "For Formal Defense"){
                     return {
-                        text: "For Re-Defense — complete re-defense before next phase",
+                        text: "For Formal Defense — complete formal defense before next phase",
                         className: "phase-active"
                     };
                 }
             }
 
-            if(isPhaseComplete(category)){
-                return {
-                    text: "All documents approved",
-                    className: "phase-complete"
-                };
+            if(isGraded || verdict){
+                if(hasDefenseMinutes && !defMinutesApproved){
+                    return {
+                        text: "Defense graded — upload defense minutes for adviser approval to unlock next phase",
+                        className: "phase-active"
+                    };
+                }
             }
 
             if(getPhaseIndexByCategory(category) === getActivePhaseIndex()){
@@ -2308,6 +2669,13 @@
 
             grid.innerHTML = "";
 
+            // Determine the group's program (IT students do not need Environmental Scanning)
+            // DB may store "IT" or "BSIT"; normalise to check both
+            const groupProgram = (currentGroup && currentGroup.program)
+                ? String(currentGroup.program).toUpperCase()
+                : "";
+            const isITGroup = groupProgram === "IT" || groupProgram === "BSIT";
+
             CONSULTATION_CATALOG.forEach(phase => {
 
                 const phaseLocked =
@@ -2325,11 +2693,18 @@
                     + (phaseStatus.className === "phase-complete" ? " phase-complete" : "")
                     + (phaseStatus.className === "phase-active" ? " phase-active" : "");
 
+                // For IT groups: remove Environmental Scanning from the Concept Presentation phase
+                const visibleItems = isITGroup
+                    ? phase.items.filter(item =>
+                        !String(item.label || "").toLowerCase().includes("environmental scanning")
+                      )
+                    : phase.items;
+
                 const listHtml = [];
 
                 // Group items by their group property (if defined)
                 const groups = {};
-                phase.items.forEach(item => {
+                visibleItems.forEach(item => {
                     const groupName = item.group || "";
                     if(!groups[groupName]){
                         groups[groupName] = [];
@@ -2513,7 +2888,18 @@
             return row;
         }
 
+        function isEnvScanLabel(baseLabel){
+            return String(baseLabel || "").trim().toLowerCase() === "environmental scanning";
+        }
+
         function buildConsultationSlotRow(category, baseLabel, slotIndex, totalSlots, isPhaseLocked){
+            const isDefMinPic = isDefenseMinutesPictureLabel(category, baseLabel);
+
+            // Defense minutes (picture) get a special row renderer
+            if(isDefMinPic){
+                return buildDefenseMinutesPictureRow(category, baseLabel, isPhaseLocked);
+            }
+
             const documentItem =
                 findDocumentForSlot(
                     category,
@@ -2539,6 +2925,16 @@
                 ? "doc-slot-row phase-slot-locked"
                 : "doc-slot-row";
 
+            /* Build student-signature button for Environmental Scanning */
+            const signBtn = (isEnvScanLabel(baseLabel) && documentItem && slotHasFile(documentItem) && !isLocked)
+                ? buildEnvScanStudentSignButton(documentItem)
+                : "";
+
+            /* Build recommendation signing status button */
+            const recSignBtn = isRecommendationLabel(baseLabel) && documentItem && slotHasFile(documentItem)
+                ? buildRecommendationSignStatusBadge(documentItem)
+                : "";
+
             return `
                 <div class="${rowClass}">
                     <div class="doc-slot-main">
@@ -2558,6 +2954,8 @@
                             isPhaseLocked
                         )}
                         ${buildSlotViewButton(documentItem)}
+                        ${signBtn}
+                        ${recSignBtn}
                         ${buildSlotSendButton(documentItem, isLocked, isPhaseLocked, baseLabel)}
                         ${buildSlotDeleteButton(documentItem, canDelete)}
                         ${buildSlotDeclineReasonButton(documentItem, baseLabel)}
@@ -2566,8 +2964,37 @@
             `;
         }
 
+        function buildEnvScanStudentSignButton(documentItem){
+            if(!documentItem || !documentItem.id) return "";
+            const docStatus = String(documentItem.document_status || "");
+            /* Don't show sign button after instructor has signed */
+            if(['Instructor Signed','Chairperson Signed','Approved'].includes(docStatus)) return "";
+            return `
+                <button
+                    class="slot-btn"
+                    type="button"
+                    style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border:none;"
+                    onclick="openEnvScanSignModal('${documentItem.id}')"
+                    title="Sign this Environmental Scanning document"
+                >
+                    <i class="fa-solid fa-pen-fancy"></i>
+                    Sign
+                </button>
+            `;
+        }
+
         function buildSlotDeclineReasonButton(documentItem, baseLabel){
-            if(baseLabel !== "Environmental scanning" || !documentItem || !documentItem.id){
+            if(!isEnvScanLabel(baseLabel) || !documentItem || !documentItem.id || !slotHasFile(documentItem)){
+                return "";
+            }
+
+            // Once the group is graded in Concept Presentation, they can no longer report decline
+            if(isConceptPresentationGraded()){
+                return "";
+            }
+
+            const docStatus = String(documentItem.document_status || "").trim();
+            if(docStatus === "Declined by Organization"){
                 return "";
             }
 
@@ -2585,6 +3012,129 @@
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     Report Decline
                 </button>
+            `;
+        }
+
+        /* ---- Recommendation Letter Signing Status Badge (student view) ---- */
+        function buildRecommendationSignStatusBadge(documentItem){
+            if(!documentItem || !documentItem.id) return "";
+            const docStatus = String(documentItem.document_status || "");
+            if(docStatus === "Approved"){
+                return `<span class="slot-btn" style="background:#dcfce7;color:#16a34a;border:1px solid #86efac;cursor:default;" title="Signed and approved by adviser">
+                    <i class="fa-solid fa-circle-check"></i> Approved by Adviser
+                </span>`;
+            }
+            if(docStatus === "Adviser Signed"){
+                return `<span class="slot-btn" style="background:#dcfce7;color:#16a34a;border:1px solid #86efac;cursor:default;" title="Signed by adviser">
+                    <i class="fa-solid fa-circle-check"></i> Approved by Adviser
+                </span>`;
+            }
+            return `<span class="slot-btn" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;cursor:default;" title="Awaiting adviser signature">
+                <i class="fa-solid fa-pen-nib"></i> Awaiting Adviser Signature
+            </span>`;
+        }
+
+        /* ---- Defense Minutes (Picture) Row ---- */
+        function buildDefenseMinutesPictureRow(category, baseLabel, isPhaseLocked){
+            const docType = `${category} • ${baseLabel}`;
+            // Gather all picture uploads for this defense minutes slot
+            const pictures = studentDocuments.filter(doc =>
+                String(doc.document_type || "") === docType
+            ).sort((a,b) => Number(a.id) - Number(b.id));
+
+            const approvedDoc = pictures.find(doc =>
+                String(doc.document_status || "") === "Approved" || isAdviserLocked(doc)
+            );
+            const isApproved = !!approvedDoc;
+
+            const isGraded = isDefenseGradedForPhase(category);
+            const prevComplete = isPreviousPhaseComplete(category);
+            const phaseLocked = isCatalogPhaseLocked(category, baseLabel) || !prevComplete;
+            const notGradedLocked = !isGraded;
+
+            let statusText = "No pictures uploaded";
+            let statusClass = "not-uploaded";
+            if(isApproved){
+                statusText = `Approved by adviser (${pictures.length} photo${pictures.length !== 1 ? 's' : ''})`;
+                statusClass = "approved";
+            } else if(pictures.length > 0){
+                const sent = pictures.find(doc =>
+                    Number(doc.is_sent) === 1 || Number(doc.submission_count || 0) > 0
+                );
+                if(sent){
+                    statusText = `${pictures.length}/5 photo${pictures.length !== 1 ? 's' : ''} uploaded — Pending adviser approval`;
+                    statusClass = "pending";
+                } else {
+                    statusText = `${pictures.length}/5 photo${pictures.length !== 1 ? 's' : ''} uploaded — Not sent yet`;
+                    statusClass = "not-sent";
+                }
+            } else if(!phaseLocked && notGradedLocked){
+                statusText = "Upload locked — presentation must be graded by panel first";
+                statusClass = "not-uploaded";
+            }
+
+            const isMaxReached = pictures.length >= 5;
+            const canUploadMore = !isApproved && !phaseLocked && !notGradedLocked && !isMaxReached;
+
+            const safeCategory = category.replace(/'/g, "\\'");
+            const safeLabel = baseLabel.replace(/'/g, "\\'");
+
+            const rowClass = phaseLocked ? "doc-slot-row phase-slot-locked" : "doc-slot-row defense-minutes-picture-row";
+
+            const uploadBtn = isApproved
+                ? `<button class="slot-btn disabled" type="button" disabled title="Approved by adviser — locked">
+                    <i class="fa-solid fa-lock"></i> Locked
+                   </button>`
+                : phaseLocked
+                ? `<button class="slot-btn disabled" type="button" disabled title="Complete previous phase first">
+                    <i class="fa-solid fa-lock"></i> Phase Locked
+                   </button>`
+                : notGradedLocked
+                ? `<button class="slot-btn disabled" type="button" disabled title="Defense minutes can only be uploaded after the defense presentation has been graded by the panel">
+                    <i class="fa-solid fa-lock"></i> Awaiting Defense Grading
+                   </button>`
+                : isMaxReached
+                ? `<button class="slot-btn disabled" type="button" disabled title="Maximum of 5 photos reached">
+                    <i class="fa-solid fa-check"></i> Max 5
+                   </button>`
+                : `<button class="slot-btn upload" type="button"
+                    onclick="openDefenseMinutesPictureModal('${safeCategory}','${safeLabel}')">
+                    <i class="fa-solid fa-camera"></i>
+                    ${pictures.length > 0 ? 'Add More' : 'Upload Photos'}
+                   </button>`;
+
+            const viewBtn = pictures.length > 0
+                ? `<button class="slot-btn view" type="button"
+                    onclick="openDefenseMinutesPictureGallery('${safeCategory}','${safeLabel}')">
+                    <i class="fa-solid fa-images"></i>
+                    View (${pictures.length})
+                   </button>`
+                : `<button class="slot-btn disabled" type="button" disabled>
+                    <i class="fa-solid fa-images"></i> View
+                   </button>`;
+
+            const sendBtn = (pictures.length >= 1 && !isApproved && !phaseLocked && !notGradedLocked)
+                ? `<button class="slot-btn send" type="button"
+                    onclick="openDefenseMinutesSendModal('${safeCategory}','${safeLabel}')">
+                    <i class="fa-solid fa-paper-plane"></i> Send to Adviser
+                   </button>`
+                : `<button class="slot-btn disabled" type="button" disabled
+                    title="${isApproved ? 'Already approved' : (notGradedLocked ? 'Presentation must be graded before sending minutes' : (pictures.length < 1 ? 'Upload at least 1 photo before sending' : ''))}">` +
+                  `<i class="fa-solid fa-paper-plane"></i> Send
+                  </button>`;
+
+            return `
+                <div class="${rowClass}">
+                    <div class="doc-slot-main">
+                        <span class="doc-name">${baseLabel} <span style="font-size:11px;color:#7c3aed;font-weight:600;">(1–5 Photos • Physical Defense)</span></span>
+                        <span class="slot-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="doc-slot-actions">
+                        ${uploadBtn}
+                        ${viewBtn}
+                        ${sendBtn}
+                    </div>
+                </div>
             `;
         }
 
@@ -2615,19 +3165,30 @@
                 `;
             }
 
-            // Defense Minutes: only allow upload when the previous phase is complete
-            if(isDefenseMinutesLabel(baseLabel) && !isPreviousPhaseComplete(category)){
-                const phaseIndex = getPhaseIndexByCategory(category);
-                const prevPhaseName = phaseIndex > 0
-                    ? CONSULTATION_CATALOG[phaseIndex - 1].category
-                    : "the previous phase";
-                return `
-                    <button class="slot-btn disabled" type="button" disabled
-                        title="Complete '${prevPhaseName}' before uploading defense minutes for this phase">
-                        <i class="fa-solid fa-lock"></i>
-                        Locked
-                    </button>
-                `;
+            // Defense Minutes: only allow upload when the previous phase is complete and this phase is graded
+            if(isDefenseMinutesLabel(baseLabel)){
+                if(!isPreviousPhaseComplete(category)){
+                    const phaseIndex = getPhaseIndexByCategory(category);
+                    const prevPhaseName = phaseIndex > 0
+                        ? CONSULTATION_CATALOG[phaseIndex - 1].category
+                        : "the previous phase";
+                    return `
+                        <button class="slot-btn disabled" type="button" disabled
+                            title="Complete '${prevPhaseName}' before uploading defense minutes for this phase">
+                            <i class="fa-solid fa-lock"></i>
+                            Locked
+                        </button>
+                    `;
+                }
+                if(!isDefenseGradedForPhase(category)){
+                    return `
+                        <button class="slot-btn disabled" type="button" disabled
+                            title="Defense minutes can only be uploaded after the defense presentation has been graded by the panel">
+                            <i class="fa-solid fa-lock"></i>
+                            Awaiting Defense Grading
+                        </button>
+                    `;
+                }
             }
 
             const safeCategory =
@@ -2672,7 +3233,7 @@
             return `
                 <a
                     class="slot-btn view"
-                    href="http://localhost:3005${viewPath}"
+                    href="${API_BASE}${String(viewPath || "").startsWith("/") ? viewPath : ("/" + viewPath)}"
                     target="_blank"
                     title="${documentItem.signed_file_path ? 'View signed document' : 'View document'}"
                 >
@@ -2694,6 +3255,22 @@
                         Send
                     </button>
                 `;
+            }
+
+            /* For Environmental Scanning: Send is disabled until all students have signed */
+            if(isEnvScanLabel(baseLabel) && documentItem){
+                const docStatus = String(documentItem.document_status || "");
+                const allSigned = docStatus === "Students Signed"
+                    || ['Instructor Signed','Chairperson Signed','Approved'].includes(docStatus);
+                if(!allSigned){
+                    return `
+                        <button class="slot-btn disabled" type="button" disabled
+                            title="All 3 group members must sign first before sending to the Instructor">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            Send
+                        </button>
+                    `;
+                }
             }
 
             const isSent =
@@ -2737,6 +3314,257 @@
             `;
         }
 
+        /* ---- Defense Minutes Picture Modal ---- */
+        let pendingDefMinCategory = null;
+        let pendingDefMinLabel = null;
+        let pendingDefMinSendCategory = null;
+        let pendingDefMinSendLabel = null;
+
+        function openDefenseMinutesPictureModal(category, baseLabel){
+            if(!isDefenseGradedForPhase(category)){
+                alert(`Defense minutes for "${category}" can only be uploaded after your group has completed the defense presentation and received panel grades.`);
+                return;
+            }
+
+            const docType = `${category} • ${baseLabel}`;
+            const existing = studentDocuments.filter(doc =>
+                String(doc.document_type || "") === docType
+            );
+            if(existing.length >= 5){
+                alert("Maximum of 5 photos already uploaded for this defense minutes slot.");
+                return;
+            }
+
+            pendingDefMinCategory = category;
+            pendingDefMinLabel = baseLabel;
+            document.getElementById("defMinPictureCategory").value = category;
+            document.getElementById("defMinPictureLabel").value = baseLabel;
+            document.getElementById("defMinPictureFile").value = "";
+            document.getElementById("defMinPicturePreview").innerHTML = "";
+            document.getElementById("defMinPictureModal").style.display = "flex";
+        }
+
+        function closeDefenseMinutesPictureModal(){
+            document.getElementById("defMinPictureModal").style.display = "none";
+            pendingDefMinCategory = null;
+            pendingDefMinLabel = null;
+        }
+
+        function previewDefMinPictures(input){
+            const preview = document.getElementById("defMinPicturePreview");
+            preview.innerHTML = "";
+            const files = Array.from(input.files || []);
+            if(files.length === 0) return;
+
+            const category = pendingDefMinCategory;
+            const baseLabel = pendingDefMinLabel;
+            const docType = `${category} • ${baseLabel}`;
+            const existing = studentDocuments.filter(doc =>
+                String(doc.document_type || "") === docType
+            );
+            const remaining = Math.max(0, 5 - existing.length);
+            if(files.length > remaining){
+                alert(`You can only select up to ${remaining} photo(s). (Currently uploaded: ${existing.length}/5)`);
+                input.value = "";
+                return;
+            }
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.style.cssText = "width:100px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e9d5ff;";
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function uploadDefenseMinutesPictures(){
+            const category = pendingDefMinCategory;
+            const baseLabel = pendingDefMinLabel;
+            if(!category || !baseLabel){ alert("Missing category/label."); return; }
+
+            if(!isDefenseGradedForPhase(category)){
+                alert(`Defense minutes for "${category}" can only be uploaded after your group has completed the defense presentation and received panel grades.`);
+                return;
+            }
+
+            const fileInput = document.getElementById("defMinPictureFile");
+            const files = Array.from(fileInput.files || []);
+
+            if(files.length === 0){
+                alert("Please select at least one picture.");
+                return;
+            }
+
+            const allowedExt = ["jpg","jpeg","png","webp"];
+            const invalid = files.find(f => !allowedExt.includes(f.name.split(".").pop().toLowerCase()));
+            if(invalid){
+                alert("Only image files are allowed (JPG, PNG, WEBP).");
+                return;
+            }
+
+            // Count existing pictures
+            const docType = `${category} • ${baseLabel}`;
+            const existing = studentDocuments.filter(doc =>
+                String(doc.document_type || "") === docType
+            );
+            if(existing.length >= 5){
+                alert("Maximum of 5 photos already uploaded for this defense minutes slot.");
+                return;
+            }
+            if(existing.length + files.length > 5){
+                const remaining = 5 - existing.length;
+                alert(`You can only upload ${remaining} more photo(s). (Maximum of 5 photos total; currently ${existing.length})`);
+                return;
+            }
+
+            let uploadedCount = 0;
+            let lastErrorMsg = "";
+            for(const file of files){
+                const num = existing.length + uploadedCount + 1;
+                const formData = new FormData();
+                formData.append("studentUserId", loggedInUserId);
+                formData.append("documentType", docType);
+                formData.append("documentTitle", `${category} - ${baseLabel} (${num})`);
+                formData.append("documentFile", file);
+
+                try{
+                    const resp = await fetch("http://localhost:3005/upload-defense-minutes-picture", {
+                        method: "POST",
+                        body: formData
+                    });
+                    const rawText = await resp.text();
+                    let data = null;
+                    try { data = JSON.parse(rawText); } catch (parseErr) {}
+                    if(data && data.success){
+                        uploadedCount++;
+                    } else {
+                        lastErrorMsg = (data && data.message) ? data.message : "Server endpoint not active yet — please restart node Server.js.";
+                    }
+                }catch(err){
+                    console.error(err);
+                    lastErrorMsg = "Could not connect to server.";
+                }
+            }
+
+            if(uploadedCount > 0){
+                closeDefenseMinutesPictureModal();
+                alert(`${uploadedCount} picture(s) uploaded successfully.`);
+                await loadStudentDocuments();
+            } else {
+                alert(lastErrorMsg || "Failed to upload defense minutes photo(s). Please make sure node Server.js is restarted.");
+            }
+        }
+
+        function openDefenseMinutesPictureGallery(category, baseLabel){
+            const docType = `${category} • ${baseLabel}`;
+            const pictures = studentDocuments.filter(doc =>
+                String(doc.document_type || "") === docType
+            ).sort((a,b) => Number(a.id) - Number(b.id));
+
+            if(pictures.length === 0){
+                alert("No pictures uploaded yet.");
+                return;
+            }
+
+            const galleryEl = document.getElementById("defMinGalleryGrid");
+            galleryEl.innerHTML = "";
+            pictures.forEach((pic, i) => {
+                const div = document.createElement("div");
+                div.style.cssText = "position:relative;";
+                div.innerHTML = `
+                    <a href="http://localhost:3005${pic.file_path}" target="_blank" title="Open picture ${i+1}">
+                        <img src="http://localhost:3005${pic.file_path}"
+                            style="width:140px;height:110px;object-fit:cover;border-radius:10px;border:2px solid #e9d5ff;display:block;"
+                            onerror="this.style.background='#f1f5f9';this.alt='Image ${i+1}';">
+                    </a>
+                    <div style="text-align:center;font-size:11px;color:#6d5f85;margin-top:4px;">Photo ${i+1}</div>
+                `;
+                galleryEl.appendChild(div);
+            });
+
+            const approvedDoc = pictures.find(doc =>
+                String(doc.document_status || "") === "Approved" || isAdviserLocked(doc)
+            );
+            document.getElementById("defMinGalleryTitle").textContent = `${category} — ${baseLabel} (${pictures.length}/5 photos)`;
+            document.getElementById("defMinGalleryStatus").textContent =
+                approvedDoc ? "✓ Approved by Adviser" :
+                (pictures.length >= 1 ? `${pictures.length}/5 photo(s) uploaded — Send to adviser for approval` :
+                `No photos uploaded yet`);
+            document.getElementById("defMinGalleryModal").style.display = "flex";
+        }
+
+        function closeDefenseMinutesPictureGallery(){
+            document.getElementById("defMinGalleryModal").style.display = "none";
+        }
+
+        async function openDefenseMinutesSendModal(category, baseLabel){
+            const docType = `${category} • ${baseLabel}`;
+            const pictures = studentDocuments.filter(doc =>
+                String(doc.document_type || "") === docType
+            ).sort((a,b) => Number(a.id) - Number(b.id));
+
+            if(pictures.length < 1){
+                alert("Please upload at least 1 photo of your defense minutes before sending.");
+                return;
+            }
+
+            const approvedDoc = pictures.find(doc =>
+                String(doc.document_status || "") === "Approved" || isAdviserLocked(doc)
+            );
+            if(approvedDoc){
+                alert("These defense minutes have already been approved by your adviser.");
+                return;
+            }
+
+            pendingDefMinSendCategory = category;
+            pendingDefMinSendLabel = baseLabel;
+            selectedDocumentId = pictures[pictures.length - 1].id;
+
+            const codes = pictures.map(p => p.document_code).filter(Boolean);
+            const codeDisplay = codes.length > 1
+                ? `${codes[0]} – ${codes[codes.length - 1]}`
+                : (codes[0] || "DOC2026");
+
+            document.getElementById("sendDocumentTitle").innerText =
+                `${category} — ${baseLabel}`;
+
+            document.getElementById("sendDocumentDetails").innerText =
+                `${codeDisplay} • ${docType} • ${pictures.length} Photo${pictures.length !== 1 ? 's' : ''} Attached (Physical Defense)`;
+
+            document.getElementById("submissionMessage").value = "";
+
+            const noticeContainer =
+                document.getElementById("sendRoutingNoticeContainer");
+            if(noticeContainer){
+                noticeContainer.innerHTML = `
+                    <div class="routing-notice-box">
+                        <p style="color:#64748b;font-size:13px;margin:0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading routing details...</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById("sendModal").style.display = "flex";
+
+            if(!recipients || recipients.length === 0){
+                await loadRecipients();
+            }
+
+            const syntheticItem = {
+                id: selectedDocumentId,
+                document_type: docType,
+                document_title: `${category} — ${baseLabel} (${pictures.length} photo${pictures.length !== 1 ? 's' : ''})`
+            };
+            renderSendRoutingNotice(syntheticItem);
+        }
+
+        function sendDefenseMinutesPictures(category, baseLabel){
+            return openDefenseMinutesSendModal(category, baseLabel);
+        }
+
         function uploadFromSlot(
             category,
             baseLabel,
@@ -2772,6 +3600,13 @@
                 alert(
                     `You can only upload defense minutes for "${category}" after completing "${prevPhaseName}". ` +
                     `Defense minutes must be uploaded after your presentation, not before.`
+                );
+                return;
+            }
+
+            if(isDefenseMinutesLabel(baseLabel) && !isDefenseGradedForPhase(category)){
+                alert(
+                    `Defense minutes for "${category}" can only be uploaded after your group has completed the defense presentation and received panel grades.`
                 );
                 return;
             }
@@ -3126,9 +3961,343 @@
 
         }
 
+        /* ================= ENV SCAN STUDENT SIGNATURE WORKSPACE ================= */
+
+        /* State — mirrors adviser e-sign workspace */
+        let envScanSigPdfDoc       = null;
+        let envScanSigCurrentPage  = 1;
+        let envScanSigTotalPages   = 1;
+        let envScanSigPlaced       = false;
+        let envScanSigCurrentMode  = 'draw';
+        let envScanSigSavedPath    = null;
+        let envScanSigCanvasInited = false;
+
+        async function openEnvScanSignModal(documentId){
+            envScanSigDocId = String(documentId);
+            document.getElementById("envScanSignModalOverlay").style.display = "flex";
+            document.getElementById("envScanSignStatus").innerHTML =
+                `<div style="text-align:center;color:#7c3aed;padding:16px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>`;
+
+            /* Reset all state */
+            envScanSigPdfDoc = null;
+            envScanSigCurrentPage = 1;
+            envScanSigPlaced = false;
+            envScanSigCurrentMode = 'draw';
+            envScanSigSavedPath = null;
+            envScanSigCanvasInited = false;
+
+            const layer = document.getElementById("envScanSigPlacementLayer");
+            if(layer) layer.innerHTML = "";
+
+            if(window.pdfjsLib)
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+            await loadEnvScanSigStatus(documentId);
+            setTimeout(() => initEnvScanDrawCanvas(), 150);
+        }
+
+        function closeEnvScanSignModal(){
+            document.getElementById("envScanSignModalOverlay").style.display = "none";
+            envScanSigDocId = null;
+            envScanSigPdfDoc = null;
+            envScanSigPlaced = false;
+            envScanSigCanvasInited = false;
+            const layer = document.getElementById("envScanSigPlacementLayer");
+            if(layer) layer.innerHTML = "";
+        }
+
+        async function loadEnvScanSigStatus(documentId){
+            try{
+                const resp = await fetch(`${API_BASE}/env-scan-student-signatures/${documentId}?studentUserId=${encodeURIComponent(loggedInUserId)}`);
+                const data = await resp.json();
+                if(!data.success){
+                    document.getElementById("envScanSignStatus").innerHTML =
+                        `<p style="color:#ef4444;">${data.message || 'Failed to load.'}</p>`;
+                    return;
+                }
+
+                envScanSigCache[documentId] = data;
+                const meEntry = (data.members || []).find(m => m.user_id === loggedInUserId);
+                const alreadySigned = meEntry && meEntry.has_signed;
+
+                /* Fetch saved signature */
+                const settingsResp = await fetch(`${API_BASE}/student-settings/${loggedInUserId}`).catch(() => null);
+                const settingsData = settingsResp ? await settingsResp.json().catch(() => null) : null;
+                const savedPath = (settingsData && settingsData.success && settingsData.student)
+                    ? settingsData.student.digital_signature || null : null;
+                envScanSigSavedPath = savedPath;
+                envScanSigHasSavedSig = !!savedPath;
+
+                /* Member rows */
+                const memberRows = (data.members || []).map(m => {
+                    const isSelf = m.user_id === loggedInUserId;
+                    const isInactive = m.student_status && m.student_status !== "ACTIVE";
+                    let icon = m.has_signed ? `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i>` : `<i class="fa-solid fa-circle-xmark" style="color:#dc2626;"></i>`;
+                    let label = m.has_signed ? `<span style="color:#16a34a;font-weight:600;font-size:12px;">Signed</span>` : `<span style="color:#dc2626;font-weight:600;font-size:12px;">Not signed</span>`;
+                    let statusPill = "";
+
+                    if (isInactive) {
+                        icon = `<i class="fa-solid fa-circle-minus" style="color:#94a3b8;"></i>`;
+                        label = `<span style="color:#94a3b8;font-weight:600;font-size:12px;">Not required</span>`;
+                        const pillColor = m.student_status === "DROPPED" ? "#fee2e2" : "#fef9c3";
+                        const textColor = m.student_status === "DROPPED" ? "#991b1b" : "#854d0e";
+                        statusPill = `<span style="background:${pillColor};color:${textColor};font-size:10px;padding:2px 6px;border-radius:12px;margin-left:6px;font-weight:700;">${m.student_status} (Excluded)</span>`;
+                    }
+
+                    const youBadge = isSelf ? `<span style="background:#ede9fe;color:#7c3aed;font-size:10px;padding:2px 6px;border-radius:20px;margin-left:5px;font-weight:700;">You</span>` : "";
+                    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9;">${icon}<div style="flex:1;"><span style="font-weight:600;color:#1e293b;font-size:13px;">${m.fullname}</span>${youBadge}${statusPill}<span style="color:#94a3b8;font-size:11px;margin-left:5px;">${m.student_position || ""}</span></div>${label}</div>`;
+                }).join("");
+
+                const banner = data.all_signed
+                    ? `<div style="background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:9px 14px;margin-bottom:8px;color:#16a34a;font-weight:600;font-size:12px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-circle-check"></i> All active members signed (${data.total_signed}/${data.total_members}) — ready to send!</div>` : "";
+
+                document.getElementById("envScanSignStatus").innerHTML = `
+                    ${banner}
+                    <div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:5px;">${data.total_signed} of ${data.total_members} active member(s) signed</div>
+                    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:0 10px;">${memberRows}</div>
+                `;
+
+                const signPanel = document.getElementById("envScanSignPanel");
+                const msgEl    = document.getElementById("envScanSignPanelMsg");
+
+                const currentMember = (data.members || []).find(m => m.user_id === loggedInUserId);
+                const isSelfInactive = currentMember && currentMember.student_status && currentMember.student_status !== "ACTIVE";
+
+                if(isSelfInactive){
+                    signPanel.style.display = "none";
+                    msgEl.textContent = `Your account is marked as ${currentMember.student_status}. Only active members can sign documents.`;
+                    msgEl.style.display = "block";
+                }else if(alreadySigned || data.all_signed){
+                    signPanel.style.display = "none";
+                    msgEl.textContent = alreadySigned ? "✓ You have already signed this document." : "All active members have signed.";
+                    msgEl.style.display = "block";
+                }else{
+                    signPanel.style.display = "block";
+                    msgEl.style.display = "none";
+                    if(savedPath){
+                        setEnvScanSigMode('saved');
+                        const prev = document.getElementById("envScanSavedSigPreview");
+                        if(prev) { const clean = savedPath.startsWith("/") ? savedPath : ("/" + savedPath); prev.src = `${API_BASE}${clean}`; }
+                    }else{
+                        setEnvScanSigMode('draw');
+                    }
+                }
+
+                /* Load the PDF */
+                await loadEnvScanPdf(documentId);
+
+            }catch(err){
+                console.error(err);
+                document.getElementById("envScanSignStatus").innerHTML =
+                    `<p style="color:#ef4444;">Failed to load.</p>`;
+            }
+        }
+
+        async function loadEnvScanPdf(documentId){
+            if(!window.pdfjsLib) return;
+            const cached = envScanSigCache[documentId];
+            if(!cached) return;
+            const filePath = String(cached.signed_file_path || cached.file_path || "").trim();
+            if(!filePath || !filePath.toLowerCase().endsWith(".pdf")){
+                showEnvScanPdfMsg("PDF preview is available for .pdf files. Place & apply your signature.");
+                return;
+            }
+            try{
+                document.getElementById("envScanPageInfo").innerText = "Loading PDF...";
+                const cleanFilePath = filePath.startsWith("/") ? filePath : ("/" + filePath); const response = await fetch(`${API_BASE}${cleanFilePath}`);
+                if(!response.ok){ showEnvScanPdfMsg(`Cannot load PDF (HTTP ${response.status}).`); return; }
+                const buf = await response.arrayBuffer();
+                if(!buf || buf.byteLength === 0){ showEnvScanPdfMsg("PDF is empty."); return; }
+                envScanSigPdfDoc    = await window.pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+                envScanSigTotalPages = envScanSigPdfDoc.numPages || 1;
+                envScanSigCurrentPage = 1;
+                await renderEnvScanPdfPage(1);
+            }catch(e){
+                console.error(e);
+                showEnvScanPdfMsg("Could not render PDF. Use the eye icon to open the file externally.");
+            }
+        }
+
+        function showEnvScanPdfMsg(msg){
+            const canvas = document.getElementById("envScanPdfCanvas");
+            const vp = document.getElementById("envScanPdfViewport");
+            if(!canvas || !vp) return;
+            const ctx = canvas.getContext("2d");
+            canvas.width = 520; canvas.height = 240;
+            vp.style.width = "520px"; vp.style.height = "240px";
+            ctx.fillStyle = "#f8fafc"; ctx.fillRect(0,0,520,240);
+            ctx.fillStyle = "#5b4b7a"; ctx.font = "13px Poppins,sans-serif"; ctx.textAlign = "center";
+            String(msg).split(". ").forEach((l,i) => ctx.fillText(l, 260, 110 + i*22));
+            document.getElementById("envScanPageInfo").innerText = "Preview unavailable";
+        }
+
+        async function renderEnvScanPdfPage(n){
+            if(!envScanSigPdfDoc) return;
+            const page = await envScanSigPdfDoc.getPage(n);
+            const vp   = page.getViewport({ scale: 1.2 });
+            const canvas = document.getElementById("envScanPdfCanvas");
+            canvas.width = vp.width; canvas.height = vp.height;
+            const vpEl = document.getElementById("envScanPdfViewport");
+            vpEl.style.width = vp.width + "px"; vpEl.style.height = vp.height + "px";
+            document.getElementById("envScanPageInfo").innerText = `Page ${n} of ${envScanSigTotalPages}`;
+            await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+        }
+
+        async function envScanChangePage(delta){
+            if(!envScanSigPdfDoc) return;
+            const next = envScanSigCurrentPage + delta;
+            if(next < 1 || next > envScanSigTotalPages) return;
+            envScanSigCurrentPage = next;
+            const layer = document.getElementById("envScanSigPlacementLayer");
+            if(layer) layer.innerHTML = "";
+            envScanSigPlaced = false;
+            updateEnvScanPlaceBtn();
+            await renderEnvScanPdfPage(next);
+        }
+
+        function setEnvScanSigMode(mode){
+            envScanSigCurrentMode = mode;
+            const tS = document.getElementById("envScanTabSaved");
+            const tD = document.getElementById("envScanTabDraw");
+            const wS = document.getElementById("envScanSavedWrapper");
+            const wD = document.getElementById("envScanDrawWrapper");
+            if(mode === 'saved'){
+                if(!envScanSigSavedPath){ alert("No saved signature found. Upload one in Settings or draw below."); setEnvScanSigMode('draw'); return; }
+                if(tS) tS.classList.add("active"); if(tD) tD.classList.remove("active");
+                if(wS) wS.style.display = "block"; if(wD) wD.style.display = "none";
+            }else{
+                if(tS) tS.classList.remove("active"); if(tD) tD.classList.add("active");
+                if(wS) wS.style.display = "none";  if(wD) wD.style.display = "block";
+                initEnvScanDrawCanvas();
+            }
+        }
+
+        function initEnvScanDrawCanvas(){
+            const canvas = document.getElementById("envScanSigCanvas");
+            if(!canvas || envScanSigCanvasInited) return;
+            envScanSigCanvasInited = true;
+            envScanSigCanvas = canvas;
+            envScanSigCtx = canvas.getContext("2d");
+            const w = canvas.parentElement ? canvas.parentElement.clientWidth - 4 : 320;
+            canvas.width = Math.max(w, 240); canvas.height = 120;
+            envScanSigCtx.strokeStyle = "#2e1065"; envScanSigCtx.lineWidth = 2.5;
+            envScanSigCtx.lineCap = "round"; envScanSigCtx.lineJoin = "round";
+            const pos = (e, c) => { const r = c.getBoundingClientRect(); return { x:(e.clientX||e.pageX)-r.left, y:(e.clientY||e.pageY)-r.top }; };
+            canvas.addEventListener("mousedown", e => { envScanSigDrawing=true; envScanSigCtx.beginPath(); const p=pos(e,canvas); envScanSigCtx.moveTo(p.x,p.y); });
+            canvas.addEventListener("mousemove", e => { if(!envScanSigDrawing) return; const p=pos(e,canvas); envScanSigCtx.lineTo(p.x,p.y); envScanSigCtx.stroke(); });
+            canvas.addEventListener("mouseup",    () => { envScanSigDrawing=false; });
+            canvas.addEventListener("mouseleave", () => { envScanSigDrawing=false; });
+            canvas.addEventListener("touchstart", e => { e.preventDefault(); envScanSigDrawing=true; envScanSigCtx.beginPath(); const p=pos(e.touches[0],canvas); envScanSigCtx.moveTo(p.x,p.y); }, {passive:false});
+            canvas.addEventListener("touchmove",  e => { e.preventDefault(); if(!envScanSigDrawing) return; const p=pos(e.touches[0],canvas); envScanSigCtx.lineTo(p.x,p.y); envScanSigCtx.stroke(); }, {passive:false});
+            canvas.addEventListener("touchend",   () => { envScanSigDrawing=false; });
+        }
+
+        function clearEnvScanCanvas(){
+            if(envScanSigCtx && envScanSigCanvas)
+                envScanSigCtx.clearRect(0, 0, envScanSigCanvas.width, envScanSigCanvas.height);
+        }
+
+        function envScanPlaceSavedSig(){
+            if(!envScanSigSavedPath){ alert("No saved signature."); return; }
+            if(envScanSigPlaced){ alert("Already placed — drag to reposition."); return; }
+            _doEnvScanPlace(`${API_BASE}${envScanSigSavedPath.startsWith("/") ? envScanSigSavedPath : "/" + envScanSigSavedPath}`, 'saved');
+        }
+
+        function envScanPlaceDrawnSig(){
+            if(envScanSigPlaced){ alert("Already placed — drag to reposition."); return; }
+            if(!envScanSigCanvas){ alert("Draw your signature first."); return; }
+            const d = envScanSigCtx.getImageData(0,0,envScanSigCanvas.width,envScanSigCanvas.height).data;
+            if(!Array.from(d).some((v,i)=>i%4===3&&v>0)){ alert("Please draw your signature first."); return; }
+            _doEnvScanPlace(envScanSigCanvas.toDataURL("image/png"), 'draw');
+        }
+
+        function _doEnvScanPlace(src, mode){
+            const layer = document.getElementById("envScanSigPlacementLayer");
+            if(!layer) return;
+            layer.innerHTML = `<img id="envScanDraggableSig" class="stu-draggable-signature" src="${src}" alt="Signature" draggable="false">`;
+            const el = document.getElementById("envScanDraggableSig");
+            el.style.left = "40px"; el.style.top = "40px";
+            _envScanEnableDrag(el);
+            envScanSigPlaced = true;
+            envScanSigCurrentMode = mode;
+            updateEnvScanPlaceBtn();
+        }
+
+        function _envScanEnableDrag(el){
+            let st = null;
+            const down = e => { e.preventDefault(); st = {sx:e.clientX,sy:e.clientY,l:el.offsetLeft,t:el.offsetTop}; };
+            const move = e => { if(!st) return; el.style.left=`${st.l+e.clientX-st.sx}px`; el.style.top=`${st.t+e.clientY-st.sy}px`; };
+            const up   = () => { st = null; };
+            el.addEventListener("mousedown", down);
+            document.addEventListener("mousemove", move);
+            document.addEventListener("mouseup", up);
+            el.addEventListener("touchstart", e => { const t=e.touches[0]; down({preventDefault:()=>e.preventDefault(),clientX:t.clientX,clientY:t.clientY}); }, {passive:false});
+            document.addEventListener("touchmove", e => { if(!st) return; const t=e.touches[0]; move({clientX:t.clientX,clientY:t.clientY}); }, {passive:false});
+            document.addEventListener("touchend", up);
+        }
+
+        function updateEnvScanPlaceBtn(){
+            document.querySelectorAll("#envScanSignModalOverlay .stu-esign-place-btn").forEach(btn => {
+                if(envScanSigPlaced){
+                    btn.disabled=true; btn.style.opacity="0.5"; btn.style.cursor="not-allowed";
+                    if(!btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#bbf7d0;margin-right:5px;"></i>Placed — drag to reposition';
+                }else{
+                    btn.disabled=false; btn.style.opacity=""; btn.style.cursor="";
+                    if(btn.dataset.orig){ btn.innerHTML=btn.dataset.orig; delete btn.dataset.orig; }
+                }
+            });
+        }
+
+        function getEnvScanPlacement(){
+            const vp = document.getElementById("envScanPdfViewport");
+            const el = document.getElementById("envScanDraggableSig");
+            if(!vp || !el) return null;
+            return { pageIndex:envScanSigCurrentPage-1, containerWidth:vp.scrollWidth, containerHeight:vp.scrollHeight, sigLeft:el.offsetLeft, sigTop:el.offsetTop, sigWidth:el.offsetWidth, sigHeight:el.offsetHeight };
+        }
+
+        async function submitEnvScanStudentSignature(){
+            if(!envScanSigDocId){ alert("No document selected."); return; }
+            if(!envScanSigPlaced){ alert("Place your signature on the document first."); return; }
+            const placement = getEnvScanPlacement();
+            if(!placement){ alert("Signature placement missing."); return; }
+            const signatureImage = (envScanSigCurrentMode==='saved' && envScanSigSavedPath)
+                ? `http://localhost:3005${envScanSigSavedPath}`
+                : (envScanSigCanvas ? envScanSigCanvas.toDataURL("image/png") : null);
+
+            const btn = document.getElementById("envScanSignSubmitBtn");
+            if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Signing...'; }
+            try{
+                const resp = await fetch(`${API_BASE}/student-apply-env-scan-signature`,{
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({ studentUserId:loggedInUserId, documentId:envScanSigDocId, signatureImage, signatureType:envScanSigCurrentMode, placement })
+                });
+                const data = await resp.json();
+                if(data.success){
+                    const layer = document.getElementById("envScanSigPlacementLayer");
+                    if(layer) layer.innerHTML = "";
+                    envScanSigPlaced = false; updateEnvScanPlaceBtn();
+                    clearEnvScanCanvas();
+                    await loadEnvScanSigStatus(envScanSigDocId);
+                    await loadStudentDocuments();
+                    if(data.all_signed) closeEnvScanSignModal();
+                    else alert(data.message || "Signature applied! Waiting for other members.");
+                }else{
+                    alert(data.message || "Failed to apply signature.");
+                }
+            }catch(err){ console.error(err); alert("Server error."); }
+            finally{ if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Apply & Save Signature'; } }
+        }
+
         /* ================= ENVIRONMENTAL SCANNING DECLINE REASON MODAL HANDLERS ================= */
 
         function openEnvScanDeclineModal(docId, docTitle) {
+            if (isConceptPresentationGraded()) {
+                alert("You can no longer report decline for Environmental Scanning because your group has already finished and been graded in Concept Presentation.");
+                return;
+            }
+
             document.getElementById("envScanDeclineDocId").value = docId;
             document.getElementById("envScanDeclineDocTitle").value = docTitle || "Environmental Scanning";
 
@@ -3177,6 +4346,13 @@
             const confirmed = confirm("Are you sure you want to report this proposal as declined by the organization? Your Instructor, Program Chairperson, and Dean will be notified.");
             if (!confirmed) return;
 
+            const submitBtn = document.querySelector("#envScanDeclineModal .save-btn");
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            }
+
             try {
                 const response = await fetch("http://localhost:3005/update-environmental-scanning-status", {
                     method: "POST",
@@ -3196,11 +4372,16 @@
                 alert(data.message || "Status updated.");
                 if (data.success) {
                     closeEnvScanDeclineModal();
-                    loadStudentDocuments();
+                    await loadStudentDocuments();
                 }
             } catch (err) {
                 console.error("Error updating environmental scanning status:", err);
                 alert("Cannot update status. Server error.");
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
             }
         }
 

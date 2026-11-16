@@ -1,10 +1,11 @@
+require("dotenv").config();
 const mysql = require("mysql2");
 
 const db = mysql.createConnection({
     host: "localhost",
     port: 3307,
     user: "root",
-    password: "capstone123",
+    password: process.env.DB_PASSWORD,
     database: "capx_db"
 });
 

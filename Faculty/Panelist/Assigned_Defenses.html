@@ -206,7 +206,7 @@
                     </h2>
 
                     <p>
-                        For Re-Defense
+                        For Formal Defense
                     </p>
                 </div>
             </div>
@@ -300,8 +300,8 @@
                     Conditional Passed
                 </option>
 
-                <option value="For Re-Defense">
-                    For Re-Defense
+                <option value="For Formal Defense">
+                    For Formal Defense
                 </option>
 
                 <option value="Failed">
@@ -598,6 +598,16 @@
                 </button>
 
                 <button
+                    class="archive-btn"
+                    type="button"
+                    id="modalArchiveLateBtn"
+                    style="display:none;"
+                >
+                    <i class="fa-solid fa-box-archive"></i>
+                    Archive Late Defense
+                </button>
+
+                <button
                     class="evaluate-btn full-width"
                     type="button"
                     id="modalEvaluateBtn"
@@ -771,7 +781,7 @@
                         
                         <div class="form-grid two-col" style="margin-bottom: 0;">
                             <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 0.85rem; font-weight: 500;">Concept Papers Score (1-100)</label>
+                                <label id="groupPaperScoreLabel" style="font-size: 0.85rem; font-weight: 500;">Concept Papers Score (1-100)</label>
                                 <input type="number" id="groupPaperScore" min="0" max="100" placeholder="e.g. 90" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
                             </div>
                             <div style="display: flex; flex-direction: column; justify-content: center; padding-top: 15px;">
@@ -878,11 +888,11 @@
                         </details>
                         <div class="form-grid two-col" style="margin-bottom: 0;">
                             <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 0.85rem; font-weight: 500;">System Score (1-100)</label>
+                                <label id="outlineSystemScoreLabel" style="font-size: 0.85rem; font-weight: 500;">System Score (1-100)</label>
                                 <input type="number" id="outlineSystemScore" min="0" max="100" placeholder="e.g. 88" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
                             </div>
                             <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 0.85rem; font-weight: 500;">Documentation Score (1-100)</label>
+                                <label id="outlineDocScoreLabel" style="font-size: 0.85rem; font-weight: 500;">Documentation Score (1-100)</label>
                                 <input type="number" id="outlineDocScore" min="0" max="100" placeholder="e.g. 85" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
                             </div>
                         </div>
@@ -947,8 +957,8 @@
                                 Conditional Passed
                             </option>
 
-                            <option value="For Re-Defense">
-                                For Re-Defense
+                            <option value="For Formal Defense">
+                                For Formal Defense
                             </option>
 
                             <option value="Failed">
@@ -970,7 +980,7 @@
                         <strong>Conditional Passed</strong> — passed subject to meeting certain requirements, comments are required.
                     </div>
                     <div class="outcome-hint redefense">
-                        <strong>For Re-Defense</strong> — must defend again after major revisions.
+                        <strong>For Formal Defense</strong> — must defend again after major revisions.
                     </div>
                     <div class="outcome-hint failed">
                         <strong>Failed</strong> — did not meet defense requirements.
@@ -1038,6 +1048,56 @@
 
         </div>
 
+    </div>
+
+    <!-- ARCHIVE / DISMISS LATE DEFENSE MODAL -->
+    <div class="modal-overlay" id="archiveDefenseModal" style="display:none;">
+        <div class="modal-box archive-modal-box">
+            <div class="modal-header">
+                <div>
+                    <span class="defense-type-pill" style="background:#fee2e2;color:#dc2626;" id="archiveModalTypePill">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Late Defense
+                    </span>
+                    <h2 id="archiveModalGroupName" style="margin-top:6px;">Group Name</h2>
+                    <p id="archiveModalScheduleCode" style="color:var(--text-muted);font-size:12px;">DEF2026-0000</p>
+                </div>
+                <button class="close-modal-btn" onclick="closeArchiveDefenseModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p style="margin: 12px 0 0 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                This defense is marked as <strong>Late</strong> because you did not submit an evaluation. If you were unable to attend or will not evaluate, choose how you would like to handle it:
+            </p>
+
+            <div class="archive-modal-options">
+                <button type="button" class="archive-option-card" onclick="submitDefenseArchiveAction('archive')">
+                    <div class="archive-option-icon">
+                        <i class="fa-solid fa-box-archive"></i>
+                    </div>
+                    <div class="archive-option-body">
+                        <h4>Archive to History</h4>
+                        <p>Removes this defense from your active queue and moves it to your <strong>History / Completed</strong> tab marked as <em>"Did Not Evaluate"</em>.</p>
+                    </div>
+                </button>
+
+                <button type="button" class="archive-option-card option-delete" onclick="submitDefenseArchiveAction('delete')">
+                    <div class="archive-option-icon">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </div>
+                    <div class="archive-option-body">
+                        <h4 style="color:#dc2626;">Delete from Assigned List</h4>
+                        <p>Permanently removes this defense assignment from your panelist list so it no longer appears anywhere in your account.</p>
+                    </div>
+                </button>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 15px; display: flex; justify-content: flex-end;">
+                <button type="button" class="cancel-btn" onclick="closeArchiveDefenseModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1188,7 +1248,8 @@
                 defenseSchedules.filter(schedule =>
                     schedule.my_evaluation
                     && (
-                        schedule.my_evaluation.panel_result === "For Re-Defense"
+                        schedule.my_evaluation.panel_result === "For Formal Defense"
+                        || schedule.my_evaluation.panel_result === "For Re-Defense"
                         || schedule.my_evaluation.panel_result === "Passed with Revisions"
                     )
                 ).length;
@@ -1207,6 +1268,8 @@
 
         }
 
+        const loadDefenseSchedules = loadAssignedDefenses;
+
         function hasMyEvaluation(schedule){
             return !!(schedule && schedule.my_evaluation);
         }
@@ -1223,6 +1286,84 @@
             }
 
             return `${submitted}/${required} panel evaluations`;
+        }
+
+        function normalizeScheduleDate(value){
+            if(!value) return "";
+            if(typeof value === "string"){
+                const trimmed = value.trim();
+                if(trimmed.includes("T")){
+                    const d = new Date(trimmed);
+                    if(!isNaN(d.getTime())){
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, "0");
+                        const day = String(d.getDate()).padStart(2, "0");
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+                if(/^\d{4}-\d{2}-\d{2}/.test(trimmed)){
+                    return trimmed.slice(0, 10);
+                }
+            }
+            const d = new Date(value);
+            if(!isNaN(d.getTime())){
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, "0");
+                const day = String(d.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            }
+            return String(value).slice(0, 10);
+        }
+
+        function normalizeScheduleTime(value){
+            const raw = String(value || "").trim();
+            if(!raw) return "";
+            return raw.length >= 5 ? raw.slice(0, 5) : raw;
+        }
+
+        function isDefenseHappening(defenseDate, startTime, endTime){
+            if(!defenseDate || !startTime || !endTime) return false;
+            const dateStr = normalizeScheduleDate(defenseDate);
+            const startStr = normalizeScheduleTime(startTime);
+            const endStr = normalizeScheduleTime(endTime);
+            if(!dateStr || !startStr || !endStr) return false;
+            const startDt = new Date(`${dateStr}T${startStr}:00`);
+            const endDt = new Date(`${dateStr}T${endStr}:00`);
+            const now = new Date();
+            return !isNaN(startDt.getTime()) && !isNaN(endDt.getTime()) && now >= startDt && now <= endDt;
+        }
+
+        function isScheduleOngoing(schedule){
+            if(!schedule) return false;
+            const st = String(schedule.defense_status || "").toLowerCase();
+            if(st === "cancelled") return false;
+            if(st === "ongoing") return true;
+            if(st === "scheduled"){
+                return isDefenseHappening(schedule.defense_date, schedule.start_time, schedule.end_time);
+            }
+            return false;
+        }
+
+        function isScheduleLate(schedule){
+            if(!schedule) return false;
+            if(String(schedule.defense_status || "").toLowerCase() === "cancelled") return false;
+            const hasGraded = hasMyEvaluation(schedule);
+            if(hasGraded) return false;
+            // 1. Force completed by instructor (defense_status is Completed, but this panelist has not graded)
+            if(schedule.defense_status === "Completed"){
+                return true;
+            }
+            // 2. Scheduled defense slot has passed and panelist has not graded
+            const dateStr = normalizeScheduleDate(schedule.defense_date);
+            const endStr = normalizeScheduleTime(schedule.end_time);
+            if(dateStr && endStr){
+                const endDt = new Date(`${dateStr}T${endStr}:00`);
+                const now = new Date();
+                if(!isNaN(endDt.getTime()) && now > endDt){
+                    return true;
+                }
+            }
+            return false;
         }
 
         function isHistoryForPanelist(schedule){
@@ -1301,7 +1442,7 @@
                     } else if (activeTab === "final") {
                         matchesTab = type.includes("final") && !type.includes("pre") && !isHistory;
                     } else if (activeTab === "history") {
-                        matchesTab = isHistory;
+                        matchesTab = isHistory || (schedule.defense_status === "Completed");
                     }
 
                     return matchesKeyword
@@ -1316,15 +1457,26 @@
             if (activeTab === "history") {
                 // Descending order of date and time (most recent completed first)
                 filtered.sort((a, b) => {
-                    const dateA = new Date((a.defense_date || "2000-01-01") + 'T' + (a.start_time || '00:00:00'));
-                    const dateB = new Date((b.defense_date || "2000-01-01") + 'T' + (b.start_time || '00:00:00'));
+                    const dateA = new Date(normalizeScheduleDate(a.defense_date) + 'T' + normalizeScheduleTime(a.start_time));
+                    const dateB = new Date(normalizeScheduleDate(b.defense_date) + 'T' + normalizeScheduleTime(b.start_time));
                     return dateB - dateA;
                 });
             } else {
-                // Ascending order of date and time (closest deadline first)
+                // Priority ordering for active tab:
+                // 1. On-going defenses first
+                // 2. Late defenses
+                // 3. Upcoming defenses in chronological order (closest first)
                 filtered.sort((a, b) => {
-                    const dateA = new Date((a.defense_date || "9999-12-31") + 'T' + (a.start_time || '00:00:00'));
-                    const dateB = new Date((b.defense_date || "9999-12-31") + 'T' + (b.start_time || '00:00:00'));
+                    const aOngoing = isScheduleOngoing(a) ? 1 : 0;
+                    const bOngoing = isScheduleOngoing(b) ? 1 : 0;
+                    if (aOngoing !== bOngoing) return bOngoing - aOngoing;
+
+                    const aLate = isScheduleLate(a) ? 1 : 0;
+                    const bLate = isScheduleLate(b) ? 1 : 0;
+                    if (aLate !== bLate) return bLate - aLate;
+
+                    const dateA = new Date(normalizeScheduleDate(a.defense_date) + 'T' + normalizeScheduleTime(a.start_time));
+                    const dateB = new Date(normalizeScheduleDate(b.defense_date) + 'T' + normalizeScheduleTime(b.start_time));
                     return dateA - dateB;
                 });
             }
@@ -1418,12 +1570,16 @@
                 return "outcome-conditional";
             }
 
-            if(value === "For Re-Defense"){
+            if(value === "For Formal Defense" || value === "For Re-Defense"){
                 return "outcome-redefense";
             }
 
             if(value === "Failed"){
                 return "outcome-failed";
+            }
+
+            if(value === "Did Not Evaluate" || value.includes("Archived")){
+                return "outcome-archived";
             }
 
             return "outcome-pending";
@@ -1452,6 +1608,18 @@
 
             const activeTabBtn = document.querySelector(".tab-btn.active");
             const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : "concept";
+
+            // Find all upcoming non-cancelled, non-late schedules sorted chronologically
+            const upcomingSchedules = list.filter(s => 
+                String(s.defense_status).toLowerCase() !== "cancelled" &&
+                !isScheduleLate(s)
+            ).sort((a, b) => {
+                const da = new Date(normalizeScheduleDate(a.defense_date) + 'T' + normalizeScheduleTime(a.start_time));
+                const db = new Date(normalizeScheduleDate(b.defense_date) + 'T' + normalizeScheduleTime(b.start_time));
+                return da - db;
+            });
+
+            const hasOngoing = upcomingSchedules.some(s => isScheduleOngoing(s));
 
             list.forEach((schedule, index) => {
 
@@ -1486,24 +1654,67 @@
                 const panelMembers = (schedule.panelists || []).filter(p => Number(p.id) !== Number(schedule.panelist_id));
                 const panelMemberNames = panelMembers.map(p => p.fullname).join(", ") || "None";
 
-                // Group members string
+                // Group members string (indicating inactive/dropped status if any)
                 const memberNames = (schedule.members || [])
-                    .map(m => `${m.fullname} (${m.student_position || m.member_position || 'Member'})`)
+                    .map(m => {
+                        const st = String(m.student_status || "ACTIVE").toUpperCase();
+                        const stBadge = st !== "ACTIVE" ? ` [${st}]` : "";
+                        return `${m.fullname}${stBadge} (${m.student_position || m.member_position || 'Member'})`;
+                    })
                     .join(", ") || "No members listed";
 
-                const isClosest = (activeTab !== "history" && index === 0);
+                const isOngoing = isScheduleOngoing(schedule);
+                const isLate = isScheduleLate(schedule);
+                let isNextUp = false;
+
+                if (activeTab !== "history" && !isOngoing && !isLate) {
+                    if (hasOngoing) {
+                        // When an on-going defense exists, the 2nd time closest defense is "Next Up"
+                        const secondClosest = upcomingSchedules.find(s => !isScheduleOngoing(s));
+                        if (secondClosest && Number(schedule.id) === Number(secondClosest.id)) {
+                            isNextUp = true;
+                        }
+                    } else {
+                        // When no defense is on-going, the closest upcoming defense and 2nd closest defense are Next Up
+                        if (upcomingSchedules[0] && Number(schedule.id) === Number(upcomingSchedules[0].id)) {
+                            isNextUp = true;
+                        } else if (upcomingSchedules[1] && Number(schedule.id) === Number(upcomingSchedules[1].id)) {
+                            isNextUp = true;
+                        }
+                    }
+                }
+
+                let priorityBadgeHtml = "";
+                let cardExtraClass = "";
+
+                if (isLate) {
+                    cardExtraClass = "is-late";
+                    priorityBadgeHtml = `
+                        <div class="priority-badge badge-late">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Late
+                        </div>
+                    `;
+                } else if (isOngoing) {
+                    cardExtraClass = "is-ongoing";
+                    priorityBadgeHtml = `
+                        <div class="priority-badge badge-ongoing">
+                            <span class="pulse-dot"></span> On-Going
+                        </div>
+                    `;
+                } else if (isNextUp) {
+                    cardExtraClass = "is-nextup";
+                    priorityBadgeHtml = `
+                        <div class="priority-badge badge-nextup">
+                            <i class="fa-solid fa-forward"></i> Next Up
+                        </div>
+                    `;
+                }
 
                 const card =
                     document.createElement("div");
 
                 card.className =
-                    isClosest ? "defense-card closest-deadline" : "defense-card";
-
-                const priorityBadgeHtml = isClosest 
-                    ? `<div class="priority-badge">
-                        <i class="fa-solid fa-circle-exclamation"></i> Next Up / Closest Deadline
-                       </div>` 
-                    : "";
+                    cardExtraClass ? `defense-card ${cardExtraClass}` : "defense-card";
 
                 const isHistory =
                     isHistoryForPanelist(schedule)
@@ -1513,12 +1724,33 @@
                     !hasMyEvaluation(schedule)
                     && schedule.defense_status !== "Cancelled";
 
-                const evaluateButtonHtml = canEvaluate
-                    ? `<button class="evaluate-btn" type="button">
-                        <i class="fa-solid fa-file-signature"></i>
-                        Evaluate
+                const isUnevaluatedArchive = hasMyEvaluation(schedule)
+                    && (schedule.my_evaluation.panel_result === "Did Not Evaluate" || String(schedule.my_evaluation.panel_result).includes("Archived"));
+
+                const archiveButtonHtml = isLate
+                    ? `<button class="archive-btn" type="button" title="Archive or delete late defense">
+                        <i class="fa-solid fa-box-archive"></i>
+                        Archive
                        </button>`
-                    : "";
+                    : (isUnevaluatedArchive ? `
+                       <button class="delete-btn" type="button" title="Permanently delete this defense assignment">
+                        <i class="fa-solid fa-trash-can"></i>
+                        Delete
+                       </button>
+                    ` : "");
+
+                let evaluateButtonHtml = "";
+                if (canEvaluate) {
+                    evaluateButtonHtml = `<button class="evaluate-btn ${isLate ? 'evaluate-btn-late' : ''}" type="button">
+                        <i class="fa-solid fa-file-signature"></i>
+                        ${isLate ? 'Evaluate (Late)' : 'Evaluate'}
+                    </button>`;
+                } else if (isUnevaluatedArchive && schedule.defense_status !== "Cancelled") {
+                    evaluateButtonHtml = `<button class="evaluate-btn evaluate-btn-late" type="button" title="Grade this defense now">
+                        <i class="fa-solid fa-file-signature"></i>
+                        Grade Now
+                    </button>`;
+                }
 
                 card.innerHTML =
                     `
@@ -1540,11 +1772,24 @@
 
                         <div class="defense-meta">
                             <span>${programText}</span>
-                            <span class="${statusClass}">
-                                ${statusClass === "ongoing" ? '<span class="pulse-dot"></span>' : ''}
-                                ${schedule.defense_status || "Scheduled"}
-                            </span>
-                            <span class="${outcomeClass}">${hasMyEvaluation(schedule) ? myOutcome : "Your evaluation pending"}</span>
+                            ${isLate ? `
+                                <span class="indication-pill pill-late">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Late
+                                </span>
+                            ` : isOngoing ? `
+                                <span class="indication-pill pill-ongoing">
+                                    <span class="pulse-dot"></span> On-Going
+                                </span>
+                            ` : isNextUp ? `
+                                <span class="indication-pill pill-nextup">
+                                    <i class="fa-solid fa-forward"></i> Next Up
+                                </span>
+                            ` : `
+                                <span class="${statusClass}">
+                                    ${schedule.defense_status || "Scheduled"}
+                                </span>
+                            `}
+                            <span class="${outcomeClass}">${hasMyEvaluation(schedule) ? myOutcome : (isLate ? "Grading Overdue" : "Your evaluation pending")}</span>
                             ${panelProgress ? `<span>${panelProgress}</span>` : ""}
                             ${schedule.evaluations_complete ? `<span class="outcome-passed">Final: ${schedule.panel_result}</span>` : ""}
                         </div>
@@ -1566,6 +1811,7 @@
                                 View Details
                             </button>
                             ${evaluateButtonHtml}
+                            ${archiveButtonHtml}
                         </div>
                     `;
 
@@ -1577,6 +1823,22 @@
                 if (evalBtn) {
                     evalBtn.addEventListener("click", () => {
                         openEvaluationModal(schedule.id);
+                    });
+                }
+
+                const archBtn = card.querySelector(".archive-btn");
+                if (archBtn) {
+                    archBtn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        openArchiveDefenseModal(schedule.id);
+                    });
+                }
+
+                const delBtn = card.querySelector(".delete-btn");
+                if (delBtn) {
+                    delBtn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        handleDeleteArchivedDefense(schedule.id);
                     });
                 }
 
@@ -2440,10 +2702,30 @@
             }
 
             const evaluateModalBtn = document.getElementById("modalEvaluateBtn");
-            if (schedule.defense_status === "Completed" || schedule.defense_status === "Cancelled") {
+            const archiveModalBtn = document.getElementById("modalArchiveLateBtn");
+            const isLate = isScheduleLate(schedule);
+
+            if (archiveModalBtn) {
+                if (isLate) {
+                    archiveModalBtn.style.display = "inline-flex";
+                    archiveModalBtn.onclick = () => {
+                        closeDefenseModal();
+                        openArchiveDefenseModal(schedule.id);
+                    };
+                } else {
+                    archiveModalBtn.style.display = "none";
+                }
+            }
+
+            if (schedule.defense_status === "Cancelled") {
+                evaluateModalBtn.style.display = "none";
+            } else if (hasMyEvaluation(schedule) && schedule.my_evaluation.panel_result !== "Did Not Evaluate" && !String(schedule.my_evaluation.panel_result).includes("Archived")) {
+                evaluateModalBtn.style.display = "none";
+            } else if (schedule.defense_status === "Completed" && !isLate && !hasMyEvaluation(schedule)) {
                 evaluateModalBtn.style.display = "none";
             } else {
                 evaluateModalBtn.style.display = "block";
+                evaluateModalBtn.innerHTML = `<i class="fa-solid fa-file-signature"></i> ${isLate ? "Evaluate (Late)" : (hasMyEvaluation(schedule) ? "Grade Now" : "Open Evaluation Form")}`;
                 evaluateModalBtn.onclick = () => {
                     closeDefenseModal();
                     openEvaluationModal(schedule.id);
@@ -2618,6 +2900,29 @@
 
         }
 
+        function getMaxAllowedScoreForSchedule(schedule) {
+            if (schedule && (schedule.max_grade === 75 || schedule.prior_verdict === "For Formal Defense" || schedule.prior_verdict === "For Re-Defense")) {
+                return 75;
+            }
+            return 100;
+        }
+
+        function clampScoreInputEl(inputEl, maxScore) {
+            if (!inputEl) return NaN;
+            const raw = String(inputEl.value || "").trim();
+            if (raw === "") return NaN;
+            let val = parseFloat(raw);
+            if (isNaN(val)) return NaN;
+            if (val < 0) {
+                val = 0;
+                inputEl.value = "0";
+            } else if (val > maxScore) {
+                val = maxScore;
+                inputEl.value = String(maxScore);
+            }
+            return val;
+        }
+
         function calculateConceptFinalScore() {
             const inputContainer = document.getElementById("presenterGradingInputs");
             const breakdownContainer = document.getElementById("calcBreakdownContainer");
@@ -2626,6 +2931,9 @@
 
             if (!inputContainer || !breakdownContainer || !overallBadge) return;
 
+            const activeSchedule = defenseSchedules.find(s => Number(s.id) === Number(activeEvaluationId));
+            const maxAllowed = getMaxAllowedScoreForSchedule(activeSchedule);
+
             const disps = Array.from(document.querySelectorAll(".presenter-disposition"));
             const dels = Array.from(document.querySelectorAll(".presenter-delivery"));
 
@@ -2633,7 +2941,7 @@
             let totalCombinedScore = 0;
             let count = 0;
 
-            const groupScoreVal = parseFloat(document.getElementById("groupPaperScore").value);
+            const groupScoreVal = clampScoreInputEl(document.getElementById("groupPaperScore"), maxAllowed);
             const groupGpa = isNaN(groupScoreVal) ? "--" : convert100ToGpa(groupScoreVal);
             document.getElementById("groupPaperGpa").textContent = isNaN(groupScoreVal) ? "--" : `GPA: ${groupGpa}`;
 
@@ -2644,8 +2952,8 @@
                 const fullname = dispInput.dataset.name;
                 const role = dispInput.dataset.role;
 
-                const dispVal = parseFloat(dispInput.value);
-                const delVal = parseFloat(delInput.value);
+                const dispVal = clampScoreInputEl(dispInput, maxAllowed);
+                const delVal = clampScoreInputEl(delInput, maxAllowed);
 
                 if (isNaN(dispVal) || isNaN(delVal)) {
                     presentersResults.push({
@@ -2704,7 +3012,9 @@
 
             if (count > 0 && count === disps.length && !isNaN(groupScoreVal)) {
                 const averageScore = totalCombinedScore / count;
-                const finalGpa = convert100ToGpa(averageScore);
+                const activeSchedule = defenseSchedules.find(s => Number(s.id) === Number(activeEvaluationId));
+                const cappedScore = (activeSchedule && activeSchedule.max_grade === 75 && averageScore > 75) ? 75 : averageScore;
+                const finalGpa = convert100ToGpa(cappedScore);
                 overallBadge.textContent = finalGpa;
                 mainScoreInput.value = finalGpa;
             } else {
@@ -2720,11 +3030,14 @@
 
             if (!breakdownContainer || !overallBadge) return;
 
+            const activeSchedule = defenseSchedules.find(s => Number(s.id) === Number(activeEvaluationId));
+            const maxAllowed = getMaxAllowedScoreForSchedule(activeSchedule);
+
             const disps = Array.from(document.querySelectorAll(".outline-presenter-disposition"));
             const dels = Array.from(document.querySelectorAll(".outline-presenter-delivery"));
 
-            const systemScoreVal = parseFloat(document.getElementById("outlineSystemScore").value);
-            const docScoreVal = parseFloat(document.getElementById("outlineDocScore").value);
+            const systemScoreVal = clampScoreInputEl(document.getElementById("outlineSystemScore"), maxAllowed);
+            const docScoreVal = clampScoreInputEl(document.getElementById("outlineDocScore"), maxAllowed);
 
             const groupTotal = (!isNaN(systemScoreVal) && !isNaN(docScoreVal))
                 ? (systemScoreVal + docScoreVal) / 2
@@ -2743,8 +3056,8 @@
 
                 const fullname = dispInput.dataset.name;
                 const role = dispInput.dataset.role;
-                const dispVal = parseFloat(dispInput.value);
-                const delVal = parseFloat(delInput.value);
+                const dispVal = clampScoreInputEl(dispInput, maxAllowed);
+                const delVal = clampScoreInputEl(delInput, maxAllowed);
 
                 if (isNaN(dispVal) || isNaN(delVal)) {
                     presentersResults.push({ fullname, role, individualScore: null, combinedScore: null });
@@ -2793,7 +3106,9 @@
 
             if (count > 0 && count === disps.length && !isNaN(groupTotal)) {
                 const averageScore = totalCombinedScore / count;
-                const finalGpa = convert100ToGpa(averageScore);
+                const activeSchedule = defenseSchedules.find(s => Number(s.id) === Number(activeEvaluationId));
+                const cappedScore = (activeSchedule && activeSchedule.max_grade === 75 && averageScore > 75) ? 75 : averageScore;
+                const finalGpa = convert100ToGpa(cappedScore);
                 overallBadge.textContent = finalGpa;
                 mainScoreInput.value = finalGpa;
             } else {
@@ -2809,6 +3124,102 @@
 
         }
 
+        /* ================= ARCHIVE / DELETE LATE DEFENSE ================= */
+
+        let activeArchiveScheduleId = null;
+
+        function openArchiveDefenseModal(scheduleId){
+            const schedule = defenseSchedules.find(s => Number(s.id) === Number(scheduleId));
+            if(!schedule) return;
+
+            activeArchiveScheduleId = scheduleId;
+            const groupNameEl = document.getElementById("archiveModalGroupName");
+            const codeEl = document.getElementById("archiveModalScheduleCode");
+            const pillEl = document.getElementById("archiveModalTypePill");
+
+            if(groupNameEl) groupNameEl.textContent = schedule.group_name || "Unnamed Group";
+            if(codeEl) codeEl.textContent = schedule.schedule_code || "";
+            if(pillEl) pillEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Late: ${schedule.defense_type || "Defense"}`;
+
+            const modal = document.getElementById("archiveDefenseModal");
+            if(modal) modal.style.display = "flex";
+        }
+
+        function closeArchiveDefenseModal(){
+            const modal = document.getElementById("archiveDefenseModal");
+            if(modal) modal.style.display = "none";
+            activeArchiveScheduleId = null;
+        }
+
+        async function submitDefenseArchiveAction(action){
+            if(!activeArchiveScheduleId) return;
+
+            const scheduleId = activeArchiveScheduleId;
+            const schedule = defenseSchedules.find(s => Number(s.id) === Number(scheduleId));
+            const groupName = schedule ? (schedule.group_name || "this defense") : "this defense";
+
+            if(action === "delete"){
+                const confirmed = confirm(`Are you sure you want to permanently delete "${groupName}" from your assigned defenses?\n\nThis will completely remove the defense assignment from your account.`);
+                if(!confirmed) return;
+            }
+
+            try{
+                const res = await fetch("http://localhost:3005/archive-panelist-defense", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        schedule_id: scheduleId,
+                        panelist_user_id: loggedInUserId,
+                        action: action
+                    })
+                });
+
+                const data = await res.json();
+                if(data.success){
+                    alert(data.message || (action === "delete" ? "Defense assignment deleted." : "Defense archived to History."));
+                    closeArchiveDefenseModal();
+                    await loadAssignedDefenses();
+                }else{
+                    alert(data.message || "Failed to process defense archive request.");
+                }
+            }catch(err){
+                console.error("Archive defense error:", err);
+                alert("Failed to communicate with server.");
+            }
+        }
+
+        async function handleDeleteArchivedDefense(scheduleId){
+            const schedule = defenseSchedules.find(s => Number(s.id) === Number(scheduleId));
+            const groupName = schedule ? (schedule.group_name || "this defense") : "this defense";
+
+            if(!confirm(`Permanently remove "${groupName}" from your assigned defenses?\n\nThis cannot be undone.`)){
+                return;
+            }
+
+            try{
+                const res = await fetch("http://localhost:3005/archive-panelist-defense", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        schedule_id: scheduleId,
+                        panelist_user_id: loggedInUserId,
+                        action: "delete"
+                    })
+                });
+
+                const data = await res.json();
+                if(data.success){
+                    alert(data.message || "Defense assignment deleted.");
+                    await loadAssignedDefenses();
+                }else{
+                    alert(data.message || "Failed to delete defense assignment.");
+                }
+            }catch(err){
+                console.error("Delete archived defense error:", err);
+                alert("Failed to communicate with server.");
+            }
+        }
+
         function openEvaluationModal(scheduleId){
 
             const schedule =
@@ -2822,6 +3233,33 @@
 
             activeEvaluationId =
                 schedule.id;
+
+            // --- Re-defense grade cap banner ---
+            const isFormalRedefense = schedule.max_grade === 75 || schedule.prior_verdict === "For Formal Defense";
+            const isCondPassRedefense = !isFormalRedefense && schedule.prior_verdict === "Conditional Passed";
+            let redefenseBanner = document.getElementById("redefenseGradeBanner");
+            if (!redefenseBanner) {
+                redefenseBanner = document.createElement("div");
+                redefenseBanner.id = "redefenseGradeBanner";
+                redefenseBanner.style.cssText = "display:none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; font-weight: 500; align-items: center; gap: 8px;";
+                const evalForm = document.getElementById("evaluationForm");
+                if (evalForm) evalForm.insertBefore(redefenseBanner, evalForm.firstChild);
+            }
+            if (isFormalRedefense) {
+                redefenseBanner.style.display = "flex";
+                redefenseBanner.style.background = "#fff7ed";
+                redefenseBanner.style.color = "#ea580c";
+                redefenseBanner.style.borderLeft = "4px solid #ea580c";
+                redefenseBanner.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span><strong>Re-Defense Grade Cap (Max 75 / GPA 3.00):</strong> The first verdict for this group was <em>For Formal Defense</em>. The maximum grade you can award on this re-defense is <strong>75</strong> (GPA 3.00). Scores above 75 will be rejected.</span>`;
+            } else if (isCondPassRedefense) {
+                redefenseBanner.style.display = "flex";
+                redefenseBanner.style.background = "#eff6ff";
+                redefenseBanner.style.color = "#1d4ed8";
+                redefenseBanner.style.borderLeft = "4px solid #1d4ed8";
+                redefenseBanner.innerHTML = `<i class="fa-solid fa-rotate"></i><span><strong>Re-Defense [Conditional Passed]:</strong> This group received a Conditional Passed on their previous evaluation and must present again.</span>`;
+            } else {
+                redefenseBanner.style.display = "none";
+            }
 
             const typePill =
                 document.getElementById("evalTypePill");
@@ -2925,11 +3363,41 @@
 
             const isConcept = String(schedule.defense_type || "").toLowerCase().includes("concept");
             const isOutline = isOutlineDefense(schedule.defense_type);
+            const maxAllowedScore = getMaxAllowedScoreForSchedule(schedule);
             const conceptSection = document.getElementById("conceptGradingSection");
             const outlineSection = document.getElementById("outlineGradingSection");
             const scoreInputGroup = document.getElementById("evalScoreInputGroup");
             const scoreLabel = document.getElementById("evalScoreLabel");
             const scoreInput = document.getElementById("evalScore");
+
+            const groupPaperEl = document.getElementById("groupPaperScore");
+            const groupPaperLbl = document.getElementById("groupPaperScoreLabel");
+            if (groupPaperEl) {
+                groupPaperEl.max = String(maxAllowedScore);
+                groupPaperEl.placeholder = maxAllowedScore === 75 ? "Max 75" : "e.g. 90";
+            }
+            if (groupPaperLbl) {
+                groupPaperLbl.textContent = `Concept Papers Score (1-${maxAllowedScore})`;
+            }
+
+            const outlineSysEl = document.getElementById("outlineSystemScore");
+            const outlineSysLbl = document.getElementById("outlineSystemScoreLabel");
+            const outlineDocEl = document.getElementById("outlineDocScore");
+            const outlineDocLbl = document.getElementById("outlineDocScoreLabel");
+            if (outlineSysEl) {
+                outlineSysEl.max = String(maxAllowedScore);
+                outlineSysEl.placeholder = maxAllowedScore === 75 ? "Max 75" : "e.g. 88";
+            }
+            if (outlineSysLbl) {
+                outlineSysLbl.textContent = `System Score (1-${maxAllowedScore})`;
+            }
+            if (outlineDocEl) {
+                outlineDocEl.max = String(maxAllowedScore);
+                outlineDocEl.placeholder = maxAllowedScore === 75 ? "Max 75" : "e.g. 85";
+            }
+            if (outlineDocLbl) {
+                outlineDocLbl.textContent = `Documentation Score (1-${maxAllowedScore})`;
+            }
 
             if(isConcept){
                 conceptSection.style.display = "block";
@@ -2963,8 +3431,34 @@
                         const roleLabel = isLeader 
                             ? "Project Manager / Leader" 
                             : (memberActualPos && memberActualPos !== "Member" ? memberActualPos : `Member ${idx}`);
-                        
-                        // Lineup visual list
+
+                        const status = String(member.student_status || "ACTIVE").toUpperCase();
+                        const isInactive = status !== "ACTIVE";
+
+                        if(isInactive){
+                            // Inactive / Dropped: block from receiving points
+                            lineupContainer.innerHTML += `
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);">
+                                    <span style="font-weight: 500; color: var(--text-muted);">Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                    <span style="font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${status} — NOT GRADED</span>
+                                </div>
+                            `;
+
+                            inputsContainer.innerHTML += `
+                                <div style="margin-bottom: 12px; padding: 12px; border: 1px dashed #fca5a5; border-radius: 8px; background: rgba(239, 68, 68, 0.05);">
+                                    <p style="font-weight: 600; font-size: 0.88rem; margin-bottom: 4px; color: #ef4444; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                        <span style="font-size: 0.75rem; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 700;">${status}</span>
+                                    </p>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+                                        <i class="fa-solid fa-ban" style="color: #ef4444; margin-right: 4px;"></i> Excluded from scoring. Students with <strong>${status}</strong> status are not graded during defense.
+                                    </p>
+                                </div>
+                            `;
+                            return;
+                        }
+
+                        // Lineup visual list for active student
                         lineupContainer.innerHTML += `
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);">
                                 <span style="font-weight: 500; color: var(--text-main);">Student ${idx + 1}: <strong>${member.fullname}</strong></span>
@@ -2972,7 +3466,7 @@
                             </div>
                         `;
 
-                        // Form Inputs for this student
+                        // Form Inputs for active student
                         inputsContainer.innerHTML += `
                             <div style="margin-bottom: 12px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); box-shadow: inset 0 0 5px rgba(0,0,0,0.02);">
                                 <p style="font-weight: 600; font-size: 0.88rem; margin-bottom: 8px; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 4px;">
@@ -2981,12 +3475,12 @@
                                 </p>
                                 <div class="form-grid two-col" style="margin-bottom: 0;">
                                     <div class="input-group" style="margin-bottom: 0;">
-                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">I. Disposition Score (1-100)</label>
-                                        <input type="number" class="presenter-disposition" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 90" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">I. Disposition Score (1-${maxAllowedScore})</label>
+                                        <input type="number" class="presenter-disposition" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="${maxAllowedScore}" placeholder="${maxAllowedScore === 75 ? 'Max 75' : 'e.g. 90'}" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
                                     </div>
                                     <div class="input-group" style="margin-bottom: 0;">
-                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">II. Delivery &amp; Presentation Score (1-100)</label>
-                                        <input type="number" class="presenter-delivery" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 88" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">II. Delivery &amp; Presentation Score (1-${maxAllowedScore})</label>
+                                        <input type="number" class="presenter-delivery" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="${maxAllowedScore}" placeholder="${maxAllowedScore === 75 ? 'Max 75' : 'e.g. 88'}" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateConceptFinalScore()">
                                     </div>
                                 </div>
                             </div>
@@ -3058,6 +3552,32 @@
                             ? "Project Manager / Leader" 
                             : (memberActualPos && memberActualPos !== "Member" ? memberActualPos : `Member ${idx}`);
 
+                        const status = String(member.student_status || "ACTIVE").toUpperCase();
+                        const isInactive = status !== "ACTIVE";
+
+                        if(isInactive){
+                            // Inactive / Dropped: block from receiving points
+                            outlineLineup.innerHTML += `
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);">
+                                    <span style="font-weight: 500; color: var(--text-muted);">Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                    <span style="font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${status} — NOT GRADED</span>
+                                </div>
+                            `;
+
+                            outlineInputs.innerHTML += `
+                                <div style="margin-bottom: 12px; padding: 12px; border: 1px dashed #fca5a5; border-radius: 8px; background: rgba(239, 68, 68, 0.05);">
+                                    <p style="font-weight: 600; font-size: 0.88rem; margin-bottom: 4px; color: #ef4444; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>Student ${idx + 1}: <strong>${member.fullname}</strong></span>
+                                        <span style="font-size: 0.75rem; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 700;">${status}</span>
+                                    </p>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+                                        <i class="fa-solid fa-ban" style="color: #ef4444; margin-right: 4px;"></i> Excluded from scoring. Students with <strong>${status}</strong> status are not graded during defense.
+                                    </p>
+                                </div>
+                            `;
+                            return;
+                        }
+
                         outlineLineup.innerHTML += `
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);">
                                 <span style="font-weight: 500; color: var(--text-main);">Student ${idx + 1}: <strong>${member.fullname}</strong></span>
@@ -3073,12 +3593,12 @@
                                 </p>
                                 <div class="form-grid two-col" style="margin-bottom: 0;">
                                     <div class="input-group" style="margin-bottom: 0;">
-                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">I. Disposition Score (1-100)</label>
-                                        <input type="number" class="outline-presenter-disposition" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 90" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">I. Disposition Score (1-${maxAllowedScore})</label>
+                                        <input type="number" class="outline-presenter-disposition" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="${maxAllowedScore}" placeholder="${maxAllowedScore === 75 ? 'Max 75' : 'e.g. 90'}" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
                                     </div>
                                     <div class="input-group" style="margin-bottom: 0;">
-                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">II. Delivery &amp; Presentation Score (1-100)</label>
-                                        <input type="number" class="outline-presenter-delivery" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="100" placeholder="e.g. 88" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
+                                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px;">II. Delivery &amp; Presentation Score (1-${maxAllowedScore})</label>
+                                        <input type="number" class="outline-presenter-delivery" data-id="${member.id}" data-name="${member.fullname}" data-role="${roleLabel}" min="0" max="${maxAllowedScore}" placeholder="${maxAllowedScore === 75 ? 'Max 75' : 'e.g. 88'}" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);" oninput="calculateOutlineFinalScore()">
                                     </div>
                                 </div>
                             </div>
@@ -3122,8 +3642,9 @@
             } else {
                 conceptSection.style.display = "none";
                 outlineSection.style.display = "none";
-                scoreLabel.textContent = "Score / Grade";
+                scoreLabel.textContent = `Score / Grade (Max: ${maxAllowedScore})`;
                 scoreInput.readOnly = false;
+                scoreInput.oninput = () => clampScoreInputEl(scoreInput, maxAllowedScore);
                 scoreInput.value = schedule.evaluation ? schedule.evaluation.score || "" : "";
             }
 
@@ -3172,7 +3693,7 @@
 
             const status =
                 document.getElementById("evalStatus").value;
-            const isScoreOptional = status === "Conditional Passed" || status === "Conditional Pass" || status === "For Re-Defense";
+            const isScoreOptional = status === "Conditional Passed" || status === "Conditional Pass" || status === "For Formal Defense" || status === "For Re-Defense";
 
             if(!isScoreOptional && !window.isSignatureAttached){
                 alert("Please attach your e-signature before submitting the evaluation.");
@@ -3181,13 +3702,14 @@
 
             const isConcept = String(schedule.defense_type || "").toLowerCase().includes("concept");
             const isOutline = isOutlineDefense(schedule.defense_type);
+            const maxAllowedScore = getMaxAllowedScoreForSchedule(schedule);
             let conceptDetails = null;
             let outlineDetails = null;
 
             if (isConcept) {
                 const disps = Array.from(document.querySelectorAll(".presenter-disposition"));
                 const dels = Array.from(document.querySelectorAll(".presenter-delivery"));
-                const groupScoreVal = parseFloat(document.getElementById("groupPaperScore").value);
+                const groupScoreVal = clampScoreInputEl(document.getElementById("groupPaperScore"), maxAllowedScore);
 
                 if (!isScoreOptional && isNaN(groupScoreVal)) {
                     alert("Please enter the group Concept Papers score.");
@@ -3199,8 +3721,8 @@
 
                 disps.forEach((dispInput, idx) => {
                     const delInput = dels[idx];
-                    const dispVal = parseFloat(dispInput.value);
-                    const delVal = parseFloat(delInput.value);
+                    const dispVal = clampScoreInputEl(dispInput, maxAllowedScore);
+                    const delVal = clampScoreInputEl(delInput, maxAllowedScore);
 
                     if (isNaN(dispVal) || isNaN(delVal)) {
                         hasIncomplete = true;
@@ -3234,8 +3756,8 @@
             } else if (isOutline) {
                 const disps = Array.from(document.querySelectorAll(".outline-presenter-disposition"));
                 const dels = Array.from(document.querySelectorAll(".outline-presenter-delivery"));
-                const systemScoreVal = parseFloat(document.getElementById("outlineSystemScore").value);
-                const docScoreVal = parseFloat(document.getElementById("outlineDocScore").value);
+                const systemScoreVal = clampScoreInputEl(document.getElementById("outlineSystemScore"), maxAllowedScore);
+                const docScoreVal = clampScoreInputEl(document.getElementById("outlineDocScore"), maxAllowedScore);
 
                 if (!isScoreOptional && (isNaN(systemScoreVal) || isNaN(docScoreVal))) {
                     alert("Please enter both the System score and Documentation score for the group.");
@@ -3247,8 +3769,8 @@
 
                 disps.forEach((dispInput, idx) => {
                     const delInput = dels[idx];
-                    const dispVal = parseFloat(dispInput.value);
-                    const delVal = parseFloat(delInput.value);
+                    const dispVal = clampScoreInputEl(dispInput, maxAllowedScore);
+                    const delVal = clampScoreInputEl(delInput, maxAllowedScore);
 
                     if (isNaN(dispVal) || isNaN(delVal)) {
                         hasIncomplete = true;
@@ -3294,10 +3816,24 @@
 
             }
 
+            // Grade cap: if re-defense from Formal Defense, max grade is 75 (GPA 3.00)
+            if (schedule.max_grade === 75 && score && score !== "--") {
+                const numScore = parseFloat(score);
+                if (!isNaN(numScore) && numScore > 75 && numScore <= 100) {
+                    alert("The first verdict was For Formal Defense. The maximum grade allowed on re-defense is 75 (GPA 3.00). Your calculated score has been capped to 75.");
+                    document.getElementById("evalScore").value = "75";
+                }
+                // Also check GPA format (1.00 to 5.00)
+                if (!isNaN(numScore) && numScore >= 1.00 && numScore < 3.00) {
+                    alert("The first verdict was For Formal Defense. The maximum grade allowed on re-defense is GPA 3.00. You cannot award a GPA better than 3.00.");
+                    return;
+                }
+            }
+
             const comments =
                 document.getElementById("evalComments").value.trim();
 
-            if ((status === "Conditional Passed" || status === "Conditional Pass" || status === "For Re-Defense") && !comments) {
+            if ((status === "Conditional Passed" || status === "Conditional Pass" || status === "For Formal Defense" || status === "For Re-Defense") && !comments) {
                 alert(`Comments and feedback are required when the result is "${status}".`);
                 return;
             }
@@ -3404,6 +3940,17 @@
                 return "N/A";
             }
 
+            const norm = normalizeScheduleDate(dateValue);
+            if(norm && /^\d{4}-\d{2}-\d{2}$/.test(norm)){
+                const [y, m, d] = norm.split("-").map(Number);
+                const localDate = new Date(y, m - 1, d);
+                return localDate.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+            }
+
             return new Date(dateValue).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
@@ -3418,7 +3965,12 @@
                 return "N/A";
             }
 
-            return String(timeValue).slice(0, 5);
+            const cleanTime = String(timeValue).trim().slice(0, 5);
+            if(!cleanTime.includes(":")) return cleanTime;
+            const [h, m] = cleanTime.split(":").map(Number);
+            const period = h >= 12 ? "PM" : "AM";
+            const hour12 = h % 12 || 12;
+            return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 
         }
 

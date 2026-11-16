@@ -168,6 +168,17 @@
                     </span>
                 </div>
 
+                <div
+                    class="menu-item"
+                    id="nav-repository"
+                    onclick="window.location.href='Repository.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>
+                        Repository
+                    </span>
+                </div>
+
             </div>
 
         </div>
@@ -296,17 +307,8 @@
                     onclick="setTab('received')"
                     type="button"
                 >
+                    <i class="fa-solid fa-inbox" style="margin-right:6px;"></i>
                     Received Documents
-                </button>
-
-                <button
-                    class="tab-btn"
-                    id="tab-signing"
-                    onclick="setTab('signing')"
-                    type="button"
-                >
-                    <i class="fa-solid fa-file-signature" style="margin-right:5px;"></i>
-                    Signing Requests
                 </button>
 
                 <button
@@ -315,6 +317,7 @@
                     onclick="setTab('sent')"
                     type="button"
                 >
+                    <i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>
                     Sent Documents
                 </button>
 
@@ -838,7 +841,7 @@
 
                 const allReceived = data.receivedDocuments || [];
                 signingRequests = allReceived.filter(isEnvironmentalScanningDoc);
-                receivedDocuments = allReceived.filter(item => !isEnvironmentalScanningDoc(item));
+                receivedDocuments = allReceived;
 
                 sentDocuments =
                     data.sentDocuments || [];
@@ -848,6 +851,8 @@
 
                 document.getElementById("instructorSubtitle").innerText =
                     `${instructorData.fullname} • ${instructorData.user_id} • ${instructorData.position || "Instructor"}`;
+
+                console.log('[DR] Loaded receivedDocuments:', receivedDocuments.length, 'items');
 
                 renderStats(data.stats);
 
@@ -892,9 +897,8 @@
                     button.classList.remove("active")
                 );
 
-            document
-                .getElementById(`tab-${tab}`)
-                .classList.add("active");
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if(activeBtn) activeBtn.classList.add("active");
 
             renderCurrentTab();
 
@@ -908,25 +912,12 @@
                     "Received Documents";
 
                 document.getElementById("sectionDescription").innerText =
-                    "Documents sent by students for review.";
+                    "Documents sent by students for review and required e-signatures.";
 
                 document.getElementById("statusFilter").style.display =
                     "block";
 
                 renderReceivedDocuments();
-
-            }else if(currentTab === "signing"){
-
-                document.getElementById("sectionTitle").innerText =
-                    "Signing Requests";
-
-                document.getElementById("sectionDescription").innerText =
-                    "Documents intended for you to e-sign. Students can request revisions and track their progress.";
-
-                document.getElementById("statusFilter").style.display =
-                    "none";
-
-                renderSigningRequests();
 
             }else{
 
@@ -997,38 +988,51 @@
         }
 
         function buildGroupedDocRowHtml(item){
+            const isEnvScan = isEnvironmentalScanningDoc(item);
+            const isSigned = item.review_status === "Approved";
             const statusClass = getStatusClass(item.review_status);
             const isNew = isNewDocument(item);
+            const viewUrl = `http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
 
             return `
-                <div class="group-doc-row ${isNew ? "is-new" : ""}" data-submission-id="${item.submission_id}">
+                <div class="group-doc-row ${isNew ? "is-new" : ""} ${isEnvScan ? "needs-sign-row" : ""}" data-submission-id="${item.submission_id}">
                     <div class="group-doc-main">
                         <h4>
                             ${item.document_title || "Untitled Document"}
                             ${isNew ? `<span class="new-doc-pill">New</span>` : ""}
+                            ${isEnvScan && !isSigned ? `<span class="sign-needed-pill"><i class="fa-solid fa-file-signature"></i> Signature Required</span>` : ""}
+                            ${isEnvScan && isSigned ? `<span class="signed-badge-pill"><i class="fa-solid fa-circle-check"></i> Signed</span>` : ""}
                         </h4>
                         <div class="group-doc-meta">
-                            <span>${item.document_code || "No Code"}</span>
-                            <span>&bull;</span>
-                            <span>${item.document_type || "Document"}</span>
-                            <span>&bull;</span>
-                            <span>From ${item.sender_name || "Unknown Student"}</span>
-                            <span>&bull;</span>
+                            <span class="doc-code-pill">${item.document_code || "No Code"}</span>
+                            <span class="separator">&bull;</span>
+                            <span class="doc-type-pill">${item.document_type || "Document"}</span>
+                            <span class="separator">&bull;</span>
+                            <span>From <strong>${item.sender_name || "Unknown Student"}</strong></span>
+                            <span class="separator">&bull;</span>
                             <span>Sent ${formatDate(item.sent_at)}</span>
                         </div>
                     </div>
                     <div class="group-doc-actions">
                         <div class="document-meta" style="margin:0;">
                             <span class="${statusClass}">
-                                ${item.review_status || "Pending Review"}
+                                ${isEnvScan && isSigned ? "Signed" : (item.review_status || "Pending Review")}
                             </span>
                         </div>
-                        <a class="view-file-btn" href="http://localhost:3005${item.file_path}" target="_blank">
+                        <a class="view-file-btn" href="${viewUrl}" target="_blank" title="View Document">
                             <i class="fa-solid fa-eye"></i>
                         </a>
-                        <button class="review-btn" type="button" data-submission-id="${item.submission_id}">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
+                        ${isEnvScan ? `
+                            <button class="review-btn sign-direct-btn ${isSigned ? 'already-signed-btn' : ''}" type="button" data-submission-id="${item.submission_id}" onclick="openInstructorESignModal(${item.submission_id})" title="${isSigned ? 'View E-Signature' : 'E-Sign Document'}">
+                                <i class="fa-solid fa-${isSigned ? 'circle-check' : 'pen-nib'}"></i>
+                                <span>${isSigned ? 'Signed' : 'E-Sign'}</span>
+                            </button>
+                        ` : `
+                            <button class="review-btn standard-review-btn" type="button" data-submission-id="${item.submission_id}" title="Review Document">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <span>Review</span>
+                            </button>
+                        `}
                     </div>
                 </div>
             `;
@@ -1091,6 +1095,7 @@
                 document.getElementById("documentGrid");
 
             grid.classList.add("grouped-view");
+
             grid.innerHTML = "";
 
             if(list.length === 0){
@@ -1113,10 +1118,11 @@
                 bundle.className =
                     "group-bundle-card" + (group.hasNew ? " has-new-submissions" : "");
 
-                bundle.innerHTML = `
+                try {
+                    bundle.innerHTML = `
                     <div class="group-bundle-header" onclick="toggleReceivedGroup('${domId}')">
-                        <div class="group-bundle-title" style="display:flex;align-items:center;gap:12px;">
-                            <div style="background:rgba(255,255,255,0.2);width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                        <div class="group-bundle-title">
+                            <div class="group-avatar-icon">
                                 <i class="fa-solid fa-users"></i>
                             </div>
                             <div>
@@ -1126,11 +1132,11 @@
                         </div>
                         <div class="group-bundle-badges">
                             ${group.hasNew ? `<span class="group-new-badge"><i class="fa-solid fa-sparkles"></i> ${newCount} New</span>` : ""}
-                            <span class="group-count-badge">${group.docs.length} File${group.docs.length !== 1 ? "s" : ""}</span>
-                            <i class="fa-solid fa-chevron-down" id="received-chevron-${domId}" style="transition:transform 0.3s;transform:${isOpen ? "rotate(180deg)" : "rotate(0deg)"};"></i>
+                            <span class="group-count-badge"><i class="fa-solid fa-folder-closed"></i> ${group.docs.length} File${group.docs.length !== 1 ? "s" : ""}</span>
+                            <i class="fa-solid fa-chevron-down chevron-icon" id="received-chevron-${domId}" style="transform:${isOpen ? "rotate(180deg)" : "rotate(0deg);"};"></i>
                         </div>
                     </div>
-                    <div class="group-bundle-body" id="received-group-${domId}" style="display:${isOpen ? "block" : "none"};">
+                    <div class="group-bundle-body" id="received-group-${domId}" style="display:${isOpen ? "block" : "none"}">
                         <div class="group-col-header">
                             <span class="col-doc-label">Document</span>
                             <div class="col-right-labels">
@@ -1141,8 +1147,12 @@
                         ${group.docs.map(buildGroupedDocRowHtml).join("")}
                     </div>
                 `;
+                } catch(renderErr) {
+                    console.error('[DR] Error rendering group:', group.group_name, renderErr);
+                    bundle.innerHTML = `<div class="empty-card" style="color:red;">Error rendering group: ${group.group_name} — ${renderErr.message}</div>`;
+                }
 
-                bundle.querySelectorAll(".review-btn").forEach(btn => {
+                bundle.querySelectorAll(".standard-review-btn").forEach(btn => {
                     btn.addEventListener("click", (event) => {
                         event.stopPropagation();
                         openReviewModal(Number(btn.dataset.submissionId));

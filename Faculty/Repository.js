@@ -1,3 +1,24 @@
+let currentSearchQuery = "";
+
+function escapeRegex(string) {
+    return String(string).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightSearchMatch(text, query) {
+    if (!text) return "";
+    const escaped = escapeHtml(text);
+    if (!query || !query.trim()) return escaped;
+
+    const tokens = query.trim().split(/\s+/).filter(token => token.length >= 2);
+    if (tokens.length === 0) return escaped;
+
+    const uniqueTokens = [...new Set(tokens)];
+    const pattern = uniqueTokens.map(escapeRegex).join("|");
+    const regex = new RegExp(`(${pattern})`, "gi");
+
+    return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
+}
+
 /* ================= ADD REPOSITORY ================= */
 
 const addBtn =
@@ -30,6 +51,16 @@ addBtn.addEventListener(
                 "objectives"
             ).value;
 
+        const research_problem =
+            document.getElementById(
+                "research_problem"
+            )?.value?.trim() || "";
+
+        const methodology =
+            document.getElementById(
+                "methodology"
+            )?.value?.trim() || "";
+
         const researchers =
             document.getElementById(
                 "researchers"
@@ -50,14 +81,16 @@ addBtn.addEventListener(
                 "year"
             ).value;
 
-        if(
+        if (
 
             !program ||
             !title ||
             !abstract ||
-            !objectives
+            !objectives ||
+            !research_problem ||
+            !methodology
 
-        ){
+        ) {
 
             alert(
                 "Please complete required fields."
@@ -67,7 +100,7 @@ addBtn.addEventListener(
 
         }
 
-        try{
+        try {
 
             const response = await fetch(
 
@@ -75,19 +108,21 @@ addBtn.addEventListener(
 
                 {
 
-                    method:"POST",
+                    method: "POST",
 
-                    headers:{
+                    headers: {
                         "Content-Type":
-                        "application/json"
+                            "application/json"
                     },
 
-                    body:JSON.stringify({
+                    body: JSON.stringify({
 
                         program,
                         title,
                         abstract,
                         objectives,
+                        research_problem,
+                        methodology,
                         researchers,
                         adviser,
                         category,
@@ -102,7 +137,7 @@ addBtn.addEventListener(
             const data =
                 await response.json();
 
-            if(data.success){
+            if (data.success) {
 
                 alert(
                     "Repository added successfully!"
@@ -113,7 +148,7 @@ addBtn.addEventListener(
 
             }
 
-        }catch(error){
+        } catch (error) {
 
             console.log(error);
 
@@ -155,9 +190,9 @@ function getCategoryClass(category) {
 // Stats Calculation
 function updateStatsDashboard(filteredItems, allItems) {
     const totalCount = allItems.length;
-    const itCount = allItems.filter(item => item.program === "IT").length;
-    const isCount = allItems.filter(item => item.program === "IS").length;
-    
+    const itCount = allItems.filter(item => item.program === "IT" || item.program === "BSIT").length;
+    const isCount = allItems.filter(item => item.program === "IS" || item.program === "BSIS").length;
+
     // Unique categories count
     const uniqueCats = new Set();
     allItems.forEach(item => {
@@ -174,17 +209,17 @@ function updateStatsDashboard(filteredItems, allItems) {
 function populateYearFilter(items) {
     const yearSelect = document.getElementById("filterYear");
     if (!yearSelect) return;
-    
+
     // Save current selection
     const previousSelection = yearSelect.value;
-    
+
     // Get unique years sorted descending
     const years = [...new Set(items.map(item => item.year).filter(Boolean))];
     years.sort((a, b) => b - a);
 
     // Clear except first option
     yearSelect.innerHTML = '<option value="all">All Years</option>';
-    
+
     years.forEach(year => {
         const option = document.createElement("option");
         option.value = year;
@@ -202,6 +237,7 @@ function populateYearFilter(items) {
 function getFilteredAndSortedItems() {
     const searchInput = document.getElementById("archiveSearch");
     const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    currentSearchQuery = query;
     const categoryFilter = document.getElementById("filterCategory").value;
     const yearFilter = document.getElementById("filterYear").value;
     const sortBy = document.getElementById("sortRepo").value;
@@ -210,7 +246,14 @@ function getFilteredAndSortedItems() {
 
     // 1. Program Filter
     if (currentProgram !== "all") {
-        result = result.filter(item => item.program === currentProgram);
+        result = result.filter(item => {
+            if (currentProgram === "IT" || currentProgram === "BSIT") {
+                return item.program === "IT" || item.program === "BSIT";
+            } else if (currentProgram === "IS" || currentProgram === "BSIS") {
+                return item.program === "IS" || item.program === "BSIS";
+            }
+            return item.program === currentProgram;
+        });
     }
 
     // 2. Category Filter
@@ -223,15 +266,20 @@ function getFilteredAndSortedItems() {
         result = result.filter(item => String(item.year) === String(yearFilter));
     }
 
-    // 4. Search Query Filter
+    // 4. Search Query Filter - searches entire context of the study
     if (query) {
         result = result.filter(item => {
             return [
                 item.title,
+                item.abstract,
+                item.objectives,
+                item.research_problem,
+                item.methodology,
                 item.category,
                 item.adviser,
                 item.researchers,
-                item.year
+                item.year,
+                item.program
             ].some(value => String(value || "").toLowerCase().includes(query));
         });
     }
@@ -259,6 +307,8 @@ function buildGridHtml(items) {
         return '<div class="repo-empty-state"><i class="fa-solid fa-folder-open"></i><p>No repository records match your criteria.</p></div>';
     }
 
+    const query = currentSearchQuery;
+
     return items.map(item => {
         const catClass = getCategoryClass(item.category);
         const categoryLabel = escapeHtml(item.category || "Uncategorized");
@@ -271,14 +321,14 @@ function buildGridHtml(items) {
                     <span class="archive-year">${escapeHtml(item.year || "—")}</span>
                     <span class="meta-badge ${catClass}">${categoryLabel}</span>
                 </div>
-                <p class="archive-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</p>
+                <p class="archive-title" title="${escapeHtml(item.title)}">${highlightSearchMatch(item.title, query)}</p>
                 <p class="archive-adviser">
                     <i class="fa-solid fa-user-tie"></i>
-                    Adviser: <strong>${escapeHtml(item.adviser || "No adviser")}</strong>
+                    Adviser: <strong>${highlightSearchMatch(item.adviser || "No adviser", query)}</strong>
                 </p>
                 <p class="archive-researchers" title="${escapeHtml(item.researchers)}">
                     <i class="fa-solid fa-users"></i>
-                    ${escapeHtml(item.researchers || "No researchers listed")}
+                    ${highlightSearchMatch(item.researchers || "No researchers listed", query)}
                 </p>
                 <div class="archive-actions">
                     <button class="view-btn" type="button" onclick="viewRepositoryById(${Number(item.id)})">
@@ -299,6 +349,8 @@ function buildTableHtml(items) {
         return '<div class="repo-empty-state"><i class="fa-solid fa-folder-open"></i><p>No repository records match your criteria.</p></div>';
     }
 
+    const query = currentSearchQuery;
+
     const tableRows = items.map((item, index) => {
         const catClass = getCategoryClass(item.category);
         const categoryLabel = escapeHtml(item.category || "Uncategorized");
@@ -308,11 +360,11 @@ function buildTableHtml(items) {
             <tr>
                 <td class="text-center">${(currentPage - 1) * itemsPerPage + index + 1}</td>
                 <td>
-                    <div class="table-title-cell" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+                    <div class="table-title-cell" title="${escapeHtml(item.title)}">${highlightSearchMatch(item.title, query)}</div>
                 </td>
                 <td><span class="${programClass}">${escapeHtml(item.program)}</span></td>
                 <td><span class="meta-badge ${catClass}">${categoryLabel}</span></td>
-                <td>${escapeHtml(item.adviser || "—")}</td>
+                <td>${highlightSearchMatch(item.adviser || "—", query)}</td>
                 <td class="text-center font-bold">${escapeHtml(item.year || "—")}</td>
                 <td>
                     <div class="table-actions">
@@ -511,65 +563,96 @@ function viewRepositoryById(id) {
     }
 }
 
-function viewRepository(item){
+function viewRepository(item) {
     document.getElementById("modal").style.display = "flex";
 
+    const query = currentSearchQuery;
+
     document.getElementById("modalTitle").innerHTML = `
-        ${escapeHtml(item.title)}
+        ${highlightSearchMatch(item.title, query)}
         <span class="meta-badge ${getCategoryClass(item.category)}" style="display:inline-block;margin-left:10px;vertical-align:middle;">
             ${escapeHtml(item.category || "Uncategorized")}
         </span>
     `;
 
-    document.getElementById("modalAbstract").innerHTML = `
+    let sectionsHtml = `
         <div class="repository-field">
             <strong>Abstract</strong>
-            <div class="repository-preserved-text">${escapeHtml(item.abstract)}</div>
+            <div class="repository-preserved-text">${highlightSearchMatch(item.abstract, query)}</div>
         </div>
         <div class="repository-field">
             <strong>Objectives</strong>
-            <div class="repository-preserved-text">${escapeHtml(item.objectives)}</div>
+            <div class="repository-preserved-text">${highlightSearchMatch(item.objectives, query)}</div>
         </div>
     `;
 
-    document.getElementById("modalProgram").innerText = item.program;
-    document.getElementById("modalResearchers").innerText = item.researchers || "—";
-    document.getElementById("modalAdviser").innerText = item.adviser || "—";
+    if (item.research_problem && item.research_problem.trim()) {
+        sectionsHtml += `
+            <div class="repository-field">
+                <strong>Research Problem</strong>
+                <div class="repository-preserved-text">${highlightSearchMatch(item.research_problem, query)}</div>
+            </div>
+        `;
+    }
+
+    if (item.methodology && item.methodology.trim()) {
+        sectionsHtml += `
+            <div class="repository-field">
+                <strong>Methodology</strong>
+                <div class="repository-preserved-text">${highlightSearchMatch(item.methodology, query)}</div>
+            </div>
+        `;
+    }
+
+    document.getElementById("modalAbstract").innerHTML = sectionsHtml;
+
+    document.getElementById("modalProgram").innerText = item.program || "—";
+    document.getElementById("modalResearchers").innerHTML = highlightSearchMatch(item.researchers, query) || "—";
+    document.getElementById("modalAdviser").innerHTML = highlightSearchMatch(item.adviser, query) || "—";
     document.getElementById("modalYear").innerText = item.year || "—";
+
+    // Smoothly scroll to the first highlighted search match if present
+    setTimeout(() => {
+        const modalContainer = document.getElementById("modal");
+        const firstHighlight = modalContainer ? modalContainer.querySelector("mark.search-highlight") : null;
+        if (firstHighlight) {
+            firstHighlight.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, 120);
 }
 
 /* ================= CLOSE MODAL ================= */
 
-function closeModal(){
+function closeModal() {
     document.getElementById("modal").style.display = "none";
 }
 
 /* ================= DELETE ================= */
 
-async function deleteRepository(id){
+async function deleteRepository(id) {
     const confirmDelete = confirm("Delete this repository?");
-    if(!confirmDelete){
+    if (!confirmDelete) {
         return;
     }
 
-    try{
+    try {
         const response = await fetch(
             `http://localhost:3005/delete-repository/${id}`,
-            { method:"DELETE" }
+            { method: "DELETE" }
         );
 
         const data = await response.json();
-        if(data.success){
+        if (data.success) {
             loadRepository();
         }
-    }catch(error){
+    } catch (error) {
         console.log(error);
     }
 }
 
 /* ================= LOGOUT ================= */
 
-function logout(){
+function logout() {
     localStorage.clear();
     window.location.href = "../Log-in.html";
 }

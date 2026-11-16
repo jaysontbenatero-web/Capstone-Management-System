@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -142,6 +145,15 @@
                     <span>Panel Evaluation</span>
                 </div>
 
+                <div
+                    class="menu-item"
+                    id="nav-repository"
+                    onclick="window.location.href='Repository.html'"
+                >
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Repository</span>
+                </div>
+
             </div>
         </div>
 
@@ -170,61 +182,14 @@
 
                 <button
                     class="primary-btn"
+                    id="createScheduleBtn"
                     onclick="openCreateModal()"
                     type="button"
                 >
                     <i class="fa-solid fa-plus"></i>
                     Create Schedule
                 </button>
-</div>
 
-        </div>
-
-        <!-- STATS -->
-        <div class="stats-grid">
-
-            <div class="stat-card">
-                <div class="stat-icon purple">
-                    <i class="fa-solid fa-calendar-days"></i>
-                </div>
-
-                <div>
-                    <h2 id="totalSchedules">0</h2>
-                    <p>Total Schedules</p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon blue">
-                    <i class="fa-solid fa-user-pen"></i>
-                </div>
-
-                <div>
-                    <h2 id="mySchedulesCount">0</h2>
-                    <p>My Created Schedules</p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon yellow">
-                    <i class="fa-solid fa-clock"></i>
-                </div>
-
-                <div>
-                    <h2 id="upcomingSchedules">0</h2>
-                    <p>Upcoming</p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon green">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-
-                <div>
-                    <h2 id="completedSchedules">0</h2>
-                    <p>Completed</p>
-                </div>
             </div>
 
         </div>
@@ -244,31 +209,41 @@
             </div>
 
             <select
+                id="scopeFilter"
+                onchange="onScopeFilterChange()"
+            >
+                <option value="All">All Schedules</option>
+                <option value="My">My Created Schedules</option>
+                <option value="Other">Other Schedules</option>
+            </select>
+
+            <select
                 id="statusFilter"
                 onchange="renderScheduleSections()"
             >
                 <option value="All">All Status</option>
                 <option value="Scheduled">Scheduled</option>
+                <option value="Ongoing">Ongoing</option>
                 <option value="Completed">Completed</option>
                 <option value="Cancelled">Cancelled</option>
             </select>
 
         </section>
 
-        <!-- MY SCHEDULES -->
+        <!-- UNIFIED SCHEDULES TABLE -->
         <section class="content-card">
 
             <div class="section-header">
 
                 <div>
-                    <h2>My Scheduled Defenses</h2>
+                    <h2>Defense Schedules</h2>
                     <p>
-                        Defense schedules created by you. You can view, edit, and delete these records.
+                        View, manage, and coordinate defense presentation schedules for student capstone groups.
                     </p>
                 </div>
 
                 <div class="section-icon">
-                    <i class="fa-solid fa-user-pen"></i>
+                    <i class="fa-solid fa-calendar-days"></i>
                 </div>
 
             </div>
@@ -277,68 +252,30 @@
                 <table class="schedule-table">
                     <thead>
                         <tr>
-                            <th>Group Name & Project Title</th>
-                            <th>Program</th>
-                            <th>Type</th>
-                            <th>Date & Time</th>
-                            <th>Room</th>
-                            <th>Panelists</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th style="width: 25%;">Group Name & Project Title</th>
+                            <th style="width: 8%;">Program</th>
+                            <th style="width: 14%;">Type</th>
+                            <th style="width: 14%;">Date & Time</th>
+                            <th style="width: 8%;">Room</th>
+                            <th style="width: 16%;">Panelists</th>
+                            <th style="width: 8%;">Status</th>
+                            <th style="width: 7%; text-align: center;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="myScheduleTableBody">
+                    <tbody id="scheduleTableBody">
                         <tr>
                             <td colspan="8" class="empty-table-row">
-                                Loading your schedules...
+                                Loading schedules...
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-        </section>
-
-        <!-- OTHER SCHEDULES -->
-        <section class="content-card">
-
-            <div class="section-header">
-
-                <div>
-                    <h2>Other Defense Schedules</h2>
-                    <p>
-                        Defense schedules created by other instructors. These are view-only for your account.
-                    </p>
-                </div>
-
-                <div class="section-icon">
-                    <i class="fa-solid fa-eye"></i>
-                </div>
-
-            </div>
-
-            <div class="table-responsive">
-                <table class="schedule-table">
-                    <thead>
-                        <tr>
-                            <th>Group Name & Project Title</th>
-                            <th>Program</th>
-                            <th>Type</th>
-                            <th>Date & Time</th>
-                            <th>Room</th>
-                            <th>Panelists</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="otherScheduleTableBody">
-                        <tr>
-                            <td colspan="8" class="empty-table-row">
-                                Loading other schedules...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- PAGINATION -->
+            <div class="pagination-bar" id="paginationBar">
+                <div class="pagination-info" id="paginationInfo">Showing 0 of 0</div>
+                <div class="pagination-controls" id="paginationControls"></div>
             </div>
 
         </section>
@@ -349,6 +286,7 @@
     <div
         class="modal-overlay"
         id="scheduleModal"
+        style="display: none;"
     >
 
         <div class="modal-box schedule-modal">
@@ -375,6 +313,21 @@
 
             </div>
 
+            <!-- STATUS ANALYSIS ALERT BANNER -->
+            <div id="defenseStatusAlert" class="defense-status-alert" style="display:none;"></div>
+
+            <!-- PANEL GRADING PROGRESS & FORCE COMPLETE (EDIT MODE ONLY) -->
+            <div id="panelGradingStatusCard" style="display:none;" class="grading-status-card">
+                <div class="grading-status-head">
+                    <div>
+                        <span class="grading-status-title"><i class="fa-solid fa-chart-simple"></i> Panelist Grading Progress</span>
+                        <div id="gradingCountText" class="grading-count-text">0 of 3 Graded</div>
+                    </div>
+                    <div id="forceCompleteBtnWrap"></div>
+                </div>
+                <div id="panelGradingList" class="panel-grading-list"></div>
+            </div>
+
             <div class="form-grid">
 
                 <div class="input-group">
@@ -382,7 +335,7 @@
 
                     <select
                         id="defenseType"
-                        onchange="toggleOtherDefenseType()"
+                        onchange="onDefenseTypeChange()"
                     >
                         <option value="Concept Presentation">Concept Presentation</option>
                         <option value="Outline Defense">Outline Defense</option>
@@ -392,7 +345,8 @@
                     </select>
                 </div>
 
-                <div class="input-group">
+                <!-- SELECT GROUP (CREATE MODE) -->
+                <div class="input-group" id="groupSelectGroup">
                     <label>Capstone Group <span class="required-star">*</span></label>
 
                     <select
@@ -401,6 +355,15 @@
                     >
                         <option value="">Select group</option>
                     </select>
+                </div>
+
+                <!-- LOCKED GROUP DISPLAY (EDIT MODE) -->
+                <div class="input-group" id="groupLockedGroup" style="display:none;">
+                    <label>Capstone Group <span class="group-locked-badge"><i class="fa-solid fa-lock"></i> Group Locked</span></label>
+                    <div class="group-locked-box">
+                        <div id="lockedGroupName" style="font-weight: 700; color: #2e1065;"></div>
+                        <div id="lockedProjectTitle" style="font-size: 12px; color: #6d5f85; margin-top: 2px;"></div>
+                    </div>
                 </div>
 
             </div>
@@ -421,6 +384,9 @@
                     No approved documents found for this group and defense type.
                 </div>
             </div>
+
+            <!-- RETAINED OUTLINE PANEL NOTICE -->
+            <div id="retainOutlinePanelNotice" class="retained-panel-notice" style="display:none;"></div>
 
             <!-- PANEL SELECTION SYSTEM (DROPDOWN REDESIGN) -->
             <div class="panel-selection-dropdowns" style="margin-top: 15px;">
@@ -459,6 +425,11 @@
                 </div>
             </div>
 
+            <div id="panelConflictNotice" style="display: none; margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
+                <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
+                <span id="panelConflictNoticeText">One or more selected panelists are already scheduled for another defense at this date and time.</span>
+            </div>
+
             <div class="form-grid">
 
                 <div class="input-group">
@@ -466,7 +437,7 @@
 
                     <select
                         id="roomSelect"
-                        onchange="toggleOtherRoom()"
+                        onchange="toggleOtherRoom(); checkRoomAndTimelineConflicts();"
                     >
                         <option value="">Select room</option>
                         <option value="AB3-1">AB3-1</option>
@@ -480,6 +451,11 @@
                         <option value="ComLab 2">ComLab 2</option>
                         <option value="Other">Other Room</option>
                     </select>
+
+                    <div id="roomConflictNotice" style="display: none; margin-top: 8px; padding: 10px 12px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
+                        <span id="roomConflictNoticeText">This room is already booked for another defense during this date and time slot.</span>
+                    </div>
                 </div>
 
                 <div
@@ -510,6 +486,7 @@
                         type="text"
                         id="otherDefenseType"
                         placeholder="Enter defense type"
+                        oninput="onDefenseTypeChange()"
                     >
                 </div>
 
@@ -524,6 +501,7 @@
                         type="text"
                         id="otherRoom"
                         placeholder="Enter room name"
+                        oninput="checkRoomAndTimelineConflicts()"
                     >
                 </div>
             </div>
@@ -601,6 +579,17 @@
             <div class="modal-actions">
 
                 <button
+                    class="danger-btn modal-delete-btn"
+                    id="modalDeleteScheduleBtn"
+                    onclick="openDeleteReasonModal(selectedScheduleId)"
+                    type="button"
+                    style="margin-right: auto; display: none;"
+                >
+                    <i class="fa-solid fa-trash-can"></i>
+                    Delete Schedule
+                </button>
+
+                <button
                     class="cancel-btn"
                     onclick="closeScheduleModal()"
                     type="button"
@@ -610,6 +599,7 @@
 
                 <button
                     class="save-btn"
+                    id="saveScheduleBtn"
                     onclick="saveSchedule()"
                     type="button"
                 >
@@ -623,10 +613,79 @@
 
     </div>
 
+    <!-- CANCEL / DELETE DEFENSE SCHEDULE REASON MODAL -->
+    <div
+        class="modal-overlay"
+        id="deleteReasonModal"
+        style="display: none;"
+    >
+        <div class="modal-box delete-modal">
+            <div class="modal-header">
+                <div>
+                    <h2 style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Cancel Defense Schedule</h2>
+                    <p>Are you sure you want to cancel this defense schedule? Assigned panelists and group members will be notified immediately.</p>
+                </div>
+                <button
+                    class="close-modal-btn"
+                    onclick="closeDeleteReasonModal()"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="delete-summary-box" id="deleteSummaryBox">
+                Loading schedule summary...
+            </div>
+
+            <div class="input-group" style="margin-top: 15px;">
+                <label>Reason for Cancellation <span class="required-star">*</span></label>
+                <select id="deleteReasonSelect" onchange="toggleCustomDeleteReason()">
+                    <option value="Wrong Group Selected">Wrong Group Selected</option>
+                    <option value="Schedule Conflict / Panel Unavailable">Schedule Conflict / Panel Unavailable</option>
+                    <option value="Student Group Requested Postponement">Student Group Requested Postponement</option>
+                    <option value="Administrative / Emergency Reschedule">Administrative / Emergency Reschedule</option>
+                    <option value="Room Unavailability / Technical Issue">Room Unavailability / Technical Issue</option>
+                    <option value="Other Reason">Other Reason</option>
+                </select>
+            </div>
+
+            <div class="input-group" id="deleteReasonCustomGroup" style="display: none; margin-top: 10px;">
+                <label>Specific Reason Details</label>
+                <input type="text" id="deleteReasonCustom" placeholder="Explain the reason for cancellation...">
+            </div>
+
+            <div class="input-group" style="margin-top: 10px;">
+                <label>Additional Notes for Notification (Optional)</label>
+                <textarea id="deleteNotes" placeholder="Additional notes to include in cancellation notice..."></textarea>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button
+                    class="cancel-btn"
+                    type="button"
+                    onclick="closeDeleteReasonModal()"
+                >
+                    Keep Schedule
+                </button>
+
+                <button
+                    class="danger-btn"
+                    type="button"
+                    id="confirmDeleteBtn"
+                    onclick="confirmDeleteSchedule()"
+                >
+                    <i class="fa-solid fa-trash-can"></i> Confirm Cancellation
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- VIEW MODAL -->
     <div
         class="modal-overlay"
         id="viewModal"
+        style="display: none;"
     >
 
         <div class="modal-box view-modal">
@@ -725,6 +784,27 @@
         const loggedInInstructorId =
             localStorage.getItem("userId");
 
+        function getApiBaseUrl() {
+            if (window.location.protocol.startsWith("http")) {
+                if (window.location.port === "3005" || window.location.host.endsWith(":3005")) {
+                    return "";
+                }
+                return `${window.location.protocol}//${window.location.hostname}:3005`;
+            }
+            return "http://localhost:3005";
+        }
+
+        async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                return response;
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
         let groups = [];
         let panelists = [];
         let schedules = [];
@@ -741,21 +821,7 @@
 
             const promises = groups.map(async (group) => {
                 try {
-                    const instructorIds = (group.instructor_ids || "").split(",");
-                    const isMyGroup = instructorIds.includes(loggedInInstructorId);
-
-                    if (!isMyGroup) {
-                        groupReadinessMap[group.id] = {
-                            allowed: false,
-                            isMyGroup: false,
-                            alreadyPassed: false,
-                            reason: "Not Your Group",
-                            message: "You cannot create a defense schedule for this group because you are not their instructor."
-                        };
-                        return;
-                    }
-
-                    const response = await fetch(`http://localhost:3005/group-consultation-approval-status/${group.id}?defenseType=${encodeURIComponent(defenseType)}` + (selectedScheduleId ? `&excludeScheduleId=${selectedScheduleId}` : ''));
+                    const response = await fetchWithTimeout(`${getApiBaseUrl()}/group-consultation-approval-status/${group.id}?defenseType=${encodeURIComponent(defenseType)}` + (selectedScheduleId ? `&excludeScheduleId=${selectedScheduleId}` : ''));
                     const data = await response.json();
                     
                     if (data.success) {
@@ -764,7 +830,9 @@
                             isMyGroup: true,
                             alreadyPassed: data.already_passed || false,
                             reason: data.already_passed ? "Already Passed" : (!data.ready_for_schedule ? "Missing Documents" : ""),
-                            message: "you cannot create the type of defense presentation in this since there is missing document."
+                            message: data.message || "you cannot create the type of defense presentation in this since there is missing document.",
+                            is_redefense: data.is_redefense || false,
+                            redefense_verdict: data.redefense_verdict || null
                         };
                     } else {
                         groupReadinessMap[group.id] = {
@@ -785,10 +853,14 @@
         }
 
         async function loadPageData(){
-
-            await loadDefenseData();
-            await loadSchedules();
-
+            try {
+                await Promise.allSettled([
+                    loadDefenseData(),
+                    loadSchedules()
+                ]);
+            } catch (e) {
+                console.error("loadPageData error:", e);
+            }
         }
 
         async function loadDefenseData(){
@@ -796,19 +868,16 @@
             try{
 
                 const response =
-                    await fetch(
-                        "http://localhost:3005/defense-schedule-data"
+                    await fetchWithTimeout(
+                        `${getApiBaseUrl()}/defense-schedule-data`
                     );
 
                 const data =
                     await response.json();
 
                 if(!data.success){
-
-                    alert(data.message || "Failed to load schedule data.");
-
+                    console.warn(data.message || "Failed to load schedule data.");
                     return;
-
                 }
 
                 groups =
@@ -821,11 +890,7 @@
                 renderPanelistOptions();
 
             }catch(error){
-
-                console.log(error);
-
-                alert("Cannot connect to server.");
-
+                console.error("loadDefenseData error:", error);
             }
 
         }
@@ -835,7 +900,10 @@
             const groupSelect =
                 document.getElementById("groupSelect");
 
+            if(!groupSelect) return;
+
             const selectedVal = groupSelect.value;
+            const currentDefenseType = (getDefenseType() || "").trim().toLowerCase();
 
             groupSelect.innerHTML =
                 `<option value="">Select group</option>`;
@@ -843,21 +911,31 @@
             groups.forEach(group => {
                 const readiness = groupReadinessMap[group.id];
 
-                // 1. If we have readiness info, filter by instructor: if not my group, do not render at all.
-                // If we don't have readiness info yet (e.g. initial load before modal open), we check group.instructor_ids directly.
-                if (readiness) {
-                    if (!readiness.isMyGroup) {
-                        return;
+                // 1. Hide groups that already passed the selected presentation type
+                if (readiness && readiness.alreadyPassed) {
+                    return;
+                }
+
+                // 2. Hide groups that already have an ACTIVE (Scheduled/Ongoing) schedule for this defense type
+                // Completed schedules are NOT blocked — they may be re-defenses
+                const hasExistingScheduleForType = (schedules || []).some(s => {
+                    if (selectedScheduleId && Number(s.id) === Number(selectedScheduleId)) {
+                        return false;
                     }
-                    // 2. Hide groups that already passed the selected presentation type
-                    if (readiness.alreadyPassed) {
-                        return;
+                    const sStatus = String(s.defense_status || "").toLowerCase();
+                    if (sStatus === "cancelled" || sStatus === "completed") {
+                        return false;
                     }
-                } else {
-                    const instructorIds = (group.instructor_ids || "").split(",");
-                    if (!instructorIds.includes(loggedInInstructorId)) {
-                        return;
+                    const sGroupDbId = Number(s.group_db_id || s.group_id);
+                    if (sGroupDbId !== Number(group.id)) {
+                        return false;
                     }
+                    const sType = String(s.defense_type || "").trim().toLowerCase();
+                    return sType === currentDefenseType;
+                });
+
+                if (hasExistingScheduleForType) {
+                    return;
                 }
 
                 const programText =
@@ -870,7 +948,17 @@
                 let styleAttr = "";
                 let displayName = `${group.group_id} - ${group.group_name || "Unnamed Group"} (${programText})`;
 
-                if (readiness) {
+                // Check re-defense status from readiness map
+                const isRedefense = readiness && readiness.is_redefense;
+                const redefenseVerdict = readiness && readiness.redefense_verdict;
+
+                if (isRedefense && redefenseVerdict === "Conditional Passed") {
+                    styleAttr = "style='color: #1d4ed8; background-color: #eff6ff; font-weight: 600;'";
+                    displayName = `[Re-Defense: Conditional Passed] ${displayName}`;
+                } else if (isRedefense && redefenseVerdict === "For Formal Defense") {
+                    styleAttr = "style='color: #ea580c; background-color: #fff7ed; font-weight: 600;'";
+                    displayName = `[Re-Defense: For Formal Defense] ${displayName}`;
+                } else if (readiness) {
                     if (!readiness.allowed) {
                         styleAttr = "style='color: #94a3b8; background-color: #f8fafc;'";
                         if (readiness.reason === "Missing Documents") {
@@ -901,6 +989,52 @@
 
         let selectedChairId = null;
         let selectedMemberIds = [];
+        let currentGroupAdviserId = null;
+        let currentGroupInstructorIds = [];
+
+        function isForbiddenPanelist(p) {
+            if (!p) return false;
+            const pDbId = String(p.id);
+            const pUserId = String(p.user_id || "").trim();
+
+            // 1. Group adviser cannot be panelist
+            if (currentGroupAdviserId && (pDbId === String(currentGroupAdviserId) || pUserId === String(currentGroupAdviserId))) {
+                return true;
+            }
+
+            // 2. Group instructors cannot be panelist
+            if (currentGroupInstructorIds.length > 0) {
+                if (currentGroupInstructorIds.includes(pDbId) || currentGroupInstructorIds.includes(pUserId)) {
+                    return true;
+                }
+            }
+
+            // 3. Current logged-in instructor cannot be panelist
+            if (loggedInInstructorId && (pDbId === String(loggedInInstructorId) || pUserId === String(loggedInInstructorId))) {
+                return true;
+            }
+
+            return false;
+        }
+
+        function getPanelistConflict(pId) {
+            const dateVal = document.getElementById("defenseDate")?.value;
+            const startVal = document.getElementById("startTime")?.value;
+            const endVal = document.getElementById("endTime")?.value;
+            if (!dateVal || !startVal || !endVal) return null;
+
+            return findLocalPanelistConflict(dateVal, startVal, endVal, [pId], selectedScheduleId);
+        }
+
+        function getPanelistConflictText(pId) {
+            const conflict = getPanelistConflict(pId);
+            if (conflict) {
+                const sTime = formatTime(conflict.start_time);
+                const eTime = formatTime(conflict.end_time);
+                return ` (Already Booked: ${sTime} - ${eTime})`;
+            }
+            return "";
+        }
 
         function renderPanelistDropdowns() {
             const chairSelect = document.getElementById("panelChairSelect");
@@ -908,30 +1042,103 @@
             const member2Select = document.getElementById("panelMember2Select");
             if (!chairSelect || !member1Select || !member2Select) return;
 
-            const currentChair = selectedChairId || "";
-            const currentMem1 = selectedMemberIds[0] || "";
-            const currentMem2 = selectedMemberIds[1] || "";
+            const currentChair = selectedChairId ? String(selectedChairId) : "";
+            const currentMem1 = selectedMemberIds[0] ? String(selectedMemberIds[0]) : "";
+            const currentMem2 = selectedMemberIds[1] ? String(selectedMemberIds[1]) : "";
 
             // Populate Chair Select
             chairSelect.innerHTML = '<option value="">Select Panel Chair</option>';
             panelists.forEach(p => {
+                if (isForbiddenPanelist(p)) return;
                 if (String(p.id) === currentMem1 || String(p.id) === currentMem2) return;
-                chairSelect.innerHTML += `<option value="${p.id}" ${String(p.id) === currentChair ? 'selected' : ''}>${p.fullname} (${p.user_id})</option>`;
+                const conflict = getPanelistConflict(p.id);
+                const conflictText = getPanelistConflictText(p.id);
+                const styleAttr = conflict ? 'disabled style="color:#ef4444; background-color:#fee2e2; font-weight:600;"' : '';
+                chairSelect.innerHTML += `<option value="${p.id}" ${String(p.id) === currentChair ? 'selected' : ''} ${styleAttr}>${p.fullname} (${p.user_id})${conflictText}</option>`;
             });
 
             // Populate Member 1 Select
             member1Select.innerHTML = '<option value="">Select Panel Member 1</option>';
             panelists.forEach(p => {
+                if (isForbiddenPanelist(p)) return;
                 if (String(p.id) === currentChair || String(p.id) === currentMem2) return;
-                member1Select.innerHTML += `<option value="${p.id}" ${String(p.id) === currentMem1 ? 'selected' : ''}>${p.fullname} (${p.user_id})</option>`;
+                const conflict = getPanelistConflict(p.id);
+                const conflictText = getPanelistConflictText(p.id);
+                const styleAttr = conflict ? 'disabled style="color:#ef4444; background-color:#fee2e2; font-weight:600;"' : '';
+                member1Select.innerHTML += `<option value="${p.id}" ${String(p.id) === currentMem1 ? 'selected' : ''} ${styleAttr}>${p.fullname} (${p.user_id})${conflictText}</option>`;
             });
 
             // Populate Member 2 Select
             member2Select.innerHTML = '<option value="">Select Panel Member 2</option>';
             panelists.forEach(p => {
+                if (isForbiddenPanelist(p)) return;
                 if (String(p.id) === currentChair || String(p.id) === currentMem1) return;
-                member2Select.innerHTML += `<option value="${p.id}" ${String(p.id) === currentMem2 ? 'selected' : ''}>${p.fullname} (${p.user_id})</option>`;
+                const conflict = getPanelistConflict(p.id);
+                const conflictText = getPanelistConflictText(p.id);
+                const styleAttr = conflict ? 'disabled style="color:#ef4444; background-color:#fee2e2; font-weight:600;"' : '';
+                member2Select.innerHTML += `<option value="${p.id}" ${String(p.id) === currentMem2 ? 'selected' : ''} ${styleAttr}>${p.fullname} (${p.user_id})${conflictText}</option>`;
             });
+
+            // Check conflicts for currently selected panelists and style in red
+            const chairConflict = selectedChairId ? getPanelistConflict(selectedChairId) : null;
+            const mem1Conflict = selectedMemberIds[0] ? getPanelistConflict(selectedMemberIds[0]) : null;
+            const mem2Conflict = selectedMemberIds[1] ? getPanelistConflict(selectedMemberIds[1]) : null;
+
+            if (chairSelect) {
+                if (chairConflict) {
+                    chairSelect.style.border = "2px solid #ef4444";
+                    chairSelect.style.backgroundColor = "#fef2f2";
+                } else {
+                    chairSelect.style.border = "";
+                    chairSelect.style.backgroundColor = "";
+                }
+            }
+
+            if (member1Select) {
+                if (mem1Conflict) {
+                    member1Select.style.border = "2px solid #ef4444";
+                    member1Select.style.backgroundColor = "#fef2f2";
+                } else {
+                    member1Select.style.border = "";
+                    member1Select.style.backgroundColor = "";
+                }
+            }
+
+            if (member2Select) {
+                if (mem2Conflict) {
+                    member2Select.style.border = "2px solid #ef4444";
+                    member2Select.style.backgroundColor = "#fef2f2";
+                } else {
+                    member2Select.style.border = "";
+                    member2Select.style.backgroundColor = "";
+                }
+            }
+
+            // Panel conflict notice
+            const panelNotice = document.getElementById("panelConflictNotice");
+            const panelNoticeText = document.getElementById("panelConflictNoticeText");
+            const conflictList = [];
+            if (chairConflict) {
+                const ch = panelists.find(p => String(p.id) === String(selectedChairId));
+                conflictList.push(`${ch?.fullname || 'Panel Chair'} (${formatTime(chairConflict.start_time)} - ${formatTime(chairConflict.end_time)})`);
+            }
+            if (mem1Conflict) {
+                const m1 = panelists.find(p => String(p.id) === String(selectedMemberIds[0]));
+                conflictList.push(`${m1?.fullname || 'Member 1'} (${formatTime(mem1Conflict.start_time)} - ${formatTime(mem1Conflict.end_time)})`);
+            }
+            if (mem2Conflict) {
+                const m2 = panelists.find(p => String(p.id) === String(selectedMemberIds[1]));
+                conflictList.push(`${m2?.fullname || 'Member 2'} (${formatTime(mem2Conflict.start_time)} - ${formatTime(mem2Conflict.end_time)})`);
+            }
+
+            if (panelNotice && panelNoticeText) {
+                if (conflictList.length > 0) {
+                    panelNoticeText.textContent = `Schedule Conflict: The following panelist(s) already have a defense scheduled in this time duration: ${conflictList.join(", ")}. Please select another panelist or change the defense time.`;
+                    panelNotice.style.display = "block";
+                } else {
+                    panelNotice.style.display = "none";
+                }
+            }
         }
 
         function onChairChange() {
@@ -1000,13 +1207,19 @@
                     .join("")
                     .toUpperCase();
                 const isChair = type === "chair";
+                const conflict = getPanelistConflict(person.id);
+                const conflictBadge = conflict 
+                    ? `<span style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 8px;"><i class="fa-solid fa-circle-exclamation"></i> Already Booked (${formatTime(conflict.start_time)} - ${formatTime(conflict.end_time)})</span>`
+                    : '';
+                const cardStyle = conflict ? 'style="border: 1.5px solid #ef4444; background: #fef2f2;"' : '';
                 return `
-                    <div class="panel-summary-person ${type}">
+                    <div class="panel-summary-person ${type}" ${cardStyle}>
                         <div class="panel-summary-avatar ${type}">${initials}</div>
                         <div class="panel-summary-info">
                             <div class="panel-summary-name">${person.fullname}</div>
                             <div class="panel-summary-id">${person.user_id || ""}</div>
                         </div>
+                        ${conflictBadge}
                         <span class="panel-summary-role ${type}">${role}</span>
                     </div>
                 `;
@@ -1038,6 +1251,16 @@
                 return false;
             }
 
+            // Check if any selected panelist is forbidden (group adviser or instructor)
+            const allSelectedIds = [selectedChairId, ...cleanMembers];
+            for(const pid of allSelectedIds){
+                const p = panelists.find(item => String(item.id) === String(pid));
+                if(p && isForbiddenPanelist(p)){
+                    alert(`"${p.fullname}" is an adviser or instructor for this group and cannot serve as a panelist.`);
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -1057,6 +1280,9 @@
 
             if (!dateVal || !startVal || !endVal) {
                 durationBadge.style.display = "none";
+                renderPanelistDropdowns();
+                updatePanelSummary();
+                checkRoomAndTimelineConflicts();
                 return;
             }
 
@@ -1065,6 +1291,9 @@
 
             if (isNaN(start.getTime()) || isNaN(end.getTime())) {
                 durationBadge.style.display = "none";
+                renderPanelistDropdowns();
+                updatePanelSummary();
+                checkRoomAndTimelineConflicts();
                 return;
             }
 
@@ -1074,6 +1303,9 @@
                 durationBadge.style.display = "inline-flex";
                 durationBadge.textContent = "Invalid slot (End must be after Start)";
                 durationBadge.className = "duration-badge duration-invalid";
+                renderPanelistDropdowns();
+                updatePanelSummary();
+                checkRoomAndTimelineConflicts();
                 return;
             }
 
@@ -1093,6 +1325,11 @@
             durationBadge.style.display = "inline-flex";
             durationBadge.textContent = durationStr;
             durationBadge.className = "duration-badge duration-valid";
+
+            // Refresh panelist and room availability for the selected date & time
+            renderPanelistDropdowns();
+            updatePanelSummary();
+            checkRoomAndTimelineConflicts();
         }
 
 
@@ -1105,28 +1342,62 @@
                 document.getElementById("memberPreview");
 
             if(!groupDbId){
-
+                currentGroupAdviserId = null;
+                currentGroupInstructorIds = [];
+                renderPanelistDropdowns();
                 preview.innerHTML =
                     "Select a group to show student members.";
-
                 return;
-
             }
 
             const readiness = groupReadinessMap[groupDbId];
             if (readiness && !readiness.allowed) {
                 alert(readiness.message);
                 document.getElementById("groupSelect").value = "";
+                currentGroupAdviserId = null;
+                currentGroupInstructorIds = [];
+                renderPanelistDropdowns();
                 preview.innerHTML = "Select a group to show student members.";
                 document.getElementById("approvedPapersBox").style.display = "none";
                 return;
             }
 
+            // Populate adviser and instructor restrictions for this group
+            const selectedGroup = groups.find(g => String(g.id) === String(groupDbId));
+            if (selectedGroup) {
+                currentGroupAdviserId = selectedGroup.adviser_db_id ? String(selectedGroup.adviser_db_id) : (selectedGroup.adviser_id ? String(selectedGroup.adviser_id) : null);
+                currentGroupInstructorIds = [];
+                if (selectedGroup.instructor_ids) {
+                    selectedGroup.instructor_ids.split(',').forEach(i => { if (i && i.trim()) currentGroupInstructorIds.push(i.trim()); });
+                }
+                if (selectedGroup.instructor_db_ids) {
+                    selectedGroup.instructor_db_ids.split(',').forEach(i => { if (i && i.trim()) currentGroupInstructorIds.push(i.trim()); });
+                }
+                if (loggedInInstructorId) {
+                    currentGroupInstructorIds.push(String(loggedInInstructorId).trim());
+                }
+            } else {
+                currentGroupAdviserId = null;
+                currentGroupInstructorIds = [];
+            }
+
+            // If a currently selected panelist is forbidden, clear them
+            if (isForbiddenPanelist(panelists.find(p => String(p.id) === String(selectedChairId)))) {
+                selectedChairId = null;
+            }
+            selectedMemberIds = selectedMemberIds.filter(id => !isForbiddenPanelist(panelists.find(p => String(p.id) === String(id))));
+
+            renderPanelistDropdowns();
+            updatePanelSummary();
+
+            // Check if we should retain outline defense panelists
+            checkAndRetainOutlinePanelists(getDefenseType(), groupDbId);
+
             try{
 
                 const response =
-                    await fetch(
-                        `http://localhost:3005/defense-group-members/${groupDbId}`
+                    await fetchWithTimeout(
+                        `${getApiBaseUrl()}/defense-group-members/${groupDbId}`
                     );
 
                 const data =
@@ -1150,7 +1421,18 @@
 
                 }
 
+                let adviserPill = "";
+                if (selectedGroup && selectedGroup.adviser_name) {
+                    adviserPill = `
+                        <div class="member-pill" style="background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3); color: #5b21b6; font-weight: 600;">
+                            <i class="fa-solid fa-user-tie"></i>
+                            ${escapeHtml(selectedGroup.adviser_name)} (${escapeHtml(selectedGroup.adviser_user_id || "")}) &bull; <em>Adviser (Cannot be panel)</em>
+                        </div>
+                    `;
+                }
+
                 preview.innerHTML =
+                    adviserPill +
                     data.members.map(member => `
                         <div class="member-pill">
                             <i class="fa-solid fa-user-graduate"></i>
@@ -1172,195 +1454,284 @@
         }
 
         async function loadSchedules(){
-
+            const tbody = document.getElementById("scheduleTableBody");
             try{
 
                 const response =
-                    await fetch(
-                        `http://localhost:3005/defense-schedules?userId=${loggedInInstructorId}`
+                    await fetchWithTimeout(
+                        `${getApiBaseUrl()}/defense-schedules?userId=${encodeURIComponent(loggedInInstructorId || "")}`
                     );
 
                 const data =
                     await response.json();
 
                 if(!data.success){
-
-                    alert(data.message || "Failed to load schedules.");
-
                     schedules = [];
-
-                    renderScheduleSections();
-
+                    if(tbody){
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
+                                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
+                                    ${escapeHtml(data.message || "Failed to load schedules.")}
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    renderPaginationControls(0, 0, 0, 1);
                     return;
-
                 }
 
                 schedules =
                     data.schedules || [];
 
-                updateStats();
-
                 renderScheduleSections();
 
             }catch(error){
-
-                console.log(error);
-
-                alert("Cannot connect to server.");
-
+                console.error("loadSchedules error:", error);
+                if(tbody){
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
+                                <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; display: block; margin-bottom: 8px; color: #ef4444;"></i>
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Cannot connect to backend server.</div>
+                                <div style="font-size: 12px; color: #7b6f96; margin-top: 4px;">Make sure the server is running on port 3005 (<code>node server.js</code>).</div>
+                                <div style="margin-top: 12px;">
+                                    <button type="button" class="view-btn-sm" onclick="loadPageData()" style="display: inline-flex; padding: 6px 16px; font-size: 12.5px; cursor: pointer; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-rotate-right"></i> Retry Connection
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+                renderPaginationControls(0, 0, 0, 1);
             }
 
         }
 
-        function updateStats(){
+        let currentScopeFilter = "All";
+        let currentPage = 1;
+        const PAGE_SIZE = 10;
 
-            const today =
-                new Date();
+        function onScopeFilterChange(){
+            currentScopeFilter = document.getElementById("scopeFilter")?.value || "All";
+            currentPage = 1;
+            renderScheduleSections();
+        }
 
-            today.setHours(0,0,0,0);
+        function isDefenseHappening(defenseDate, startTime, endTime){
+            if(!defenseDate || !startTime || !endTime) return false;
+            const dateStr = String(defenseDate).slice(0, 10);
+            const startStr = String(startTime).slice(0, 5);
+            const endStr = String(endTime).slice(0, 5);
+            const startDt = new Date(`${dateStr}T${startStr}:00`);
+            const endDt = new Date(`${dateStr}T${endStr}:00`);
+            const now = new Date();
+            return now >= startDt && now <= endDt;
+        }
 
-            const upcoming =
-                schedules.filter(item => {
+        function onDefenseTypeChange(){
+            toggleOtherDefenseType();
+            const groupDbId = modalMode === "edit"
+                ? (schedules.find(s => Number(s.id) === Number(selectedScheduleId))?.group_db_id)
+                : document.getElementById("groupSelect").value;
 
-                    const scheduleDate =
-                        new Date(item.defense_date);
+            checkAndRetainOutlinePanelists(getDefenseType(), groupDbId);
+            updateGroupsReadiness();
+        }
 
-                    scheduleDate.setHours(0,0,0,0);
+        function checkAndRetainOutlinePanelists(defenseType, groupDbId){
+            const retainNotice = document.getElementById("retainOutlinePanelNotice");
+            if(!retainNotice) return;
 
-                    return scheduleDate >= today
-                        &&
-                        item.defense_status === "Scheduled";
+            if(modalMode !== "create"){
+                retainNotice.style.display = "none";
+                return;
+            }
 
-                }).length;
+            if(!groupDbId){
+                retainNotice.style.display = "none";
+                return;
+            }
 
-            const completed =
-                schedules.filter(item =>
-                    item.defense_status === "Completed"
-                ).length;
+            const type = String(defenseType || "").trim();
 
-            const mine =
-                schedules.filter(item =>
-                    item.is_owner === true
-                ).length;
+            // --- Re-defense retention: same type, prior completed with Conditional Passed or For Formal Defense ---
+            const readiness = groupReadinessMap[Number(groupDbId)];
+            if (readiness && readiness.is_redefense && readiness.redefense_verdict) {
+                // Find prior COMPLETED schedule for same defense type
+                const priorSched = (schedules || []).find(s =>
+                    Number(s.group_db_id) === Number(groupDbId)
+                    && String(s.defense_status || "").toLowerCase() === "completed"
+                    && String(s.defense_type || "").trim().toLowerCase() === type.toLowerCase()
+                    && Array.isArray(s.panelists)
+                    && s.panelists.length > 0
+                );
 
-            document.getElementById("totalSchedules").innerText =
-                schedules.length;
+                if (priorSched && priorSched.panelists && priorSched.panelists.length >= 3) {
+                    const chair = priorSched.panelists[0];
+                    const mem1 = priorSched.panelists[1];
+                    const mem2 = priorSched.panelists[2];
 
-            document.getElementById("mySchedulesCount").innerText =
-                mine;
+                    selectedChairId = String(chair.id);
+                    selectedMemberIds = [String(mem1.id), String(mem2.id)];
 
-            document.getElementById("upcomingSchedules").innerText =
-                upcoming;
+                    renderPanelistDropdowns();
+                    updatePanelSummary();
 
-            document.getElementById("completedSchedules").innerText =
-                completed;
+                    const isCondPass = readiness.redefense_verdict === "Conditional Passed";
+                    const isFormal = readiness.redefense_verdict === "For Formal Defense";
+                    const bannerColor = isCondPass ? "#1d4ed8" : "#ea580c";
+                    const bannerBg = isCondPass ? "#eff6ff" : "#fff7ed";
+                    const verdictLabel = isCondPass ? "Conditional Passed" : "For Formal Defense";
+                    const extraNote = isFormal ? " <strong>Note:</strong> Since the first verdict was For Formal Defense, panelists cannot award a grade higher than 75 (GPA 3.00) on re-defense." : "";
 
+                    retainNotice.style.display = "flex";
+                    retainNotice.style.background = bannerBg;
+                    retainNotice.style.borderLeft = `4px solid ${bannerColor}`;
+                    retainNotice.style.color = bannerColor;
+                    retainNotice.innerHTML = `
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span><strong>Re-Defense [${verdictLabel}]:</strong> Panelists retained from prior ${escapeHtml(type)} (${escapeHtml(chair.fullname)}, ${escapeHtml(mem1.fullname)}, ${escapeHtml(mem2.fullname)}). Still editable if needed.${extraNote}</span>
+                    `;
+                    return;
+                }
+            }
+
+            // --- Standard outline → pre-final/final retention ---
+            if(type !== "Pre-Final Defense" && type !== "Final Defense"){
+                retainNotice.style.display = "none";
+                return;
+            }
+
+            // Look for an Outline Defense schedule for this group
+            const outlineSched = schedules.find(s =>
+                Number(s.group_db_id) === Number(groupDbId)
+                && String(s.defense_type || "").toLowerCase().includes("outline")
+                && Array.isArray(s.panelists)
+                && s.panelists.length > 0
+            );
+
+            if(outlineSched && outlineSched.panelists && outlineSched.panelists.length >= 3){
+                const chair = outlineSched.panelists[0];
+                const mem1 = outlineSched.panelists[1];
+                const mem2 = outlineSched.panelists[2];
+
+                selectedChairId = String(chair.id);
+                selectedMemberIds = [String(mem1.id), String(mem2.id)];
+
+                renderPanelistDropdowns();
+                updatePanelSummary();
+
+                retainNotice.style.display = "flex";
+                retainNotice.style.background = "";
+                retainNotice.style.borderLeft = "";
+                retainNotice.style.color = "";
+                retainNotice.innerHTML = `
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Retained panelists from <strong>Outline Defense</strong> (${escapeHtml(chair.fullname)}, ${escapeHtml(mem1.fullname)}, ${escapeHtml(mem2.fullname)}). Still editable if needed.</span>
+                `;
+            }else{
+                retainNotice.style.display = "none";
+            }
         }
 
         function renderScheduleSections(){
 
             const keyword =
-                document
-                .getElementById("searchSchedule")
-                .value
-                .toLowerCase();
+                (document.getElementById("searchSchedule")?.value || "").toLowerCase().trim();
 
             const status =
-                document
-                .getElementById("statusFilter")
-                .value;
+                document.getElementById("statusFilter")?.value || "All";
+
+            const scope =
+                document.getElementById("scopeFilter")?.value || currentScopeFilter || "All";
 
             const filtered =
                 schedules.filter(item => {
 
-                    const panelistNames =
-                        item.panelists && item.panelists.length > 0
-                        ? item.panelists.map(panelist => panelist.fullname).join(" ")
-                        : "";
+                    // 1. Scope Filter (All / My / Other)
+                    if(scope === "My" && item.is_owner !== true) return false;
+                    if(scope === "Other" && item.is_owner === true) return false;
 
-                    const memberNames =
-                        item.members && item.members.length > 0
-                        ? item.members.map(member => member.fullname).join(" ")
-                        : "";
+                    // 2. Status Filter
+                    if(status !== "All"){
+                        const itemStatus = String(item.defense_status || "").trim();
+                        if(status === "Ongoing"){
+                            if(!isDefenseHappening(item.defense_date, item.start_time, item.end_time)) return false;
+                        }else if(itemStatus !== status){
+                            return false;
+                        }
+                    }
 
-                    const matchesKeyword =
-                        String(item.schedule_code || "").toLowerCase().includes(keyword)
-                        ||
-                        String(item.group_id || "").toLowerCase().includes(keyword)
-                        ||
-                        String(item.group_name || "").toLowerCase().includes(keyword)
-                        ||
-                        String(item.project_title || "").toLowerCase().includes(keyword)
-                        ||
-                        String(item.room_name || "").toLowerCase().includes(keyword)
-                        ||
-                        String(item.defense_type || "").toLowerCase().includes(keyword)
-                        ||
-                        String(item.defense_status || "").toLowerCase().includes(keyword)
-                        ||
-                        String(item.creator_name || "").toLowerCase().includes(keyword)
-                        ||
-                        String(panelistNames || "").toLowerCase().includes(keyword)
-                        ||
-                        String(memberNames || "").toLowerCase().includes(keyword);
+                    // 3. Search Filter
+                    if(keyword){
+                        const panelistNames =
+                            Array.isArray(item.panelists) && item.panelists.length > 0
+                            ? item.panelists.map(panelist => panelist.fullname || "").join(" ")
+                            : "";
 
-                    const matchesStatus =
-                        status === "All"
-                        ||
-                        item.defense_status === status;
+                        const memberNames =
+                            Array.isArray(item.members) && item.members.length > 0
+                            ? item.members.map(member => member.fullname || "").join(" ")
+                            : "";
 
-                    return matchesKeyword && matchesStatus;
+                        const matchesKeyword =
+                            String(item.schedule_code || "").toLowerCase().includes(keyword)
+                            || String(item.group_id || "").toLowerCase().includes(keyword)
+                            || String(item.group_name || "").toLowerCase().includes(keyword)
+                            || String(item.project_title || "").toLowerCase().includes(keyword)
+                            || String(item.room_name || "").toLowerCase().includes(keyword)
+                            || String(item.defense_type || "").toLowerCase().includes(keyword)
+                            || String(item.defense_status || "").toLowerCase().includes(keyword)
+                            || String(item.creator_name || "").toLowerCase().includes(keyword)
+                            || panelistNames.toLowerCase().includes(keyword)
+                            || memberNames.toLowerCase().includes(keyword);
+
+                        if(!matchesKeyword) return false;
+                    }
+
+                    return true;
 
                 });
 
-            const mySchedules =
-                filtered.filter(item =>
-                    item.is_owner === true
-                );
+            // Pagination calculation (10 per page)
+            const totalRecords = filtered.length;
+            const totalPages = Math.ceil(totalRecords / PAGE_SIZE) || 1;
+            if(currentPage > totalPages) currentPage = totalPages;
+            if(currentPage < 1) currentPage = 1;
 
-            const otherSchedules =
-                filtered.filter(item =>
-                    item.is_owner !== true
-                );
+            const startIndex = (currentPage - 1) * PAGE_SIZE;
+            const endIndex = Math.min(startIndex + PAGE_SIZE, totalRecords);
+            const pagedList = filtered.slice(startIndex, endIndex);
 
-            renderSchedules(
-                mySchedules,
-                "myScheduleTableBody",
-                true
-            );
-
-            renderSchedules(
-                otherSchedules,
-                "otherScheduleTableBody",
-                false
-            );
+            renderSchedulesTable(pagedList, totalRecords, startIndex, endIndex, totalPages);
 
         }
 
-        function renderSchedules(list, containerId, canManage){
+        function renderSchedulesTable(list, totalRecords, startIndex, endIndex, totalPages){
 
             const tbody =
-                document.getElementById(containerId);
+                document.getElementById("scheduleTableBody");
 
-            tbody.innerHTML =
-                "";
+            if(!tbody) return;
 
-            if(list.length === 0){
+            tbody.innerHTML = "";
 
-                tbody.innerHTML =
-                    `
-                        <tr>
-                            <td colspan="8" class="empty-table-row" style="text-align: center; color: #7b6f96; padding: 30px;">
-                                No defense schedules found.
-                            </td>
-                        </tr>
-                    `;
-
+            if(totalRecords === 0){
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-table-row" style="text-align: center; color: #7b6f96; padding: 35px 20px;">
+                            <i class="fa-solid fa-calendar-xmark" style="font-size: 26px; color: #c4b5fd; display: block; margin-bottom: 8px;"></i>
+                            No defense schedules found matching your filter criteria.
+                        </td>
+                    </tr>
+                `;
+                renderPaginationControls(0, 0, 0, 1);
                 return;
-
             }
 
-            list.forEach(item => {
+            tbody.innerHTML = list.map(item => {
 
                 const programText =
                     item.program === "IS"
@@ -1370,32 +1741,38 @@
                     : "Not Set";
 
                 const panelistNames =
-                    item.panelists && item.panelists.length > 0
-                    ? item.panelists.map(panelist => panelist.fullname).join(", ")
+                    Array.isArray(item.panelists) && item.panelists.length > 0
+                    ? item.panelists.map(panelist => panelist.fullname || "").join(", ")
                     : "No panelists";
 
-                const statusClass =
-                    String(item.defense_status || "Scheduled").toLowerCase();
+                const isHappening = isDefenseHappening(item.defense_date, item.start_time, item.end_time);
+                const displayStatus = isHappening && item.defense_status === "Scheduled" ? "Ongoing" : item.defense_status;
+                const statusClass = String(displayStatus || "Scheduled").toLowerCase();
 
-                const tr =
-                    document.createElement("tr");
+                const ownerPill = item.is_owner
+                    ? `<span class="owner-pill my-owner"><i class="fa-solid fa-user-check"></i> You</span>`
+                    : `<span class="owner-pill other-owner" title="Created by ${escapeHtml(item.creator_name || "Instructor")}"><i class="fa-solid fa-user"></i> ${escapeHtml(item.creator_name || "Instructor")}</span>`;
 
-                tr.className =
-                    "schedule-table-row";
+                const canManage = item.is_owner === true;
 
-                tr.innerHTML =
-                    `
+                return `
+                    <tr class="schedule-table-row">
                         <td class="group-col">
-                            <div class="group-name-cell"><strong>${escapeHtml(item.group_name || "Unnamed Group")}</strong></div>
-                            <div class="project-title-cell" style="font-size: 12px; color: #7b6f96;">${escapeHtml(item.project_title || "No project title")}</div>
+                            <div class="group-name-cell">
+                                <span>${escapeHtml(item.group_name || "Unnamed Group")}</span>
+                                ${ownerPill}
+                            </div>
+                            <div class="project-title-cell" title="${escapeHtml(item.project_title || "")}">
+                                ${escapeHtml(item.project_title || "No project title")}
+                            </div>
                         </td>
                         <td class="program-col"><span class="program-badge">${programText}</span></td>
-                        <td class="type-col">${item.defense_type}</td>
+                        <td class="type-col" style="font-weight: 600; font-size: 12.5px; color: #2e1065;">${escapeHtml(item.defense_type)}</td>
                         <td class="datetime-col">
                             <div class="date-cell"><i class="fa-regular fa-calendar-days"></i> ${formatDate(item.defense_date)}</div>
-                            <div class="time-cell" style="font-size: 12px; color: #7b6f96;"><i class="fa-regular fa-clock"></i> ${formatTime(item.start_time)} - ${formatTime(item.end_time)}</div>
+                            <div class="time-cell"><i class="fa-regular fa-clock"></i> ${formatTime(item.start_time)} - ${formatTime(item.end_time)}</div>
                         </td>
-                        <td class="room-col"><span class="room-badge">${item.room_name}</span></td>
+                        <td class="room-col"><span class="room-badge">${escapeHtml(item.room_name)}</span></td>
                         <td class="panelists-col">
                             <div class="panel-cell" title="${escapeHtml(panelistNames)}">
                                 ${escapeHtml(panelistNames)}
@@ -1403,104 +1780,173 @@
                         </td>
                         <td class="status-col">
                             <span class="status-badge ${statusClass}">
-                                ${item.defense_status}
+                                ${displayStatus}
                             </span>
                         </td>
-                        <td class="actions-col">
-                            <div class="table-actions">
+                        <td class="actions-col" style="text-align: center;">
+                            <div class="table-actions" style="justify-content: center;">
                                 <button
                                     class="view-btn-sm"
                                     type="button"
                                     title="View details"
-                                 >
+                                    onclick="openViewModal(${item.id})"
+                                >
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
-
-                                ${
-                                    canManage
-                                    ? `
-                                        <button
-                                            class="edit-btn-sm"
-                                            type="button"
-                                            title="Edit"
-                                        >
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
-
+                                ${canManage ? `
+                                    <button
+                                        class="edit-btn-sm"
+                                        type="button"
+                                        title="Edit schedule"
+                                        onclick="openEditModal(${item.id})"
+                                    >
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    ${(Number(item.evaluations_submitted || 0) > 0 || (item.evaluation && item.evaluation.score !== null)) ? `
                                         <button
                                             class="delete-btn-sm"
                                             type="button"
-                                            title="Delete"
+                                            disabled
+                                            style="opacity: 0.35; cursor: not-allowed; background: #94a3b8;"
+                                            title="Cannot delete: panel evaluation or grade has already been received"
                                         >
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
-                                    `
-                                    : ''
-                                }
+                                    ` : `
+                                        <button
+                                            class="delete-btn-sm"
+                                            type="button"
+                                            title="Cancel defense schedule"
+                                            onclick="openDeleteReasonModal(${item.id})"
+                                        >
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    `}
+                                ` : ''}
                             </div>
                         </td>
-                    `;
+                    </tr>
+                `;
 
-                tr
-                    .querySelector(".view-btn-sm")
-                    .addEventListener("click", () => {
+            }).join("");
 
-                        openViewModal(item.id);
-
-                    });
-
-                if(canManage){
-
-                    tr
-                        .querySelector(".edit-btn-sm")
-                        .addEventListener("click", () => {
-
-                            openEditModal(item.id);
-
-                        });
-
-                    tr
-                        .querySelector(".delete-btn-sm")
-                        .addEventListener("click", () => {
-
-                            deleteSchedule(item.id);
-
-                        });
-
-                }
-
-                tbody.appendChild(tr);
-
-            });
+            renderPaginationControls(totalRecords, startIndex + 1, endIndex, totalPages);
 
         }
 
+        function renderPaginationControls(totalRecords, fromRecord, toRecord, totalPages){
+            const infoEl = document.getElementById("paginationInfo");
+            const controlsEl = document.getElementById("paginationControls");
+            if(!infoEl || !controlsEl) return;
 
+            if(totalRecords === 0){
+                infoEl.textContent = "Showing 0 of 0 schedules";
+                controlsEl.innerHTML = "";
+                return;
+            }
+
+            infoEl.textContent = `Showing ${fromRecord}–${toRecord} of ${totalRecords} schedules`;
+
+            let html = `
+                <button
+                    class="page-btn"
+                    type="button"
+                    title="Previous page"
+                    onclick="goToPage(${currentPage - 1})"
+                    ${currentPage === 1 ? 'disabled' : ''}
+                >
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            `;
+
+            for(let p = 1; p <= totalPages; p++){
+                html += `
+                    <button
+                        class="page-btn ${p === currentPage ? 'active' : ''}"
+                        type="button"
+                        onclick="goToPage(${p})"
+                    >
+                        ${p}
+                    </button>
+                `;
+            }
+
+            html += `
+                <button
+                    class="page-btn"
+                    type="button"
+                    title="Next page"
+                    onclick="goToPage(${currentPage + 1})"
+                    ${currentPage === totalPages ? 'disabled' : ''}
+                >
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            `;
+
+            controlsEl.innerHTML = html;
+        }
+
+        function goToPage(page){
+            currentPage = page;
+            renderScheduleSections();
+        }
 
         async function openCreateModal(){
+            try {
+                modalMode = "create";
+                selectedScheduleId = null;
 
-            modalMode =
-                "create";
+                clearForm();
 
-            selectedScheduleId =
-                null;
+                const safeSetText = (id, text) => {
+                    const el = document.getElementById(id);
+                    if(el) el.innerText = text;
+                };
+                const safeSetDisplay = (id, disp) => {
+                    const el = document.getElementById(id);
+                    if(el) el.style.display = disp;
+                };
+                const safeSetDisabled = (id, dis) => {
+                    const el = document.getElementById(id);
+                    if(el) el.disabled = dis;
+                };
 
-            clearForm();
+                safeSetText("modalTitle", "Create Defense Schedule");
+                safeSetText("modalSubtitle", "Select group, room, time, defense type, and panelists.");
 
-            document.getElementById("modalTitle").innerText =
-                "Create Defense Schedule";
+                safeSetDisplay("groupSelectGroup", "block");
+                safeSetDisplay("groupLockedGroup", "none");
+                safeSetDisplay("defenseStatusAlert", "none");
+                safeSetDisplay("panelGradingStatusCard", "none");
+                safeSetDisplay("retainOutlinePanelNotice", "none");
 
-            document.getElementById("modalSubtitle").innerText =
-                "Select group, room, time, defense type, and panelists.";
+                safeSetDisabled("defenseDate", false);
+                safeSetDisabled("startTime", false);
+                safeSetDisabled("endTime", false);
+                safeSetDisabled("roomSelect", false);
+                safeSetDisabled("otherRoom", false);
 
-            document.getElementById("statusBox").style.display =
-                "none";
+                const saveBtn = document.querySelector("#scheduleModal .save-btn");
+                if(saveBtn) saveBtn.style.display = "inline-flex";
 
-            document.getElementById("scheduleModal").style.display =
-                "flex";
+                safeSetDisplay("modalDeleteScheduleBtn", "none");
+                safeSetDisplay("statusBox", "none");
 
-            await updateGroupsReadiness();
+                const modal = document.getElementById("scheduleModal");
+                if (modal) {
+                    modal.style.display = "flex";
+                }
 
+                if (!groups || groups.length === 0) {
+                    await loadDefenseData();
+                }
+
+                updateGroupsReadiness().catch(err => console.error("updateGroupsReadiness error:", err));
+            } catch(err) {
+                console.error("openCreateModal error:", err);
+                const modal = document.getElementById("scheduleModal");
+                if (modal) modal.style.display = "flex";
+            }
         }
 
         async function openEditModal(id){
@@ -1518,7 +1964,7 @@
 
             }
 
-            if(item.is_owner !== true){
+            if(!Boolean(item.is_owner)){
 
                 alert("You can only edit schedules that you created.");
 
@@ -1532,42 +1978,55 @@
             selectedScheduleId =
                 item.id;
 
-            await updateGroupsReadiness();
-
             document.getElementById("modalTitle").innerText =
                 "Edit Defense Schedule";
 
             document.getElementById("modalSubtitle").innerText =
                 "Only the instructor who created this schedule can edit it.";
 
-            document.getElementById("groupSelect").value =
-                item.group_db_id;
+            // 1. Group Locked Display: Remove ability to change group in edit
+            document.getElementById("groupSelectGroup").style.display = "none";
+            document.getElementById("groupLockedGroup").style.display = "block";
+            document.getElementById("lockedGroupName").textContent = `${item.group_id ? item.group_id + " - " : ""}${item.group_name || "Unnamed Group"}`;
+            document.getElementById("lockedProjectTitle").textContent = item.project_title || "No project title";
+            document.getElementById("groupSelect").value = item.group_db_id;
 
-            await loadSelectedGroupMembers();
+            // 2. Status Analysis & In-Progress Check
+            const isCompleted = String(item.defense_status).toLowerCase() === "completed";
+            const isHappening = isDefenseHappening(item.defense_date, item.start_time, item.end_time);
 
-            renderPanelistOptions();
+            const statusAlertEl = document.getElementById("defenseStatusAlert");
+            const saveBtn = document.querySelector("#scheduleModal .save-btn");
 
-            const selectedPanelistIds =
-                item.panelists && item.panelists.length > 0
-                ? item.panelists.map(panelist =>
-                    String(panelist.id)
-                )
-                : [];
+            const hasEvaluations = (Number(item.evaluations_submitted || 0) > 0) || (item.evaluation && item.evaluation.score !== null);
+            const modalDelBtn = document.getElementById("modalDeleteScheduleBtn");
+            if(isCompleted){
+                statusAlertEl.style.display = "flex";
+                statusAlertEl.className = "defense-status-alert completed-alert";
+                statusAlertEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> <div><strong>Defense Completed:</strong> This defense schedule is completed and graded. Schedule settings are locked.</div>`;
+                if(saveBtn) saveBtn.style.display = "none";
+                if(modalDelBtn) modalDelBtn.style.display = "none";
+            }else if(isHappening){
+                statusAlertEl.style.display = "flex";
+                statusAlertEl.className = "defense-status-alert happening-alert";
+                statusAlertEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <div><strong>Defense In Progress:</strong> This defense presentation is currently taking place. Date, time, and room cannot be changed. You can still adjust panelists or force complete if needed.</div>`;
+                if(saveBtn) saveBtn.style.display = "inline-flex";
+                if(modalDelBtn) modalDelBtn.style.display = hasEvaluations ? "none" : "inline-flex";
+            }else{
+                statusAlertEl.style.display = "none";
+                if(saveBtn) saveBtn.style.display = "inline-flex";
+                if(modalDelBtn) modalDelBtn.style.display = hasEvaluations ? "none" : "inline-flex";
+            }
 
-            setSelectedPanelists(selectedPanelistIds);
+            // 3. Lock date, time, and room if happening or completed
+            const lockDateTimeRoom = isCompleted || isHappening;
+            document.getElementById("defenseDate").disabled = lockDateTimeRoom;
+            document.getElementById("startTime").disabled = lockDateTimeRoom;
+            document.getElementById("endTime").disabled = lockDateTimeRoom;
+            document.getElementById("roomSelect").disabled = lockDateTimeRoom;
+            document.getElementById("otherRoom").disabled = lockDateTimeRoom;
 
-            document.getElementById("roomSelect").value =
-                isDefaultRoom(item.room_name)
-                ? item.room_name
-                : "Other";
-
-            toggleOtherRoom();
-
-            document.getElementById("otherRoom").value =
-                isDefaultRoom(item.room_name)
-                ? ""
-                : item.room_name;
-
+            // 4. Populate form values
             document.getElementById("defenseDate").value =
                 formatDateInput(item.defense_date);
 
@@ -1600,12 +2059,230 @@
 
             calculateDuration();
 
-            // Load approved documents when editing a schedule
+            // 5. Load group members and restrictions
+            await loadSelectedGroupMembers();
+
+            renderPanelistOptions();
+
+            const selectedPanelistIds =
+                item.panelists && item.panelists.length > 0
+                ? item.panelists.map(panelist =>
+                    String(panelist.id)
+                )
+                : [];
+
+            setSelectedPanelists(selectedPanelistIds);
+
+            document.getElementById("roomSelect").value =
+                isDefaultRoom(item.room_name)
+                ? item.room_name
+                : "Other";
+
+            toggleOtherRoom();
+
+            document.getElementById("otherRoom").value =
+                isDefaultRoom(item.room_name)
+                ? ""
+                : item.room_name;
+
+            // 6. Load panel grading progress & Force Complete controls
+            await loadPanelGradingProgress(item);
+
+            // 7. Load approved documents
             loadApprovedDocumentsForGroup();
+
+            checkRoomAndTimelineConflicts();
 
             document.getElementById("scheduleModal").style.display =
                 "flex";
 
+        }
+
+        async function loadPanelGradingProgress(item){
+            const card = document.getElementById("panelGradingStatusCard");
+            const countText = document.getElementById("gradingCountText");
+            const listEl = document.getElementById("panelGradingList");
+            const btnWrap = document.getElementById("forceCompleteBtnWrap");
+            if(!card || !countText || !listEl || !btnWrap) return;
+
+            card.style.display = "block";
+            countText.textContent = "Loading grading status...";
+            listEl.innerHTML = "";
+            btnWrap.innerHTML = "";
+
+            try{
+                const res = await fetchWithTimeout(`${getApiBaseUrl()}/defense-panel-evaluations/${item.id}`);
+                const data = await res.json();
+
+                const submittedCount = data.success ? Number(data.evaluations_submitted || 0) : Number(item.evaluations_submitted || 0);
+                const requiredCount = 3;
+                const evals = (data.success && data.panel_evaluations) ? data.panel_evaluations : [];
+                const isCompleted = String(item.defense_status).toLowerCase() === "completed";
+
+                countText.innerHTML = `<strong>${submittedCount} of ${requiredCount}</strong> Panelists Graded` + (isCompleted ? ` <span style="font-size:12px;color:#059669;font-weight:700;">(Completed)</span>` : "");
+
+                // Render each assigned panelist and their grade status
+                const assignedPanelists = item.panelists || [];
+                listEl.innerHTML = assignedPanelists.map((p, idx) => {
+                    const hasGraded = evals.some(ev => Number(ev.panelist_id) === Number(p.id));
+                    const roleLabel = idx === 0 ? "Chair" : `Member ${idx}`;
+                    return `
+                        <div class="panel-grade-item">
+                            <div>
+                                <strong>${escapeHtml(p.fullname)}</strong>
+                                <span style="font-size:11px;color:#7c3aed;margin-left:6px;">(${roleLabel})</span>
+                            </div>
+                            ${hasGraded ? `
+                                <span class="graded-tag"><i class="fa-solid fa-circle-check"></i> Graded</span>
+                            ` : `
+                                <span class="pending-tag"><i class="fa-solid fa-clock"></i> Pending Grade</span>
+                            `}
+                        </div>
+                    `;
+                }).join("");
+
+                // Force complete button logic
+                if(!isCompleted){
+                    if(submittedCount >= 2){
+                        btnWrap.innerHTML = `
+                            <button type="button" class="force-complete-btn" onclick="forceCompleteSchedule(${item.id})">
+                                <i class="fa-solid fa-flag-checkered"></i> Force Complete (${submittedCount}/3 Graded)
+                            </button>
+                        `;
+                    }else{
+                        btnWrap.innerHTML = `
+                            <button type="button" class="force-complete-btn disabled" disabled title="At least 2 panelists must submit grades before force completing.">
+                                <i class="fa-solid fa-lock"></i> Force Complete (Requires 2 Panel Grades)
+                            </button>
+                        `;
+                    }
+                }else{
+                    btnWrap.innerHTML = `<span style="font-size:12.5px;font-weight:700;color:#059669;"><i class="fa-solid fa-circle-check"></i> Completed</span>`;
+                }
+
+            }catch(e){
+                console.error("Grading progress error:", e);
+                countText.textContent = `${item.evaluations_submitted || 0}/3 Graded`;
+            }
+        }
+
+        async function forceCompleteSchedule(id){
+            if(!confirm("Are you sure you want to force complete this defense presentation? The system will calculate final results from the submitted panel evaluations and mark the presentation as Completed.")){
+                return;
+            }
+
+            try{
+                const res = await fetchWithTimeout(`${getApiBaseUrl()}/force-complete-defense-schedule/${id}`, {
+                    method:"POST",
+                    headers:{ "Content-Type":"application/json" },
+                    body:JSON.stringify({ instructorUserId:loggedInInstructorId })
+                });
+                const data = await res.json();
+                alert(data.message || "Force complete processed.");
+                if(data.success){
+                    closeScheduleModal();
+                    await loadSchedules();
+                    if(window.PortalNotifications) window.PortalNotifications.refresh(false);
+                }
+            }catch(e){
+                console.error("Force complete error:", e);
+                alert("Cannot connect to server to force complete defense.");
+            }
+        }
+
+        let pendingDeleteScheduleId = null;
+
+        function openDeleteReasonModal(id){
+            const item = schedules.find(s => Number(s.id) === Number(id));
+            if(!item){
+                alert("Schedule not found.");
+                return;
+            }
+            if(!Boolean(item.is_owner)){
+                alert("You can only cancel defense schedules that you created.");
+                return;
+            }
+
+            if((Number(item.evaluations_submitted || 0) > 0) || (item.evaluation && item.evaluation.score !== null)){
+                alert("Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this defense.");
+                return;
+            }
+
+            pendingDeleteScheduleId = id;
+
+            const summaryEl = document.getElementById("deleteSummaryBox");
+            if(summaryEl){
+                summaryEl.innerHTML = `
+                    <strong>Group:</strong> ${escapeHtml(item.group_name || "Unnamed Group")}<br>
+                    <strong>Defense Type:</strong> ${escapeHtml(item.defense_type)}<br>
+                    <strong>Date & Time:</strong> ${formatDate(item.defense_date)} (${formatTime(item.start_time)} - ${formatTime(item.end_time)})<br>
+                    <strong>Room:</strong> ${escapeHtml(item.room_name)}
+                `;
+            }
+
+            document.getElementById("deleteReasonSelect").value = "Wrong Group Selected";
+            document.getElementById("deleteReasonCustom").value = "";
+            document.getElementById("deleteReasonCustomGroup").style.display = "none";
+            document.getElementById("deleteNotes").value = "";
+
+            document.getElementById("deleteReasonModal").style.display = "flex";
+        }
+
+        function closeDeleteReasonModal(){
+            pendingDeleteScheduleId = null;
+            document.getElementById("deleteReasonModal").style.display = "none";
+        }
+
+        function toggleCustomDeleteReason(){
+            const sel = document.getElementById("deleteReasonSelect").value;
+            document.getElementById("deleteReasonCustomGroup").style.display = (sel === "Other Reason") ? "block" : "none";
+        }
+
+        async function confirmDeleteSchedule(){
+            if(!pendingDeleteScheduleId) return;
+
+            const reasonSelect = document.getElementById("deleteReasonSelect").value;
+            const customReason = document.getElementById("deleteReasonCustom").value.trim();
+            const notes = document.getElementById("deleteNotes").value.trim();
+
+            const finalReason = (reasonSelect === "Other Reason" && customReason) ? customReason : reasonSelect;
+
+            const btn = document.getElementById("confirmDeleteBtn");
+            const origHtml = btn ? btn.innerHTML : "";
+            if(btn){
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...';
+            }
+
+            try{
+                const response = await fetchWithTimeout(`${getApiBaseUrl()}/delete-defense-schedule/${pendingDeleteScheduleId}`, {
+                    method:"DELETE",
+                    headers:{ "Content-Type":"application/json" },
+                    body:JSON.stringify({
+                        instructorUserId: loggedInInstructorId,
+                        reason: finalReason,
+                        notes: notes
+                    })
+                });
+
+                const data = await response.json();
+                alert(data.message || "Cancellation processed.");
+
+                if(data.success){
+                    closeDeleteReasonModal();
+                    closeScheduleModal();
+                    await loadSchedules();
+                    if(window.PortalNotifications) window.PortalNotifications.refresh(false);
+                }
+            }catch(e){
+                console.error("Delete schedule error:", e);
+                alert("Cannot connect to server to cancel schedule.");
+            }finally{
+                if(btn){
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
         }
 
         function closeScheduleModal(){
@@ -1616,58 +2293,66 @@
         }
 
         function clearForm(){
-            selectedChairId = null;
-            selectedMemberIds = [];
+            try {
+                selectedChairId = null;
+                selectedMemberIds = [];
+                currentGroupAdviserId = null;
+                currentGroupInstructorIds = [];
 
-            document.getElementById("groupSelect").value =
-                "";
+                const safeSetVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if(el) el.value = val;
+                };
+                const safeSetDisplay = (id, disp) => {
+                    const el = document.getElementById(id);
+                    if(el) el.style.display = disp;
+                };
+                const safeSetHtml = (id, html) => {
+                    const el = document.getElementById(id);
+                    if(el) el.innerHTML = html;
+                };
 
-            renderPanelistOptions();
+                safeSetVal("groupSelect", "");
+                renderPanelistOptions();
 
-            document.getElementById("roomSelect").value =
-                "";
+                safeSetVal("roomSelect", "");
+                safeSetVal("otherRoom", "");
+                safeSetDisplay("otherRoomBox", "none");
 
-            document.getElementById("otherRoom").value =
-                "";
+                safeSetVal("defenseDate", "");
+                safeSetVal("startTime", "");
+                safeSetVal("endTime", "");
+                safeSetVal("defenseType", "Concept Presentation");
+                safeSetVal("otherDefenseType", "");
+                safeSetDisplay("otherDefenseTypeBox", "none");
+                safeSetVal("defenseStatus", "Scheduled");
+                safeSetVal("notes", "");
 
-            document.getElementById("otherRoomBox").style.display =
-                "none";
+                safeSetHtml("memberPreview", "Select a group to show student members.");
+                safeSetDisplay("durationBadge", "none");
+                safeSetDisplay("approvedPapersBox", "none");
+                safeSetDisplay("retainOutlinePanelNotice", "none");
+                safeSetDisplay("modalDeleteScheduleBtn", "none");
+                safeSetDisplay("roomConflictNotice", "none");
+                safeSetDisplay("panelConflictNotice", "none");
 
-            document.getElementById("defenseDate").value =
-                "";
-
-            document.getElementById("startTime").value =
-                "";
-
-            document.getElementById("endTime").value =
-                "";
-
-            document.getElementById("defenseType").value =
-                "Concept Presentation";
-
-            document.getElementById("otherDefenseType").value =
-                "";
-
-            document.getElementById("otherDefenseTypeBox").style.display =
-                "none";
-
-            document.getElementById("defenseStatus").value =
-                "Scheduled";
-
-            document.getElementById("notes").value =
-                "";
-
-            document.getElementById("memberPreview").innerHTML =
-                "Select a group to show student members.";
-
-            const durationBadge = document.getElementById("durationBadge");
-            if (durationBadge) {
-                durationBadge.style.display = "none";
+                const resetBorderAndBg = (elId) => {
+                    const el = document.getElementById(elId);
+                    if (el) {
+                        el.style.border = "";
+                        el.style.backgroundColor = "";
+                    }
+                };
+                resetBorderAndBg("roomSelect");
+                resetBorderAndBg("otherRoom");
+                resetBorderAndBg("startTime");
+                resetBorderAndBg("endTime");
+                resetBorderAndBg("panelChairSelect");
+                resetBorderAndBg("panelMember1Select");
+                resetBorderAndBg("panelMember2Select");
+            } catch(e) {
+                console.error("clearForm error:", e);
             }
-
-            // Hide approved papers container when form is cleared
-            document.getElementById("approvedPapersBox").style.display = "none";
-
         }
 
         function toggleOtherRoom(){
@@ -1679,6 +2364,8 @@
                 room === "Other"
                 ? "block"
                 : "none";
+
+            checkRoomAndTimelineConflicts();
 
         }
 
@@ -1704,7 +2391,28 @@
             if(!value){
                 return "";
             }
-
+            if(typeof value === "string"){
+                const trimmed = value.trim();
+                if(trimmed.includes("T")){
+                    const d = new Date(trimmed);
+                    if(!isNaN(d.getTime())){
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, "0");
+                        const day = String(d.getDate()).padStart(2, "0");
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+                if(/^\d{4}-\d{2}-\d{2}/.test(trimmed)){
+                    return trimmed.slice(0, 10);
+                }
+            }
+            const d = new Date(value);
+            if(!isNaN(d.getTime())){
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, "0");
+                const day = String(d.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            }
             return String(value).slice(0, 10);
         }
 
@@ -1792,6 +2500,94 @@
 
         }
 
+        function checkRoomAndTimelineConflicts(){
+            const dateVal = document.getElementById("defenseDate")?.value;
+            const startVal = document.getElementById("startTime")?.value;
+            const endVal = document.getElementById("endTime")?.value;
+            const roomSelect = document.getElementById("roomSelect");
+            const otherRoom = document.getElementById("otherRoom");
+            const currentRoom = getRoomName();
+            const notice = document.getElementById("roomConflictNotice");
+            const noticeText = document.getElementById("roomConflictNoticeText");
+            const excludeId = modalMode === "edit" ? selectedScheduleId : null;
+
+            // Highlight booked options in roomSelect
+            if (roomSelect) {
+                Array.from(roomSelect.options).forEach(opt => {
+                    if (!opt.value || opt.value === "Other") return;
+                    const optRoom = opt.value;
+                    const conflict = (dateVal && startVal && endVal) 
+                        ? findLocalRoomConflict(dateVal, optRoom, startVal, endVal, excludeId) 
+                        : null;
+                    if (conflict) {
+                        opt.style.color = "#ef4444";
+                        opt.style.backgroundColor = "#fee2e2";
+                        opt.style.fontWeight = "600";
+                        opt.textContent = `${optRoom} (Already Booked: ${formatTime(conflict.start_time)} - ${formatTime(conflict.end_time)})`;
+                    } else {
+                        opt.style.color = "";
+                        opt.style.backgroundColor = "";
+                        opt.style.fontWeight = "";
+                        opt.textContent = optRoom;
+                    }
+                });
+            }
+
+            // Check if current chosen room has a conflict
+            let roomConflict = null;
+            if (dateVal && startVal && endVal && currentRoom) {
+                roomConflict = findLocalRoomConflict(dateVal, currentRoom, startVal, endVal, excludeId);
+            }
+
+            const startInput = document.getElementById("startTime");
+            const endInput = document.getElementById("endTime");
+
+            if (roomConflict) {
+                if (roomSelect) {
+                    roomSelect.style.border = "2px solid #ef4444";
+                    roomSelect.style.backgroundColor = "#fef2f2";
+                }
+                if (otherRoom) {
+                    otherRoom.style.border = "2px solid #ef4444";
+                    otherRoom.style.backgroundColor = "#fef2f2";
+                }
+                if (startInput) {
+                    startInput.style.border = "2px solid #ef4444";
+                    startInput.style.backgroundColor = "#fef2f2";
+                }
+                if (endInput) {
+                    endInput.style.border = "2px solid #ef4444";
+                    endInput.style.backgroundColor = "#fef2f2";
+                }
+
+                if (notice && noticeText) {
+                    const bookedTime = `${formatTime(roomConflict.start_time)} - ${formatTime(roomConflict.end_time)}`;
+                    noticeText.textContent = `Room "${currentRoom}" is already booked on ${formatDate(roomConflict.defense_date)} (${bookedTime}) by ${roomConflict.group_name || 'another group'}.`;
+                    notice.style.display = "block";
+                }
+            } else {
+                if (roomSelect) {
+                    roomSelect.style.border = "";
+                    roomSelect.style.backgroundColor = "";
+                }
+                if (otherRoom) {
+                    otherRoom.style.border = "";
+                    otherRoom.style.backgroundColor = "";
+                }
+                if (startInput) {
+                    startInput.style.border = "";
+                    startInput.style.backgroundColor = "";
+                }
+                if (endInput) {
+                    endInput.style.border = "";
+                    endInput.style.backgroundColor = "";
+                }
+                if (notice) {
+                    notice.style.display = "none";
+                }
+            }
+        }
+
         function isDefaultRoom(roomName){
 
             const rooms = [
@@ -1830,15 +2626,16 @@
 
         function getDefenseType(){
 
+            const el = document.getElementById("defenseType");
+            if(!el) return "Concept Presentation";
+
             const defenseType =
-                document.getElementById("defenseType").value;
+                el.value || "Concept Presentation";
 
             if(defenseType === "Other"){
 
-                return document
-                    .getElementById("otherDefenseType")
-                    .value
-                    .trim();
+                const otherEl = document.getElementById("otherDefenseType");
+                return (otherEl?.value || "").trim() || "Other";
 
             }
 
@@ -1909,15 +2706,23 @@
                 }
 
                 const assigned =
-                    (item.panelists || []).map(p => String(p.id));
+                    Array.isArray(item.panelists)
+                    ? item.panelists.map(p => String(p.id))
+                    : [];
 
                 return selected.some(id => assigned.includes(id));
 
             }) || null;
         }
 
-        function buildLocalPanelistConflictMessage(){
-            return "Schedule conflict detected. One or more selected panelists are already assigned to another defense at this date and time.";
+        function buildLocalPanelistConflictMessage(conflict, selectedPanelistIds){
+            if (!conflict) return "Schedule conflict detected. One or more selected panelists are already assigned to another defense at this date and time.";
+            const assigned = Array.isArray(conflict.panelists) ? conflict.panelists.map(p => String(p.id)) : [];
+            const conflictingPerson = panelists.find(p => selectedPanelistIds.includes(String(p.id)) && assigned.includes(String(p.id)));
+            const name = conflictingPerson ? conflictingPerson.fullname : "One of the selected panelists";
+            const sTime = formatTime(conflict.start_time);
+            const eTime = formatTime(conflict.end_time);
+            return `Schedule conflict detected: ${name} is already scheduled for another defense on ${formatDate(conflict.defense_date)} from ${sTime} to ${eTime}. Please select another panelist or change the defense time slot.`;
         }
 
         async function saveSchedule(){
@@ -1984,6 +2789,22 @@
                 ? selectedScheduleId
                 : null;
 
+            // Check if group already has an active defense schedule for this type
+            if(modalMode === "create"){
+                const currentDefenseTypeLower = (defenseType || "").trim().toLowerCase();
+                const groupConflict = (schedules || []).find(s => {
+                    const sStatus = String(s.defense_status || "").toLowerCase();
+                    if (sStatus === "cancelled" || sStatus === "completed") return false;
+                    const sGroupDbId = Number(s.group_db_id || s.group_id);
+                    if (sGroupDbId !== Number(groupDbId)) return false;
+                    return String(s.defense_type || "").trim().toLowerCase() === currentDefenseTypeLower;
+                });
+                if(groupConflict){
+                    alert(`This group already has an active defense schedule for "${defenseType}". Duplicate defense schedules for the same defense type are not allowed.`);
+                    return;
+                }
+            }
+
             const roomConflict = findLocalRoomConflict(
                 defenseDate,
                 roomName,
@@ -1993,7 +2814,7 @@
             );
 
             if(roomConflict){
-
+                checkRoomAndTimelineConflicts();
                 alert(
                     buildLocalRoomConflictMessage(
                         roomConflict,
@@ -2001,9 +2822,7 @@
                         defenseDate
                     )
                 );
-
                 return;
-
             }
 
             const panelistConflict =
@@ -2016,7 +2835,9 @@
                 );
 
             if(panelistConflict){
-                alert(buildLocalPanelistConflictMessage());
+                renderPanelistDropdowns();
+                updatePanelSummary();
+                alert(buildLocalPanelistConflictMessage(panelistConflict, panelistIds));
                 return;
             }
 
@@ -2075,8 +2896,8 @@
             try{
 
                 const response =
-                    await fetch(
-                        "http://localhost:3005/create-defense-schedule",
+                    await fetchWithTimeout(
+                        `${getApiBaseUrl()}/create-defense-schedule`,
                         {
                             method:"POST",
 
@@ -2143,8 +2964,8 @@
             try{
 
                 const response =
-                    await fetch(
-                        `http://localhost:3005/update-defense-schedule/${selectedScheduleId}`,
+                    await fetchWithTimeout(
+                        `${getApiBaseUrl()}/update-defense-schedule/${selectedScheduleId}`,
                         {
                             method:"PUT",
 
@@ -2198,72 +3019,7 @@
         }
 
         async function deleteSchedule(id){
-
-            const schedule =
-                schedules.find(item =>
-                    Number(item.id) === Number(id)
-                );
-
-            if(!schedule){
-
-                alert("Schedule not found.");
-
-                return;
-
-            }
-
-            if(schedule.is_owner !== true){
-
-                alert("You can only delete schedules that you created.");
-
-                return;
-
-            }
-
-            const confirmed =
-                confirm("Delete this defense schedule? Selected panelists and students will be notified.");
-
-            if(!confirmed){
-                return;
-            }
-
-            try{
-
-                const response =
-                    await fetch(
-                        `http://localhost:3005/delete-defense-schedule/${id}`,
-                        {
-                            method:"DELETE",
-
-                            headers:{
-                                "Content-Type":"application/json"
-                            },
-
-                            body:JSON.stringify({
-                                instructorUserId:loggedInInstructorId
-                            })
-                        }
-                    );
-
-                const data =
-                    await response.json();
-
-                alert(data.message || "Delete processed.");
-
-                if(data.success){
-
-                    loadSchedules();
-
-                }
-
-            }catch(error){
-
-                console.log(error);
-
-                alert("Cannot delete schedule.");
-
-            }
-
+            openDeleteReasonModal(id);
         }
 
         function openViewModal(id){
@@ -2352,7 +3108,7 @@
                     <div class="member-row">
 
                         <div class="member-avatar">
-                            ${panelist.profile_image ? `<img src="http://localhost:3005${panelist.profile_image}" alt="Profile">` : panelist.fullname.charAt(0).toUpperCase()}
+                            ${panelist.profile_image ? `<img src="${getApiBaseUrl()}${panelist.profile_image}" alt="Profile">` : panelist.fullname.charAt(0).toUpperCase()}
                         </div>
 
                         <div>
@@ -2390,7 +3146,7 @@
                     <div class="member-row">
 
                         <div class="member-avatar student-avatar">
-                            ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
+                            ${member.profile_image ? `<img src="${getApiBaseUrl()}${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
                         </div>
 
                         <div>
@@ -2446,7 +3202,7 @@
                 return "";
             }
 
-            return String(dateValue).split("T")[0];
+            return normalizeScheduleDate(dateValue);
 
         }
 
@@ -2507,8 +3263,8 @@
 
                 // Sort by date and time
                 booked.sort((a,b) => {
-                    const da = new Date(a.defense_date + 'T' + a.start_time);
-                    const db = new Date(b.defense_date + 'T' + b.start_time);
+                    const da = new Date(normalizeScheduleDate(a.defense_date) + 'T' + normalizeScheduleTime(a.start_time));
+                    const db = new Date(normalizeScheduleDate(b.defense_date) + 'T' + normalizeScheduleTime(b.start_time));
                     return da - db;
                 });
 
@@ -2560,8 +3316,8 @@
                 : "";
 
             const response =
-                await fetch(
-                    `http://localhost:3005/group-consultation-approval-status/${groupDbId}${query}`
+                await fetchWithTimeout(
+                    `${getApiBaseUrl()}/group-consultation-approval-status/${groupDbId}${query}`
                 );
 
             return response.json();
@@ -2688,7 +3444,7 @@
             try {
 
                 const [docsRes, statusData] = await Promise.all([
-                    fetch(`http://localhost:3005/group-documents/${groupDbId}`),
+                    fetchWithTimeout(`${getApiBaseUrl()}/group-documents/${groupDbId}`),
                     fetchGroupApprovalStatus(
                         groupDbId,
                         requireAllPhases ? "" : defenseType,
@@ -2843,7 +3599,7 @@
                                         <span style="font-weight: 500; font-size: 12px; color: #1f2937;">${doc.document_title}</span>
                                         <span style="font-size: 10px; color: #6b7280;">${doc.document_code}</span>
                                     </div>
-                                    <a class="approved-doc-view-btn" href="http://localhost:3005${doc.file_path}" target="_blank" style="background: #7c3aed; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 4px; cursor: pointer; text-decoration: none;">
+                                    <a class="approved-doc-view-btn" href="${getApiBaseUrl()}${doc.file_path}" target="_blank" style="background: #7c3aed; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 4px; cursor: pointer; text-decoration: none;">
                                         <i class="fa-solid fa-eye"></i> View
                                     </a>
                                 </div>
@@ -2867,11 +3623,58 @@
             }
         }
 
-        loadPageData();
+        // Explicitly attach global functions to window for onclick handlers
+        window.openCreateModal = openCreateModal;
+        window.closeScheduleModal = closeScheduleModal;
+        window.openEditModal = openEditModal;
+        window.openViewModal = openViewModal;
+        window.closeViewModal = closeViewModal;
+        window.openDeleteReasonModal = openDeleteReasonModal;
+        window.closeDeleteReasonModal = closeDeleteReasonModal;
+        window.confirmDeleteSchedule = confirmDeleteSchedule;
+        window.toggleCustomDeleteReason = toggleCustomDeleteReason;
+        window.forceCompleteSchedule = forceCompleteSchedule;
+        window.loadPageData = loadPageData;
+        window.loadSchedules = loadSchedules;
+        window.renderScheduleSections = renderScheduleSections;
+        window.onScopeFilterChange = onScopeFilterChange;
+        window.goToPage = goToPage;
+        window.onDefenseTypeChange = onDefenseTypeChange;
+        window.onChairChange = onChairChange;
+        window.onMember1Change = onMember1Change;
+        window.onMember2Change = onMember2Change;
+        window.loadSelectedGroupMembers = loadSelectedGroupMembers;
+        window.calculateDuration = calculateDuration;
+        window.toggleOtherRoom = toggleOtherRoom;
+        window.toggleOtherDefenseType = toggleOtherDefenseType;
+        window.saveSchedule = saveSchedule;
+
+        function initSchedulePage(){
+            const createBtn = document.getElementById("createScheduleBtn") || document.querySelector(".primary-btn");
+            if (createBtn) {
+                createBtn.onclick = openCreateModal;
+                createBtn.addEventListener("click", openCreateModal);
+            }
+            loadPageData();
+        }
+
+        // Run immediately as script body finishes parsing
+        initSchedulePage();
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initSchedulePage);
+        }
+
+        window.addEventListener("load", () => {
+            const tbody = document.getElementById("scheduleTableBody");
+            if (tbody && tbody.innerText.includes("Loading schedules...")) {
+                loadPageData();
+            }
+        });
 
     </script>
 
-    <script src="../../shared/portal-notifications.js" defer></script>
+    <script src="../../shared/portal-notifications.js?v=20261108" defer></script>
 </body>
 
 </html>

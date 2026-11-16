@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -167,6 +167,17 @@
                 </span>
             </div>
 
+            <div
+                class="menu-item"
+                id="nav-repository"
+                onclick="window.location.href='Repository.html'"
+            >
+                <i class="fa-solid fa-book-open"></i>
+                <span>
+                    Repository
+                </span>
+            </div>
+
         </div>
 
     </div>
@@ -282,35 +293,88 @@
             </div>
 
             <div id="bulkEnrollWrap" class="enroll-mode-wrap is-hidden">
-            <!-- BULK ENROLL -->
-            <section class="form-card bulk-card">
-                <div class="card-title">
-                    <div class="icon">
-                        <i class="fa-solid fa-file-import"></i>
+                <!-- BULK ENROLL -->
+                <section class="form-card bulk-card">
+                <div class="card-title bulk-card-header">
+                    <div class="title-left">
+                        <div class="icon">
+                            <i class="fa-solid fa-file-csv"></i>
+                        </div>
+                        <div>
+                            <h2>Bulk Enrollment (CSV)</h2>
+                            <p>Import a CSV file to create multiple student accounts at once.</p>
+                        </div>
                     </div>
-                    <h2>Bulk Enrollment (CSV)</h2>
-                </div>
 
-                <div class="bulk-instructions">
-                    <p><strong>Required columns:</strong> fullname, program, year_level</p>
-                    <p><strong>Optional column:</strong> student_position</p>
-                    <p><strong>Allowed year_level:</strong> 3rd Year, 4th Year</p>
-                </div>
-
-                <div class="bulk-actions">
-                    <button class="secondary-btn" type="button" onclick="downloadCsvTemplate()">
-                        <i class="fa-solid fa-download"></i>
-                        Download CSV Template
+                    <button class="template-dl-btn" type="button" onclick="downloadCsvTemplate()">
+                        <i class="fa-solid fa-file-arrow-down"></i>
+                        Download Template
                     </button>
                 </div>
 
-                <div class="input-group">
-                    <label>Import CSV File</label>
-                    <input type="file" id="bulkCsvFile" accept=".csv" />
+                <!-- MOCK CSV TABLE FORMAT GUIDE -->
+                <div class="csv-guide-card">
+                    <div class="guide-header">
+                        <i class="fa-solid fa-table-cells"></i>
+                        <span>Required CSV Structure &amp; Column Format</span>
+                    </div>
+
+                    <div class="mock-table-wrapper">
+                        <table class="mock-csv-table">
+                            <thead>
+                                <tr>
+                                    <th>FullName <span class="col-tag req">Required</span></th>
+                                    <th>Email <span class="col-tag req">For Mail</span></th>
+                                    <th>Program <span class="col-tag req">BSIT / BSIS</span></th>
+                                    <th>Year Level <span class="col-tag req">3rd / 4th Year</span></th>
+                                    <th>Student Position <span class="col-tag opt">Optional</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Juan Dela Cruz</td>
+                                    <td>juan@example.com</td>
+                                    <td>BSIT</td>
+                                    <td>3rd Year</td>
+                                    <td>System Developer</td>
+                                </tr>
+                                <tr>
+                                    <td>Maria Clara</td>
+                                    <td>maria@example.com</td>
+                                    <td>BSIS</td>
+                                    <td>4th Year</td>
+                                    <td>Project Manager</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bulk-notice-banner">
+                        <div class="notice-icon">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </div>
+                        <div class="notice-text">
+                            <strong>Automated Credential Dispatch:</strong> Credentials (<strong>Student ID</strong> &amp; <strong>Password</strong>) will be emailed automatically to every valid <strong>Email</strong> provided in the CSV file upon upload.
+                        </div>
+                    </div>
                 </div>
 
-                <button class="enroll-btn" type="button" onclick="bulkEnrollFromCsv()">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                <!-- UPLOAD ZONE -->
+                <div class="upload-zone" onclick="document.getElementById('bulkCsvFile').click()">
+                    <input type="file" id="bulkCsvFile" accept=".csv" onchange="handleFileSelect(this)" style="display:none;" />
+                    <div class="upload-zone-content">
+                        <div class="upload-icon-circle">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </div>
+                        <div class="upload-text">
+                            <span class="upload-main-text" id="uploadMainText">Click to select or drag &amp; drop CSV file</span>
+                            <span class="upload-sub-text" id="uploadSubText">Supports .csv files with student enrollment rows</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="enroll-btn bulk-submit-btn" type="button" onclick="bulkEnrollFromCsv()">
+                    <i class="fa-solid fa-user-plus"></i>
                     Import and Enroll Students
                 </button>
 
@@ -331,7 +395,7 @@
                             <tbody id="bulkResultBody"></tbody>
                         </table>
                     </div>
-                    <div class="bulk-actions">
+                    <div class="bulk-actions" style="margin-top:14px;">
                         <button class="secondary-btn" type="button" onclick="downloadBulkResultCsv()">
                             <i class="fa-solid fa-file-csv"></i>
                             Download Result CSV
@@ -339,7 +403,7 @@
                     </div>
                 </div>
 
-            </section>
+                </section>
             </div>
         </div>
 
@@ -361,12 +425,13 @@
                         <th>Year</th>
                         <th>Position</th>
                         <th>Password</th>
+                        <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="studentTableBody">
                     <tr>
-                        <td colspan="7">Loading students...</td>
+                        <td colspan="8">Loading students...</td>
                     </tr>
                 </tbody>
             </table>
@@ -384,32 +449,42 @@
                 <input type="text" id="editFullname">
             </div>
 
-            <!-- PROGRAM -->
-            <div class="input-group">
-                <label>Program</label>
-                <select id="editProgram">
-                    <option>BSIT</option>
-                    <option>BSIS</option>
-                </select>
+            <!-- Group Lock Notice (shown if student already belongs to a capstone group) -->
+            <div id="editGroupLockNotice" style="display:none; background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; padding:10px 14px; border-radius:12px; font-size:12px; margin-bottom:14px;">
+                <i class="fa-solid fa-lock" style="margin-right:6px; color:#16a34a;"></i>
+                <strong>Group Member:</strong> <span id="editGroupLockText">This student is in a capstone group. Program, Year Level, and Position cannot be modified.</span>
             </div>
 
-            <!-- YEAR -->
-            <div class="input-group">
-                <label>Year Level</label>
-                <select id="editYear">
-                    <option>3rd Year</option>
-                    <option>4th Year</option>
-                </select>
-            </div>
+            <!-- Program, Year Level, and Student Position: editable ONLY when student has NO group -->
+            <div id="editGroupRestrictedFields">
+                <!-- PROGRAM -->
+                <div class="input-group">
+                    <label>Program</label>
+                    <select id="editProgram">
+                        <option>BSIT</option>
+                        <option>BSIS</option>
+                    </select>
+                </div>
 
-            <!-- POSITION -->
-            <div class="input-group">
-                <label>Student Position (Optional)</label>
-                <select id="editPosition">
-                    <option>System Analyst</option>
-                    <option>System Developer</option>
-                    <option>Project Manager</option>
-                </select>
+                <!-- YEAR -->
+                <div class="input-group">
+                    <label>Year Level</label>
+                    <select id="editYear">
+                        <option>3rd Year</option>
+                        <option>4th Year</option>
+                    </select>
+                </div>
+
+                <!-- POSITION -->
+                <div class="input-group">
+                    <label>Student Position (Optional)</label>
+                    <select id="editPosition">
+                        <option value="Not Assigned">Not Assigned</option>
+                        <option value="System Analyst">System Analyst</option>
+                        <option value="System Developer">System Developer</option>
+                        <option value="Project Manager">Project Manager</option>
+                    </select>
+                </div>
             </div>
 
             <!-- PASSWORD -->
@@ -418,10 +493,33 @@
                 <input type="text" id="editPassword">
             </div>
 
+            <!-- STUDENT STATUS -->
+            <div class="input-group">
+                <label>Student Status</label>
+                <select id="editStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                    <option value="DROPPED">DROPPED</option>
+                </select>
+            </div>
+
             <!-- BUTTONS -->
-            <div class="modal-actions">
-                <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
-                <button class="save-btn" onclick="saveStudentEdit()">Save</button>
+            <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:12px;">
+                <button
+                    type="button"
+                    class="delete-btn"
+                    id="editDeleteStudentBtn"
+                    onclick="handleDeleteFromEditModal()"
+                    title="Delete student"
+                    style="margin: 0;"
+                >
+                    <i class="fa-solid fa-trash-can"></i>
+                    Delete Student
+                </button>
+                <div style="display:flex; gap:10px; margin-left:auto;">
+                    <button type="button" class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+                    <button type="button" class="save-btn" onclick="saveStudentEdit()">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
@@ -489,6 +587,7 @@
             const program = document.getElementById("studentProgram").value;
             const year_level = document.getElementById("studentYear").value;
             const student_position = document.getElementById("studentPosition").value;
+            const email = document.getElementById("studentEmail") ? document.getElementById("studentEmail").value.trim() : "";
 
             // Check if required fields are filled
             if (!fullname || !program || !year_level) {
@@ -507,7 +606,8 @@
                         program,
                         year_level,
                         student_position: student_position || "Not Assigned", // Default if no position selected
-                        enrolledByUserId: localStorage.getItem("userId") || ""
+                        enrolledByUserId: localStorage.getItem("userId") || "",
+                        email
                     }),
                 });
 
@@ -516,7 +616,10 @@
                 if (data.success) {
                     document.getElementById("studentId").innerText = data.studentId;
                     document.getElementById("tempPassword").innerText = data.tempPassword;
-                    alert("Student enrolled successfully!");
+                    if (document.getElementById("studentEmail")) {
+                        document.getElementById("studentEmail").value = "";
+                    }
+                    alert("Student enrolled successfully! Credentials sent to email if provided.");
                     loadStudents();
                 } else {
                     alert("Enrollment failed.");
@@ -553,21 +656,39 @@
                 data.students.forEach((student) => {
                     const row = document.createElement("tr");
 
+                    const rawStatus = String(student.student_status || "ACTIVE").toUpperCase();
+                    let statusBadge = '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Active</span>';
+                    if(rawStatus === "INACTIVE"){
+                        statusBadge = '<span style="background:#fef9c3;color:#854d0e;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Inactive</span>';
+                    } else if(rawStatus === "DROPPED"){
+                        statusBadge = '<span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Dropped</span>';
+                    }
+
+                    const inGroup = !!(student.group_db_id || student.group_name || student.group_code);
+
                     row.innerHTML = `
                         <td>${student.user_id}</td>
                         <td>${student.fullname}</td>
                         <td>${student.program}</td>
                         <td>${student.year_level}</td>
-                        <td>${student.student_position}</td>
+                        <td>${student.student_position || "Not Assigned"}</td>
                         <td>${student.password}</td>
+                        <td>${statusBadge}</td>
                         <td>
                             <div class="action-buttons">
                                 <button class="view-btn" type="button" title="View student">
                                     <i class="fa-solid fa-eye"></i>
                                     View
                                 </button>
-                                <button class="edit-btn">Edit</button>
-                                <button class="delete-btn">Delete</button>
+                                <button class="edit-btn" type="button">Edit</button>
+                                <button
+                                    class="delete-btn"
+                                    type="button"
+                                    ${inGroup ? 'disabled title="Cannot delete: Student belongs to a capstone group" style="opacity:0.4; cursor:not-allowed;"' : 'title="Delete Student"'}
+                                >
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    Delete
+                                </button>
                             </div>
                         </td>
                     `;
@@ -581,12 +702,12 @@
 
                     /* EDIT */
                     row.querySelector(".edit-btn").addEventListener("click", () => {
-                        openEditModal(student.id, student.fullname, student.program, student.year_level, student.student_position, student.password);
+                        handleOpenEditModal(student);
                     });
 
                     /* DELETE */
                     row.querySelector(".delete-btn").addEventListener("click", () => {
-                        deleteStudent(student.id);
+                        handleDeleteStudent(student.id, student.fullname, inGroup);
                     });
                 });
             } catch (error) {
@@ -595,56 +716,138 @@
         }
 
         /* ================= DELETE ================= */
-        async function deleteStudent(id) {
-            const confirmDelete = confirm("Delete this student?");
+        async function handleDeleteStudent(id, fullname, inGroup) {
+            if (inGroup) {
+                alert(`Cannot delete student "${fullname}" because they are currently enrolled in a capstone group. Only students without a group can be deleted.`);
+                return;
+            }
+
+            const confirmDelete = confirm(`Are you sure you want to permanently delete student "${fullname}"?\n\nThis will remove their student account from the system. This action cannot be undone.`);
             if (!confirmDelete) return;
 
             try {
                 const response = await fetch(
                     `http://localhost:3005/delete-student/${id}?requestorRole=faculty&requestorUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`,
                     {
-                    method: "DELETE",
+                        method: "DELETE",
                     }
                 );
 
                 const data = await response.json();
 
                 if (data.success) {
-                    alert("Student deleted successfully!");
+                    alert(data.message || "Student deleted successfully!");
+                    closeEditModal();
                     loadStudents();
                 } else {
-                    alert("Delete failed.");
+                    alert(data.message || "Delete failed.");
                 }
             } catch (error) {
-                console.log(error);
+                console.error("Delete student error:", error);
+                alert("Failed to communicate with server to delete student.");
             }
         }
 
-        /* ================= OPEN MODAL ================= */
-        function openEditModal(id, fullname, program, year_level, position, password) {
-            selectedStudentId = id;
+        async function deleteStudent(id) {
+            handleDeleteStudent(id, "this student", false);
+        }
 
-            document.getElementById("editFullname").value = fullname;
-            document.getElementById("editProgram").value = program;
-            document.getElementById("editYear").value = year_level;
-            document.getElementById("editPosition").value = position;
-            document.getElementById("editPassword").value = password;
+        function handleDeleteFromEditModal() {
+            if (!currentEditingStudent) return;
+            const inGroup = !!(currentEditingStudent.group_db_id || currentEditingStudent.group_name || currentEditingStudent.group_code);
+            handleDeleteStudent(currentEditingStudent.id, currentEditingStudent.fullname, inGroup);
+        }
+
+        /* ================= OPEN MODAL ================= */
+        let currentEditingStudent = null;
+
+        function handleOpenEditModal(student) {
+            currentEditingStudent = student;
+            selectedStudentId = student.id;
+
+            document.getElementById("editFullname").value = student.fullname || "";
+            document.getElementById("editPassword").value = student.password || "";
+            document.getElementById("editStatus").value = (student.student_status || "ACTIVE").toUpperCase();
+
+            const restrictedFields = document.getElementById("editGroupRestrictedFields");
+            const lockNotice = document.getElementById("editGroupLockNotice");
+            const lockText = document.getElementById("editGroupLockText");
+
+            const inGroup = !!(student.group_db_id || student.group_name || student.group_code);
+
+            if (inGroup) {
+                // In group: Remove/hide editing for program, year level, and student position
+                if (restrictedFields) restrictedFields.style.display = "none";
+                if (lockNotice) {
+                    lockNotice.style.display = "block";
+                    const grpLabel = student.group_name || student.group_code || "Capstone Group";
+                    lockText.textContent = `Assigned to ${grpLabel}. Program, Year Level, and Student Position are locked and cannot be edited.`;
+                }
+            } else {
+                // Not in group: Fully editable
+                if (restrictedFields) restrictedFields.style.display = "block";
+                if (lockNotice) lockNotice.style.display = "none";
+
+                document.getElementById("editProgram").value = student.program || "BSIT";
+                document.getElementById("editYear").value = student.year_level || "3rd Year";
+                document.getElementById("editPosition").value = student.student_position || "Not Assigned";
+            }
+
+            const modalDelBtn = document.getElementById("editDeleteStudentBtn");
+            if (modalDelBtn) {
+                if (inGroup) {
+                    modalDelBtn.disabled = true;
+                    modalDelBtn.style.opacity = "0.45";
+                    modalDelBtn.style.cursor = "not-allowed";
+                    modalDelBtn.title = "Cannot delete student who is assigned to a capstone group.";
+                } else {
+                    modalDelBtn.disabled = false;
+                    modalDelBtn.style.opacity = "1";
+                    modalDelBtn.style.cursor = "pointer";
+                    modalDelBtn.title = "Permanently delete this student account";
+                }
+            }
 
             document.getElementById("editModal").style.display = "flex";
+        }
+
+        function openEditModal(id, fullname, program, year_level, position, password) {
+            handleOpenEditModal({ id, fullname, program, year_level, student_position: position, password });
         }
 
         /* ================= CLOSE MODAL ================= */
         function closeEditModal() {
             document.getElementById("editModal").style.display = "none";
+            currentEditingStudent = null;
         }
 
         /* ================= SAVE EDIT ================= */
         async function saveStudentEdit() {
-            const fullname = document.getElementById("editFullname").value;
-            const program = document.getElementById("editProgram").value;
-            const year_level = document.getElementById("editYear").value;
-            const student_position = document.getElementById("editPosition").value;
-            const password = document.getElementById("editPassword").value;
+            const fullname = document.getElementById("editFullname").value.trim();
+            const password = document.getElementById("editPassword").value.trim();
+            const student_status = document.getElementById("editStatus").value;
+
+            const inGroup = currentEditingStudent && !!(currentEditingStudent.group_db_id || currentEditingStudent.group_name || currentEditingStudent.group_code);
+
+            let program = null;
+            let year_level = null;
+            let student_position = null;
+
+            if (inGroup) {
+                if (!fullname || !password) {
+                    alert("Please provide Full Name and Password.");
+                    return;
+                }
+            } else {
+                program = document.getElementById("editProgram").value;
+                year_level = document.getElementById("editYear").value;
+                student_position = document.getElementById("editPosition").value;
+
+                if (!fullname || !program || !year_level || !password) {
+                    alert("Please complete all fields.");
+                    return;
+                }
+            }
 
             try {
                 const response = await fetch("http://localhost:3005/edit-student", {
@@ -659,6 +862,7 @@
                         year_level,
                         student_position,
                         password,
+                        student_status,
                         requestorRole: "faculty",
                         requestorUserId: localStorage.getItem("userId") || ""
                     }),
@@ -671,10 +875,11 @@
                     closeEditModal();
                     loadStudents();
                 } else {
-                    alert("Update failed.");
+                    alert(data.message || "Update failed.");
                 }
             } catch (error) {
                 console.log(error);
+                alert("Server error.");
             }
         }
 
@@ -741,11 +946,24 @@
 
         let lastBulkResults = [];
 
+        function handleFileSelect(input){
+            const file = input.files && input.files[0];
+            const mainText = document.getElementById("uploadMainText");
+            const subText = document.getElementById("uploadSubText");
+            if(file){
+                mainText.innerHTML = `<i class="fa-solid fa-file-csv" style="color:#7c3aed; margin-right:6px;"></i> Selected: <strong>${escapeText(file.name)}</strong>`;
+                subText.innerText = `Size: ${(file.size / 1024).toFixed(1)} KB — Click to change file`;
+            }else{
+                mainText.innerText = "Click to select or drag & drop CSV file";
+                subText.innerText = "Supports .csv files with student enrollment rows";
+            }
+        }
+
         function downloadCsvTemplate(){
             const template =
-                "fullname,program,year_level,student_position\n" +
-                "\"Juan Dela Cruz\",BSIT,\"3rd Year\",\"System Developer\"\n" +
-                "\"Maria Clara\",BSIS,\"4th Year\",\"Project Manager\"\n";
+                "fullname,email,program,year_level,student_position\n" +
+                "\"Juan Dela Cruz\",\"juan@example.com\",BSIT,\"3rd Year\",\"System Developer\"\n" +
+                "\"Maria Clara\",\"maria@example.com\",BSIS,\"4th Year\",\"Project Manager\"\n";
 
             downloadTextFile("bulk_enrollment_template.csv", template);
         }
@@ -806,6 +1024,9 @@
             const fullname =
                 row.fullname || row.name || row.full_name || "";
 
+            const email =
+                row.email || row.student_email || row.email_address || "";
+
             const program =
                 row.program || "";
 
@@ -817,6 +1038,7 @@
 
             return {
                 fullname:String(fullname).trim(),
+                email:String(email).trim(),
                 program:String(program).trim(),
                 year_level:String(year_level).trim(),
                 student_position:String(student_position).trim()
