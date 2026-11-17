@@ -48,12 +48,14 @@ services:
     volumes:
       # Persistent MySQL data storage so database records are never lost on container restart
       - mysql_data:/var/lib/mysql
+      # Auto-initialize clean schema + bcrypt-hashed Admin accounts + Repository titles on first startup
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$MYSQL_ROOT_PASSWORD --silent && mysql -h 127.0.0.1 -P 3306 -u root -p$$MYSQL_ROOT_PASSWORD -e 'SELECT 1' capx_db >/dev/null 2>&1"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 10
+      start_period: 30s
     networks:
       - capstonex2-net
 
@@ -62,8 +64,6 @@ volumes:
     name: capstonex2_mysql_data
   hf_cache:
     name: capstonex2_hf_cache
-  uploads_data:
-    name: capstonex2_uploads_data
 
 networks:
   capstonex2-net:

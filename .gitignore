@@ -25,6 +25,7 @@ onnx/
 # database backups & dumps
 backups/
 *.sql
+!database/init.sql
 *.sqlite
 *.db
 
