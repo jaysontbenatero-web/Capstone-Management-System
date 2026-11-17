@@ -145,3 +145,41 @@ body{
 .signing-doc-actions{
     margin-top:8px;
 }
+
+.b-declined{
+    background:#fee2e2;
+    color:#991b1b;
+    border:1px solid #fecaca;
+}
+
+.declined-reason-box{
+    margin-top:10px;
+    background:#fef2f2;
+    border:1.5px solid #fecaca;
+    border-radius:12px;
+    padding:12px 14px;
+    color:#7f1d1d;
+    font-size:13px;
+    line-height:1.55;
+}
+.declined-reason-box strong{
+    color:#b91c1c;
+    display:block;
+    margin-bottom:3px;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+}
+
+.availability-warning-banner{
+    margin-top:12px;
+    background:#fffbeb;
+    border:1.5px solid #fde68a;
+    color:#92400e;
+    border-radius:12px;
+    padding:10px 14px;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}

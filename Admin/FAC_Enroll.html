@@ -36,6 +36,9 @@
         rel="stylesheet"
         href="AdminTheme.css"
     >
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -44,8 +47,10 @@
         const userRole = localStorage.getItem("role");
 
         if (userRole !== "admin") {
-            alert("You do not have permission to access the Admin Portal.");
-            window.location.href = "../Log-in.html";
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access the Admin Portal.").then(() => {
+                window.location.href = "../Log-in.html";
+            });
         }
     </script>
 
@@ -349,7 +354,7 @@
                 <input
                     type="text"
                     id="editPassword"
-                    placeholder="Enter new password"
+                    placeholder="Enter new password (leave blank to keep current)"
                 >
             </div>
 
@@ -487,7 +492,7 @@
                 positionCell.textContent = position;
 
                 const passwordCell = document.createElement("td");
-                passwordCell.textContent = password;
+                passwordCell.textContent = "••••••••";
 
                 const rolesCell = document.createElement("td");
                 rolesCell.appendChild(createSwitchGroup(faculty));
@@ -638,7 +643,9 @@
             selectedFacultyId = id;
 
             document.getElementById("editPosition").value = position || "Instructor 1";
-            document.getElementById("editPassword").value = password || "";
+            const editPwdInput = document.getElementById("editPassword");
+            editPwdInput.value = "";
+            editPwdInput.placeholder = "Enter new password (leave blank to keep current)";
 
             document.getElementById("editModal").classList.add("show");
             document.body.classList.add("modal-open");
@@ -658,8 +665,8 @@
                 return;
             }
 
-            if (!position || !password) {
-                alert("Please complete faculty position and password.");
+            if (!position) {
+                alert("Please select a faculty position.");
                 return;
             }
 
@@ -696,7 +703,7 @@
                 return;
             }
 
-            const confirmDelete = confirm("Delete this faculty account?");
+            const confirmDelete = await confirm("Delete this faculty account?");
 
             if (!confirmDelete) {
                 return;

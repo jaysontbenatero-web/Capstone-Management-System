@@ -171,6 +171,16 @@ let currentView = "grid";
 let currentPage = 1;
 let itemsPerPage = 10;
 
+// 3-Layer Semantic Search State (Gemini AI / Local HuggingFace AI / Keyword)
+let _searchDebounceTimer = null;
+let _lastSearchQuery = "";
+let _isSemanticSearch = false;
+
+const API_BASE = (() => {
+    if (window.location.port === "3005" || window.location.host.endsWith(":3005")) return "";
+    return `${window.location.protocol}//${window.location.hostname}:3005`;
+})();
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -268,8 +278,9 @@ function getFilteredAndSortedItems() {
         result = result.filter(item => String(item.year) === String(yearFilter));
     }
 
-    // 4. Search Query Filter - comprehensive search across all context of the study
-    if (query) {
+    // 4. Search Query Filter
+    // When _isSemanticSearch=true the backend /repository-search already ranked repositoryItems; skip local filter.
+    if (query && !_isSemanticSearch) {
         const queryTerms = query.split(/\s+/).filter(Boolean);
         result = result.filter(item => {
             const contextFields = [
@@ -292,18 +303,21 @@ function getFilteredAndSortedItems() {
     }
 
     // 5. Sorting
-    result.sort((a, b) => {
-        if (sortBy === "year-desc") {
-            return (b.year || 0) - (a.year || 0);
-        } else if (sortBy === "year-asc") {
-            return (a.year || 0) - (b.year || 0);
-        } else if (sortBy === "title-asc") {
-            return String(a.title || "").localeCompare(String(b.title || ""));
-        } else if (sortBy === "title-desc") {
-            return String(b.title || "").localeCompare(String(a.title || ""));
-        }
-        return 0;
-    });
+    // In semantic mode preserve server rank order unless user picks an explicit sort
+    if (!_isSemanticSearch || sortBy !== "year-desc") {
+        result.sort((a, b) => {
+            if (sortBy === "year-desc") {
+                return (b.year || 0) - (a.year || 0);
+            } else if (sortBy === "year-asc") {
+                return (a.year || 0) - (b.year || 0);
+            } else if (sortBy === "title-asc") {
+                return String(a.title || "").localeCompare(String(b.title || ""));
+            } else if (sortBy === "title-desc") {
+                return String(b.title || "").localeCompare(String(a.title || ""));
+            }
+            return 0;
+        });
+    }
 
     return result;
 }
@@ -482,12 +496,29 @@ function changePage(page) {
 
 // Event Listeners setup
 function initializeExplorerEvents() {
-    // 1. Search Box Input
+    // 1. Search Box Input (3-Layer Semantic Search with 400ms debounce)
     const searchInput = document.getElementById("archiveSearch");
     if (searchInput) {
         searchInput.addEventListener("input", () => {
-            currentPage = 1;
-            renderRepositoryExplorer();
+            const q = searchInput.value.trim();
+
+            if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
+
+            if (!q) {
+                _lastSearchQuery = "";
+                _isSemanticSearch = false;
+                currentSearchQuery = "";
+                currentPage = 1;
+                const badge = document.getElementById("searchModeBadge");
+                if (badge) badge.style.display = "none";
+                loadRepository();
+                return;
+            }
+
+            _searchDebounceTimer = setTimeout(() => {
+                _searchDebounceTimer = null;
+                doSemanticSearch(q);
+            }, 400);
         });
     }
 
@@ -536,10 +567,11 @@ function initializeExplorerEvents() {
 
 async function loadRepository() {
     try {
-        const response = await fetch("http://localhost:3005/repository");
+        const response = await fetch(`${API_BASE}/repository`);
         const data = await response.json();
 
         repositoryItems = data.success ? data.repository : [];
+        _isSemanticSearch = false;
 
         repositoryItems.forEach(item => {
             repositoryById[item.id] = item;
@@ -556,6 +588,63 @@ async function loadRepository() {
 
     } catch (error) {
         console.log(error);
+    }
+}
+
+// 3-Layer Semantic / Synonym Search via Backend (/repository-search)
+async function doSemanticSearch(query) {
+    currentSearchQuery = query;
+    _lastSearchQuery = query;
+
+    const searchInput = document.getElementById("archiveSearch");
+    if (searchInput) searchInput.style.opacity = "0.6";
+
+    try {
+        const response = await fetch(`${API_BASE}/repository-search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        repositoryItems = data.titles || [];
+        _isSemanticSearch = true;
+
+        repositoryItems.forEach(item => {
+            repositoryById[item.id] = item;
+        });
+
+        const matchCount = data.matchCount ?? repositoryItems.length;
+        const mode = data.mode || "keyword";
+        console.log(`[Admin Repo Search] mode=${mode}, matched=${matchCount}/${repositoryItems.length}`);
+
+        const badge = document.getElementById("searchModeBadge");
+        if (badge) {
+            badge.textContent = `${matchCount} match${matchCount !== 1 ? "es" : ""}`;
+            if (mode === "gemini") {
+                badge.style.background = "#eff6ff";
+                badge.style.color = "#1d4ed8";
+                badge.style.border = "1px solid #bfdbfe";
+            } else if (mode === "huggingface" || mode === "semantic") {
+                badge.style.background = "#f5f3ff";
+                badge.style.color = "#7c3aed";
+                badge.style.border = "1px solid #ece3ff";
+            } else {
+                badge.style.background = "#f3f4f6";
+                badge.style.color = "#4b5563";
+                badge.style.border = "1px solid #e5e7eb";
+            }
+            badge.style.display = matchCount > 0 ? "inline-block" : "none";
+        }
+
+        currentPage = 1;
+        renderRepositoryExplorer();
+
+    } catch (err) {
+        console.error("[Admin Repo Search] Semantic search failed, using local filter:", err);
+        _isSemanticSearch = false;
+        currentPage = 1;
+        renderRepositoryExplorer();
+    } finally {
+        if (searchInput) searchInput.style.opacity = "1";
     }
 }
 
@@ -633,7 +722,7 @@ function closeModal() {
 /* ================= DELETE ================= */
 
 async function deleteRepository(id) {
-    const confirmDelete = confirm("Delete this repository?");
+    const confirmDelete = await confirm("Delete this repository?");
     if (!confirmDelete) {
         return;
     }

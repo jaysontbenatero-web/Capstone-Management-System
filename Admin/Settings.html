@@ -36,6 +36,9 @@
 
     <link rel="stylesheet" href="AdminTheme.css">
 
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -46,10 +49,11 @@
 
         if(userRole !== "admin"){
 
-            alert("You do not have permission to access the Admin Portal.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access the Admin Portal.").then(() => {
+                window.location.href =
                 "../Log-in.html";
+            });
 
         }
     </script>
@@ -602,7 +606,7 @@
         let isLoadingToggles = false;
         let previousPosition = "";
 
-        function confirmPositionChange(selectEl){
+        async function confirmPositionChange(selectEl){
 
             const newPosition = selectEl.value;
 
@@ -615,7 +619,7 @@
                 return;
             }
 
-            const confirmed = confirm(
+            const confirmed = await confirm(
                 `Are you sure you want to change your position to: "${newPosition}"?`
             );
 
@@ -948,7 +952,7 @@
                 : `Disable ${labelMap[accessType]} access? You will no longer be able to open the ${labelMap[accessType]} portal unless you enable it again.`;
 
             const confirmed =
-                confirm(warning);
+                await confirm(warning);
 
             if(!confirmed){
 
@@ -1124,7 +1128,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../Log-in.html";
 

@@ -34,6 +34,9 @@
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
     <link rel="stylesheet" href="student-portal.css">
     <script src="student-portal.js"></script>
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -1238,7 +1241,7 @@
         async function removeGroupMember(studentUserId){
 
             const confirmRemove =
-                confirm(
+                await confirm(
                     `Remove ${studentUserId} from this group?`
                 );
 
@@ -1903,7 +1906,6 @@ async function loadStudentGroup(){
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../Log-in.html";
 

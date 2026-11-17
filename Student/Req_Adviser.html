@@ -119,6 +119,9 @@
         }
     
     </style>
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -1084,12 +1087,28 @@
                         foundProposal.file_path
                         && String(foundProposal.file_path).trim();
 
-                    // Generate similarity HTML block if similarity percentage is present
+                    // Generate similarity HTML block prioritizing Archived Study comparison first
                     let similarityHtml = "";
                     if (foundProposal.similarity_percentage !== null && foundProposal.similarity_percentage !== undefined) {
-                        const simLevel = foundProposal.similarity_level || "Low Similarity";
-                        const simPercent = Number(foundProposal.similarity_percentage);
-                        const matchedTitle = foundProposal.matched_title;
+                        let archMatch = null;
+                        try {
+                            archMatch = typeof foundProposal.archived_match_details === "string"
+                                ? JSON.parse(foundProposal.archived_match_details)
+                                : (foundProposal.archived_match_details || null);
+                        } catch (e) { archMatch = null; }
+
+                        const hasArchDetails = archMatch && archMatch.percentage !== undefined && archMatch.percentage !== null;
+                        const isArchivedPrimary = foundProposal.matched_source_type !== "approved_proposal";
+
+                        const simPercent = hasArchDetails
+                            ? Number(archMatch.percentage)
+                            : (isArchivedPrimary ? Number(foundProposal.similarity_percentage) : 0);
+                        const simLevel = hasArchDetails
+                            ? (archMatch.level || "Low Similarity")
+                            : (isArchivedPrimary ? (foundProposal.similarity_level || "Low Similarity") : "Low Similarity");
+                        const matchedTitle = (archMatch && archMatch.matchedRecord && archMatch.matchedRecord.title)
+                            ? archMatch.matchedRecord.title
+                            : (isArchivedPrimary ? foundProposal.matched_title : null);
                         const badgeStyle = getBadgeStyle(simLevel);
 
                         // If extremely high similarity (>=90%), show a prominent rejection-style alert
@@ -1896,8 +1915,7 @@
             populateArchivedPanel(proposal, currentModalArchivedMatch);
             populateOngoingPanel(proposal, currentModalOngoingMatch);
 
-            const isOngoingPrimary = proposal.matched_source_type === 'approved_proposal';
-            switchCompareTab(isOngoingPrimary ? 'ongoing' : 'archived');
+            switchCompareTab('archived');
 
             document.getElementById('compareModal').style.display = 'flex';
         }
@@ -2237,7 +2255,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../Log-in.html";
 

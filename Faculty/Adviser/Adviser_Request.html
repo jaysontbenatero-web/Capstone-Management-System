@@ -84,6 +84,9 @@
             flex-shrink: 0;
         }
     </style>
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -97,17 +100,19 @@
 
         if(userRole === "admin" && adviserAccess !== "1"){
 
-            alert("Your Adviser access is disabled. Enable it in Admin Settings first.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Adviser access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href =
                 "../../Admin/AdminDash.html";
+            });
 
         }else if(userRole !== "admin" && adviserAccess !== "1"){
 
-            alert("You do not have permission to access this role.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href =
                 "../FacultyDash.html";
+            });
 
         }
     </script>
@@ -1296,21 +1301,11 @@
             return cleanedBlocks.filter(Boolean).join('\n\n').trim();
         }
 
-        function openCompareModal(proposalNumber) {
-            const request = adviserRequests.find(item => String(item.request_id) === String(selectedRequestId));
-            if (!request || !request.proposals) return;
-            const proposal = request.proposals.find(item => Number(item.title_number) === Number(proposalNumber));
-            if (!proposal) return;
+        let currentModalProposal = null;
+        let currentModalArchivedMatch = null;
+        let currentModalOngoingMatch = null;
 
-            const srcTypeForLabel = proposal.matched_source_type || 'repository';
-            document.getElementById("compareModalSubtitle").innerText = srcTypeForLabel === 'approved_proposal'
-                ? `Comparing Title Proposal ${proposalNumber} against Approved Ongoing Study`
-                : `Comparing Title Proposal ${proposalNumber} against Matched Archived Study`;
-            
-            const badge = document.getElementById("compareModalBadge");
-            badge.innerText = `${proposal.similarity_percentage}% - ${proposal.similarity_level}`;
-            badge.style.cssText = `font-size: 13px; padding: 6px 12px; border-radius: 14px; font-weight: 700; ${getBadgeStyle(proposal.similarity_level)}`;
-
+        function renderModalLeftHighlights(proposal, rawMw) {
             let mw = {
                 matchedTitleWords: [],
                 matchedObjAbstractWords: [],
@@ -1320,19 +1315,14 @@
                 synonymObjectivesWords: []
             };
             try {
-                if (proposal.matching_sections) {
-                    const parsed = typeof proposal.matching_sections === 'string' ? JSON.parse(proposal.matching_sections) : proposal.matching_sections;
-                    mw = { ...mw, ...parsed };
-                }
-            } catch(e) {
-                console.error("Error parsing matching sections:", e);
-            }
+                const parsed = typeof rawMw === 'string' ? JSON.parse(rawMw) : (rawMw || {});
+                mw = { ...mw, ...parsed };
+            } catch (e) {}
 
-            // ── Left panel: Student proposal (multi-colour) ──
             document.getElementById("compareProposedTitle").innerHTML = highlightMulti(
                 proposal.proposed_title, [
-                    { words: mw.synonymTitleWords,   type: 'synonym' },
-                    { words: mw.matchedTitleWords,   type: 'title' }
+                    { words: mw.synonymTitleWords, type: 'synonym' },
+                    { words: mw.matchedTitleWords, type: 'title' }
                 ]
             );
 
@@ -1344,57 +1334,72 @@
                     { words: mw.matchedObjObjectivesWords, type: 'objectives' }
                 ]
             );
+        }
 
-            // ── Right panel: Repository match (multi-colour) ──
-            document.getElementById("compareMatchedTitle").innerHTML = highlightRight(
-                proposal.matched_title,
-                mw.matchedTitleWords,
-                mw.synonymTitleWords,
-                'title'
-            );
+        function openCompareModal(proposalNumber) {
+            const request = adviserRequests.find(item => String(item.request_id) === String(selectedRequestId));
+            if (!request || !request.proposals) return;
+            const proposal = request.proposals.find(item => Number(item.title_number) === Number(proposalNumber));
+            if (!proposal) return;
+            currentModalProposal = proposal;
 
-            document.getElementById("compareMatchedAbstract").innerHTML = highlightRight(
-                proposal.matched_abstract,
-                mw.matchedObjAbstractWords,
-                mw.synonymAbstractWords,
-                'abstract'
-            );
+            try {
+                currentModalArchivedMatch = typeof proposal.archived_match_details === 'string'
+                    ? JSON.parse(proposal.archived_match_details)
+                    : (proposal.archived_match_details || null);
+            } catch (e) { currentModalArchivedMatch = null; }
 
-            document.getElementById("compareMatchedObjectives").innerHTML = highlightRight(
-                proposal.matched_objectives,
-                mw.matchedObjObjectivesWords,
-                mw.synonymObjectivesWords,
-                'objectives'
-            );
+            try {
+                currentModalOngoingMatch = typeof proposal.ongoing_match_details === 'string'
+                    ? JSON.parse(proposal.ongoing_match_details)
+                    : (proposal.ongoing_match_details || null);
+            } catch (e) { currentModalOngoingMatch = null; }
 
-            // ── RIGHT PANEL: source-type aware ──
-            const sourceType = proposal.matched_source_type || 'archived';
-            const isOngoing = sourceType === 'approved_proposal';
-            if (isOngoing) {
-                document.getElementById("compareOngoingTitle").innerHTML = highlightRight(
-                    proposal.matched_title || proposal.matched_approved_title || '',
-                    mw.matchedTitleWords, mw.synonymTitleWords, 'title'
-                );
-                document.getElementById("compareOngoingGroup").textContent = proposal.matched_group_name || 'Unknown Group';
-                const lockedMsg = (txt) => `<span style="color:#9ca3af;font-style:italic;font-size:12.5px;"><i class="fa-solid fa-lock" style="margin-right:6px;"></i>${txt}</span>`;
-                document.getElementById("compareMatchedAbstract").innerHTML = lockedMsg('Abstract not available for ongoing approved studies.');
-                document.getElementById("compareMatchedObjectives").innerHTML = lockedMsg('Objectives not available for ongoing approved studies.');
-                document.getElementById("compareMatchedResearchProblem").innerHTML = lockedMsg('Not available for ongoing approved studies.');
-                document.getElementById("compareMatchedMethodology").innerHTML = lockedMsg('Not available for ongoing approved studies.');
-                switchCompareTab('ongoing');
-            } else {
-                document.getElementById("compareMatchedAbstract").innerHTML = highlightRight(proposal.matched_abstract || '', mw.matchedObjAbstractWords, mw.synonymAbstractWords, 'abstract');
-                document.getElementById("compareMatchedObjectives").innerHTML = highlightRight(proposal.matched_objectives || '', mw.matchedObjObjectivesWords, mw.synonymObjectivesWords, 'objectives');
-                const naMsg = (txt) => `<span style="color:#9ca3af;font-style:italic;font-size:12.5px;"><i class="fa-solid fa-minus-circle" style="margin-right:6px;"></i>${txt}</span>`;
-                document.getElementById("compareMatchedResearchProblem").innerHTML = proposal.matched_research_problem
-                    ? highlightRight(proposal.matched_research_problem, mw.matchedResearchProbWords || [], mw.synonymResearchProbWords || [], 'abstract')
-                    : naMsg('No research problem recorded for this archived study.');
-                document.getElementById("compareMatchedMethodology").innerHTML = proposal.matched_methodology
-                    ? highlightRight(proposal.matched_methodology, mw.matchedMethodologyWords || [], mw.synonymMethodologyWords || [], 'objectives')
-                    : naMsg('No methodology recorded for this archived study.');
-                switchCompareTab('archived');
-            }
+            // ── Populate Archived Study Match panel ──
+            const archRec = currentModalArchivedMatch && currentModalArchivedMatch.matchedRecord ? currentModalArchivedMatch.matchedRecord : null;
+            const archMw = (currentModalArchivedMatch && currentModalArchivedMatch.matchingSections)
+                ? currentModalArchivedMatch.matchingSections
+                : (proposal.matched_source_type !== 'approved_proposal' ? proposal.matching_sections : {});
+            const isArchivedPrimary = proposal.matched_source_type !== 'approved_proposal';
 
+            const archTitle = (archRec && archRec.title) ? archRec.title : (isArchivedPrimary ? proposal.matched_title : '');
+            const archAbstract = (archRec && archRec.abstract) ? archRec.abstract : (isArchivedPrimary ? proposal.matched_abstract : '');
+            const archObjectives = (archRec && archRec.objectives) ? archRec.objectives : (isArchivedPrimary ? proposal.matched_objectives : '');
+            const archProb = (archRec && archRec.research_problem) ? archRec.research_problem : (isArchivedPrimary ? proposal.matched_research_problem : '');
+            const archMeth = (archRec && archRec.methodology) ? archRec.methodology : (isArchivedPrimary ? proposal.matched_methodology : '');
+
+            const naMsg = (txt) => `<span style="color:#9ca3af;font-style:italic;font-size:12.5px;"><i class="fa-solid fa-minus-circle" style="margin-right:6px;"></i>${txt}</span>`;
+            document.getElementById("compareMatchedTitle").innerHTML = archTitle
+                ? highlightRight(archTitle, archMw.matchedTitleWords || [], archMw.synonymTitleWords || [], 'title')
+                : naMsg('No matching archived study found.');
+            document.getElementById("compareMatchedAbstract").innerHTML = archAbstract
+                ? highlightRight(archAbstract, archMw.matchedObjAbstractWords || [], archMw.synonymAbstractWords || [], 'abstract')
+                : naMsg('No abstract recorded for this archived study.');
+            document.getElementById("compareMatchedObjectives").innerHTML = archObjectives
+                ? highlightRight(archObjectives, archMw.matchedObjObjectivesWords || [], archMw.synonymObjectivesWords || [], 'objectives')
+                : naMsg('No objectives recorded for this archived study.');
+            document.getElementById("compareMatchedResearchProblem").innerHTML = archProb
+                ? highlightRight(archProb, archMw.matchedResearchProbWords || [], archMw.synonymResearchProbWords || [], 'abstract')
+                : naMsg('No research problem recorded for this archived study.');
+            document.getElementById("compareMatchedMethodology").innerHTML = archMeth
+                ? highlightRight(archMeth, archMw.matchedMethodologyWords || [], archMw.synonymMethodologyWords || [], 'objectives')
+                : naMsg('No methodology recorded for this archived study.');
+
+            // ── Populate Approved Ongoing Study panel ──
+            const ongRec = currentModalOngoingMatch && currentModalOngoingMatch.matchedRecord ? currentModalOngoingMatch.matchedRecord : null;
+            const ongMw = (currentModalOngoingMatch && currentModalOngoingMatch.matchingSections)
+                ? currentModalOngoingMatch.matchingSections
+                : (proposal.matched_source_type === 'approved_proposal' ? proposal.matching_sections : {});
+            const ongTitle = (ongRec && ongRec.title) ? ongRec.title : (proposal.matched_source_type === 'approved_proposal' ? (proposal.matched_approved_title || proposal.matched_title || '') : '');
+            const ongGroup = (ongRec && ongRec.group_name) ? ongRec.group_name : (proposal.matched_group_name || '');
+
+            document.getElementById("compareOngoingTitle").innerHTML = ongTitle
+                ? highlightRight(ongTitle, ongMw.matchedTitleWords || [], ongMw.synonymTitleWords || [], 'title')
+                : naMsg('No matching approved ongoing study found.');
+            document.getElementById("compareOngoingGroup").textContent = ongGroup || 'Unknown Group';
+
+            // Always show Archived Study Match first
+            switchCompareTab('archived');
             document.getElementById("compareModal").style.display = "flex";
         }
 
@@ -1404,18 +1409,58 @@
             const btnArch = document.getElementById('tabBtnArchived');
             const btnOngoing = document.getElementById('tabBtnOngoing');
             const panelTitle = document.getElementById('compareRightPanelTitle');
+            const subtitleEl = document.getElementById("compareModalSubtitle");
+            const badgeEl = document.getElementById("compareModalBadge");
+
+            if (!currentModalProposal) return;
+            const num = currentModalProposal.title_number;
+
             if (tab === 'archived') {
                 if (archTab) { archTab.style.display = 'flex'; archTab.style.flexDirection = 'column'; }
                 if (ongoingTab) ongoingTab.style.display = 'none';
                 if (btnArch) { btnArch.style.background = '#7c3aed'; btnArch.style.color = 'white'; }
                 if (btnOngoing) { btnOngoing.style.background = '#f5f3ff'; btnOngoing.style.color = '#7c3aed'; }
                 if (panelTitle) panelTitle.textContent = 'Archived Study Match';
+                if (subtitleEl) subtitleEl.innerText = `Comparing Title Proposal ${num} against Matched Archived Study`;
+
+                const archPct = (currentModalArchivedMatch && currentModalArchivedMatch.percentage !== undefined)
+                    ? currentModalArchivedMatch.percentage
+                    : (currentModalProposal.matched_source_type !== 'approved_proposal' ? currentModalProposal.similarity_percentage : 0);
+                const archLvl = (currentModalArchivedMatch && currentModalArchivedMatch.level)
+                    ? currentModalArchivedMatch.level
+                    : (currentModalProposal.matched_source_type !== 'approved_proposal' ? currentModalProposal.similarity_level : 'Low Similarity');
+
+                if (badgeEl) {
+                    badgeEl.innerText = `${archPct}% - ${archLvl}`;
+                    badgeEl.style.cssText = `font-size: 13px; padding: 6px 12px; border-radius: 14px; font-weight: 700; ${getBadgeStyle(archLvl)}`;
+                }
+                const archMw = currentModalArchivedMatch && currentModalArchivedMatch.matchingSections
+                    ? currentModalArchivedMatch.matchingSections
+                    : (currentModalProposal.matched_source_type !== 'approved_proposal' ? currentModalProposal.matching_sections : {});
+                renderModalLeftHighlights(currentModalProposal, archMw);
             } else {
                 if (archTab) archTab.style.display = 'none';
                 if (ongoingTab) { ongoingTab.style.display = 'flex'; ongoingTab.style.flexDirection = 'column'; }
                 if (btnArch) { btnArch.style.background = '#f5f3ff'; btnArch.style.color = '#7c3aed'; }
                 if (btnOngoing) { btnOngoing.style.background = '#7c3aed'; btnOngoing.style.color = 'white'; }
                 if (panelTitle) panelTitle.textContent = 'Approved Ongoing Study';
+                if (subtitleEl) subtitleEl.innerText = `Comparing Title Proposal ${num} against Approved Ongoing Study`;
+
+                const ongPct = (currentModalOngoingMatch && currentModalOngoingMatch.percentage !== undefined)
+                    ? currentModalOngoingMatch.percentage
+                    : (currentModalProposal.matched_source_type === 'approved_proposal' ? currentModalProposal.similarity_percentage : 0);
+                const ongLvl = (currentModalOngoingMatch && currentModalOngoingMatch.level)
+                    ? currentModalOngoingMatch.level
+                    : (currentModalProposal.matched_source_type === 'approved_proposal' ? currentModalProposal.similarity_level : 'Low Similarity');
+
+                if (badgeEl) {
+                    badgeEl.innerText = `${ongPct}% - ${ongLvl}`;
+                    badgeEl.style.cssText = `font-size: 13px; padding: 6px 12px; border-radius: 14px; font-weight: 700; ${getBadgeStyle(ongLvl)}`;
+                }
+                const ongMw = currentModalOngoingMatch && currentModalOngoingMatch.matchingSections
+                    ? currentModalOngoingMatch.matchingSections
+                    : (currentModalProposal.matched_source_type === 'approved_proposal' ? currentModalProposal.matching_sections : {});
+                renderModalLeftHighlights(currentModalProposal, ongMw);
             }
         }
 
@@ -1447,9 +1492,25 @@
             proposalList.forEach(proposal => {
                 let similarityHtml = "";
                 if (proposal.similarity_percentage !== null && proposal.similarity_percentage !== undefined) {
-                    const simLevel = proposal.similarity_level || "Low Similarity";
-                    const simPercent = proposal.similarity_percentage;
-                    const matchedTitle = proposal.matched_title;
+                    let archMatch = null;
+                    try {
+                        archMatch = typeof proposal.archived_match_details === "string"
+                            ? JSON.parse(proposal.archived_match_details)
+                            : (proposal.archived_match_details || null);
+                    } catch (e) { archMatch = null; }
+
+                    const hasArchDetails = archMatch && archMatch.percentage !== undefined && archMatch.percentage !== null;
+                    const isArchivedPrimary = proposal.matched_source_type !== "approved_proposal";
+
+                    const simPercent = hasArchDetails
+                        ? Number(archMatch.percentage)
+                        : (isArchivedPrimary ? Number(proposal.similarity_percentage) : 0);
+                    const simLevel = hasArchDetails
+                        ? (archMatch.level || "Low Similarity")
+                        : (isArchivedPrimary ? (proposal.similarity_level || "Low Similarity") : "Low Similarity");
+                    const matchedTitle = (archMatch && archMatch.matchedRecord && archMatch.matchedRecord.title)
+                        ? archMatch.matchedRecord.title
+                        : (isArchivedPrimary ? proposal.matched_title : null);
                     const badgeStyle = getBadgeStyle(simLevel);
 
                     similarityHtml = `
@@ -1615,7 +1676,7 @@
                 : "Decline this adviser request?";
 
             const confirmed =
-                confirm(confirmText);
+                await confirm(confirmText);
 
             if(!confirmed){
                 return;
@@ -1681,7 +1742,7 @@
             }
 
             const confirmed =
-                confirm(
+                await confirm(
                     "Remove this adviser assignment? The request record will remain, but the group will no longer have this adviser."
                 );
 
@@ -1756,7 +1817,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../../Log-in.html";
 

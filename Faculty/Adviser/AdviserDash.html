@@ -33,6 +33,9 @@
     >
 
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -714,12 +717,13 @@
 
     if(userRole !== "admin" && adviserAccess !== "1"){
 
-        alert(
+        document.documentElement.classList.add("capx-auth-blocked");
+            alert(
             "You do not have permission to access this role."
-        );
-
-        window.location.href =
+        ).then(() => {
+                window.location.href =
             "../FacultyDash.html";
+            });
 
     }
 

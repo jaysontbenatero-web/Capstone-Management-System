@@ -37,6 +37,9 @@
     >
 
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -756,7 +759,6 @@ function toggleRoleGrid(){
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../../Log-in.html";
 
@@ -773,11 +775,11 @@ function toggleRoleGrid(){
 
     if(userRole !== "admin" && instructorAccess !== "1"){
 
+        document.documentElement.classList.add("capx-auth-blocked");
         alert(
             "You do not have permission to access this role."
-        );
-
-        if(userRole === "admin"){
+        ).then(() => {
+            if(userRole === "admin"){
 
             window.location.href =
                 "../../Admin/AdminDash.html";
@@ -788,6 +790,7 @@ function toggleRoleGrid(){
                 "../FacultyDash.html";
 
         }
+        });
 
     }
 </script>

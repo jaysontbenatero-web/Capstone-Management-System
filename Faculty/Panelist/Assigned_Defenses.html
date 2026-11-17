@@ -29,6 +29,9 @@
     >
 
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -42,17 +45,19 @@
 
         if(userRole === "admin" && panelistAccess !== "1"){
 
-            alert("Your Panelist access is disabled. Enable it in Admin Settings first.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Panelist access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href =
                 "../../Admin/AdminDash.html";
+            });
 
         }else if(userRole !== "admin" && panelistAccess !== "1"){
 
-            alert("You do not have permission to access this role.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href =
                 "../FacultyDash.html";
+            });
 
         }
     </script>
@@ -1154,8 +1159,10 @@
         async function loadAssignedDefenses(){
 
             if (!loggedInUserId) {
-                alert("Please log in first.");
+                document.documentElement.classList.add("capx-auth-blocked");
+            alert("Please log in first.").then(() => {
                 window.location.href = "../../Log-in.html";
+            });
                 return;
             }
 
@@ -3159,7 +3166,7 @@
             const groupName = schedule ? (schedule.group_name || "this defense") : "this defense";
 
             if(action === "delete"){
-                const confirmed = confirm(`Are you sure you want to permanently delete "${groupName}" from your assigned defenses?\n\nThis will completely remove the defense assignment from your account.`);
+                const confirmed = await confirm(`Are you sure you want to permanently delete "${groupName}" from your assigned defenses?\n\nThis will completely remove the defense assignment from your account.`);
                 if(!confirmed) return;
             }
 
@@ -3192,7 +3199,7 @@
             const schedule = defenseSchedules.find(s => Number(s.id) === Number(scheduleId));
             const groupName = schedule ? (schedule.group_name || "this defense") : "this defense";
 
-            if(!confirm(`Permanently remove "${groupName}" from your assigned defenses?\n\nThis cannot be undone.`)){
+            if(!(await confirm(`Permanently remove "${groupName}" from your assigned defenses?\n\nThis cannot be undone.`))){
                 return;
             }
 
@@ -3977,7 +3984,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../../Log-in.html";
 

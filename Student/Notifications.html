@@ -29,6 +29,9 @@
     >
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal notifications-full-page">
@@ -39,10 +42,11 @@
 
         if(userRole !== "student"){
 
-            alert("You do not have permission to access the Student Portal.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access the Student Portal.").then(() => {
+                window.location.href =
                 "../Log-in.html";
+            });
 
         }
     </script>
@@ -1339,7 +1343,7 @@
         async function markAllAsRead(){
 
             const confirmed =
-                confirm("Mark all system notifications as read?");
+                await confirm("Mark all system notifications as read?");
 
             if(!confirmed){
                 return;
@@ -1418,7 +1422,7 @@
             }
 
             const confirmed =
-                confirm("Remove this update from your view?");
+                await confirm("Remove this update from your view?");
 
             if(!confirmed){
                 return;
@@ -1560,7 +1564,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../Log-in.html";
 

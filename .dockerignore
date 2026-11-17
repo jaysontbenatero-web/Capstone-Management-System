@@ -1,0 +1,49 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Git & Editor metadata
+.git
+.gitignore
+.vscode
+.DS_Store
+Thumbs.db
+
+# Environment & Secrets (injected at runtime via docker-compose env_file)
+.env
+.env.*
+*.pem
+*.key
+credentials*.json
+client_secret*.json
+
+# Local caches & database backups (mounted via Docker volumes at runtime)
+.cache
+.transformers-cache
+models
+onnx
+backups
+*.sql
+*.sqlite
+*.db
+
+# Runtime uploads (persisted via Docker volume mount)
+uploads/*
+
+# Temporary migration & debug scripts
+hash-existing-passwords.js
+replace_3005.js
+check-submissions.js
+check_lint.js
+debug_similarity.js
+fix_missing_similarity.js
+fix_similarity_clean.js
+retrigger_similarity_fix.js
+test_sched_eval.js
+verify_similarity.js
+_check_smart.js
+_test_submit.js
+

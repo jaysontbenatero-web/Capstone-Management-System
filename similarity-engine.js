@@ -127,6 +127,11 @@ async function loadModel() {
         // must import it dynamically from this CommonJS module.
         const { pipeline, env } = await import('@huggingface/transformers');
 
+        // Use persistent Docker cache directory if configured via HF_CACHE_DIR
+        if (process.env.HF_CACHE_DIR) {
+            env.cacheDir = process.env.HF_CACHE_DIR;
+        }
+
         // Allow the ONNX runtime to use all available CPU threads
         env.backends.onnx.wasm.numThreads = 4;
 

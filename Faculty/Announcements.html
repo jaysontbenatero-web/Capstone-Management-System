@@ -29,6 +29,9 @@
     >
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -39,10 +42,11 @@
 
         if(userRole !== "faculty" && userRole !== "admin"){
 
-            alert("You do not have permission to access the Faculty Portal.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access the Faculty Portal.").then(() => {
+                window.location.href =
                 "../Log-in.html";
+            });
 
         }
     </script>
@@ -1047,7 +1051,7 @@
         async function deleteAnnouncement(id){
 
             const confirmed =
-                confirm(
+                await confirm(
                     "Delete this announcement? This action cannot be undone."
                 );
 
@@ -1204,7 +1208,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../Log-in.html";
 

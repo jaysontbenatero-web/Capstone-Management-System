@@ -1,0 +1,218 @@
+/* ==========================================================================
+   CapstoneX2 Custom Alerts & Confirmation Modals (Light Academic Theme)
+   Replaces native browser alert() and confirm() dialogs across all portals
+   ========================================================================== */
+
+.capx-alert-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s ease;
+    font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.capx-alert-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.capx-alert-card {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #ede9fe;
+    box-shadow:
+        0 24px 48px -12px rgba(76, 29, 149, 0.2),
+        0 12px 24px -8px rgba(15, 23, 42, 0.08),
+        0 0 0 1px rgba(124, 58, 237, 0.06);
+    padding: 28px 26px 24px;
+    text-align: center;
+    transform: translateY(14px) scale(0.96);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.capx-alert-backdrop.is-open .capx-alert-card {
+    transform: translateY(0) scale(1);
+}
+
+.capx-alert-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6d28d9, #8b5cf6);
+}
+
+.capx-alert-card.tone-success::before {
+    background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.capx-alert-card.tone-warning::before {
+    background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+
+.capx-alert-card.tone-error::before,
+.capx-alert-card.tone-danger::before {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.capx-alert-icon-wrap {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3e8ff;
+    color: #7c3aed;
+    box-shadow: 0 0 0 6px #faf5ff;
+}
+
+.capx-alert-card.tone-success .capx-alert-icon-wrap {
+    background: #dcfce7;
+    color: #16a34a;
+    box-shadow: 0 0 0 6px #f0fdf4;
+}
+
+.capx-alert-card.tone-warning .capx-alert-icon-wrap {
+    background: #fef3c7;
+    color: #d97706;
+    box-shadow: 0 0 0 6px #fffbeb;
+}
+
+.capx-alert-card.tone-error .capx-alert-icon-wrap,
+.capx-alert-card.tone-danger .capx-alert-icon-wrap {
+    background: #fee2e2;
+    color: #dc2626;
+    box-shadow: 0 0 0 6px #fef2f2;
+}
+
+.capx-alert-icon-wrap svg {
+    width: 28px;
+    height: 28px;
+    stroke-width: 2.2;
+}
+
+.capx-alert-title {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e1b4b;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+}
+
+.capx-alert-message {
+    margin: 0 0 24px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #475569;
+    line-height: 1.6;
+    white-space: pre-line;
+    word-break: break-word;
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.capx-alert-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.capx-alert-btn {
+    flex: 1;
+    min-height: 42px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.16s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.capx-alert-btn:focus-visible {
+    outline: 2px solid #7c3aed;
+    outline-offset: 2px;
+}
+
+.capx-alert-btn-cancel {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.capx-alert-btn-cancel:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.capx-alert-btn-ok {
+    background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%);
+    color: #ffffff;
+    box-shadow: 0 6px 16px -4px rgba(109, 40, 217, 0.45);
+}
+
+.capx-alert-btn-ok:hover {
+    background: linear-gradient(135deg, #5b21b6 0%, #6d28d9 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -4px rgba(109, 40, 217, 0.55);
+}
+
+.capx-alert-card.tone-success .capx-alert-btn-ok {
+    background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+    box-shadow: 0 6px 16px -4px rgba(22, 163, 74, 0.4);
+}
+
+.capx-alert-card.tone-success .capx-alert-btn-ok:hover {
+    background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+}
+
+.capx-alert-card.tone-warning .capx-alert-btn-ok {
+    background: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+    box-shadow: 0 6px 16px -4px rgba(217, 119, 6, 0.4);
+}
+
+.capx-alert-card.tone-warning .capx-alert-btn-ok:hover {
+    background: linear-gradient(135deg, #b45309 0%, #c2410c 100%);
+}
+
+.capx-alert-card.tone-error .capx-alert-btn-ok,
+.capx-alert-card.tone-danger .capx-alert-btn-ok {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    box-shadow: 0 6px 16px -4px rgba(220, 38, 38, 0.4);
+}
+
+.capx-alert-card.tone-error .capx-alert-btn-ok:hover,
+.capx-alert-card.tone-danger .capx-alert-btn-ok:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+}
+
+html.capx-auth-blocked body > *:not(.capx-alert-backdrop):not(.bg1):not(.bg2) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+

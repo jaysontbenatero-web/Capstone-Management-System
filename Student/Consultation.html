@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="student-portal.css">
     <link rel="stylesheet" href="Consultation.css">
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 <body class="admin-portal">
     <div class="bg1"></div><div class="bg2"></div>
@@ -76,7 +79,7 @@
             <div class="form-grid">
                 <div class="input-group">
                     <label>Send To</label>
-                    <select id="facultySelect"></select>
+                    <select id="facultySelect" onchange="updateSelectedFacultyAvailability()"></select>
                 </div>
                 <div class="input-group">
                     <label>Consultation Type</label>
@@ -85,6 +88,10 @@
                         <option value="System Consultation">System Consultation</option>
                     </select>
                 </div>
+            </div>
+            <div class="availability-warning-banner" id="facultyAvailabilityNotice" style="display:none;">
+                <i class="fa-solid fa-circle-pause"></i>
+                <span id="facultyAvailabilityText">This faculty member is currently unavailable for new consultations.</span>
             </div>
             <div class="input-group" id="docUploadGroup">
                 <label><i class="fa-solid fa-file-pdf" style="color:#ef4444;margin-right:6px;"></i>Upload Document (PDF only) <span style="color:#ef4444;">*</span></label>
@@ -155,8 +162,21 @@
 
         function logout(){ localStorage.clear(); window.location.href = "../Log-in.html"; }
 
+        let availableFacultyList = [];
+
+        function escapeHtml(value){
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
         /* ── Compute status client-side ── */
         function computeStatus(item){
+            const rawStatus = String(item.status || "").trim();
+            if(rawStatus.toLowerCase() === "declined") return "Declined";
+            if(rawStatus.toLowerCase() === "cancelled") return "Cancelled";
             if(!item.scheduled_date) return "Pending";
             const endTime   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : null;
             const startTime = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : null;
@@ -173,11 +193,30 @@
 
         function statusClass(status){
             const key = String(status||"").toLowerCase();
-            if(key==="scheduled")  return "b-scheduled";
+            if(key==="scheduled" || key==="approved")  return "b-scheduled";
             if(key==="ongoing")    return "b-ongoing";
             if(key==="completed")  return "b-completed";
+            if(key==="declined")   return "b-declined";
             if(key==="cancelled")  return "b-cancelled";
             return "b-pending";
+        }
+
+        function updateSelectedFacultyAvailability(){
+            const select = document.getElementById("facultySelect");
+            const notice = document.getElementById("facultyAvailabilityNotice");
+            const textEl = document.getElementById("facultyAvailabilityText");
+            const submitBtn = document.querySelector("#formSection .submit-btn");
+            if(!select || !notice || !textEl) return;
+
+            const chosen = availableFacultyList.find(f => String(f.faculty_id) === String(select.value));
+            if(chosen && Number(chosen.consultation_available) === 0){
+                notice.style.display = "flex";
+                textEl.textContent = `${chosen.faculty_name} (${chosen.assigned_role}) is currently marked as Unavailable and is not accepting new consultation requests.`;
+                if(submitBtn) submitBtn.disabled = true;
+            } else {
+                notice.style.display = "none";
+                if(submitBtn) submitBtn.disabled = false;
+            }
         }
 
         function toggleTopicField(){
@@ -210,10 +249,13 @@
                 select.innerHTML = `<option value="">No recipient available</option>`;
                 return;
             }
+            availableFacultyList = data.context.availableFaculty;
             document.getElementById("facultyHint").innerText = "You can send to your assigned adviser or instructor.";
-            data.context.availableFaculty.forEach(item => {
-                select.innerHTML += `<option value="${item.faculty_id}">${item.assigned_role}: ${item.faculty_name} (${item.faculty_user_id})</option>`;
+            availableFacultyList.forEach(item => {
+                const isAvail = Number(item.consultation_available ?? 1) === 1;
+                select.innerHTML += `<option value="${item.faculty_id}">${item.assigned_role}: ${item.faculty_name} (${item.faculty_user_id})${isAvail ? "" : " — Unavailable"}</option>`;
             });
+            updateSelectedFacultyAvailability();
         }
 
         function buildStudentCard(item, isHistory){
@@ -242,6 +284,13 @@
                 </div>
             ` : "";
 
+            const declinedBlock = status === "Declined" ? `
+                <div class="declined-reason-box">
+                    <strong>Declined by ${escapeHtml(item.faculty_name || "Faculty")}</strong>
+                    ${escapeHtml(item.decline_reason || "No specific reason provided.")}
+                </div>
+            ` : "";
+
             return `
                 <article class="request-card ${isHistory ? "history-card" : ""}">
                     <h3>${item.consultation_code || "Consultation Request"}</h3>
@@ -251,9 +300,10 @@
                     </div>
                     ${item.file_name ? `<p><strong>Document:</strong> ${item.file_name}</p>` : (item.topic ? `<p><strong>Topic:</strong> ${item.topic}</p>` : "")}
                     ${docBlock}
-                    <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
-                    <p><strong>Faculty:</strong> ${item.faculty_name || "N/A"} (${item.assigned_role || "-"})</p>
+                    <p><strong>Concern:</strong> ${escapeHtml(item.concern_message || "N/A")}</p>
+                    <p><strong>Faculty:</strong> ${escapeHtml(item.faculty_name || "N/A")} (${escapeHtml(item.assigned_role || "-")})</p>
                     <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+                    ${declinedBlock}
                     ${schedBlock}
                 </article>
             `;

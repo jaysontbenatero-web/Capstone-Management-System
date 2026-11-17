@@ -33,6 +33,9 @@
 
     <!-- PDF.js for env scan student signature viewer -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -1887,7 +1890,7 @@
         async function deleteStudentDocument(documentId){
 
             const confirmed =
-                confirm(
+                await confirm(
                     "Delete this document? This will remove the file permanently."
                 );
 
@@ -1959,7 +1962,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../Log-in.html";
 
@@ -3621,8 +3623,9 @@
                 if(!proposal || !String(proposal.proposed_title || "").trim()){
                     alert(
                         `Enter proposed title ${slotIndex} in Request Adviser first, then upload the PDF here.`
-                    );
-                    window.location.href = "Req_Adviser.html";
+                    ).then(() => {
+                        window.location.href = "Req_Adviser.html";
+                    });
                     return;
                 }
             }
@@ -4343,7 +4346,7 @@
                 }
             }
 
-            const confirmed = confirm("Are you sure you want to report this proposal as declined by the organization? Your Instructor, Program Chairperson, and Dean will be notified.");
+            const confirmed = await confirm("Are you sure you want to report this proposal as declined by the organization? Your Instructor, Program Chairperson, and Dean will be notified.");
             if (!confirmed) return;
 
             const submitBtn = document.querySelector("#envScanDeclineModal .save-btn");

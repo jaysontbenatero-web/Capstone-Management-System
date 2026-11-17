@@ -20,6 +20,9 @@
             padding: 0 !important;
         }
     </style>
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal notifications-full-page">
@@ -28,8 +31,10 @@
         const userRole = localStorage.getItem("role");
 
         if (userRole !== "admin") {
-            alert("You do not have permission to access the Admin Portal.");
-            window.location.href = "../Log-in.html";
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access the Admin Portal.").then(() => {
+                window.location.href = "../Log-in.html";
+            });
         }
     </script>
 

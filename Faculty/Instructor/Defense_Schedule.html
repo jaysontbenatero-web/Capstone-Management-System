@@ -28,6 +28,9 @@
         href="Defense_Schedule.css"
     >
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -41,17 +44,19 @@
 
         if(userRole === "admin" && instructorAccess !== "1"){
 
-            alert("Your Instructor access is disabled. Enable it in Admin Settings first.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Instructor access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href =
                 "../../Admin/AdminDash.html";
+            });
 
         }else if(userRole !== "admin" && instructorAccess !== "1"){
 
-            alert("You do not have permission to access this role.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href =
                 "../FacultyDash.html";
+            });
 
         }
     </script>
@@ -2167,7 +2172,7 @@
         }
 
         async function forceCompleteSchedule(id){
-            if(!confirm("Are you sure you want to force complete this defense presentation? The system will calculate final results from the submitted panel evaluations and mark the presentation as Completed.")){
+            if(!(await confirm("Are you sure you want to force complete this defense presentation? The system will calculate final results from the submitted panel evaluations and mark the presentation as Completed."))){
                 return;
             }
 
@@ -3229,7 +3234,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../../Log-in.html";
 

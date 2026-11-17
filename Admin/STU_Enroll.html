@@ -32,6 +32,9 @@
 
     <link rel="stylesheet" href="AdminTheme.css">
 
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -618,6 +621,7 @@
                 <input
                     type="text"
                     id="editPassword"
+                    placeholder="Enter new password (leave blank to keep current)"
                 >
             </div>
 
@@ -845,7 +849,7 @@
                     <td>${student.program || "Not Set"}</td>
                     <td>${student.year_level || "Not Set"}</td>
                     <td>${student.student_position || "Not Assigned"}</td>
-                    <td>${student.password}</td>
+                    <td>••••••••</td>
                     <td>${statusBadge}</td>
                     <td>
                         <div class="action-buttons">
@@ -918,7 +922,7 @@
         async function deleteStudent(id){
 
             const confirmDelete =
-                confirm("Delete this student account?");
+                await confirm("Delete this student account?");
 
             if(!confirmDelete){
                 return;
@@ -966,7 +970,9 @@
             selectedStudentId = student.id;
 
             document.getElementById("editFullname").value = student.fullname || "";
-            document.getElementById("editPassword").value = student.password || "";
+            const editPwdInput = document.getElementById("editPassword");
+            editPwdInput.value = "";
+            editPwdInput.placeholder = "Enter new password (leave blank to keep current)";
             document.getElementById("editStatus").value = (student.student_status || "ACTIVE").toUpperCase();
 
             const restrictedFields = document.getElementById("editGroupRestrictedFields");
@@ -1036,8 +1042,8 @@
             let student_position = null;
 
             if(inGroup){
-                if(!fullname || !password){
-                    alert("Please provide Full Name and Password.");
+                if(!fullname){
+                    alert("Please provide Full Name.");
                     return;
                 }
             } else {
@@ -1045,8 +1051,8 @@
                 year_level = document.getElementById("editYear").value;
                 student_position = document.getElementById("editPosition").value;
 
-                if(!fullname || !program || !year_level || !password){
-                    alert("Please complete all fields.");
+                if(!fullname || !program || !year_level){
+                    alert("Please complete Full Name, Program, and Year Level.");
                     return;
                 }
             }
@@ -1092,7 +1098,7 @@
             }
 
             const confirmMsg = `Are you sure you want to permanently delete student "${fullname}"?\n\nThis will remove their student account from the system. This action cannot be undone.`;
-            if(!confirm(confirmMsg)){
+            if(!(await confirm(confirmMsg))){
                 return;
             }
 
@@ -1125,7 +1131,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../Log-in.html";
 

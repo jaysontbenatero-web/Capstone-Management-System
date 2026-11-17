@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="Panel_Evaluation.css">
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -19,11 +22,15 @@
         const instructorAccess = localStorage.getItem("instructor_access");
 
         if (userRole === "admin" && instructorAccess !== "1") {
-            alert("Your Instructor access is disabled. Enable it in Admin Settings first.");
-            window.location.href = "../../Admin/AdminDash.html";
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Instructor access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href = "../../Admin/AdminDash.html";
+            });
         } else if (userRole !== "admin" && instructorAccess !== "1") {
-            alert("You do not have permission to access this role.");
-            window.location.href = "../FacultyDash.html";
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href = "../FacultyDash.html";
+            });
         }
     </script>
 

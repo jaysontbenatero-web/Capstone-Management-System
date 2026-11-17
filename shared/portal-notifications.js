@@ -121,9 +121,6 @@
             if (role === "student") return resolveRelativeUrl("Student/Messages.html");
             if (role === "admin") return resolveRelativeUrl("Admin/Messages.html");
             if (role === "faculty") {
-                if (position.includes("instructor") || facultyRole === "instructor") {
-                    return resolveRelativeUrl("Faculty/Instructor/Messages.html");
-                }
                 return resolveRelativeUrl("Faculty/Messages.html");
             }
         }
@@ -151,6 +148,18 @@
             if (role === "student") return resolveRelativeUrl("Student/Req_Adviser.html");
             if (role === "faculty") return resolveRelativeUrl("Faculty/Adviser/Adviser_Request.html");
             if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
+        }
+
+        // 3.5 CONSULTATIONS
+        if (combined.includes("consultation") || type === "consultation") {
+            if (role === "student") return resolveRelativeUrl("Student/Consultation.html");
+            if (role === "faculty") {
+                const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
+                if (activePath.includes("/instructor/") || position.includes("instructor") || facultyRole === "instructor") {
+                    return resolveRelativeUrl("Faculty/Instructor/Consultation.html");
+                }
+                return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
+            }
         }
 
         // 4. DOCUMENTS / SIGNING / E-SIGNATURE / ENVIRONMENTAL SCANNING / REVISION / CONCEPT PRESENTATION
@@ -203,7 +212,7 @@
             combined.includes("room")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
-            if (role === "admin") return resolveRelativeUrl("Admin/Defense_Schedule.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/AdminDash.html");
             if (role === "faculty") {
                 if (position.includes("panelist") || facultyRole === "panelist") {
                     return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");

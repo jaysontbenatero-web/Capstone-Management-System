@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="Capstone_Titles.css">
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
     <link rel="stylesheet" href="student-portal.css">
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -702,18 +705,16 @@
                 // Update the search bar placeholder feedback
                 const badge = document.getElementById("searchModeBadge");
                 if (badge) {
+                    badge.textContent = `${matchCount} match${matchCount !== 1 ? "es" : ""}`;
                     if (mode === "gemini") {
-                        badge.textContent = `🔮 Gemini AI – ${matchCount} match${matchCount !== 1 ? "es" : ""}`;
                         badge.style.background = "#eff6ff";
                         badge.style.color = "#1d4ed8";
                         badge.style.border = "1px solid #bfdbfe";
                     } else if (mode === "huggingface" || mode === "semantic") {
-                        badge.textContent = `🔮 Local HuggingFace AI – ${matchCount} match${matchCount !== 1 ? "es" : ""}`;
                         badge.style.background = "#f5f3ff";
                         badge.style.color = "#7c3aed";
                         badge.style.border = "1px solid #ece3ff";
                     } else {
-                        badge.textContent = `🔍 Keyword – ${matchCount} match${matchCount !== 1 ? "es" : ""}`;
                         badge.style.background = "#f3f4f6";
                         badge.style.color = "#4b5563";
                         badge.style.border = "1px solid #e5e7eb";

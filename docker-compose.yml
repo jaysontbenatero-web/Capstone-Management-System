@@ -1,0 +1,71 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: capstonex2-app
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      # Mode 1 (Default for localhost XAMPP verification): connects to your host MySQL on port 3307 via host.docker.internal.
+      # Mode 2 (School server standalone container): set DOCKER_DB_HOST=db and DOCKER_DB_PORT=3306 in .env.
+      DB_HOST: ${DOCKER_DB_HOST:-host.docker.internal}
+      DB_PORT: ${DOCKER_DB_PORT:-3307}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-capx_db}
+      HF_CACHE_DIR: /app/.cache/huggingface
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Persist uploaded PDFs, e-signatures, signed documents, profile images, and defense minutes photos
+      - ./uploads:/app/uploads
+      # Persist Hugging Face (@huggingface/transformers) ONNX model cache across container restarts
+      - hf_cache:/app/.cache/huggingface
+    networks:
+      - capstonex2-net
+
+  db:
+    image: mysql:8.0
+    container_name: capstonex2-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-capstone123}
+      MYSQL_DATABASE: ${DB_NAME:-capx_db}
+    ports:
+      # Mapped to host port 3308 so it does not conflict with local XAMPP MySQL on 3306/3307
+      - "3308:3306"
+    volumes:
+      # Persistent MySQL data storage so database records are never lost on container restart
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - capstonex2-net
+
+volumes:
+  mysql_data:
+    name: capstonex2_mysql_data
+  hf_cache:
+    name: capstonex2_hf_cache
+  uploads_data:
+    name: capstonex2_uploads_data
+
+networks:
+  capstonex2-net:
+    driver: bridge
+

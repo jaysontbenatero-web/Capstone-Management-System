@@ -16,6 +16,9 @@
 
     <link rel="stylesheet" href="Force_Pass.css">
 
+
+    <link rel="stylesheet" href="shared/custom-alerts.css">
+    <script src="shared/custom-alerts.js"></script>
 </head>
 
 <body>
@@ -251,7 +254,7 @@
                 const data =
                     await response.json();
 
-                alert(data.message || "Password updated.");
+                await alert(data.message || "Password updated.");
 
                 if(data.success){
 
@@ -325,7 +328,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "Log-in.html";
 

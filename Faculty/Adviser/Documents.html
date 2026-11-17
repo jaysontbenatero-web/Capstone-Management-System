@@ -54,6 +54,9 @@
             opacity: 1 !important;
         }
     </style>
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -67,17 +70,19 @@
 
         if(userRole === "admin" && adviserAccess !== "1"){
 
-            alert("Your Adviser access is disabled. Enable it in Admin Settings first.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Adviser access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href =
                 "../../Admin/AdminDash.html";
+            });
 
         }else if(userRole !== "admin" && adviserAccess !== "1"){
 
-            alert("You do not have permission to access this role.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href =
                 "../FacultyDash.html";
+            });
 
         }
     </script>
@@ -2693,7 +2698,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../../Log-in.html";
 
@@ -2883,7 +2887,7 @@
         }
 
         async function approveDefenseMinutes(groupId, docType){
-            const confirmed = confirm(`Approve all defense minutes photos for this group?\nPlease verify all panelist signatures are visible before approving.`);
+            const confirmed = await confirm(`Approve all defense minutes photos for this group?\nPlease verify all panelist signatures are visible before approving.`);
             if(!confirmed) return;
 
             try{

@@ -128,6 +128,10 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get("/", (req, res) => {
+    res.redirect("/Log-in.html");
+});
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static(__dirname, {
     etag: false,
@@ -138,6 +142,28 @@ app.use(express.static(__dirname, {
         res.setHeader("Expires", "0");
     }
 }));
+
+// Case-insensitive static asset fallback for Linux Docker containers
+app.use((req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    const reqPath = decodeURIComponent(req.path || "").replace(/^\/+/, "");
+    if (!reqPath || !/\.(html|css|js|png|jpg|jpeg|svg|gif|webp|ico|pdf)$/i.test(reqPath)) {
+        return next();
+    }
+    const parts = reqPath.split("/").filter(Boolean);
+    let currentDir = __dirname;
+    for (let i = 0; i < parts.length; i++) {
+        if (!fs.existsSync(currentDir) || !fs.statSync(currentDir).isDirectory()) return next();
+        const entries = fs.readdirSync(currentDir);
+        const match = entries.find(e => e.toLowerCase() === parts[i].toLowerCase());
+        if (!match) return next();
+        currentDir = path.join(currentDir, match);
+    }
+    if (fs.existsSync(currentDir) && fs.statSync(currentDir).isFile()) {
+        return res.sendFile(currentDir);
+    }
+    next();
+});
 
 /* ================= PROFILE IMAGE UPLOAD SETUP ================= */
 
@@ -410,6 +436,21 @@ const db = mysql.createPool({
     } else {
         console.log("MySQL Connected via Connection Pool");
         connection.release();
+
+        const ensureCol = (tbl, col, def) => {
+            db.query(
+                "SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1",
+                [tbl, col],
+                (e, r) => {
+                    if (!e && Array.isArray(r) && r.length === 0) {
+                        db.query(`ALTER TABLE ${tbl} ADD COLUMN ${col} ${def}`, () => {});
+                    }
+                }
+            );
+        };
+        ensureCol("consultations", "decline_reason", "TEXT NULL");
+        ensureCol("consultations", "declined_at", "TIMESTAMP NULL");
+        ensureCol("users", "consultation_available", "TINYINT(1) NOT NULL DEFAULT 1");
 
         const checkEmailColumnSql = `
             SELECT 1
@@ -1074,6 +1115,13 @@ app.put("/edit-faculty", async (req, res) => {
                     console.log(err);
                     return res.json({ success: false });
                 }
+                if (!isBcrypt) {
+                    db.query("SELECT user_id, fullname, email FROM users WHERE id = ? LIMIT 1", [id], (eErr, uRows) => {
+                        if (!eErr && uRows && uRows.length > 0 && uRows[0].email) {
+                            sendCredentialEmail(uRows[0].email, uRows[0].fullname, uRows[0].user_id, rawPwd, "Faculty");
+                        }
+                    });
+                }
                 res.json({ success: true });
             });
         } else {
@@ -1404,11 +1452,22 @@ app.put("/edit-student", (req, res) => {
 
             const inGroup = grpRows && grpRows.length > 0;
 
+            const rawPwd = password ? String(password).trim() : "";
+            const isPlainNewPwd = rawPwd !== "" && !rawPwd.startsWith("$2a$") && !rawPwd.startsWith("$2b$");
+
             const resolvePasswordHash = async () => {
-                if (!password || String(password).trim() === "") return null;
-                const rawPwd = String(password).trim();
-                if (rawPwd.startsWith("$2a$") || rawPwd.startsWith("$2b$")) return rawPwd;
+                if (!rawPwd) return null;
+                if (!isPlainNewPwd) return rawPwd;
                 return await bcrypt.hash(rawPwd, 10);
+            };
+
+            const notifyIfPasswordChanged = () => {
+                if (!isPlainNewPwd) return;
+                db.query("SELECT user_id, fullname, email FROM users WHERE id = ? LIMIT 1", [id], (eErr, uRows) => {
+                    if (!eErr && uRows && uRows.length > 0 && uRows[0].email) {
+                        sendCredentialEmail(uRows[0].email, fullname || uRows[0].fullname, uRows[0].user_id, rawPwd, "Student");
+                    }
+                });
             };
 
             resolvePasswordHash().then((hashedPwd) => {
@@ -1422,6 +1481,7 @@ app.put("/edit-student", (req, res) => {
                             console.log(err);
                             return res.json({ success: false, message: "Failed to update student." });
                         }
+                        notifyIfPasswordChanged();
                         res.json({ success: true, in_group: true });
                     });
                 } else {
@@ -1436,6 +1496,7 @@ app.put("/edit-student", (req, res) => {
                             console.log(err);
                             return res.json({ success: false, message: "Failed to update student." });
                         }
+                        notifyIfPasswordChanged();
                         res.json({ success: true, in_group: false });
                     });
                 }
@@ -5163,6 +5224,95 @@ function getComparisonRecords(currentGroupId, callback) {
             group_name: null
         }));
 
+        // Build per-group lifecycle state for ongoing study filtering:
+        // 1. If group is Completed (stage/progress/status or graded Final Defense) -> exclude from ongoing studies.
+        // 2. If Concept Presentation panel chose 1 title (approved_title_id) -> keep ONLY that chosen title.
+        // 3. If no Concept Presentation grade/choice yet -> keep all 3 approved proposed titles.
+        const groupStateSql = `
+            SELECT
+                cg.id AS group_id,
+                cg.stage,
+                cg.progress,
+                cg.status AS group_status,
+                (
+                    SELECT COALESCE(
+                        ds.approved_title_id,
+                        (
+                            SELECT dpe.approved_title_id
+                            FROM defense_panel_evaluations dpe
+                            WHERE dpe.schedule_id = ds.id
+                              AND dpe.approved_title_id IS NOT NULL
+                            GROUP BY dpe.approved_title_id
+                            ORDER BY COUNT(*) DESC
+                            LIMIT 1
+                        )
+                    )
+                    FROM defense_schedules ds
+                    WHERE ds.group_id = cg.id
+                      AND LOWER(COALESCE(ds.defense_type, '')) LIKE '%concept%'
+                      AND (
+                          ds.approved_title_id IS NOT NULL
+                          OR EXISTS (
+                              SELECT 1 FROM defense_panel_evaluations dpe2
+                              WHERE dpe2.schedule_id = ds.id AND dpe2.approved_title_id IS NOT NULL
+                          )
+                      )
+                    ORDER BY ds.id DESC
+                    LIMIT 1
+                ) AS chosen_title_id,
+                EXISTS (
+                    SELECT 1
+                    FROM defense_schedules fd
+                    WHERE fd.group_id = cg.id
+                      AND LOWER(COALESCE(fd.defense_type, '')) LIKE '%final defense%'
+                      AND LOWER(COALESCE(fd.defense_type, '')) NOT LIKE '%pre-final%'
+                      AND (
+                          fd.score IS NOT NULL
+                          OR LOWER(COALESCE(fd.defense_status, '')) = 'completed'
+                          OR EXISTS (
+                              SELECT 1 FROM defense_panel_evaluations fde
+                              WHERE fde.schedule_id = fd.id AND fde.score IS NOT NULL
+                          )
+                      )
+                ) AS has_final_defense_grade
+            FROM capstone_groups cg
+            WHERE cg.id != ?
+        `;
+
+        db.query(groupStateSql, [currentGroupId || 0], (stateErr, stateRows) => {
+            if (stateErr) {
+                console.error("Error fetching group lifecycle state for similarity:", stateErr);
+                stateRows = [];
+            }
+
+            const groupStateMap = new Map();
+            (stateRows || []).forEach(g => {
+                const stageLower = String(g.stage || "").trim().toLowerCase();
+                const statusLower = String(g.group_status || "").trim().toLowerCase();
+                const isCompleted =
+                    stageLower === "completed" ||
+                    stageLower === "final" ||
+                    stageLower === "stage 5" ||
+                    statusLower === "completed" ||
+                    Number(g.progress || 0) >= 100 ||
+                    Number(g.has_final_defense_grade || 0) === 1;
+
+                groupStateMap.set(Number(g.group_id), {
+                    isCompleted,
+                    chosenTitleId: g.chosen_title_id ? Number(g.chosen_title_id) : null
+                });
+            });
+
+            const shouldIncludeForGroup = (groupId, tpId) => {
+                const st = groupStateMap.get(Number(groupId));
+                if (!st) return true;
+                if (st.isCompleted) return false;
+                if (st.chosenTitleId) {
+                    return Number(tpId) === st.chosenTitleId;
+                }
+                return true;
+            };
+
         // Fetch Approved Concept Papers from student_documents (Concept Presentation • Proposed concept paper 1-3)
         // These are the approved ongoing studies that must be checked against
         const conceptDocsSql = `
@@ -5174,6 +5324,7 @@ function getComparisonRecords(currentGroupId, callback) {
                 sd.document_title AS title,
                 sd.file_name,
                 sd.file_path,
+                tp.id AS tp_id,
                 tp.proposed_title,
                 tp.proposed_objectives AS cached_text
             FROM student_documents sd
@@ -5206,6 +5357,7 @@ function getComparisonRecords(currentGroupId, callback) {
             const seenTitles = new Set();
 
             for (const doc of (docRows || [])) {
+                if (!shouldIncludeForGroup(doc.group_id, doc.tp_id)) continue;
                 const cleanTitle = (doc.proposed_title || doc.title || "").trim();
                 if (!cleanTitle) continue;
                 const dedupKey = (cleanTitle + '|' + (doc.group_name || '')).toLowerCase();
@@ -5262,6 +5414,7 @@ function getComparisonRecords(currentGroupId, callback) {
                 }
 
                 (propRows || []).forEach(p => {
+                    if (!shouldIncludeForGroup(p.group_id, p.id)) return;
                     const cleanTitle = (p.title || "").trim();
                     if (!cleanTitle) return;
                     const dedupKey = (cleanTitle + '|' + (p.group_name || '')).toLowerCase();
@@ -5288,6 +5441,7 @@ function getComparisonRecords(currentGroupId, callback) {
                     allRecords: [...archivedRecords, ...ongoingRecords]
                 });
             });
+        });
         });
     });
 }
@@ -21159,7 +21313,7 @@ app.get("/consultation-context/:userId", (req, res) => {
 
         const getAdviser = new Promise((resolve) => {
             const adviserSql = `
-                SELECT u.id AS faculty_id, u.fullname AS faculty_name, u.user_id AS faculty_user_id, 'Adviser' AS assigned_role
+                SELECT u.id AS faculty_id, u.fullname AS faculty_name, u.user_id AS faculty_user_id, COALESCE(u.consultation_available, 1) AS consultation_available, 'Adviser' AS assigned_role
                 FROM group_members gm
                 JOIN capstone_groups cg ON gm.group_id = cg.id
                 JOIN users u ON cg.adviser_id = u.id
@@ -21180,9 +21334,9 @@ app.get("/consultation-context/:userId", (req, res) => {
                 return resolve();
             }
             const instructorSql = `
-                SELECT id AS faculty_id, fullname AS faculty_name, user_id AS faculty_user_id, 'Instructor' AS assigned_role
+                SELECT id AS faculty_id, fullname AS faculty_name, user_id AS faculty_user_id, COALESCE(consultation_available, 1) AS consultation_available, 'Instructor' AS assigned_role
                 FROM users
-                WHERE user_id = ? AND role = 'faculty'
+                WHERE user_id = ? AND role IN ('faculty', 'admin')
             `;
             db.query(instructorSql, [enrolledByUserId], (err, instructorResult) => {
                 if (err) {
@@ -21221,6 +21375,18 @@ app.post("/student-consultations", (req, res, next) => {
     if (!studentUserId || !assignedFacultyId || !consultationType || !concernMessage) {
         return res.json({ success: false, message: "Missing required fields." });
     }
+
+    db.query("SELECT fullname, COALESCE(consultation_available, 1) AS consultation_available FROM users WHERE id = ? LIMIT 1", [assignedFacultyId], (availErr, availRows) => {
+        if (availErr) {
+            console.error(availErr);
+            return res.json({ success: false, message: "Database error while checking faculty availability." });
+        }
+        if (availRows && availRows.length > 0 && Number(availRows[0].consultation_available) === 0) {
+            return res.json({
+                success: false,
+                message: `${availRows[0].fullname} is currently unavailable and not accepting new consultation requests.`
+            });
+        }
 
     const studentSql = "SELECT id, fullname FROM users WHERE user_id = ? AND role = 'student'";
     db.query(studentSql, [studentUserId], (err, studentResult) => {
@@ -21322,6 +21488,7 @@ app.post("/student-consultations", (req, res, next) => {
             });
         });
     });
+    });
 });
 
 app.get("/student-consultations/:userId", (req, res) => {
@@ -21332,6 +21499,7 @@ app.get("/student-consultations/:userId", (req, res) => {
 
     const sql = `
         SELECT c.id, c.consultation_code, c.consultation_type, c.topic, c.concern_message, c.status,
+               c.decline_reason, c.declined_at, c.schedule_notes,
                DATE_FORMAT(c.scheduled_date, '%Y-%m-%d') AS scheduled_date,
                c.scheduled_start_time, c.scheduled_end_time, c.consultation_mode, c.location_or_link,
                c.created_at, c.file_path, c.file_name, u.fullname AS faculty_name, c.assigned_role
@@ -21360,6 +21528,7 @@ app.get("/faculty-consultations", (req, res) => {
 
     const sql = `
         SELECT c.id, c.consultation_code, c.consultation_type, c.topic, c.concern_message, c.status,
+               c.decline_reason, c.declined_at,
                DATE_FORMAT(c.scheduled_date, '%Y-%m-%d') AS scheduled_date,
                c.scheduled_start_time, c.scheduled_end_time, c.consultation_mode, c.location_or_link,
                c.schedule_notes, c.created_at, c.file_path, c.file_name,
@@ -21376,7 +21545,12 @@ app.get("/faculty-consultations", (req, res) => {
             console.error(err);
             return res.json({ success: false, message: "Failed to fetch assigned consultations." });
         }
-        res.json({ success: true, consultations: results });
+        db.query("SELECT COALESCE(consultation_available, 1) AS consultation_available FROM users WHERE user_id = ? LIMIT 1", [facultyUserId], (availErr, availRows) => {
+            const consultationAvailable = (!availErr && availRows && availRows.length > 0)
+                ? Number(availRows[0].consultation_available) === 1
+                : true;
+            res.json({ success: true, consultations: results, consultationAvailable });
+        });
     });
 });
 
@@ -21497,6 +21671,110 @@ app.put("/faculty-consultations/:id/schedule", (req, res) => {
     });
 });
 
+app.put("/api/consultations/:id/decline", (req, res) => {
+    const id = req.params.id;
+    const { facultyUserId, reason, customNote } = req.body;
+
+    if (!id) {
+        return res.json({ success: false, message: "Missing consultation ID." });
+    }
+
+    const baseReason = String(reason || "").trim();
+    const extraNote = String(customNote || "").trim();
+    const finalReason = baseReason && extraNote
+        ? `${baseReason} — ${extraNote}`
+        : (baseReason || extraNote || "No specific reason provided.");
+
+    const lookupSql = `
+        SELECT c.id, c.student_id, c.consultation_code, c.created_at, c.scheduled_date,
+               f.fullname AS faculty_name, f.user_id AS faculty_user_id
+        FROM consultations c
+        JOIN users f ON c.assigned_faculty_id = f.id
+        WHERE c.id = ?
+        LIMIT 1
+    `;
+
+    db.query(lookupSql, [id], (lookupErr, rows) => {
+        if (lookupErr) {
+            console.error("Decline lookup error:", lookupErr);
+            return res.json({ success: false, message: "Database error." });
+        }
+        if (!rows || rows.length === 0) {
+            return res.json({ success: false, message: "Consultation request not found." });
+        }
+
+        const item = rows[0];
+        if (facultyUserId && String(item.faculty_user_id) !== String(facultyUserId)) {
+            return res.json({ success: false, message: "You are not authorized to decline this request." });
+        }
+
+        const updateSql = `
+            UPDATE consultations
+            SET status = 'Declined',
+                decline_reason = ?,
+                declined_at = NOW()
+            WHERE id = ?
+        `;
+
+        db.query(updateSql, [finalReason, id], (updErr) => {
+            if (updErr) {
+                console.error("Decline update error:", updErr);
+                return res.json({ success: false, message: "Failed to decline consultation request." });
+            }
+
+            const dateSource = item.scheduled_date || item.created_at || new Date();
+            const formattedDate = new Date(dateSource).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            });
+
+            if (item.student_id) {
+                const notifSql = `
+                    INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                    VALUES (?, 'Consultation Request Declined', ?, 'Consultation')
+                `;
+                const notifMsg = `Your consultation request on ${formattedDate} was declined by ${item.faculty_name}. Reason: ${finalReason}`;
+                db.query(notifSql, [item.student_id, notifMsg], (notifErr) => {
+                    if (notifErr) console.error("Student decline notification error:", notifErr);
+                });
+            }
+
+            res.json({
+                success: true,
+                message: "Consultation request declined and student notified.",
+                decline_reason: finalReason
+            });
+        });
+    });
+});
+
+app.put("/api/faculty/consultation-availability", (req, res) => {
+    const { facultyUserId, available } = req.body;
+    if (!facultyUserId) {
+        return res.json({ success: false, message: "Missing facultyUserId." });
+    }
+
+    const flag = (available === true || available === 1 || available === "1" || available === "true") ? 1 : 0;
+    db.query(
+        "UPDATE users SET consultation_available = ? WHERE user_id = ?",
+        [flag, facultyUserId],
+        (err) => {
+            if (err) {
+                console.error("Availability update error:", err);
+                return res.json({ success: false, message: "Failed to update consultation availability." });
+            }
+            res.json({
+                success: true,
+                consultation_available: flag === 1,
+                message: flag === 1
+                    ? "You are now accepting consultation requests."
+                    : "Consultations paused (marked as Unavailable)."
+            });
+        }
+    );
+});
+
 /* ================= CONSULTATION AUTO-STATUS UPDATER ================= */
 
 function computeConsultationStatus(row) {
@@ -21522,7 +21800,7 @@ function runConsultationStatusSync() {
                c.student_id, c.consultation_code
         FROM consultations c
         WHERE c.scheduled_date IS NOT NULL
-          AND c.status NOT IN ('Cancelled')
+          AND c.status NOT IN ('Cancelled', 'Declined')
     `;
     db.query(fetchSql, (err, rows) => {
         if (err) { console.error("Consultation status sync error:", err); return; }
@@ -22492,7 +22770,8 @@ app.get("/adviser-defense-minutes/:adviserUserId", (req, res) => {
 
 /* ================= SERVER ================= */
 
-app.listen(3005, () => {
+const PORT = Number(process.env.PORT) || 3005;
+app.listen(PORT, '0.0.0.0', () => {
     console.log("Server running on port 3005");
     console.log("[HF-CHECK] Loading @huggingface/transformers model: Xenova/all-MiniLM-L6-v2...");
     semEngine.loadModel().then(() => {

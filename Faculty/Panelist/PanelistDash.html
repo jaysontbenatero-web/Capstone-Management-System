@@ -29,6 +29,9 @@
     >
 
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -42,17 +45,19 @@
 
         if(userRole === "admin" && panelistAccess !== "1"){
 
-            alert("Your Panelist access is disabled. Enable it in Admin Settings first.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Panelist access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href =
                 "../../Admin/AdminDash.html";
+            });
 
         }else if(userRole !== "admin" && panelistAccess !== "1"){
 
-            alert("You do not have permission to access this role.");
-
-            window.location.href =
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href =
                 "../FacultyDash.html";
+            });
 
         }
     </script>
@@ -411,11 +416,11 @@
 
                 if(!data.success){
 
-                    alert(
+                    document.documentElement.classList.add("capx-auth-blocked");
+        alert(
                         data.message || "Failed to load panelist dashboard."
-                    );
-
-                    if(userRole === "admin"){
+                    ).then(() => {
+            if(userRole === "admin"){
 
                         window.location.href =
                             "../../Admin/AdminDash.html";
@@ -426,6 +431,7 @@
                             "../FacultyDash.html";
 
                     }
+        });
 
                     return;
 
@@ -767,7 +773,6 @@
         function logout(){
 
             localStorage.clear();
-
             window.location.href =
                 "../../Log-in.html";
 

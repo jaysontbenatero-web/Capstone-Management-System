@@ -34,6 +34,9 @@
     <link rel="stylesheet" href="../Admin/Messages.css">
     <link rel="stylesheet" href="student-portal.css">
 
+
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal student-messages-page">
@@ -43,8 +46,10 @@
         const userRole = localStorage.getItem("role");
 
         if (!currentUserId || userRole !== "student") {
-            alert("You do not have permission to access the Student Portal.");
-            window.location.href = "../Log-in.html";
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access the Student Portal.").then(() => {
+                window.location.href = "../Log-in.html";
+            });
         }
     </script>
 
