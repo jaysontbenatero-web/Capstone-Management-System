@@ -600,7 +600,7 @@
             }
 
             try {
-                const response = await fetch("http://localhost:3005/enroll-student", {
+                const response = await fetch("/enroll-student", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -637,7 +637,7 @@
         async function loadStudents() {
             try {
                 const response = await fetch(
-                    `http://localhost:3005/student-accounts?scope=mine&enrolledByUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`
+                    `/student-accounts?scope=mine&enrolledByUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`
                 );
                 const data = await response.json();
 
@@ -731,7 +731,7 @@
 
             try {
                 const response = await fetch(
-                    `http://localhost:3005/delete-student/${id}?requestorRole=faculty&requestorUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`,
+                    `/delete-student/${id}?requestorRole=faculty&requestorUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`,
                     {
                         method: "DELETE",
                     }
@@ -856,7 +856,7 @@
             }
 
             try {
-                const response = await fetch("http://localhost:3005/edit-student", {
+                const response = await fetch("/edit-student", {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
@@ -1092,7 +1092,7 @@
 
             try{
                 const response = await fetch(
-                    "http://localhost:3005/bulk-enroll-students",
+                    "/bulk-enroll-students",
                     {
                         method:"POST",
                         headers:{ "Content-Type":"application/json" },

@@ -635,7 +635,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/admin-settings/${loggedInAdminId}`
+                        `/admin-settings/${loggedInAdminId}`
                     );
 
                 const data =
@@ -711,7 +711,7 @@
                 if(admin.profile_image){
 
                     avatar.innerHTML =
-                        `<img src="http://localhost:3005${admin.profile_image}" alt="Profile Photo">`;
+                        `<img src="${admin.profile_image}" alt="Profile Photo">`;
 
                 }else{
 
@@ -769,7 +769,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/update-admin-profile",
+                        "/update-admin-profile",
                         {
                             method:"PUT",
 
@@ -883,7 +883,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/update-admin-profile-image",
+                        "/update-admin-profile-image",
                         {
                             method:"POST",
                             body:formData
@@ -976,7 +976,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/toggle-admin-role-access",
+                        "/toggle-admin-role-access",
                         {
                             method:"PUT",
 
@@ -1079,7 +1079,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/change-admin-password",
+                        "/change-admin-password",
                         {
                             method:"PUT",
 
@@ -1200,7 +1200,7 @@
             document.getElementById("signatureFileInput").value = "";
 
             document.getElementById("signatureImage").src =
-                `http://localhost:3005${path}`;
+                `${path}`;
 
             document.getElementById("signatureImage").style.display =
                 "block";
@@ -1241,7 +1241,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/update-user-digital-signature",
+                        "/update-user-digital-signature",
                         {
                             method:"POST",
                             body:formData

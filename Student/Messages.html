@@ -286,7 +286,7 @@
     </main>
 
     <script>
-        const API_URL = "http://localhost:3005";
+        const API_URL = "";
         let activeReceiverId = null;
         let activeReceiverData = null;
         let roleFilter = "all";
@@ -344,7 +344,7 @@
             filtered.forEach(u => {
                 const initials = u.fullname ? u.fullname.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "?";
                 const avatarContent = u.profile_image
-                    ? `<img src="http://localhost:3005${u.profile_image}" alt="Profile">`
+                    ? `<img src="${u.profile_image}" alt="Profile">`
                     : initials;
                 const isSelected = activeReceiverId === u.user_id;
 
@@ -383,7 +383,7 @@
             const initials = user.fullname ? user.fullname.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "?";
             const avatarEl = document.getElementById("activeChatAvatar");
             if (user.profile_image) {
-                avatarEl.innerHTML = `<img src="http://localhost:3005${user.profile_image}" alt="Profile">`;
+                avatarEl.innerHTML = `<img src="${user.profile_image}" alt="Profile">`;
             } else {
                 avatarEl.innerText = initials;
             }

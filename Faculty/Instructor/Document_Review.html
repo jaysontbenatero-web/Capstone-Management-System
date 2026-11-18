@@ -826,7 +826,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/instructor-document-review/${loggedInInstructorId}`
+                        `/instructor-document-review/${loggedInInstructorId}`
                     );
 
                 const data =
@@ -997,7 +997,7 @@
             const isSigned = item.review_status === "Approved";
             const statusClass = getStatusClass(item.review_status);
             const isNew = isNewDocument(item);
-            const viewUrl = `http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
+            const viewUrl = `${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
 
             return `
                 <div class="group-doc-row ${isNew ? "is-new" : ""} ${isEnvScan ? "needs-sign-row" : ""}" data-submission-id="${item.submission_id}">
@@ -1238,7 +1238,7 @@
                                 <div class="document-meta" style="margin:0;">
                                     <span class="${statusCls}">${statusLabel}</span>
                                 </div>
-                                <a class="view-file-btn" href="http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
+                                <a class="view-file-btn" href="${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
                                 <button
@@ -1413,7 +1413,7 @@
 
                         <a
                             class="view-file-btn full"
-                            href="http://localhost:3005${item.file_path}"
+                            href="${item.file_path}"
                             target="_blank"
                         >
                             <i class="fa-solid fa-eye"></i>
@@ -1470,7 +1470,7 @@
                 item.file_name || "Attached File";
 
             document.getElementById("reviewFileLink").href =
-                `http://localhost:3005${item.file_path}`;
+                `${item.file_path}`;
 
             document.getElementById("reviewComment").value =
                 item.review_comment || "";
@@ -1712,7 +1712,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/instructor-send-document",
+                        "/instructor-send-document",
                         {
                             method:"POST",
                             body:formData
@@ -1759,7 +1759,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/review-student-document/${selectedSubmissionId}`,
+                        `/review-student-document/${selectedSubmissionId}`,
                         {
                             method:"PUT",
 
@@ -1931,7 +1931,7 @@
 
                 if(savedSignaturePath){
                     document.getElementById("savedSignaturePreview").src =
-                        `http://localhost:3005${savedSignaturePath}`;
+                        `${savedSignaturePath}`;
                     setSignatureMode('saved');
                 } else {
                     setSignatureMode('draw');
@@ -1999,7 +1999,7 @@
             if(infoEl) infoEl.innerText = "Loading PDF...";
 
             try{
-                const apiUrl = `http://localhost:3005/instructor-signing-document-file/${submissionId}?instructorUserId=${encodeURIComponent(loggedInInstructorId)}`;
+                const apiUrl = `/instructor-signing-document-file/${submissionId}?instructorUserId=${encodeURIComponent(loggedInInstructorId)}`;
                 const response = await fetch(apiUrl);
                 if(!response.ok){
                     let msg = `Cannot load PDF (HTTP ${response.status}).`;
@@ -2090,7 +2090,7 @@
 
         function placeSavedSignatureOnDocument(){
             if(!savedSignaturePath){ alert("No saved signature."); return; }
-            const dataUrl = `http://localhost:3005${savedSignaturePath}`;
+            const dataUrl = `${savedSignaturePath}`;
             const layer = document.getElementById("signaturePlacementLayer");
             layer.innerHTML = `<img id="draggableSignature" class="draggable-signature" src="${dataUrl}" alt="Signature" draggable="false">`;
             const sigEl = document.getElementById("draggableSignature");
@@ -2199,14 +2199,14 @@
 
                 let signatureImage = null;
                 if(currentSignatureMode === 'saved'){
-                    signatureImage = savedSignaturePath ? `http://localhost:3005${savedSignaturePath}` : null;
+                    signatureImage = savedSignaturePath ? `${savedSignaturePath}` : null;
                 } else {
                     signatureImage = document.getElementById("signatureCanvas").toDataURL("image/png");
                 }
 
                 try{
                     const res = await fetch(
-                        `http://localhost:3005/instructor-apply-document-signature/${submissionId}`,
+                        `/instructor-apply-document-signature/${submissionId}`,
                         {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
@@ -2240,7 +2240,7 @@
             /* Non-Approved (Revision / Reject) — no signature needed */
             try{
                 const res = await fetch(
-                    `http://localhost:3005/instructor-apply-document-signature/${submissionId}`,
+                    `/instructor-apply-document-signature/${submissionId}`,
                     {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },

@@ -408,7 +408,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/panelist-dashboard/${loggedInUserId}`
+                        `/panelist-dashboard/${loggedInUserId}`
                     );
 
                 const data =
@@ -651,7 +651,7 @@
 
                                     <a
                                         class="open-link"
-                                        href="http://localhost:3005${documentItem.file_path}"
+                                        href="${documentItem.file_path}"
                                         target="_blank"
                                     >
                                         View

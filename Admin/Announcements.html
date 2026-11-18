@@ -552,7 +552,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/admin-announcements"
+                        "/admin-announcements"
                     );
 
                 const data =
@@ -967,7 +967,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/create-announcement",
+                        "/create-announcement",
                         {
                             method:"POST",
 
@@ -1023,7 +1023,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/update-announcement/${selectedAnnouncementId}`,
+                        `/update-announcement/${selectedAnnouncementId}`,
                         {
                             method:"PUT",
 
@@ -1083,7 +1083,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/delete-announcement/${id}`,
+                        `/delete-announcement/${id}`,
                         {
                             method:"DELETE",
 

@@ -711,7 +711,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/enroll-student",
+                        "/enroll-student",
                         {
                             method:"POST",
 
@@ -778,7 +778,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/student-accounts"
+                        "/student-accounts"
                     );
 
                 const data =
@@ -932,7 +932,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/delete-student/${id}?requestorRole=admin&requestorUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`,
+                        `/delete-student/${id}?requestorRole=admin&requestorUserId=${encodeURIComponent(localStorage.getItem("userId") || "")}`,
                         {
                             method:"DELETE"
                         }
@@ -1058,7 +1058,7 @@
             }
 
             try{
-                const response = await fetch("http://localhost:3005/edit-student", {
+                const response = await fetch("/edit-student", {
                     method:"PUT",
                     headers: { "Content-Type":"application/json" },
                     body: JSON.stringify({
@@ -1103,7 +1103,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:3005/delete-student/${id}`, {
+                const response = await fetch(`/delete-student/${id}`, {
                     method: "DELETE"
                 });
                 const data = await response.json();
@@ -1298,7 +1298,7 @@
 
             try{
                 const response = await fetch(
-                    "http://localhost:3005/bulk-enroll-students",
+                    "/bulk-enroll-students",
                     {
                         method:"POST",
                         headers:{ "Content-Type":"application/json" },

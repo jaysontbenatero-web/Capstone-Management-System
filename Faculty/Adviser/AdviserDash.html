@@ -580,7 +580,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/faculty-dashboard/${userId}`
+                        `/faculty-dashboard/${userId}`
                     );
 
                 const data =
@@ -638,7 +638,7 @@
         async function loadAdviserDashboardData() {
             const userId = localStorage.getItem("userId");
             try {
-                const response = await fetch(`http://localhost:3005/adviser-dashboard-data/${userId}`);
+                const response = await fetch(`/adviser-dashboard-data/${userId}`);
                 const data = await response.json();
                 if (data.success) {
                     const stats = data.stats;

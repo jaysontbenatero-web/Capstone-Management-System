@@ -932,7 +932,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/adviser-documents/${loggedInAdviserId}`
+                        `/adviser-documents/${loggedInAdviserId}`
                     );
 
                 const data =
@@ -1131,7 +1131,7 @@
                                 <div class="document-meta" style="margin:0;">
                                     <span class="${statusCls}">${statusLabel}</span>
                                 </div>
-                                <a class="view-file-btn" href="http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
+                                <a class="view-file-btn" href="${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
                                 <button
@@ -1298,7 +1298,7 @@
                 return;
             }
 
-            const dataUrl = `http://localhost:3005${savedSignaturePath}`;
+            const dataUrl = `${savedSignaturePath}`;
             const layer = document.getElementById("signaturePlacementLayer");
 
             layer.innerHTML = `
@@ -1347,7 +1347,7 @@
                 if (savedSignaturePath) {
                     const previewImg = document.getElementById("savedSignaturePreview");
                     if (previewImg) {
-                        previewImg.src = `http://localhost:3005${savedSignaturePath}`;
+                        previewImg.src = `${savedSignaturePath}`;
                     }
                     setSignatureMode('saved');
                 } else {
@@ -1485,8 +1485,8 @@
             try{
                 const apiUrl =
                     submissionId
-                    ? `http://localhost:3005/adviser-signing-document-file/${submissionId}?adviserUserId=${encodeURIComponent(loggedInAdviserId)}`
-                    : `http://localhost:3005${normalizeDocumentFilePath(filePath)}`;
+                    ? `/adviser-signing-document-file/${submissionId}?adviserUserId=${encodeURIComponent(loggedInAdviserId)}`
+                    : `${normalizeDocumentFilePath(filePath)}`;
 
                 const response =
                     await fetch(apiUrl);
@@ -1808,14 +1808,14 @@
                 /* Determine signature image based on mode */
                 let signatureImage;
                 if(currentSignatureMode === 'saved' && savedSignaturePath){
-                    signatureImage = `http://localhost:3005${savedSignaturePath}`;
+                    signatureImage = `${savedSignaturePath}`;
                 } else {
                     signatureImage = document.getElementById("signatureCanvas").toDataURL("image/png");
                 }
 
                 try{
                     const res = await fetch(
-                        `http://localhost:3005/adviser-apply-document-signature/${submissionId}`,
+                        `/adviser-apply-document-signature/${submissionId}`,
                         {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
@@ -1852,7 +1852,7 @@
 
             try{
                 const res = await fetch(
-                    `http://localhost:3005/adviser-apply-document-signature/${submissionId}`,
+                    `/adviser-apply-document-signature/${submissionId}`,
                     {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
@@ -2048,7 +2048,7 @@
             const isSigned = item.review_status === "Approved";
             const statusClass = getStatusClass(item.review_status);
             const isNew = isNewDocument(item);
-            const viewUrl = `http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
+            const viewUrl = `${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
 
             return `
                 <div class="group-doc-row ${isNew ? "is-new" : ""} ${isSigningDoc ? "needs-sign-row" : ""}" data-submission-id="${item.submission_id}">
@@ -2306,7 +2306,7 @@
 
                         <a
                             class="view-file-btn full"
-                            href="http://localhost:3005${item.file_path}"
+                            href="${item.file_path}"
                             target="_blank"
                         >
                             <i class="fa-solid fa-eye"></i>
@@ -2363,7 +2363,7 @@
                 item.file_name || "Attached File";
 
             document.getElementById("reviewFileLink").href =
-                `http://localhost:3005${item.file_path}`;
+                `${item.file_path}`;
 
             document.getElementById("reviewComment").value =
                 item.review_comment || "";
@@ -2545,7 +2545,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/adviser-send-document",
+                        "/adviser-send-document",
                         {
                             method:"POST",
                             body:formData
@@ -2592,7 +2592,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/adviser-review-student-document/${selectedSubmissionId}`,
+                        `/adviser-review-student-document/${selectedSubmissionId}`,
                         {
                             method:"PUT",
 
@@ -2706,7 +2706,7 @@
         /* ====== DEFENSE MINUTES PHOTO REVIEW ====== */
         async function loadDefenseMinutesForAdviser(){
             try{
-                const res = await fetch(`http://localhost:3005/adviser-defense-minutes/${loggedInAdviserId}`);
+                const res = await fetch(`/adviser-defense-minutes/${loggedInAdviserId}`);
                 const data = await res.json();
                 if(data.success){
                     defenseMinutesList = data.defenseMinutesList || [];
@@ -2805,7 +2805,7 @@
 
             document.getElementById("defMinLightboxGroup").textContent = entry.group_name || "Group";
             document.getElementById("defMinLightboxSubtitle").textContent = `${entry.doc_type || "Defense Minutes"}${entry.program ? " • " + entry.program : ""}`;
-            document.getElementById("defMinLightboxImg").src = `http://localhost:3005${pic.file_path}`;
+            document.getElementById("defMinLightboxImg").src = `${pic.file_path}`;
             document.getElementById("defMinLightboxCounter").textContent = `Photo ${idx + 1} of ${pics.length}`;
 
             const showNav = pics.length > 1;
@@ -2815,7 +2815,7 @@
             const thumbsContainer = document.getElementById("defMinLightboxThumbs");
             thumbsContainer.innerHTML = pics.map((p, i) => `
                 <button type="button" class="defmin-lightbox-thumb ${i === idx ? "active" : ""}" onclick="activeDefMinLightboxIndex=${i};updateDefMinLightboxView();">
-                    <img src="http://localhost:3005${p.file_path}" alt="Thumb ${i + 1}">
+                    <img src="${p.file_path}" alt="Thumb ${i + 1}">
                 </button>
             `).join("");
         }
@@ -2844,7 +2844,7 @@
 
                 const photosHtml = (entry.pictures || []).map((pic, i) => `
                     <button type="button" class="defmin-thumb-btn" onclick="openDefMinLightbox(${entryIdx}, ${i})" title="Click to preview Photo ${i+1}">
-                        <img src="http://localhost:3005${pic.file_path}"
+                        <img src="${pic.file_path}"
                             alt="Photo ${i+1}"
                             onerror="this.parentElement.innerHTML='<span style=font-size:10px;color:#94a3b8;>Photo ${i+1}</span>'">
                         <span class="defmin-thumb-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
@@ -2891,7 +2891,7 @@
             if(!confirmed) return;
 
             try{
-                const res = await fetch("http://localhost:3005/approve-defense-minutes-pictures", {
+                const res = await fetch("/approve-defense-minutes-pictures", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -2917,7 +2917,7 @@
             if(!reason) return;
 
             try{
-                const res = await fetch("http://localhost:3005/approve-defense-minutes-pictures", {
+                const res = await fetch("/approve-defense-minutes-pictures", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

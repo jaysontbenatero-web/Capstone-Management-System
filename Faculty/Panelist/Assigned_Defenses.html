@@ -1129,8 +1129,8 @@
 
             const settingsUrl =
                 role === "admin"
-                ? `http://localhost:3005/admin-settings/${loggedInUserId}`
-                : `http://localhost:3005/faculty-settings/${loggedInUserId}`;
+                ? `/admin-settings/${loggedInUserId}`
+                : `/faculty-settings/${loggedInUserId}`;
 
             try{
 
@@ -1179,7 +1179,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:3005/panelist-assigned-defenses/${loggedInUserId}`);
+                const response = await fetch(`/panelist-assigned-defenses/${loggedInUserId}`);
                 const data = await response.json();
 
                 if (!data.success) {
@@ -1923,7 +1923,7 @@
 
                 row.querySelector(".doc-view-btn").addEventListener("click", () => {
                     if (proposal.file_path) {
-                        window.open(`http://localhost:3005${proposal.file_path}`, "_blank");
+                        window.open(`${proposal.file_path}`, "_blank");
                     } else {
                         alert(`File path not available for "${proposal.file_name}"`);
                     }
@@ -2027,7 +2027,7 @@
 
                 row.querySelector("button").addEventListener("click", () => {
                     if (doc.file_path) {
-                        window.open(`http://localhost:3005${doc.file_path}`, "_blank");
+                        window.open(`${doc.file_path}`, "_blank");
                     } else {
                         alert(`File path not available for "${doc.file_name}"`);
                     }
@@ -2280,7 +2280,7 @@
 
             const imageHtml =
                 details.signature_image_path
-                ? `<img src="http://localhost:3005${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:8px 0;background:transparent;">`
+                ? `<img src="${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:8px 0;background:transparent;">`
                 : "";
 
             return `
@@ -2595,7 +2595,7 @@
 
             try {
                 const panelRes = await fetch(
-                    `http://localhost:3005/defense-panel-evaluations/${scheduleId}`
+                    `/defense-panel-evaluations/${scheduleId}`
                 );
                 const panelData = await panelRes.json();
 
@@ -2874,7 +2874,7 @@
                 statusEl.innerHTML = `
                     <span style="color: #10B981; font-weight: 600; display: flex; flex-direction: column; gap: 6px;">
                         <span><i class="fa-solid fa-circle-check"></i> E-Signature Attached ✓</span>
-                        <img src="http://localhost:3005${window.attachedSignaturePath}" alt="Attached signature" style="max-height: 48px; max-width: 180px; object-fit: contain; background: transparent;">
+                        <img src="${window.attachedSignaturePath}" alt="Attached signature" style="max-height: 48px; max-width: 180px; object-fit: contain; background: transparent;">
                     </span>
                 `;
 
@@ -3171,7 +3171,7 @@
             }
 
             try{
-                const res = await fetch("http://localhost:3005/archive-panelist-defense", {
+                const res = await fetch("/archive-panelist-defense", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -3204,7 +3204,7 @@
             }
 
             try{
-                const res = await fetch("http://localhost:3005/archive-panelist-defense", {
+                const res = await fetch("/archive-panelist-defense", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -3898,7 +3898,7 @@
             };
 
             try {
-                const response = await fetch(`http://localhost:3005/submit-defense-evaluation/${schedule.id}`, {
+                const response = await fetch(`/submit-defense-evaluation/${schedule.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'

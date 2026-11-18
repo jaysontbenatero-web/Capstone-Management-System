@@ -231,7 +231,7 @@
             const userId = localStorage.getItem("userId");
 
             try {
-                const response = await fetch(`http://localhost:3005/faculty-dashboard/${userId}`);
+                const response = await fetch(`/faculty-dashboard/${userId}`);
                 const data = await response.json();
 
                 if (data.success && data.faculty) {
@@ -322,7 +322,7 @@
 
             try {
                 const userId = localStorage.getItem("userId") || "";
-                const response = await fetch(`http://localhost:3005/defense-schedules?userId=${encodeURIComponent(userId)}`);
+                const response = await fetch(`/defense-schedules?userId=${encodeURIComponent(userId)}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -335,7 +335,7 @@
                     await Promise.all(
                         candidates.map(async (sched) => {
                             try {
-                                const evalRes = await fetch(`http://localhost:3005/defense-panel-evaluations/${sched.id}`);
+                                const evalRes = await fetch(`/defense-panel-evaluations/${sched.id}`);
                                 const evalData = await evalRes.json();
                                 if (evalData.success) {
                                     sched.panel_evaluations = evalData.panel_evaluations || [];
@@ -545,7 +545,7 @@
             const name = escapeHtml(details.evaluated_by || "Panelist");
 
             const imageHtml = details.signature_image_path
-                ? `<img src="http://localhost:3005${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:6px 0;background:transparent;">`
+                ? `<img src="${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:6px 0;background:transparent;">`
                 : "";
 
             return `
@@ -663,7 +663,7 @@
 
             try {
                 const response =
-                    await fetch(`http://localhost:3005/defense-panel-evaluations/${id}`);
+                    await fetch(`/defense-panel-evaluations/${id}`);
 
                 const data = await response.json();
 
@@ -726,7 +726,7 @@
 
             const name = escapeHtml(details.evaluated_by || "Panelist");
             const imageHtml = details.signature_image_path
-                ? `<img src="http://localhost:3005${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:8px 0;background:transparent;">`
+                ? `<img src="${escapeHtml(details.signature_image_path)}" alt="Panelist signature" style="max-height:52px;max-width:200px;object-fit:contain;display:block;margin:8px 0;background:transparent;">`
                 : "";
 
             return `

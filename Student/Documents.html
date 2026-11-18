@@ -799,9 +799,7 @@
 
     <script>
 
-        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-            ? `${window.location.protocol}//${window.location.hostname}:3005`
-            : `${window.location.protocol}//${window.location.hostname}:3005`;
+        const API_BASE = "";
 
         const loggedInUserId =
             localStorage.getItem("userId");
@@ -858,7 +856,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/student-documents/${loggedInUserId}`
+                        `/student-documents/${loggedInUserId}`
                     );
 
                 const data =
@@ -977,7 +975,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/document-recipients?studentUserId=${encodeURIComponent(loggedInUserId)}`
+                        `/document-recipients?studentUserId=${encodeURIComponent(loggedInUserId)}`
                     );
 
                 const data =
@@ -1097,7 +1095,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/upload-student-document",
+                        "/upload-student-document",
                         {
                             method:"POST",
                             body:formData
@@ -1301,7 +1299,7 @@
 
                         <a
                             class="view-btn"
-                            href="http://localhost:3005${documentItem.file_path}"
+                            href="${documentItem.file_path}"
                             target="_blank"
                         >
                             <i class="fa-solid fa-eye"></i>
@@ -1794,7 +1792,7 @@
                     || (currentGroup && (currentGroup.adviser_user_id || currentGroup.adviser_id));
 
                 try{
-                    const response = await fetch("http://localhost:3005/send-defense-minutes-pictures", {
+                    const response = await fetch("/send-defense-minutes-pictures", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -1828,7 +1826,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/send-student-document",
+                        "/send-student-document",
                         {
                             method:"POST",
 
@@ -1902,7 +1900,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/delete-student-document/${documentId}`,
+                        `/delete-student-document/${documentId}`,
                         {
                             method:"DELETE",
 
@@ -3434,7 +3432,7 @@
                 formData.append("documentFile", file);
 
                 try{
-                    const resp = await fetch("http://localhost:3005/upload-defense-minutes-picture", {
+                    const resp = await fetch("/upload-defense-minutes-picture", {
                         method: "POST",
                         body: formData
                     });
@@ -3478,8 +3476,8 @@
                 const div = document.createElement("div");
                 div.style.cssText = "position:relative;";
                 div.innerHTML = `
-                    <a href="http://localhost:3005${pic.file_path}" target="_blank" title="Open picture ${i+1}">
-                        <img src="http://localhost:3005${pic.file_path}"
+                    <a href="${pic.file_path}" target="_blank" title="Open picture ${i+1}">
+                        <img src="${pic.file_path}"
                             style="width:140px;height:110px;object-fit:cover;border-radius:10px;border:2px solid #e9d5ff;display:block;"
                             onerror="this.style.background='#f1f5f9';this.alt='Image ${i+1}';">
                     </a>
@@ -3724,7 +3722,7 @@
             try{
                 const response =
                     await fetch(
-                        "http://localhost:3005/upload-student-document",
+                        "/upload-student-document",
                         {
                             method:"POST",
                             body:formData
@@ -3818,7 +3816,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/student-received-documents/${loggedInUserId}`
+                        `/student-received-documents/${loggedInUserId}`
                     );
 
                 const data =
@@ -3917,7 +3915,7 @@
                         <div class="received-doc-actions">
                             <a
                                 class="slot-btn view"
-                                href="http://localhost:3005${item.file_path}"
+                                href="${item.file_path}"
                                 target="_blank"
                             >
                                 <i class="fa-solid fa-eye"></i>
@@ -3925,7 +3923,7 @@
                             </a>
                             <a
                                 class="slot-btn download-btn"
-                                href="http://localhost:3005${item.file_path}"
+                                href="${item.file_path}"
                                 download="${item.file_name || 'document'}"
                             >
                                 <i class="fa-solid fa-download"></i>
@@ -4266,7 +4264,7 @@
             const placement = getEnvScanPlacement();
             if(!placement){ alert("Signature placement missing."); return; }
             const signatureImage = (envScanSigCurrentMode==='saved' && envScanSigSavedPath)
-                ? `http://localhost:3005${envScanSigSavedPath}`
+                ? `${envScanSigSavedPath}`
                 : (envScanSigCanvas ? envScanSigCanvas.toDataURL("image/png") : null);
 
             const btn = document.getElementById("envScanSignSubmitBtn");
@@ -4357,7 +4355,7 @@
             }
 
             try {
-                const response = await fetch("http://localhost:3005/update-environmental-scanning-status", {
+                const response = await fetch("/update-environmental-scanning-status", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

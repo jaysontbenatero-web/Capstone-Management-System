@@ -424,7 +424,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/student-info/${userId}`
+                        `/student-info/${userId}`
                     );
 
                 const data =
@@ -709,7 +709,7 @@
             container.innerHTML = members.map(member => `
                 <div class="member">
                     <div class="member-avatar">
-                        ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : escapeHtml(getMemberInitial(member.fullname))}
+                        ${member.profile_image ? `<img src="${member.profile_image}" alt="Profile">` : escapeHtml(getMemberInitial(member.fullname))}
                     </div>
                     <div>
                         <h3>${escapeHtml(member.fullname || "Member")}</h3>
@@ -1026,10 +1026,10 @@
 
             try {
                 const [groupRes, defenseRes, repoRes, notifRes] = await Promise.all([
-                    fetch(`http://localhost:3005/student-group/${userId}`),
-                    fetch(`http://localhost:3005/student-defense-history/${userId}`),
-                    fetch("http://localhost:3005/repository-titles"),
-                    fetch(`http://localhost:3005/student-notifications/${userId}`)
+                    fetch(`/student-group/${userId}`),
+                    fetch(`/student-defense-history/${userId}`),
+                    fetch("/repository-titles"),
+                    fetch(`/student-notifications/${userId}`)
                 ]);
 
                 const groupData = await parseApiJson(groupRes, "student-group");

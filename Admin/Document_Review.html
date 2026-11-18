@@ -780,7 +780,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/admin-document-review/${loggedInAdminId}`
+                        `/admin-document-review/${loggedInAdminId}`
                     );
 
                 const data =
@@ -997,7 +997,7 @@
                                 <div class="document-meta" style="margin:0;">
                                     <span class="${statusCls}">${statusLabel}</span>
                                 </div>
-                                <a class="view-file-btn" href="http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
+                                <a class="view-file-btn" href="${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
                                 <button
@@ -1165,7 +1165,7 @@
                 ? "Pending Dean Signature"
                 : (item.review_status || "Pending Review");
             const isNew = isNewDocument(item) && !isSigned && !isAdviserSignedPendingDean;
-            const viewUrl = `http://localhost:3005${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
+            const viewUrl = `${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
 
             return `
                 <div class="group-doc-row ${isNew ? "is-new" : ""} ${isSigningDoc ? "needs-sign-row" : ""}" data-submission-id="${item.submission_id}">
@@ -1421,7 +1421,7 @@
 
                         <a
                             class="view-file-btn full"
-                            href="http://localhost:3005${item.file_path}"
+                            href="${item.file_path}"
                             target="_blank"
                         >
                             <i class="fa-solid fa-eye"></i>
@@ -1478,7 +1478,7 @@
                 item.file_name || "Attached File";
 
             document.getElementById("reviewFileLink").href =
-                `http://localhost:3005${item.file_path}`;
+                `${item.file_path}`;
 
             document.getElementById("reviewComment").value =
                 item.review_comment || "";
@@ -1653,7 +1653,7 @@
                             >
 
                             <div class="recipient-avatar">
-                                ${user.profile_image ? `<img src="http://localhost:3005/uploads/profile_images/${user.profile_image}" alt="">` : (user.fullname ? user.fullname.charAt(0).toUpperCase() : "U")}
+                                ${user.profile_image ? `<img src="/uploads/profile_images/${user.profile_image}" alt="">` : (user.fullname ? user.fullname.charAt(0).toUpperCase() : "U")}
                             </div>
 
                             <div>
@@ -1721,7 +1721,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/admin-send-document",
+                        "/admin-send-document",
                         {
                             method:"POST",
                             body:formData
@@ -1768,7 +1768,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/admin-review-student-document/${selectedSubmissionId}`,
+                        `/admin-review-student-document/${selectedSubmissionId}`,
                         {
                             method:"PUT",
 
@@ -2000,7 +2000,7 @@
                 if (savedSignaturePath) {
                     const previewImg = document.getElementById("savedSignaturePreview");
                     if (previewImg) {
-                        previewImg.src = `http://localhost:3005${savedSignaturePath}`;
+                        previewImg.src = `${savedSignaturePath}`;
                     }
                     setSignatureMode('saved');
                 } else {
@@ -2079,8 +2079,8 @@
 
             try{
                 const apiUrl = submissionId
-                    ? `http://localhost:3005/admin-signing-document-file/${submissionId}?adminUserId=${encodeURIComponent(loggedInAdminId)}`
-                    : `http://localhost:3005${filePath.startsWith("/") ? filePath : "/" + filePath}`;
+                    ? `/admin-signing-document-file/${submissionId}?adminUserId=${encodeURIComponent(loggedInAdminId)}`
+                    : `${filePath.startsWith("/") ? filePath : "/" + filePath}`;
 
                 const response = await fetch(apiUrl);
                 if(!response.ok){
@@ -2172,7 +2172,7 @@
                 return;
             }
 
-            const dataUrl = `http://localhost:3005${savedSignaturePath}`;
+            const dataUrl = `${savedSignaturePath}`;
             const layer = document.getElementById("signaturePlacementLayer");
 
             layer.innerHTML = `
@@ -2362,7 +2362,7 @@
                 let signatureImage = null;
                 if(currentSignatureMode === 'saved'){
                     signatureImage = savedSignaturePath
-                        ? `http://localhost:3005${savedSignaturePath}`
+                        ? `${savedSignaturePath}`
                         : null;
                 } else {
                     signatureImage = document.getElementById("signatureCanvas").toDataURL("image/png");
@@ -2370,7 +2370,7 @@
 
                 try{
                     const res = await fetch(
-                        `http://localhost:3005/admin-apply-document-signature/${submissionId}`,
+                        `/admin-apply-document-signature/${submissionId}`,
                         {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
@@ -2421,7 +2421,7 @@
 
             try{
                 const res = await fetch(
-                    `http://localhost:3005/admin-apply-document-signature/${submissionId}`,
+                    `/admin-apply-document-signature/${submissionId}`,
                     {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },

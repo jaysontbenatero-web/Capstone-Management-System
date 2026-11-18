@@ -263,10 +263,7 @@
         let _lastSearchQuery = "";
         let _isSemanticSearch = false; // true when results came from /repository-search
 
-        const API_BASE = (() => {
-            if (window.location.port === "3005" || window.location.host.endsWith(":3005")) return "";
-            return `${window.location.protocol}//${window.location.hostname}:3005`;
-        })();
+        const API_BASE = "";
 
         function logout() {
             localStorage.clear();

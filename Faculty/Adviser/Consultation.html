@@ -83,9 +83,7 @@
     </main>
 
     <script>
-        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-            ? `${window.location.protocol}//${window.location.hostname}:3005`
-            : `${window.location.protocol}//${window.location.hostname}:3005`;
+        const API_BASE = "";
         const facultyUserId = localStorage.getItem("userId");
         let consultations = [];
         let showingHistory = false;

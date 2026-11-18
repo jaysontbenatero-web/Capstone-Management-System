@@ -726,7 +726,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/adviser-capstone-groups/${loggedInUserId}`
+                        `/adviser-capstone-groups/${loggedInUserId}`
                     );
 
                 const data =
@@ -1078,7 +1078,7 @@
                         <div class="member-row">
 
                             <div class="member-avatar">
-                                ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
+                                ${member.profile_image ? `<img src="${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
                             </div>
 
                             <div>
@@ -1136,7 +1136,7 @@
                                 </p>
 
                                 <a
-                                    href="http://localhost:3005${proposal.file_path}"
+                                    href="${proposal.file_path}"
                                     target="_blank"
                                 >
                                     View PDF

@@ -556,7 +556,7 @@
             try{
 
                 const response = await fetch(
-                    `http://localhost:3005/student-info/${loggedInUserId}`
+                    `/student-info/${loggedInUserId}`
                 );
 
                 const data =
@@ -647,7 +647,7 @@
             const runCheck = async () => {
                 try {
                     const excludeParam = currentGroupId ? `&excludeGroupId=${encodeURIComponent(currentGroupId)}` : "";
-                    const res = await fetch(`http://localhost:3005/check-group-name?name=${encodeURIComponent(rawName)}${excludeParam}`);
+                    const res = await fetch(`/check-group-name?name=${encodeURIComponent(rawName)}${excludeParam}`);
                     const data = await res.json();
 
                     if (nameInput.value.trim() !== rawName) return true;
@@ -700,7 +700,7 @@
             try{
 
                 const response = await fetch(
-                    `http://localhost:3005/student-group/${loggedInUserId}`
+                    `/student-group/${loggedInUserId}`
                 );
 
                 const data =
@@ -981,7 +981,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:3005/student-info/${studentId}`);
+                const response = await fetch(`/student-info/${studentId}`);
                 const data = await response.json();
                 if (data.success) {
                     const student = data.student;
@@ -1084,7 +1084,7 @@
             // Verify group name uniqueness before saving
             try {
                 const excludeParam = currentGroupId ? `&excludeGroupId=${encodeURIComponent(currentGroupId)}` : "";
-                const nameCheckRes = await fetch(`http://localhost:3005/check-group-name?name=${encodeURIComponent(groupName)}${excludeParam}`);
+                const nameCheckRes = await fetch(`/check-group-name?name=${encodeURIComponent(groupName)}${excludeParam}`);
                 const nameCheckData = await nameCheckRes.json();
                 if (nameCheckData.success && nameCheckData.available === false) {
                     await checkGroupNameAvailability(false);
@@ -1137,7 +1137,7 @@
                 if(currentGroupId){
 
                     url =
-                        "http://localhost:3005/update-group";
+                        "/update-group";
 
                     method =
                         "PUT";
@@ -1145,7 +1145,7 @@
                 }else{
 
                     url =
-                        "http://localhost:3005/create-group";
+                        "/create-group";
 
                     method =
                         "POST";
@@ -1187,7 +1187,7 @@
                             const pos = posEl.value;
                             if (sid && pos) {
                                 positionSyncPromises.push(
-                                    fetch('http://localhost:3005/update-student-position', {
+                                    fetch('/update-student-position', {
                                         method: 'PUT',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ studentUserId: sid, position: pos })
@@ -1254,7 +1254,7 @@
             try{
 
                 const response = await fetch(
-                    "http://localhost:3005/remove-group-member",
+                    "/remove-group-member",
                     {
                         method: "DELETE",
 
@@ -1601,8 +1601,8 @@ async function loadStudentGroup(){
     try{
 
         const [groupResponse, defenseResponse] = await Promise.all([
-            fetch(`http://localhost:3005/student-group/${loggedInUserId}`),
-            fetch(`http://localhost:3005/student-defense-history/${loggedInUserId}`)
+            fetch(`/student-group/${loggedInUserId}`),
+            fetch(`/student-defense-history/${loggedInUserId}`)
         ]);
 
         const data = await groupResponse.json();
@@ -1755,7 +1755,7 @@ async function loadStudentGroup(){
                 <div class="member">
 
                     <div class="member-avatar">
-                        ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : initial}
+                        ${member.profile_image ? `<img src="${member.profile_image}" alt="Profile">` : initial}
                     </div>
 
                     <div>
@@ -1809,7 +1809,7 @@ async function loadStudentGroup(){
             <div class="assigned-adviser-top">
 
                 <div class="assigned-adviser-avatar">
-                    ${group.adviser_profile_image ? `<img src="http://localhost:3005${group.adviser_profile_image}" alt="Adviser Profile">` : group.adviser_name.charAt(0).toUpperCase()}
+                    ${group.adviser_profile_image ? `<img src="${group.adviser_profile_image}" alt="Adviser Profile">` : group.adviser_name.charAt(0).toUpperCase()}
                 </div>
 
                 <div class="assigned-adviser-main">

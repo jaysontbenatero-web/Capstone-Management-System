@@ -644,7 +644,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/instructor-capstone-groups"
+                        "/instructor-capstone-groups"
                     );
 
                 const data =
@@ -1030,7 +1030,7 @@
         async function loadGroupProgressAndDocs(group) {
             try {
                 // Fetch defense history
-                const defResponse = await fetch(`http://localhost:3005/group-defense-history/${group.id}`);
+                const defResponse = await fetch(`/group-defense-history/${group.id}`);
                 const defData = await defResponse.json();
                 const defenses = defData.success ? defData.defenses : [];
                 renderStageTracker(group, defenses);
@@ -1041,7 +1041,7 @@
                 }
 
                 // Fetch documents
-                const docResponse = await fetch(`http://localhost:3005/group-documents/${group.id}`);
+                const docResponse = await fetch(`/group-documents/${group.id}`);
                 const docData = await docResponse.json();
                 groupDocuments = docData.success ? docData.documents.filter(d => d.document_status === 'Approved') : [];
                 renderModalDocuments();
@@ -1094,7 +1094,7 @@
                             </h4>
                             <p style="color: #7b6f96; font-size: 12px; margin-top: 4px;">${doc.document_type} • Approved on ${dateStr}</p>
                         </div>
-                        <a href="http://localhost:3005${filePath}" target="_blank" style="color: #7c3aed; font-size: 16px; padding: 8px; background: #f3e8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;" title="${isSigned ? 'Download / View Signed File' : 'Download / View File'}">
+                        <a href="${filePath}" target="_blank" style="color: #7c3aed; font-size: 16px; padding: 8px; background: #f3e8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;" title="${isSigned ? 'Download / View Signed File' : 'Download / View File'}">
                             <i class="fa-solid fa-download"></i>
                         </a>
                     </div>
@@ -1201,7 +1201,7 @@
                         <div class="member-row">
 
                             <div class="member-avatar">
-                                ${member.profile_image ? `<img src="http://localhost:3005${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
+                                ${member.profile_image ? `<img src="${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
                             </div>
 
                             <div>
@@ -1329,7 +1329,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/instructor-update-capstone-group",
+                        "/instructor-update-capstone-group",
                         {
                             method:"PUT",
 

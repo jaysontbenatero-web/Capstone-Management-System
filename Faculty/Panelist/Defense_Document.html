@@ -209,7 +209,7 @@
         async function loadPanelistDocuments() {
             const grid = document.getElementById("documentGrid");
             try {
-                const res = await fetch(`http://localhost:3005/panelist-documents/${panelistUserId}`);
+                const res = await fetch(`/panelist-documents/${panelistUserId}`);
                 const data = await res.json();
 
                 if (data.success) {
@@ -332,7 +332,7 @@
                                 const icon = getFileIcon(doc.file_name);
                                 const iconColor = getIconColor(doc.file_name);
                                 const date = new Date(doc.created_at).toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'});
-                                const filePath = doc.file_path ? `http://localhost:3005${doc.file_path}` : '';
+                                const filePath = doc.file_path ? `${doc.file_path}` : '';
                                 return `
                                     <div style="
                                         display: flex;

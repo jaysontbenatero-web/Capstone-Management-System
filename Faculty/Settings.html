@@ -569,7 +569,7 @@
 
                 const response =
                     await fetch(
-                        `http://localhost:3005/faculty-settings/${loggedInFacultyId}`
+                        `/faculty-settings/${loggedInFacultyId}`
                     );
 
                 const data =
@@ -632,7 +632,7 @@
                 if(faculty.profile_image){
 
                     avatar.innerHTML =
-                        `<img src="http://localhost:3005${faculty.profile_image}" alt="Profile Photo">`;
+                        `<img src="${faculty.profile_image}" alt="Profile Photo">`;
 
                 }else{
 
@@ -715,7 +715,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/update-faculty-profile",
+                        "/update-faculty-profile",
                         {
                             method:"PUT",
 
@@ -826,7 +826,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/update-faculty-profile-image",
+                        "/update-faculty-profile-image",
                         {
                             method:"POST",
                             body:formData
@@ -897,7 +897,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/change-faculty-password",
+                        "/change-faculty-password",
                         {
                             method:"PUT",
 
@@ -1018,7 +1018,7 @@
             document.getElementById("signatureFileInput").value = "";
 
             document.getElementById("signatureImage").src =
-                `http://localhost:3005${path}`;
+                `${path}`;
 
             document.getElementById("signatureImage").style.display =
                 "block";
@@ -1059,7 +1059,7 @@
 
                 const response =
                     await fetch(
-                        "http://localhost:3005/update-user-digital-signature",
+                        "/update-user-digital-signature",
                         {
                             method:"POST",
                             body:formData

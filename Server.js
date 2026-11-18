@@ -69,7 +69,7 @@ async function sendCredentialEmail(recipientEmail, fullname, userId, tempPasswor
                     
                     <!-- Primary CTA Button -->
                     <div style="text-align: center; margin-top: 30px; margin-bottom: 10px;">
-                        <a href="http://localhost:3005" style="background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);">
+                        <a href="${process.env.APP_URL || "http://localhost:3005"}" style="background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);">
                             Access Portal Login
                         </a>
                     </div>

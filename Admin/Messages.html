@@ -289,7 +289,7 @@
     </main>
 
     <script>
-    const API_URL = "http://localhost:3005";
+    const API_URL = "";
 
     let activeReceiverId = null;
     let activeReceiverData = null;
@@ -427,7 +427,7 @@
         filtered.forEach((user) => {
             const initials = getInitials(user.fullname);
             const avatarContent = user.profile_image
-                ? `<img src="http://localhost:3005${user.profile_image}" alt="Profile">`
+                ? `<img src="${user.profile_image}" alt="Profile">`
                 : initials;
             const isSelected = activeReceiverId === user.user_id;
             const lastMessage = lastMessageMap[user.user_id];
@@ -502,7 +502,7 @@
         const initials = getInitials(user.fullname);
         const avatarEl = document.getElementById("activeChatAvatar");
         if (user.profile_image) {
-            avatarEl.innerHTML = `<img src="http://localhost:3005${user.profile_image}" alt="Profile">`;
+            avatarEl.innerHTML = `<img src="${user.profile_image}" alt="Profile">`;
         } else {
             avatarEl.innerText = initials;
         }

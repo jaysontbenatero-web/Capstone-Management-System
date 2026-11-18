@@ -521,7 +521,7 @@
 
             // 1. Fetch Faculty Dashboard Stats and Reviews
             try {
-                const response = await fetch(`http://localhost:3005/faculty-dashboard/${userId}`);
+                const response = await fetch(`/faculty-dashboard/${userId}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -574,7 +574,7 @@
 
             // 2. Fetch Notifications (limit to 5 to match reviews)
             try {
-                const response = await fetch(`http://localhost:3005/portal-notifications/${encodeURIComponent(userId)}?limit=5`);
+                const response = await fetch(`/portal-notifications/${encodeURIComponent(userId)}?limit=5`);
                 const data = await response.json();
 
                 if (data.success) {

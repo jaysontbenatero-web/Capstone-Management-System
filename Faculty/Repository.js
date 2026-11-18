@@ -104,7 +104,7 @@ addBtn.addEventListener(
 
             const response = await fetch(
 
-                "http://localhost:3005/add-repository",
+                "/add-repository",
 
                 {
 
@@ -174,10 +174,7 @@ let _searchDebounceTimer = null;
 let _lastSearchQuery = "";
 let _isSemanticSearch = false;
 
-const API_BASE = (() => {
-    if (window.location.port === "3005" || window.location.host.endsWith(":3005")) return "";
-    return `${window.location.protocol}//${window.location.hostname}:3005`;
-})();
+const API_BASE = "";
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -726,7 +723,7 @@ async function deleteRepository(id) {
 
     try {
         const response = await fetch(
-            `http://localhost:3005/delete-repository/${id}`,
+            `/delete-repository/${id}`,
             { method: "DELETE" }
         );
 
