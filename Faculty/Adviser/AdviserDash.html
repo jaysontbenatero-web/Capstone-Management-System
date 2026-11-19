@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -114,7 +114,7 @@
                     <i class="fa-solid fa-file-lines"></i>
 
                     <span>
-                        Documents
+                        Document Review
                     </span>
                 </div>
 
@@ -210,11 +210,12 @@
 
         <div
             class="role-card"
+            id="homeRoleCard"
             onclick="goToFacultyHome()"
         >
-            <i class="fa-solid fa-house"></i>
-            <span>
-                Home
+            <i id="homeRoleIcon" class="fa-solid fa-graduation-cap"></i>
+            <span id="homeRoleLabel">
+                Faculty
             </span>
         </div>
 
@@ -230,6 +231,7 @@
 
         <div
             class="role-card"
+            id="panelistRoleCard"
             onclick="goToPanelist()"
         >
             <i class="fa-solid fa-clipboard-check"></i>
@@ -240,6 +242,7 @@
 
         <div
             class="role-card"
+            id="instructorRoleCard"
             onclick="goToInstructor()"
         >
             <i class="fa-solid fa-chalkboard-user"></i>
@@ -614,6 +617,8 @@
                         String(faculty.instructor_access || 0)
                     );
 
+                    applyRoleAccessStyles();
+
                     return;
 
                 }
@@ -752,12 +757,38 @@
 
     }
 
+    (function syncHomeRoleCard(){
+        const isAdmin = String(localStorage.getItem("role") || "").toLowerCase() === "admin";
+        const iconEl = document.getElementById("homeRoleIcon");
+        const labelEl = document.getElementById("homeRoleLabel");
+        if(iconEl) iconEl.className = isAdmin ? "fa-solid fa-user-shield" : "fa-solid fa-graduation-cap";
+        if(labelEl) labelEl.textContent = isAdmin ? "Admin" : "Faculty";
+    })();
+
+    function applyRoleAccessStyles(){
+        const roles = [
+            { id: "panelistRoleCard", key: "panelist_access" },
+            { id: "instructorRoleCard", key: "instructor_access" }
+        ];
+        roles.forEach(({ id, key }) => {
+            const el = document.getElementById(id);
+            if(!el) return;
+            const hasAccess = localStorage.getItem(key) === "1";
+            el.style.opacity = hasAccess ? "" : "0.5";
+            el.style.filter = hasAccess ? "" : "grayscale(85%)";
+            el.style.background = hasAccess ? "" : "#cbd5e1";
+            el.style.color = hasAccess ? "" : "#475569";
+        });
+    }
+
+    applyRoleAccessStyles();
+
     function goToPanelist(){
 
         const panelistAccess =
             localStorage.getItem("panelist_access");
 
-        if(userRole === "admin" || panelistAccess === "1"){
+        if(panelistAccess === "1"){
 
             window.location.href =
                 "../Panelist/PanelistDash.html";
@@ -777,7 +808,7 @@
         const instructorAccess =
             localStorage.getItem("instructor_access");
 
-        if(userRole === "admin" || instructorAccess === "1"){
+        if(instructorAccess === "1"){
 
             window.location.href =
                 "../Instructor/InstructorDash.html";

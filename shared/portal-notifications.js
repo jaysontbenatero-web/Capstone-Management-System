@@ -98,17 +98,27 @@
         const type = String(item.notification_type || "").toLowerCase();
         const combined = `${title} ${message} ${type}`;
 
+        if (type === "announcement" || title.startsWith("new announcement")) {
+            return getNotificationsPageUrl();
+        }
+
         const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
         const position = String(localStorage.getItem("position") || "").toLowerCase().trim();
         const facultyRole = String(localStorage.getItem("facultyRole") || "").toLowerCase().trim();
+        const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
+        const sessionRole = String(sessionStorage.getItem("active_faculty_role") || "").toLowerCase();
+        const hasPanelistAccess = localStorage.getItem("panelist_access") === "1";
+        const hasInstructorAccess = localStorage.getItem("instructor_access") === "1";
+        const hasAdviserAccess = localStorage.getItem("adviser_access") === "1";
 
         // 1. MESSAGES / CHAT / CONVERSATION
         if (
-            combined.includes("message") ||
+            type === "message" ||
+            title.includes("message") ||
+            combined.includes("new message") ||
             combined.includes("chat") ||
             combined.includes("conversation") ||
-            combined.includes("inbox") ||
-            type === "message"
+            combined.includes("inbox")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Messages.html");
             if (role === "admin") return resolveRelativeUrl("Admin/Messages.html");
@@ -129,7 +139,96 @@
             if (role === "faculty") return resolveRelativeUrl("Faculty/Settings.html");
         }
 
-        // 3. ADVISER REQUEST / ADVISORY / TITLE PROPOSALS
+        // 2.5 DEFENSE MINUTES E-SIGNATURE WORKFLOW
+        if (type === "defense minutes" || combined.includes("defense minutes")) {
+            if (role === "student") return resolveRelativeUrl("Student/Documents.html");
+            if (role === "faculty" || role === "admin") {
+                if (
+                    combined.includes("panelist document review") ||
+                    combined.includes("ready for e-signature") ||
+                    activePath.includes("/panelist/")
+                ) {
+                    return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
+                }
+                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+            }
+        }
+
+        // 3. DEFENSE / SCHEDULE / EVALUATION / PANELIST / GRADING
+        // Checked before generic document matching so "Concept Presentation" defense schedules route here.
+        if (
+            type === "defense schedule" ||
+            type === "defense evaluation" ||
+            type === "defense" ||
+            combined.includes("defense") ||
+            combined.includes("panelist") ||
+            combined.includes("panel assignment") ||
+            combined.includes("panel evaluation") ||
+            combined.includes("grading") ||
+            (combined.includes("schedule") && !combined.includes("consultation"))
+        ) {
+            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
+
+            if (role === "faculty" || role === "admin") {
+                // Explicit panelist assignment or cancellation goes to Assigned Defenses
+                if (
+                    combined.includes("panelist") ||
+                    combined.includes("panel assignment") ||
+                    combined.includes("assigned as a panelist") ||
+                    title.includes("defense created") ||
+                    title.includes("defense scheduled")
+                ) {
+                    if (hasPanelistAccess || role === "faculty") {
+                        return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+                    }
+                }
+
+                // Completed / evaluation notifications go to Panel Evaluation for instructors
+                if (
+                    type === "defense evaluation" ||
+                    combined.includes("evaluation") ||
+                    combined.includes("completed")
+                ) {
+                    if (hasInstructorAccess) {
+                        return resolveRelativeUrl("Faculty/Instructor/Panel_Evaluation.html");
+                    }
+                    if (hasPanelistAccess) {
+                        return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+                    }
+                    if (hasAdviserAccess) {
+                        return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
+                    }
+                }
+
+                // Respect active sub-portal if currently browsing one
+                if (activePath.includes("/panelist/") || facultyRole === "panelist" || sessionRole === "panelist") {
+                    return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+                }
+                if (activePath.includes("/adviser/") || facultyRole === "adviser" || sessionRole === "adviser") {
+                    return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
+                }
+                if (activePath.includes("/instructor/") || facultyRole === "instructor" || sessionRole === "instructor") {
+                    return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+                }
+
+                // Fallback by granted access
+                if (hasPanelistAccess && !hasInstructorAccess) {
+                    return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+                }
+                if (hasInstructorAccess) {
+                    return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+                }
+                if (hasAdviserAccess) {
+                    return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
+                }
+                if (role === "admin") {
+                    return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+                }
+                return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+            }
+        }
+
+        // 4. ADVISER REQUEST / ADVISORY / TITLE PROPOSALS
         if (
             combined.includes("adviser request") ||
             combined.includes("adviser acceptance") ||
@@ -138,23 +237,24 @@
             combined.includes("proposed title")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Req_Adviser.html");
-            if (role === "faculty") return resolveRelativeUrl("Faculty/Adviser/Adviser_Request.html");
+            if (role === "faculty" || (role === "admin" && hasAdviserAccess)) {
+                return resolveRelativeUrl("Faculty/Adviser/Adviser_Request.html");
+            }
             if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
         }
 
-        // 3.5 CONSULTATIONS
+        // 4.5 CONSULTATIONS
         if (combined.includes("consultation") || type === "consultation") {
             if (role === "student") return resolveRelativeUrl("Student/Consultation.html");
-            if (role === "faculty") {
-                const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
-                if (activePath.includes("/instructor/") || position.includes("instructor") || facultyRole === "instructor") {
+            if (role === "faculty" || role === "admin") {
+                if (activePath.includes("/instructor/") || position.includes("instructor") || facultyRole === "instructor" || sessionRole === "instructor") {
                     return resolveRelativeUrl("Faculty/Instructor/Consultation.html");
                 }
                 return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
             }
         }
 
-        // 4. DOCUMENTS / SIGNING / E-SIGNATURE / ENVIRONMENTAL SCANNING / REVISION / CONCEPT PRESENTATION
+        // 5. DOCUMENTS / SIGNING / E-SIGNATURE / ENVIRONMENTAL SCANNING / REVISION / CONCEPT PRESENTATION
         if (
             combined.includes("document") ||
             combined.includes("signing") ||
@@ -168,11 +268,16 @@
             combined.includes("manuscript")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
-            if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
+            if (role === "admin") {
+                if (combined.includes("adviser") && hasAdviserAccess) {
+                    return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+                }
+                if (combined.includes("instructor") && hasInstructorAccess) {
+                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+                }
+                return resolveRelativeUrl("Admin/Document_Review.html");
+            }
             if (role === "faculty") {
-                const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
-                const sessionRole = String(sessionStorage.getItem("active_faculty_role") || "").toLowerCase();
-
                 // If message specifically indicates adviser or user is currently inside Adviser portal
                 if (combined.includes("adviser") || facultyRole === "adviser" || sessionRole === "adviser" || activePath.includes("/adviser/")) {
                     return resolveRelativeUrl("Faculty/Adviser/Documents.html");
@@ -191,25 +296,6 @@
                 }
 
                 return resolveRelativeUrl("Faculty/Adviser/Documents.html");
-            }
-        }
-
-        // 5. DEFENSE / SCHEDULE / EVALUATION / PANELIST / GRADING
-        if (
-            combined.includes("defense") ||
-            combined.includes("schedule") ||
-            combined.includes("panel") ||
-            combined.includes("evaluation") ||
-            combined.includes("grading") ||
-            combined.includes("room")
-        ) {
-            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
-            if (role === "admin") return resolveRelativeUrl("Admin/AdminDash.html");
-            if (role === "faculty") {
-                if (position.includes("panelist") || facultyRole === "panelist") {
-                    return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
-                }
-                return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
             }
         }
 

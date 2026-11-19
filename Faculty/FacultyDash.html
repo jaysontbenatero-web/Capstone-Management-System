@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -80,7 +80,7 @@
                 >
                     <i class="fa-solid fa-house"></i>
                     <span>
-                        Home
+                        Dashboard
                     </span>
                 </div>
 
@@ -94,7 +94,7 @@
                 >
                     <i class="fa-solid fa-book-open"></i>
                     <span>
-                        Capstone Repository
+                        Capstone Titles
                     </span>
                 </div>
 
@@ -280,7 +280,7 @@
                     onclick="goHome()"
                     type="button"
                 >
-                    <i class="fa-solid fa-house"></i>
+                    <i class="fa-solid fa-graduation-cap"></i>
                     Faculty
                 </button>
 
@@ -503,18 +503,19 @@
             localStorage.setItem("panelist_access", String(facultyData.panelist_access || 0));
             localStorage.setItem("instructor_access", String(facultyData.instructor_access || 0));
 
-            const disableBtn = (id) => {
+            const markNoAccessBtn = (id, hasAccess) => {
                 const btn = document.getElementById(id);
                 if(btn){
-                    btn.style.opacity = "0.5";
-                    btn.style.cursor = "not-allowed";
-                    btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); };
+                    btn.style.opacity = hasAccess ? "" : "0.5";
+                    btn.style.filter = hasAccess ? "" : "grayscale(85%)";
+                    btn.style.background = hasAccess ? "" : "#cbd5e1";
+                    btn.style.color = hasAccess ? "" : "#475569";
                 }
             };
 
-            if(String(facultyData.adviser_access || 0) !== "1") disableBtn("roleBtnAdviser");
-            if(String(facultyData.panelist_access || 0) !== "1") disableBtn("roleBtnPanelist");
-            if(String(facultyData.instructor_access || 0) !== "1") disableBtn("roleBtnInstructor");
+            markNoAccessBtn("roleBtnAdviser", String(facultyData.adviser_access || 0) === "1");
+            markNoAccessBtn("roleBtnPanelist", String(facultyData.panelist_access || 0) === "1");
+            markNoAccessBtn("roleBtnInstructor", String(facultyData.instructor_access || 0) === "1");
 
         }
 

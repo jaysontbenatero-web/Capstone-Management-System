@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -31,7 +31,7 @@
     >
     <link
         rel="stylesheet"
-        href="Announcements.css"
+        href="Announcements.css?v=20261119_01"
     >
 
     <link rel="stylesheet" href="AdminTheme.css">
@@ -167,59 +167,6 @@
 
         </div>
 
-        <!-- STATS -->
-        <div class="stats-grid">
-
-            <div class="stat-card">
-                <div class="stat-icon purple">
-                    <i class="fa-solid fa-bullhorn"></i>
-                </div>
-
-                <div>
-                    <h2 id="totalAnnouncements">
-                        0
-                    </h2>
-
-                    <p>
-                        Total Announcements
-                    </p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon green">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-
-                <div>
-                    <h2 id="publishedAnnouncements">
-                        0
-                    </h2>
-
-                    <p>
-                        Published
-                    </p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon yellow">
-                    <i class="fa-solid fa-users"></i>
-                </div>
-
-                <div>
-                    <h2 id="allAudienceAnnouncements">
-                        0
-                    </h2>
-
-                    <p>
-                        For All Users
-                    </p>
-                </div>
-            </div>
-
-        </div>
-
         <!-- ANNOUNCEMENTS CARD -->
         <section class="card">
 
@@ -297,6 +244,8 @@
                     Loading announcements...
                 </div>
             </div>
+
+            <div class="pagination-bar" id="paginationControls" style="display:none;"></div>
 
         </section>
 
@@ -588,39 +537,81 @@
         }
 
         function updateStats(){
+            const totalEl = document.getElementById("totalAnnouncements");
+            if(totalEl) totalEl.innerText = announcements.length;
 
-            const total =
-                announcements.length;
+            const pubEl = document.getElementById("publishedAnnouncements");
+            if(pubEl){
+                pubEl.innerText = announcements.filter(item => item.announcement_status === "Published").length;
+            }
 
-            const published =
-                announcements.filter(item =>
-                    item.announcement_status === "Published"
-                ).length;
+            const allEl = document.getElementById("allAudienceAnnouncements");
+            if(allEl){
+                allEl.innerText = announcements.filter(item => item.audience === "All Users").length;
+            }
+        }
 
-            const allUsers =
-                announcements.filter(item =>
-                    item.audience === "All Users"
-                ).length;
+        let currentPage = 1;
+        const itemsPerPage = 6;
+        let currentFilteredList = [];
 
-            document.getElementById("totalAnnouncements").innerText =
-                total;
+        function goToPage(page){
+            currentPage = page;
+            renderAnnouncements(currentFilteredList);
+        }
 
-            document.getElementById("publishedAnnouncements").innerText =
-                published;
+        function renderPagination(totalItems, totalPages){
+            const paginationEl = document.getElementById("paginationControls");
+            if(!paginationEl) return;
 
-            document.getElementById("allAudienceAnnouncements").innerText =
-                allUsers;
+            if(totalItems === 0 || totalPages <= 1){
+                paginationEl.style.display = "none";
+                paginationEl.innerHTML = "";
+                return;
+            }
 
+            const startIdx = (currentPage - 1) * itemsPerPage + 1;
+            const endIdx = Math.min(totalItems, currentPage * itemsPerPage);
+
+            let buttonsHtml = `
+                <button type="button" class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? "disabled" : ""}>
+                    Prev
+                </button>
+            `;
+
+            for(let p = 1; p <= totalPages; p++){
+                buttonsHtml += `
+                    <button type="button" class="pagination-btn ${p === currentPage ? "active" : ""}" onclick="goToPage(${p})">
+                        ${p}
+                    </button>
+                `;
+            }
+
+            buttonsHtml += `
+                <button type="button" class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}>
+                    Next
+                </button>
+            `;
+
+            paginationEl.style.display = "flex";
+            paginationEl.innerHTML = `
+                <span class="pagination-info">Showing ${startIdx}–${endIdx} of ${totalItems}</span>
+                <div class="pagination-buttons">${buttonsHtml}</div>
+            `;
         }
 
         function renderAnnouncements(list){
+
+            currentFilteredList = list || [];
 
             const grid =
                 document.getElementById("announcementGrid");
 
             grid.innerHTML = "";
 
-            if(list.length === 0){
+            if(currentFilteredList.length === 0){
+
+                renderPagination(0, 0);
 
                 grid.innerHTML = `
                     <div class="empty-card">
@@ -632,7 +623,16 @@
 
             }
 
-            list.forEach(item => {
+            const totalPages = Math.max(1, Math.ceil(currentFilteredList.length / itemsPerPage));
+            if(currentPage > totalPages) currentPage = totalPages;
+            if(currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const pageItems = currentFilteredList.slice(start, start + itemsPerPage);
+
+            renderPagination(currentFilteredList.length, totalPages);
+
+            pageItems.forEach(item => {
 
                 const statusClass =
                     "published";
@@ -733,6 +733,8 @@
         }
 
         function filterAnnouncements(){
+
+            currentPage = 1;
 
             const keyword =
                 document.getElementById("searchAnnouncement")

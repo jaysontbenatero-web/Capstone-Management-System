@@ -89,7 +89,6 @@ addBtn.addEventListener(
             !title ||
             !abstract ||
             !objectives ||
-            !research_problem ||
             !methodology
 
         ) {
@@ -350,8 +349,8 @@ function buildGridHtml(items) {
                     <button class="view-btn" type="button" onclick="viewRepositoryById(${Number(item.id)})">
                         <i class="fa-solid fa-eye"></i> View
                     </button>
-                    <button class="delete-btn" type="button" onclick="deleteRepository(${Number(item.id)})">
-                        <i class="fa-solid fa-trash-can"></i> Delete
+                    <button class="edit-btn" type="button" onclick="openEditRepositoryModal(${Number(item.id)})">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit
                     </button>
                 </div>
             </div>
@@ -385,8 +384,8 @@ function buildTableHtml(items) {
                         <button class="table-action-btn view" onclick="viewRepositoryById(${Number(item.id)})" title="View Details">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button class="table-action-btn delete" onclick="deleteRepository(${Number(item.id)})" title="Delete Entry">
-                            <i class="fa-solid fa-trash-can"></i>
+                        <button class="table-action-btn edit" onclick="openEditRepositoryModal(${Number(item.id)})" title="Edit Entry">
+                            <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                     </div>
                 </td>
@@ -716,6 +715,160 @@ function closeModal() {
     document.getElementById("modal").style.display = "none";
 }
 
+/* ================= EDIT REPOSITORY ================= */
+
+function populateRepositoryYearInputs() {
+    const startYear = 2023;
+    const maxYear = Math.max(2026, new Date().getFullYear());
+    ["year", "editYear"].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">Select year</option>';
+        for (let y = maxYear; y >= startYear; y--) {
+            const opt = document.createElement("option");
+            opt.value = String(y);
+            opt.textContent = String(y);
+            sel.appendChild(opt);
+        }
+        if (prev) sel.value = prev;
+    });
+}
+
+populateRepositoryYearInputs();
+
+let editingRepositoryId = null;
+
+function openEditRepositoryModal(id) {
+    const item = repositoryById[id];
+    if (!item) return;
+
+    editingRepositoryId = item.id;
+    populateRepositoryYearInputs();
+
+    document.getElementById("editProgram").value = item.program || "IT";
+    document.getElementById("editCategory").value = item.category || "";
+    document.getElementById("editTitle").value = item.title || "";
+    document.getElementById("editAbstract").value = item.abstract || "";
+    document.getElementById("editObjectives").value = item.objectives || "";
+    document.getElementById("editResearchProblem").value = item.research_problem || "";
+    document.getElementById("editMethodology").value = item.methodology || "";
+    document.getElementById("editResearchers").value = item.researchers || "";
+    document.getElementById("editAdviser").value = item.adviser || "";
+
+    const editYearSel = document.getElementById("editYear");
+    const itemYear = item.year ? String(item.year) : "";
+    if (itemYear && ![...editYearSel.options].some(o => o.value === itemYear)) {
+        const legacyOpt = document.createElement("option");
+        legacyOpt.value = itemYear;
+        legacyOpt.textContent = itemYear;
+        editYearSel.appendChild(legacyOpt);
+    }
+    editYearSel.value = itemYear;
+
+    document.getElementById("editRepoModal").style.display = "flex";
+}
+
+function closeEditRepositoryModal() {
+    editingRepositoryId = null;
+    document.getElementById("editRepoModal").style.display = "none";
+}
+
+async function saveRepositoryEdit() {
+    if (!editingRepositoryId) return;
+
+    const program = document.getElementById("editProgram").value;
+    const title = document.getElementById("editTitle").value.trim();
+    const abstract = document.getElementById("editAbstract").value.trim();
+    const objectives = document.getElementById("editObjectives").value.trim();
+    const research_problem = document.getElementById("editResearchProblem").value.trim();
+    const methodology = document.getElementById("editMethodology").value.trim();
+    const researchers = document.getElementById("editResearchers").value.trim();
+    const adviser = document.getElementById("editAdviser").value.trim();
+    const category = document.getElementById("editCategory").value;
+    const year = document.getElementById("editYear").value;
+
+    if (!program || !title || !abstract || !objectives || !methodology) {
+        alert("Please complete required fields (Program, Title, Abstract, Objectives, Methodology).");
+        return;
+    }
+
+    const saveBtn = document.getElementById("saveEditRepoBtn");
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE}/update-repository/${editingRepositoryId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                program,
+                title,
+                abstract,
+                objectives,
+                research_problem,
+                methodology,
+                researchers,
+                adviser,
+                category,
+                year
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            closeEditRepositoryModal();
+            alert("Repository entry updated successfully!");
+            const q = document.getElementById("archiveSearch") ? document.getElementById("archiveSearch").value.trim() : "";
+            if (q && _isSemanticSearch) {
+                await doSemanticSearch(q);
+            } else {
+                await loadRepository();
+            }
+        } else {
+            alert(data.message || "Failed to update repository entry.");
+        }
+    } catch (error) {
+        console.error("Update repository error:", error);
+        alert("Failed to update repository entry.");
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
+}
+
+async function deleteFromEditRepositoryModal() {
+    if (!editingRepositoryId) return;
+    const idToDelete = editingRepositoryId;
+    const confirmDelete = await confirm("Delete this repository entry? This action cannot be undone.");
+    if (!confirmDelete) return;
+
+    const delBtn = document.getElementById("deleteEditRepoBtn");
+    if (delBtn) delBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE}/delete-repository/${idToDelete}`, {
+            method: "DELETE"
+        });
+        const data = await response.json();
+        if (data.success) {
+            closeEditRepositoryModal();
+            alert("Repository entry deleted successfully.");
+            const q = document.getElementById("archiveSearch") ? document.getElementById("archiveSearch").value.trim() : "";
+            if (q && _isSemanticSearch) {
+                await doSemanticSearch(q);
+            } else {
+                await loadRepository();
+            }
+        } else {
+            alert(data.message || "Failed to delete repository entry.");
+        }
+    } catch (error) {
+        console.error("Delete repository error:", error);
+        alert("Failed to delete repository entry.");
+    } finally {
+        if (delBtn) delBtn.disabled = false;
+    }
+}
+
 /* ================= DELETE ================= */
 
 async function deleteRepository(id) {
@@ -726,7 +879,7 @@ async function deleteRepository(id) {
 
     try {
         const response = await fetch(
-            `/delete-repository/${id}`,
+            `${API_BASE}/delete-repository/${id}`,
             { method: "DELETE" }
         );
 
@@ -743,7 +896,7 @@ async function deleteRepository(id) {
 
 function logout() {
     localStorage.clear();
-    window.location.href = "../Log-in.html";
+    window.location.href = "/Log-in.html";
 }
 
 /* ================= AUTO LOAD & ATTACH ================= */

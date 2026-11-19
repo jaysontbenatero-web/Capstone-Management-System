@@ -201,7 +201,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="research_problem">Research Problem <span class="required">*</span></label>
+                            <label for="research_problem">Research Problem <small style="font-weight:500;color:#8b7aa8;">(Optional)</small></label>
                             <textarea id="research_problem" class="textarea-box textarea-compact" rows="4" placeholder="State the specific research problem or statement of the problem..."></textarea>
                         </div>
 
@@ -261,7 +261,9 @@
                                 <label for="year">Year</label>
                                 <div class="input-with-icon">
                                     <i class="fa-solid fa-calendar"></i>
-                                    <input type="number" id="year" class="input-box" placeholder="2026" min="2000" max="2099">
+                                    <select id="year" class="select-box">
+                                        <option value="">Select year</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -458,6 +460,103 @@
 
         </div>
 
+    </div>
+
+    <!-- EDIT REPOSITORY MODAL -->
+    <div class="modal" id="editRepoModal">
+        <div class="modal-content edit-repo-modal-box">
+            <div class="edit-repo-modal-header">
+                <div>
+                    <h2><i class="fa-solid fa-pen-to-square" style="color:#7c3aed;margin-right:8px;"></i>Edit Repository Entry</h2>
+                    <p>Update title details, abstract, objectives, or metadata.</p>
+                </div>
+                <button type="button" class="edit-repo-close-x" onclick="closeEditRepositoryModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="editRepositoryForm" onsubmit="return false;">
+                <div class="edit-repo-form-grid">
+                    <div class="form-group">
+                        <label for="editProgram">Program <span class="required">*</span></label>
+                        <select id="editProgram" class="select-box">
+                            <option value="IT">BSIT — Information Technology</option>
+                            <option value="IS">BSIS — Information Systems</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategory">Category</label>
+                        <select id="editCategory" class="select-box">
+                            <option value="">Select category</option>
+                            <option>Artificial Intelligence</option>
+                            <option>Web Development</option>
+                            <option>Web Application</option>
+                            <option>Mobile Development</option>
+                            <option>Data Analytics</option>
+                            <option>IoT</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTitle">Capstone Title <span class="required">*</span></label>
+                    <input type="text" id="editTitle" class="input-box">
+                </div>
+
+                <div class="edit-repo-form-grid">
+                    <div class="form-group">
+                        <label for="editAbstract">Abstract <span class="required">*</span></label>
+                        <textarea id="editAbstract" class="textarea-box edit-repo-textarea" rows="6"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editObjectives">Objectives <span class="required">*</span></label>
+                        <textarea id="editObjectives" class="textarea-box edit-repo-textarea" rows="6"></textarea>
+                    </div>
+                </div>
+
+                <div class="edit-repo-form-grid">
+                    <div class="form-group">
+                        <label for="editResearchProblem">Research Problem <small style="font-weight:500;color:#8b7aa8;">(Optional)</small></label>
+                        <textarea id="editResearchProblem" class="textarea-box edit-repo-textarea" rows="5"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editMethodology">Methodology <span class="required">*</span></label>
+                        <textarea id="editMethodology" class="textarea-box edit-repo-textarea" rows="5"></textarea>
+                    </div>
+                </div>
+
+                <div class="edit-repo-meta-grid">
+                    <div class="form-group">
+                        <label for="editResearchers">Researchers</label>
+                        <input type="text" id="editResearchers" class="input-box">
+                    </div>
+                    <div class="form-group">
+                        <label for="editAdviser">Adviser</label>
+                        <input type="text" id="editAdviser" class="input-box">
+                    </div>
+                    <div class="form-group">
+                        <label for="editYear">Year</label>
+                        <select id="editYear" class="select-box">
+                            <option value="">Select year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="edit-repo-modal-actions">
+                    <button type="button" class="edit-repo-delete-btn" id="deleteEditRepoBtn" onclick="deleteFromEditRepositoryModal()">
+                        <i class="fa-solid fa-trash-can"></i> Delete
+                    </button>
+                    <div class="edit-repo-actions-right">
+                        <button type="button" class="edit-repo-cancel-btn" onclick="closeEditRepositoryModal()">Cancel</button>
+                        <button type="button" class="submit-btn edit-repo-save-btn" id="saveEditRepoBtn" onclick="saveRepositoryEdit()">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="Repository.js"></script>

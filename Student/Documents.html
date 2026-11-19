@@ -30,6 +30,8 @@
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
     <link rel="stylesheet" href="student-portal.css">
+    <link rel="stylesheet" href="../shared/defense-minutes-sheet.css">
+    <script src="../shared/defense-minutes-sheet.js"></script>
 
     <!-- PDF.js for env scan student signature viewer -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -121,6 +123,10 @@
                     <i class="fa-solid fa-comments"></i>
                     <span>Consultation</span>
                 </div>
+<div class="menu-item" id="nav-defense" onclick="window.location.href='Defense_Schedule.html'">
+    <i class="fa-solid fa-calendar-check"></i>
+    <span>Defense Schedules</span>
+</div>
 
                 <div class="menu-title">
                     Communication
@@ -352,77 +358,100 @@
 
     </main>
 
-    <!-- DEFENSE MINUTES PICTURE UPLOAD MODAL -->
-    <div class="modal-overlay" id="defMinPictureModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:20px;">
-        <div class="modal-box" style="width:520px; max-width:95%; background:#fff; border-radius:24px; padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.22);">
-            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+    <!-- DEFENSE MINUTES LIVE DOCUMENT EDITOR MODAL -->
+    <div class="modal-overlay" id="defenseMinutesEditorModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:16px;">
+        <div class="modal-box dm-editor-modal-box" style="width:940px; max-width:97%; max-height:94vh; display:flex; flex-direction:column; background:#f8fafc; border-radius:20px; padding:18px 22px; box-shadow:0 25px 60px rgba(0,0,0,0.28);">
+            <div class="modal-header dm-no-print" style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
                 <div>
-                    <h2 style="color:#2e1065; font-size:20px; margin:0; display:flex; align-items:center; gap:9px;">
-                        <i class="fa-solid fa-camera" style="color:#7c3aed;"></i>
-                        Upload Defense Minutes Photos
+                    <h2 id="dmEditorTitle" style="color:#2e1065; font-size:18px; margin:0; display:flex; align-items:center; gap:9px;">
+                        <i class="fa-solid fa-file-pen" style="color:#7c3aed;"></i>
+                        Defense Minutes
+                        <button type="button" class="dm-help-btn" onclick="openDefenseMinutesHelpModal()" title="How does defense minutes work?">
+                            <i class="fa-solid fa-circle-question"></i>
+                            <span>How does defense minutes work?</span>
+                        </button>
                     </h2>
-                    <p style="margin-top:6px; color:#6d5f85; font-size:13px; line-height:1.5;">
-                        Upload photos of your signed defense minutes (<strong>minimum 1, maximum 5 photos</strong>) — ensure all panelist signatures are clearly visible. Adviser will review and approve.
+                    <p id="dmEditorSubtitle" style="margin-top:3px; color:#64748b; font-size:12px;">
+                        Type directly inside Page No., Comments/Suggestions/Recommendations, and Action/s Taken (press Enter for a new bullet).
                     </p>
                 </div>
-                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesPictureModal()" style="border:none; background:#f1f5f9; color:#6d5f85; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesEditor()" style="border:none; background:#e2e8f0; color:#475569; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <input type="hidden" id="defMinPictureCategory">
-            <input type="hidden" id="defMinPictureLabel">
+            <div id="dmEditorBody" style="overflow-y:auto; flex:1; padding:12px; background:#cbd5e1; border-radius:12px;"></div>
 
-            <div style="background:#faf5ff; border:2px dashed #c4b5fd; border-radius:16px; padding:20px; text-align:center; margin-bottom:18px;">
-                <i class="fa-solid fa-images" style="font-size:32px; color:#7c3aed; margin-bottom:10px; display:block;"></i>
-                <p style="color:#6d5f85; font-size:13px; margin:0 0 12px;">Select photos (1 to 5 photos total; JPG, PNG, WEBP)</p>
-                <input type="file" id="defMinPictureFile" accept="image/jpeg,image/jpg,image/png,image/webp" multiple
-                    onchange="previewDefMinPictures(this)"
-                    style="display:block; margin:0 auto; font-size:13px; cursor:pointer;">
-            </div>
-
-            <div id="defMinPicturePreview" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; min-height:0;"></div>
-
-            <div style="background:#fef9c3; border:1px solid #fde047; border-radius:12px; padding:10px 14px; font-size:12px; color:#854d0e; margin-bottom:18px; display:flex; gap:8px; align-items:flex-start;">
-                <i class="fa-solid fa-triangle-exclamation" style="color:#d97706; margin-top:2px;"></i>
-                <span>Defense minutes are done <strong>physically/face-to-face</strong>. You must upload photos showing all panelists' signatures. This requires adviser approval before the next phase unlocks.</span>
-            </div>
-
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button type="button" onclick="closeDefenseMinutesPictureModal()"
-                    style="padding:11px 20px; border-radius:12px; border:none; background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer; font-size:13px;">
-                    Cancel
+            <div class="dm-no-print" style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px; padding-top:10px; border-top:1px solid #e2e8f0; flex-wrap:wrap;">
+                <button type="button" onclick="closeDefenseMinutesEditor()"
+                    style="padding:9px 18px; border-radius:11px; border:none; background:#e2e8f0; color:#475569; font-weight:600; cursor:pointer; font-size:13px;">
+                    Close
                 </button>
-                <button type="button" onclick="uploadDefenseMinutesPictures()"
-                    style="padding:11px 22px; border-radius:12px; border:none; background:linear-gradient(135deg,#6d28d9,#7c3aed); color:#fff; font-weight:700; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-upload"></i> Upload Photos
+                <button type="button" onclick="saveDefenseMinutesDraft(false)"
+                    style="padding:9px 20px; border-radius:11px; border:none; background:linear-gradient(135deg,#6d28d9,#7c3aed); color:#fff; font-weight:700; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:7px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Minutes
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- DEFENSE MINUTES PICTURE GALLERY MODAL -->
-    <div class="modal-overlay" id="defMinGalleryModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:20px;">
-        <div class="modal-box" style="width:700px; max-width:95%; background:#fff; border-radius:24px; padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.22);">
-            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
-                <div>
-                    <h2 id="defMinGalleryTitle" style="color:#2e1065; font-size:20px; margin:0; display:flex; align-items:center; gap:9px;">
-                        <i class="fa-solid fa-images" style="color:#7c3aed;"></i>
-                        Defense Minutes Photos
-                    </h2>
-                    <p id="defMinGalleryStatus" style="margin-top:5px; color:#6d5f85; font-size:13px;"></p>
-                </div>
-                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesPictureGallery()" style="border:none; background:#f1f5f9; color:#6d5f85; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+    <!-- DEFENSE MINUTES HOW-IT-WORKS HELP MODAL -->
+    <div class="modal-overlay" id="defenseMinutesHelpModal" onclick="if(event.target === this) closeDefenseMinutesHelpModal()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:10050; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:16px;">
+        <div class="modal-box" style="width:540px; max-width:96%; background:#ffffff; border-radius:20px; padding:22px 24px; box-shadow:0 25px 60px rgba(0,0,0,0.28);">
+            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <h2 style="color:#2e1065; font-size:18px; margin:0; display:flex; align-items:center; gap:9px;">
+                    <i class="fa-solid fa-circle-question" style="color:#7c3aed;"></i>
+                    How does Defense Minutes work?
+                </h2>
+                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesHelpModal()" style="border:none; background:#e2e8f0; color:#475569; border-radius:10px; width:34px; height:34px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div id="defMinGalleryGrid" style="display:flex; flex-wrap:wrap; gap:12px; max-height:420px; overflow-y:auto; padding:4px;"></div>
-            <div style="display:flex; justify-content:flex-end; margin-top:18px;">
-                <button type="button" onclick="closeDefenseMinutesPictureGallery()"
-                    style="padding:11px 20px; border-radius:12px; border:none; background:#f1f5f9; color:#475569; font-weight:600; cursor:pointer;">
-                    Close
+            <ul class="dm-help-list">
+                <li>
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Students should edit the defense minutes based on each panelist's thoughts, comments, and suggestions during evaluation.</span>
+                </li>
+                <li>
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Once finished, when sending it, it goes to your <strong>Adviser</strong> for checking first, and then it goes to the <strong>Panelists</strong> who have graded your defense.</span>
+                </li>
+                <li>
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Both your <strong>Adviser</strong> and <strong>Panelists</strong> will e-sign the document.</span>
+                </li>
+                <li class="dm-help-important">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>DEFENSE MINUTES SHOULD BE DONE PHYSICALLY.</span>
+                </li>
+            </ul>
+            <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                <button type="button" onclick="closeDefenseMinutesHelpModal()"
+                    style="padding:9px 20px; border-radius:11px; border:none; background:linear-gradient(135deg,#6d28d9,#7c3aed); color:#fff; font-weight:700; cursor:pointer; font-size:13px;">
+                    Got it
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- DEFENSE MINUTES A4 PRINT / PREVIEW MODAL -->
+    <div class="modal-overlay" id="defenseMinutesPrintModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.68); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:16px;">
+        <div class="modal-box dm-print-modal-box" style="width:920px; max-width:97%; max-height:94vh; display:flex; flex-direction:column; background:#f8fafc; border-radius:20px; padding:18px 22px; box-shadow:0 25px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header dm-no-print" style="display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #e2e8f0;">
+                <div>
+                    <h2 style="color:#2e1065; font-size:18px; margin:0; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-print" style="color:#7c3aed;"></i>
+                        Defense Minutes — A4 Print Preview
+                    </h2>
+                    <p style="margin:2px 0 0; color:#64748b; font-size:12px;">Formatted for A4 bond paper with repeating DNSC header &amp; footer across pages.</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesPrintModal()" style="border:none; background:#e2e8f0; color:#475569; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="dmPrintSheetViewport" style="overflow-y:auto; flex:1; padding:8px; background:#cbd5e1; border-radius:12px;"></div>
         </div>
     </div>
 
@@ -805,6 +834,8 @@
             localStorage.getItem("userId");
 
         let studentDocuments = [];
+        let pendingDefMinSendCategory = null;
+        let pendingDefMinSendLabel = null;
         let titleProposals = [];
         let defenseVerdicts = []; // Latest verdict per defense_type from the server
         let conceptPresentationGraded = false; // Flag: whether group is already graded in Concept Presentation
@@ -905,6 +936,14 @@
 
                 gradedDefenseTypes =
                     data.graded_defense_types || [];
+
+                try {
+                    const tdmResp = await fetch(`/typed-defense-minutes/student/${encodeURIComponent(loggedInUserId)}`);
+                    const tdmData = await tdmResp.json();
+                    typedDefenseMinutesList = (tdmData && tdmData.success && Array.isArray(tdmData.minutes)) ? tdmData.minutes : [];
+                } catch (_) {
+                    typedDefenseMinutesList = [];
+                }
 
                 pinnedRecipients = {
                     adviserUserId: group.adviser_user_id || null,
@@ -1984,7 +2023,7 @@
                 category: "Outline Defense",
                 icon: "fa-clipboard-check",
                 iconClass: "yellow",
-                description: "Upload early chapters and defense requirements. Defense minutes must be submitted as photos (1–5 photos) showing panelist signatures, and require adviser approval.",
+                description: "Upload early chapters and defense requirements. Encode and download your official Defense Minutes in A4 format after the defense presentation.",
                 items: [
                     { label: "Chapter 1 and 2", slots: 1 },
                     { label: "Recommendation for outline defense", slots: 1 },
@@ -1995,7 +2034,7 @@
                 category: "Pre-Final Defense",
                 icon: "fa-person-chalkboard",
                 iconClass: "blue",
-                description: "Upload mid chapters, defense minutes, and supporting files. Defense minutes must be submitted as photos (1–5 photos) showing panelist signatures, and require adviser approval.",
+                description: "Upload mid chapters and supporting files. Encode and download your official Defense Minutes in A4 format after the defense presentation.",
                 items: [
                     { label: "Chapter 3-4", slots: 1 },
                     { label: "Recommendation letter", slots: 1 },
@@ -2006,7 +2045,7 @@
                 category: "Final Defense",
                 icon: "fa-graduation-cap",
                 iconClass: "purple",
-                description: "Upload final chapters, defense minutes, and supporting files. Defense minutes must be submitted as photos (1–5 photos) showing panelist signatures, and require adviser approval.",
+                description: "Upload final chapters and supporting files. Encode and download your official Defense Minutes in A4 format after the defense presentation.",
                 items: [
                     { label: "Chapter 1-4", slots: 1 },
                     { label: "Recommendation letter", slots: 1 },
@@ -2128,8 +2167,17 @@
             );
         }
 
+        /* Typed Defense Minutes are approved/complete once Adviser and all grading Panelists have signed */
+        function isTypedDefenseMinutesCompleted(category){
+            const rec = getSentTypedDefenseMinutes(category);
+            return !!(rec && String(rec.status || "").trim() === "Completed");
+        }
+
         /* Legacy/plain defense minutes document approved check */
         function isDefenseMinutesApproved(category, baseLabel){
+            if(isTypedDefenseMinutesCompleted(category)){
+                return true;
+            }
             const docType = `${category} • ${baseLabel}`;
             return (studentDocuments || []).some(doc => {
                 const typeStr = String(doc.document_type || "");
@@ -2215,23 +2263,6 @@
         }
 
         function getSlotDisplayLabel(baseLabel, slotIndex, totalSlots, category){
-            if(
-                category === "Concept Presentation"
-                && baseLabel === "Proposed concept paper"
-            ){
-                const proposal =
-                    getTitleProposalForSlot(slotIndex);
-
-                const titleText =
-                    proposal && proposal.proposed_title
-                    ? proposal.proposed_title
-                    : null;
-
-                if(titleText){
-                    return `${baseLabel} (${slotIndex}) — ${titleText}`;
-                }
-            }
-
             if(totalSlots > 1){
                 return `${baseLabel} (${slotIndex})`;
             }
@@ -2462,14 +2493,9 @@
         }
 
         function isCatalogSlotApproved(category, baseLabel, slotIndex, totalSlots){
-            // Defense minutes pictures require adviser approval to count as complete
-            if(isDefenseMinutesPictureLabel(category, baseLabel)){
-                return isDefenseMinutesPictureApproved(category, baseLabel);
-            }
-
-            // Legacy: plain "Defense minutes" label (non-picture) always passes
-            if(isDefenseMinutesLabel(baseLabel) && !isDefenseMinutesPictureLabel(category, baseLabel)){
-                return true;
+            // Typed Defense Minutes: complete once encoded & saved for this phase
+            if(isDefenseMinutesLabel(baseLabel)){
+                return hasSavedDefenseMinutes(category);
             }
 
             const documentItem =
@@ -2485,6 +2511,15 @@
                 );
 
             if(!phase){
+                return true;
+            }
+
+            // If this phase has Defense Minutes and the typed Defense Minutes are approved & e-signed (Completed),
+            // unlock the next phase immediately (e.g. Outline -> Pre-Final, Pre-Final -> Final).
+            const phaseHasDefenseMinutes = phase.items.some(item =>
+                isDefenseMinutesLabel(item.label) || isDefenseMinutesPictureLabel(category, item.label)
+            );
+            if(phaseHasDefenseMinutes && isTypedDefenseMinutesCompleted(category)){
                 return true;
             }
 
@@ -3034,104 +3069,137 @@
             </span>`;
         }
 
-        /* ---- Defense Minutes (Picture) Row ---- */
-        function buildDefenseMinutesPictureRow(category, baseLabel, isPhaseLocked){
-            const docType = `${category} • ${baseLabel}`;
-            // Gather all picture uploads for this defense minutes slot
-            const pictures = studentDocuments.filter(doc =>
-                String(doc.document_type || "") === docType
-            ).sort((a,b) => Number(a.id) - Number(b.id));
+        /* ---- Defense Minutes (Typed Form & A4 Print) Row ---- */
+        function getDefenseMinutesStorageKey(category){
+            const gKey = (currentGroup && (currentGroup.group_db_id || currentGroup.group_id)) || loggedInUserId || "guest";
+            return `capx_defense_minutes_${gKey}_${String(category || "").trim().toLowerCase()}`;
+        }
 
-            const approvedDoc = pictures.find(doc =>
-                String(doc.document_status || "") === "Approved" || isAdviserLocked(doc)
+        function loadSavedDefenseMinutes(category){
+            try{
+                const raw = localStorage.getItem(getDefenseMinutesStorageKey(category));
+                if(!raw) return null;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === "object" ? parsed : null;
+            }catch(e){
+                return null;
+            }
+        }
+
+        function hasSavedDefenseMinutes(category){
+            const saved = loadSavedDefenseMinutes(category);
+            if(!saved || !Array.isArray(saved.panelists)) return false;
+            return saved.panelists.some(p =>
+                Array.isArray(p.rows) && p.rows.some(r =>
+                    String(r.pageNo || "").trim() || String(r.comments || "").trim() || String(r.actions || "").trim()
+                )
             );
-            const isApproved = !!approvedDoc;
+        }
 
+        let typedDefenseMinutesList = [];
+
+        function getSentTypedDefenseMinutes(category){
+            return (typedDefenseMinutesList || []).find(m =>
+                String(m.defense_type || "").trim().toLowerCase() === String(category || "").trim().toLowerCase()
+            ) || null;
+        }
+
+        function buildDefenseMinutesPictureRow(category, baseLabel, isPhaseLocked){
             const isGraded = isDefenseGradedForPhase(category);
             const prevComplete = isPreviousPhaseComplete(category);
             const phaseLocked = isCatalogPhaseLocked(category, baseLabel) || !prevComplete;
             const notGradedLocked = !isGraded;
+            const isSaved = hasSavedDefenseMinutes(category);
+            const sentRec = getSentTypedDefenseMinutes(category);
 
-            let statusText = "No pictures uploaded";
+            let statusText = "Not encoded yet";
             let statusClass = "not-uploaded";
-            if(isApproved){
-                statusText = `Approved by adviser (${pictures.length} photo${pictures.length !== 1 ? 's' : ''})`;
-                statusClass = "approved";
-            } else if(pictures.length > 0){
-                const sent = pictures.find(doc =>
-                    Number(doc.is_sent) === 1 || Number(doc.submission_count || 0) > 0
-                );
-                if(sent){
-                    statusText = `${pictures.length}/5 photo${pictures.length !== 1 ? 's' : ''} uploaded — Pending adviser approval`;
+            if(sentRec){
+                if(sentRec.status === "Completed"){
+                    statusText = "Completed — All signatures affixed";
+                    statusClass = "approved";
+                } else if(sentRec.status === "Subject to Change"){
+                    statusText = "Needs Revision — Edit & re-send (existing signatures kept)";
+                    statusClass = "revision";
+                } else if(sentRec.status === "Rejected"){
+                    statusText = "Rejected by Panelist — Edit & re-send";
+                    statusClass = "rejected";
+                } else if(sentRec.status === "Pending Panelist Signatures"){
+                    let elig = [];
+                    let sigs = [];
+                    try { elig = JSON.parse(sentRec.eligible_panelist_ids_json || "[]"); } catch(_) {}
+                    try { sigs = JSON.parse(sentRec.panelist_signatures_json || "[]").filter(s => s && s.signatureImage); } catch(_) {}
+                    statusText = `Adviser Signed — Pending Panelists (${sigs.length}/${elig.length}) • Editable`;
                     statusClass = "pending";
                 } else {
-                    statusText = `${pictures.length}/5 photo${pictures.length !== 1 ? 's' : ''} uploaded — Not sent yet`;
-                    statusClass = "not-sent";
+                    statusText = "Sent to Adviser — Pending Adviser E-Signature";
+                    statusClass = "pending";
                 }
-            } else if(!phaseLocked && notGradedLocked){
-                statusText = "Upload locked — presentation must be graded by panel first";
+            } else if(isSaved){
+                statusText = "Encoded & Saved (Ready to send to Adviser)";
+                statusClass = "not-sent";
+            } else if(phaseLocked){
+                statusText = "Phase locked — complete previous phase first";
+                statusClass = "not-uploaded";
+            } else if(notGradedLocked){
+                statusText = "Locked — presentation must be graded by panel first";
                 statusClass = "not-uploaded";
             }
 
-            const isMaxReached = pictures.length >= 5;
-            const canUploadMore = !isApproved && !phaseLocked && !notGradedLocked && !isMaxReached;
-
             const safeCategory = category.replace(/'/g, "\\'");
-            const safeLabel = baseLabel.replace(/'/g, "\\'");
-
             const rowClass = phaseLocked ? "doc-slot-row phase-slot-locked" : "doc-slot-row defense-minutes-picture-row";
 
-            const uploadBtn = isApproved
-                ? `<button class="slot-btn disabled" type="button" disabled title="Approved by adviser — locked">
-                    <i class="fa-solid fa-lock"></i> Locked
-                   </button>`
-                : phaseLocked
+            const isCompleted = sentRec && sentRec.status === "Completed";
+            let hasAnySignature = false;
+            if(sentRec){
+                if(sentRec.adviser_signature_json) hasAnySignature = true;
+                try {
+                    const pSigs = JSON.parse(sentRec.panelist_signatures_json || "[]");
+                    if(Array.isArray(pSigs) && pSigs.some(s => s && s.signatureImage)) hasAnySignature = true;
+                } catch(_) {}
+            }
+            const isSendDisabled = isCompleted || hasAnySignature || (sentRec && sentRec.status === "Pending Adviser Signature");
+
+            const encodeBtn = phaseLocked
                 ? `<button class="slot-btn disabled" type="button" disabled title="Complete previous phase first">
                     <i class="fa-solid fa-lock"></i> Phase Locked
                    </button>`
                 : notGradedLocked
-                ? `<button class="slot-btn disabled" type="button" disabled title="Defense minutes can only be uploaded after the defense presentation has been graded by the panel">
+                ? `<button class="slot-btn disabled" type="button" disabled title="Defense minutes can only be encoded after the defense presentation has been graded by the panel">
                     <i class="fa-solid fa-lock"></i> Awaiting Defense Grading
                    </button>`
-                : isMaxReached
-                ? `<button class="slot-btn disabled" type="button" disabled title="Maximum of 5 photos reached">
-                    <i class="fa-solid fa-check"></i> Max 5
+                : isCompleted
+                ? `<button class="slot-btn view" type="button"
+                    onclick="viewSignedDefenseMinutes('${safeCategory}')">
+                    <i class="fa-solid fa-eye"></i> View Signed
                    </button>`
                 : `<button class="slot-btn upload" type="button"
-                    onclick="openDefenseMinutesPictureModal('${safeCategory}','${safeLabel}')">
-                    <i class="fa-solid fa-camera"></i>
-                    ${pictures.length > 0 ? 'Add More' : 'Upload Photos'}
+                    onclick="openDefenseMinutesEditor('${safeCategory}')">
+                    <i class="fa-solid fa-file-pen"></i>
+                    ${isSaved ? "Edit Minutes" : "Encode Minutes"}
                    </button>`;
 
-            const viewBtn = pictures.length > 0
-                ? `<button class="slot-btn view" type="button"
-                    onclick="openDefenseMinutesPictureGallery('${safeCategory}','${safeLabel}')">
-                    <i class="fa-solid fa-images"></i>
-                    View (${pictures.length})
+            const sendBtn = isSendDisabled
+                ? `<button class="slot-btn disabled" type="button" disabled title="${isCompleted ? 'All grading panelists have signed' : 'Already sent — use Edit Minutes and Save to update'}">
+                    <i class="fa-solid fa-check"></i> ${isCompleted ? "Completed" : "Sent"}
                    </button>`
-                : `<button class="slot-btn disabled" type="button" disabled>
-                    <i class="fa-solid fa-images"></i> View
-                   </button>`;
-
-            const sendBtn = (pictures.length >= 1 && !isApproved && !phaseLocked && !notGradedLocked)
+                : isSaved
                 ? `<button class="slot-btn send" type="button"
-                    onclick="openDefenseMinutesSendModal('${safeCategory}','${safeLabel}')">
-                    <i class="fa-solid fa-paper-plane"></i> Send to Adviser
+                    onclick="sendTypedDefenseMinutesToAdviser('${safeCategory}')">
+                    <i class="fa-solid fa-paper-plane"></i> Send
                    </button>`
-                : `<button class="slot-btn disabled" type="button" disabled
-                    title="${isApproved ? 'Already approved' : (notGradedLocked ? 'Presentation must be graded before sending minutes' : (pictures.length < 1 ? 'Upload at least 1 photo before sending' : ''))}">` +
-                  `<i class="fa-solid fa-paper-plane"></i> Send
-                  </button>`;
+                : `<button class="slot-btn disabled" type="button" disabled title="Encode and save your defense minutes first">
+                    <i class="fa-solid fa-paper-plane"></i> Send
+                   </button>`;
 
             return `
                 <div class="${rowClass}">
                     <div class="doc-slot-main">
-                        <span class="doc-name">${baseLabel} <span style="font-size:11px;color:#7c3aed;font-weight:600;">(1–5 Photos • Physical Defense)</span></span>
+                        <span class="doc-name">${baseLabel} <span style="font-size:11px;color:#7c3aed;font-weight:600;">(Typed Form • A4)</span> <button type="button" class="dm-help-btn" onclick="openDefenseMinutesHelpModal()" title="How does defense minutes work?" aria-label="How does defense minutes work?"><i class="fa-solid fa-circle-question"></i></button></span>
                         <span class="slot-status ${statusClass}">${statusText}</span>
                     </div>
                     <div class="doc-slot-actions">
-                        ${uploadBtn}
-                        ${viewBtn}
+                        ${encodeBtn}
                         ${sendBtn}
                     </div>
                 </div>
@@ -3314,255 +3382,807 @@
             `;
         }
 
-        /* ---- Defense Minutes Picture Modal ---- */
-        let pendingDefMinCategory = null;
-        let pendingDefMinLabel = null;
-        let pendingDefMinSendCategory = null;
-        let pendingDefMinSendLabel = null;
-
-        function openDefenseMinutesPictureModal(category, baseLabel){
-            if(!isDefenseGradedForPhase(category)){
-                alert(`Defense minutes for "${category}" can only be uploaded after your group has completed the defense presentation and received panel grades.`);
-                return;
-            }
-
-            const docType = `${category} • ${baseLabel}`;
-            const existing = studentDocuments.filter(doc =>
-                String(doc.document_type || "") === docType
-            );
-            if(existing.length >= 5){
-                alert("Maximum of 5 photos already uploaded for this defense minutes slot.");
-                return;
-            }
-
-            pendingDefMinCategory = category;
-            pendingDefMinLabel = baseLabel;
-            document.getElementById("defMinPictureCategory").value = category;
-            document.getElementById("defMinPictureLabel").value = baseLabel;
-            document.getElementById("defMinPictureFile").value = "";
-            document.getElementById("defMinPicturePreview").innerHTML = "";
-            document.getElementById("defMinPictureModal").style.display = "flex";
+        /* ---- Defense Minutes Typed Editor & A4 Print Modal ---- */
+        function openDefenseMinutesHelpModal(){
+            const modal = document.getElementById("defenseMinutesHelpModal");
+            if(modal) modal.style.display = "flex";
         }
 
-        function closeDefenseMinutesPictureModal(){
-            document.getElementById("defMinPictureModal").style.display = "none";
-            pendingDefMinCategory = null;
-            pendingDefMinLabel = null;
+        function closeDefenseMinutesHelpModal(){
+            const modal = document.getElementById("defenseMinutesHelpModal");
+            if(modal) modal.style.display = "none";
+        }
+        let dmContextCache = null;
+        let dmEditorState = null;
+
+        function escapeDmHtml(str){
+            return String(str || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
         }
 
-        function previewDefMinPictures(input){
-            const preview = document.getElementById("defMinPicturePreview");
-            preview.innerHTML = "";
-            const files = Array.from(input.files || []);
-            if(files.length === 0) return;
-
-            const category = pendingDefMinCategory;
-            const baseLabel = pendingDefMinLabel;
-            const docType = `${category} • ${baseLabel}`;
-            const existing = studentDocuments.filter(doc =>
-                String(doc.document_type || "") === docType
-            );
-            const remaining = Math.max(0, 5 - existing.length);
-            if(files.length > remaining){
-                alert(`You can only select up to ${remaining} photo(s). (Currently uploaded: ${existing.length}/5)`);
-                input.value = "";
-                return;
-            }
-
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const img = document.createElement("img");
-                    img.src = e.target.result;
-                    img.style.cssText = "width:100px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e9d5ff;";
-                    preview.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            });
+        function formatDmDateLong(val){
+            if(!val) return "TBA";
+            const d = new Date(val);
+            if(Number.isNaN(d.getTime())) return String(val);
+            return d.toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" });
         }
 
-        async function uploadDefenseMinutesPictures(){
-            const category = pendingDefMinCategory;
-            const baseLabel = pendingDefMinLabel;
-            if(!category || !baseLabel){ alert("Missing category/label."); return; }
+        function getDmPhaseTag(category){
+            const lower = String(category || "").toLowerCase();
+            if(lower.includes("pre-final") || lower.includes("prefinal")) return "PRE-FINAL";
+            if(lower.includes("final")) return "FINAL";
+            return "OUTLINE";
+        }
 
-            if(!isDefenseGradedForPhase(category)){
-                alert(`Defense minutes for "${category}" can only be uploaded after your group has completed the defense presentation and received panel grades.`);
-                return;
+        function getLastNameSortKey(fullname){
+            const parts = String(fullname || "").trim().replace(/\s+/g, " ").split(" ").filter(Boolean);
+            if(!parts.length) return "";
+            const suffixes = new Set(["JR", "JR.", "SR", "SR.", "II", "III", "IV", "V"]);
+            let lastIdx = parts.length - 1;
+            if(lastIdx > 0 && suffixes.has(parts[lastIdx].toUpperCase())){
+                lastIdx -= 1;
             }
+            return parts[lastIdx].toLowerCase();
+        }
 
-            const fileInput = document.getElementById("defMinPictureFile");
-            const files = Array.from(fileInput.files || []);
+        async function ensureDefenseMinutesContextLoaded(){
+            if(dmContextCache) return dmContextCache;
+            let schedules = [];
+            let members = [];
+            let conceptEvaluations = [];
 
-            if(files.length === 0){
-                alert("Please select at least one picture.");
-                return;
-            }
-
-            const allowedExt = ["jpg","jpeg","png","webp"];
-            const invalid = files.find(f => !allowedExt.includes(f.name.split(".").pop().toLowerCase()));
-            if(invalid){
-                alert("Only image files are allowed (JPG, PNG, WEBP).");
-                return;
-            }
-
-            // Count existing pictures
-            const docType = `${category} • ${baseLabel}`;
-            const existing = studentDocuments.filter(doc =>
-                String(doc.document_type || "") === docType
-            );
-            if(existing.length >= 5){
-                alert("Maximum of 5 photos already uploaded for this defense minutes slot.");
-                return;
-            }
-            if(existing.length + files.length > 5){
-                const remaining = 5 - existing.length;
-                alert(`You can only upload ${remaining} more photo(s). (Maximum of 5 photos total; currently ${existing.length})`);
-                return;
-            }
-
-            let uploadedCount = 0;
-            let lastErrorMsg = "";
-            for(const file of files){
-                const num = existing.length + uploadedCount + 1;
-                const formData = new FormData();
-                formData.append("studentUserId", loggedInUserId);
-                formData.append("documentType", docType);
-                formData.append("documentTitle", `${category} - ${baseLabel} (${num})`);
-                formData.append("documentFile", file);
-
-                try{
-                    const resp = await fetch("/upload-defense-minutes-picture", {
-                        method: "POST",
-                        body: formData
-                    });
-                    const rawText = await resp.text();
-                    let data = null;
-                    try { data = JSON.parse(rawText); } catch (parseErr) {}
-                    if(data && data.success){
-                        uploadedCount++;
-                    } else {
-                        lastErrorMsg = (data && data.message) ? data.message : "Server endpoint not active yet — please restart node Server.js.";
+            try{
+                const [schedRes, grpRes] = await Promise.all([
+                    fetch(`/student-defense-schedules/${encodeURIComponent(loggedInUserId)}`),
+                    fetch(`/student-group/${encodeURIComponent(loggedInUserId)}`)
+                ]);
+                const schedData = await schedRes.json();
+                if(schedData && schedData.success && Array.isArray(schedData.schedules)){
+                    schedules = schedData.schedules;
+                }
+                const grpData = await grpRes.json();
+                if(grpData && grpData.success){
+                    if(grpData.group && Array.isArray(grpData.group.members)){
+                        members = grpData.group.members;
+                    } else if(Array.isArray(grpData.members)){
+                        members = grpData.members;
                     }
-                }catch(err){
-                    console.error(err);
-                    lastErrorMsg = "Could not connect to server.";
+                }
+
+                const conceptSched = schedules.find(s => String(s.defense_type || "").trim().toLowerCase() === "concept presentation");
+                if(conceptSched && conceptSched.schedule_id){
+                    const evalRes = await fetch(`/defense-panel-evaluations/${encodeURIComponent(conceptSched.schedule_id)}`);
+                    const evalData = await evalRes.json();
+                    if(evalData && evalData.success && Array.isArray(evalData.panel_evaluations)){
+                        conceptEvaluations = evalData.panel_evaluations;
+                    }
+                }
+            }catch(e){
+                console.warn("Could not load defense minutes context:", e);
+            }
+
+            dmContextCache = { schedules, members, conceptEvaluations };
+            return dmContextCache;
+        }
+
+        function resolveDefenseMinutesMeta(category, ctx){
+            const schedules = ctx && Array.isArray(ctx.schedules) ? ctx.schedules : [];
+            const membersRaw = ctx && Array.isArray(ctx.members) ? ctx.members : [];
+            const conceptEvaluations = ctx && Array.isArray(ctx.conceptEvaluations) ? ctx.conceptEvaluations : [];
+
+            const catLower = String(category || "").trim().toLowerCase();
+            const matchingSched = schedules.find(s => String(s.defense_type || "").trim().toLowerCase() === catLower) || null;
+
+            // Auto-resolve title picked during Concept Presentation:
+            // Most panelist picks wins; on a tie (e.g. all 3 different), first pick during evaluation wins.
+            let approvedTitle = "";
+            if(conceptEvaluations.length > 0){
+                const counts = new Map();
+                conceptEvaluations.forEach(ev => {
+                    try{
+                        const d = typeof ev.concept_evaluation_details === "string"
+                            ? JSON.parse(ev.concept_evaluation_details)
+                            : ev.concept_evaluation_details;
+                        const t = d && d.selected_title_text ? String(d.selected_title_text).trim() : "";
+                        if(t) counts.set(t, (counts.get(t) || 0) + 1);
+                    }catch(_){}
+                });
+                if(counts.size > 0){
+                    approvedTitle = Array.from(counts.entries()).sort((a,b) => b[1] - a[1])[0][0];
                 }
             }
 
-            if(uploadedCount > 0){
-                closeDefenseMinutesPictureModal();
-                alert(`${uploadedCount} picture(s) uploaded successfully.`);
-                await loadStudentDocuments();
-            } else {
-                alert(lastErrorMsg || "Failed to upload defense minutes photo(s). Please make sure node Server.js is restarted.");
+            if(!approvedTitle && currentGroup && currentGroup.project_title){
+                approvedTitle = String(currentGroup.project_title).trim();
             }
+            if(!approvedTitle && Array.isArray(titleProposals) && titleProposals.length > 0){
+                const approvedProp = titleProposals.find(tp => String(tp.proposal_status || "").toLowerCase().includes("approved"));
+                if(approvedProp && approvedProp.proposed_title) approvedTitle = approvedProp.proposed_title;
+            }
+
+            const rawProg = currentGroup && currentGroup.program ? String(currentGroup.program).trim().toUpperCase() : "";
+            const program = (rawProg === "IS" || rawProg === "BSIS") ? "BSIS" : (rawProg === "IT" || rawProg === "BSIT") ? "BSIT" : (rawProg || "BSIS");
+
+            const defenseDate = matchingSched ? formatDmDateLong(matchingSched.defense_date) : "TBA";
+            const memberNames = membersRaw
+                .map(m => String(m.fullname || "").trim().toUpperCase())
+                .filter(Boolean)
+                .sort((a, b) => {
+                    const cmp = getLastNameSortKey(a).localeCompare(getLastNameSortKey(b));
+                    return cmp !== 0 ? cmp : a.localeCompare(b);
+                });
+
+            const rawPanelists = matchingSched && Array.isArray(matchingSched.panelists) && matchingSched.panelists.length > 0
+                ? matchingSched.panelists
+                : [
+                    { roleLabel: "Panel Chairman", panelistName: "Panel Chairman" },
+                    { roleLabel: "Panel Member", panelistName: "Panel Member 1" },
+                    { roleLabel: "Panel Member", panelistName: "Panel Member 2" }
+                ];
+
+            const panelists = rawPanelists.slice(0, 3).map((p, idx) => ({
+                name: String(p.panelistName || `Panelist ${idx + 1}`).trim(),
+                role: idx === 0 || String(p.roleLabel || "").toLowerCase().includes("chair") ? "Panel Chairman" : "Panel Member"
+            }));
+
+            return {
+                category,
+                phaseTag: getDmPhaseTag(category),
+                title: approvedTitle || "Not Set",
+                program,
+                defenseDate,
+                members: memberNames,
+                adviserName: currentGroup && currentGroup.adviser_name ? String(currentGroup.adviser_name).trim().toUpperCase() : "ADVISER",
+                panelists
+            };
         }
 
-        function openDefenseMinutesPictureGallery(category, baseLabel){
-            const docType = `${category} • ${baseLabel}`;
-            const pictures = studentDocuments.filter(doc =>
-                String(doc.document_type || "") === docType
-            ).sort((a,b) => Number(a.id) - Number(b.id));
+        async function openDefenseMinutesEditor(category){
+            const ctx = await ensureDefenseMinutesContextLoaded();
+            const meta = resolveDefenseMinutesMeta(category, ctx);
+            const savedLocal = loadSavedDefenseMinutes(category);
+            const sentRec = getSentTypedDefenseMinutes(category);
+            let serverMinutes = null;
+            try {
+                if(sentRec && sentRec.minutes_json){
+                    serverMinutes = JSON.parse(sentRec.minutes_json);
+                }
+            } catch(_) {}
 
-            if(pictures.length === 0){
-                alert("No pictures uploaded yet.");
-                return;
+            // Prefer server data if local is missing or server was updated more recently
+            let sourceSaved = savedLocal;
+            if(serverMinutes && Array.isArray(serverMinutes.panelists)){
+                const localTs = savedLocal && savedLocal.updatedAt ? new Date(savedLocal.updatedAt).getTime() : 0;
+                const serverTs = sentRec && sentRec.updated_at ? new Date(sentRec.updated_at).getTime() : 0;
+                if(!savedLocal || serverTs >= localTs){
+                    sourceSaved = serverMinutes;
+                }
             }
 
-            const galleryEl = document.getElementById("defMinGalleryGrid");
-            galleryEl.innerHTML = "";
-            pictures.forEach((pic, i) => {
-                const div = document.createElement("div");
-                div.style.cssText = "position:relative;";
-                div.innerHTML = `
-                    <a href="${pic.file_path}" target="_blank" title="Open picture ${i+1}">
-                        <img src="${pic.file_path}"
-                            style="width:140px;height:110px;object-fit:cover;border-radius:10px;border:2px solid #e9d5ff;display:block;"
-                            onerror="this.style.background='#f1f5f9';this.alt='Image ${i+1}';">
-                    </a>
-                    <div style="text-align:center;font-size:11px;color:#6d5f85;margin-top:4px;">Photo ${i+1}</div>
-                `;
-                galleryEl.appendChild(div);
+            const panelistSections = meta.panelists.map((p, idx) => {
+                const savedPanel = sourceSaved && Array.isArray(sourceSaved.panelists) ? sourceSaved.panelists[idx] : null;
+                const rows = savedPanel && Array.isArray(savedPanel.rows) && savedPanel.rows.length > 0
+                    ? savedPanel.rows.map(r => ({
+                        pageNo: r.pageNo || "",
+                        comments: r.comments || "",
+                        actions: r.actions || ""
+                    }))
+                    : [{ pageNo: "", comments: "", actions: "" }];
+
+                return {
+                    name: p.name,
+                    role: p.role,
+                    rows
+                };
             });
 
-            const approvedDoc = pictures.find(doc =>
-                String(doc.document_status || "") === "Approved" || isAdviserLocked(doc)
-            );
-            document.getElementById("defMinGalleryTitle").textContent = `${category} — ${baseLabel} (${pictures.length}/5 photos)`;
-            document.getElementById("defMinGalleryStatus").textContent =
-                approvedDoc ? "✓ Approved by Adviser" :
-                (pictures.length >= 1 ? `${pictures.length}/5 photo(s) uploaded — Send to adviser for approval` :
-                `No photos uploaded yet`);
-            document.getElementById("defMinGalleryModal").style.display = "flex";
+            dmEditorState = {
+                category,
+                meta,
+                panelists: panelistSections
+            };
+
+            document.getElementById("dmEditorTitle").innerHTML =
+                `<i class="fa-solid fa-file-pen" style="color:#7c3aed;"></i> Encode [${meta.phaseTag}] Defense Minutes`;
+
+            renderDefenseMinutesEditorBody();
+            document.getElementById("defenseMinutesEditorModal").style.display = "flex";
         }
 
-        function closeDefenseMinutesPictureGallery(){
-            document.getElementById("defMinGalleryModal").style.display = "none";
+        function closeDefenseMinutesEditor(){
+            document.getElementById("defenseMinutesEditorModal").style.display = "none";
         }
 
-        async function openDefenseMinutesSendModal(category, baseLabel){
-            const docType = `${category} • ${baseLabel}`;
-            const pictures = studentDocuments.filter(doc =>
-                String(doc.document_type || "") === docType
-            ).sort((a,b) => Number(a.id) - Number(b.id));
+        function syncDmEditorInputsToState(){
+            if(!dmEditorState) return;
+            dmEditorState.panelists.forEach((p, pIdx) => {
+                p.rows.forEach((r, rIdx) => {
+                    const pageEl = document.getElementById(`dm_page_${pIdx}_${rIdx}`);
+                    const commEl = document.getElementById(`dm_comm_${pIdx}_${rIdx}`);
+                    const actEl = document.getElementById(`dm_act_${pIdx}_${rIdx}`);
+                    if(pageEl) r.pageNo = pageEl.value;
+                    if(commEl) r.comments = commEl.value;
+                    if(actEl) r.actions = actEl.value;
+                });
+            });
+        }
 
-            if(pictures.length < 1){
-                alert("Please upload at least 1 photo of your defense minutes before sending.");
-                return;
+        function addDefenseMinutesRow(pIdx){
+            if(!dmEditorState || !dmEditorState.panelists[pIdx]) return;
+            syncDmEditorInputsToState();
+            dmEditorState.panelists[pIdx].rows.push({ pageNo: "", comments: "", actions: "" });
+            renderDefenseMinutesEditorBody();
+        }
+
+        function removeDefenseMinutesRow(pIdx, rIdx){
+            if(!dmEditorState || !dmEditorState.panelists[pIdx]) return;
+            syncDmEditorInputsToState();
+            if(dmEditorState.panelists[pIdx].rows.length <= 1){
+                dmEditorState.panelists[pIdx].rows[0] = { pageNo: "", comments: "", actions: "" };
+            } else {
+                dmEditorState.panelists[pIdx].rows.splice(rIdx, 1);
+            }
+            renderDefenseMinutesEditorBody();
+        }
+
+        function autoGrowDmTextarea(el){
+            if(!el) return;
+            el.style.height = "auto";
+            el.style.height = Math.max(44, el.scrollHeight) + "px";
+        }
+
+        function buildDmHeaderHtml(){
+            return `
+                <div class="dm-page-header-wrap">
+                    <div class="dm-dnsc-header">
+                        <div class="dm-dnsc-header-left">
+                            <img src="../Images/dnsc/dnsc_logo.png" alt="DNSC Seal" class="dm-dnsc-seal">
+                            <div>
+                                <div class="dm-dnsc-name">DAVAO DEL NORTE<br>STATE COLLEGE</div>
+                                <div class="dm-dnsc-motto">"Inspiring Change, Creating Futures"</div>
+                            </div>
+                        </div>
+                        <div class="dm-dnsc-header-right">
+                            <div>president@dnsc.edu.ph <img src="../Images/dnsc/icon_email.png" alt="" class="dm-dnsc-icon"></div>
+                            <div>dnsc.edu.ph <img src="../Images/dnsc/icon_web.png" alt="" class="dm-dnsc-icon"></div>
+                            <div>@officialdnsc <img src="../Images/dnsc/icon_fb.png" alt="" class="dm-dnsc-icon"></div>
+                            <div>New Visayas, Panabo City, 8105</div>
+                        </div>
+                    </div>
+                    <div class="dm-institute-bar">Institute of Computing</div>
+                </div>
+            `;
+        }
+
+        function buildDmFooterHtml(){
+            return `
+                <div class="dm-dnsc-footer">
+                    <div class="dm-footer-vmc">
+                        <div class="dm-vmc-col">
+                            <div class="dm-vmc-title">VISION</div>
+                            <div class="dm-vmc-text">An institution leading in agri-fisheries and socio-cultural development in the ASEAN region.</div>
+                        </div>
+                        <div class="dm-vmc-col">
+                            <div class="dm-vmc-title">MISSION</div>
+                            <div class="dm-vmc-text">DNSC shall produce future-ready workforce, create innovative solutions and technologies, empower communities, and uphold good governance towards sustainable development.</div>
+                        </div>
+                        <div class="dm-vmc-col">
+                            <div class="dm-vmc-title">CORE VALUES</div>
+                            <div class="dm-vmc-text">Stewardship<br>Adaptability and Excellence<br>Integrity and Innovativeness<br>Love of God and Country</div>
+                        </div>
+                    </div>
+                    <div class="dm-footer-logos">
+                        <img src="../Images/dnsc/bagong_pilipinas.png" alt="Bagong Pilipinas">
+                        <img src="../Images/dnsc/iso_w3.png" alt="ISO 9001:2015">
+                    </div>
+                </div>
+            `;
+        }
+
+        function estimateDmRowHeight(row){
+            const commLines = Math.max(2, String(row.comments || "").split(/\r?\n/).reduce((sum, l) => sum + Math.max(1, Math.ceil(l.length / 36)), 0));
+            const actLines = Math.max(2, String(row.actions || "").split(/\r?\n/).reduce((sum, l) => sum + Math.max(1, Math.ceil(l.length / 36)), 0));
+            const maxLines = Math.max(commLines, actLines);
+            return Math.max(64, maxLines * 15 + 24);
+        }
+
+        function renderDefenseMinutesEditorBody(){
+            if(!dmEditorState) return;
+            const { meta, panelists } = dmEditorState;
+
+            const membersHtml = meta.members.length
+                ? meta.members.map((m, i) => `
+                    <div class="dm-member-row">
+                        <span class="dm-member-label">${i === 0 ? "Members:" : ""}</span>
+                        <span class="dm-member-name">${escapeDmHtml(m)}</span>
+                    </div>
+                  `).join("")
+                : `<div class="dm-member-row"><span class="dm-member-label">Members:</span><span class="dm-member-name">N/A</span></div>`;
+
+            const page1TopHtml = `
+                <div class="dm-doc-title">[${escapeDmHtml(meta.phaseTag)}] DEFENSE MINUTES</div>
+                <div class="dm-meta-block">
+                    <div class="dm-meta-line"><strong>Title:</strong> ${escapeDmHtml(meta.title)}</div>
+                    <div class="dm-meta-split">
+                        <div><strong>Program:</strong> ${escapeDmHtml(meta.program)}</div>
+                        <div><strong>Date of Defense:</strong> ${escapeDmHtml(meta.defenseDate)}</div>
+                    </div>
+                    <div class="dm-members-block">
+                        ${membersHtml}
+                    </div>
+                </div>
+            `;
+
+            const sentRec = getSentTypedDefenseMinutes(dmEditorState.category);
+            let lockedAdvSig = null;
+            let lockedPanelSigs = [];
+            try {
+                if(sentRec && sentRec.adviser_signature_json) lockedAdvSig = JSON.parse(sentRec.adviser_signature_json);
+            } catch(_) {}
+            try {
+                if(sentRec && sentRec.panelist_signatures_json){
+                    const arr = JSON.parse(sentRec.panelist_signatures_json);
+                    if(Array.isArray(arr)){
+                        lockedPanelSigs = arr.filter(s => s && s.signatureImage && s.reviewStatus !== "Subject to Change" && s.reviewStatus !== "Rejected");
+                    }
+                }
+            } catch(_) {}
+
+            const findLockedPanelSig = (panelName) => {
+                const target = String(panelName || "").trim().toLowerCase();
+                return lockedPanelSigs.find(s => {
+                    const by = String(s.signedBy || "").trim().toLowerCase();
+                    return by && (by === target || target.includes(by) || by.includes(target));
+                }) || null;
+            };
+
+            const adviserBlockHtml = `
+                <div class="dm-adviser-signoff">
+                    ${lockedAdvSig && lockedAdvSig.signatureImage
+                        ? `<div class="dm-anchored-sig-wrap"><img src="${escapeDmHtml(lockedAdvSig.signatureImage)}" alt="Adviser Signature" class="dm-anchored-sig-img"></div>`
+                        : `<div class="dm-adviser-sig-space"></div>`}
+                    <div class="dm-adviser-name">${escapeDmHtml(meta.adviserName)}</div>
+                    <div class="dm-adviser-role">Adviser</div>
+                    <div class="dm-adviser-date">Date Signed: ${lockedAdvSig && lockedAdvSig.dateSigned ? `<span class="dm-anchored-date">${escapeDmHtml(lockedAdvSig.dateSigned)}</span>` : ""}</div>
+                </div>
+            `;
+
+            // Paginate panelist rows into A4 pages (each page has its own DNSC header & footer)
+            const PAGE1_BUDGET = 610;
+            const PAGEX_BUDGET = 790;
+            const ADVISER_HEIGHT = 115;
+
+            const pages = [{ items: [], usedHeight: 0, budget: PAGE1_BUDGET }];
+
+            panelists.forEach((panel, pIdx) => {
+                panel.rows.forEach((row, rIdx) => {
+                    const rowH = estimateDmRowHeight(row);
+                    let currPage = pages[pages.length - 1];
+                    if(currPage.items.length > 0 && currPage.usedHeight + rowH > currPage.budget){
+                        pages.push({ items: [], usedHeight: 0, budget: PAGEX_BUDGET });
+                        currPage = pages[pages.length - 1];
+                    }
+                    currPage.items.push({ pIdx, rIdx, panel, row, isFirstOfPanelInTotal: rIdx === 0 });
+                    currPage.usedHeight += rowH;
+                });
+            });
+
+            // Check if Adviser signoff fits on the last page; if not, place on a new A4 page
+            let adviserOnSeparatePage = false;
+            const lastPage = pages[pages.length - 1];
+            if(lastPage.usedHeight + ADVISER_HEIGHT > lastPage.budget){
+                adviserOnSeparatePage = true;
             }
 
-            const approvedDoc = pictures.find(doc =>
-                String(doc.document_status || "") === "Approved" || isAdviserLocked(doc)
-            );
-            if(approvedDoc){
-                alert("These defense minutes have already been approved by your adviser.");
-                return;
-            }
+            const pagesHtml = pages.map((page, pageIdx) => {
+                // Group consecutive items on this page by pIdx so rowspan works per page
+                const pCountsOnPage = new Map();
+                page.items.forEach(it => {
+                    pCountsOnPage.set(it.pIdx, (pCountsOnPage.get(it.pIdx) || 0) + 1);
+                });
+                const seenPanelOnPage = new Set();
 
-            pendingDefMinSendCategory = category;
-            pendingDefMinSendLabel = baseLabel;
-            selectedDocumentId = pictures[pictures.length - 1].id;
+                const rowsHtml = page.items.map(it => {
+                    let panelistCell = "";
+                    if(!seenPanelOnPage.has(it.pIdx)){
+                        seenPanelOnPage.add(it.pIdx);
+                        const span = pCountsOnPage.get(it.pIdx);
+                        const showDetails = it.isFirstOfPanelInTotal;
+                        const lockedPSig = showDetails ? findLockedPanelSig(it.panel.name) : null;
+                        panelistCell = `
+                            <td rowspan="${span}" class="dm-panelist-cell">
+                                ${showDetails ? `
+                                    <div class="dm-panelist-name">${escapeDmHtml(it.panel.name)}</div>
+                                    <div class="dm-panelist-role">${escapeDmHtml(it.panel.role)}</div>
+                                    ${lockedPSig ? `<div class="dm-anchored-sig-wrap dm-anchored-sig-center"><img src="${escapeDmHtml(lockedPSig.signatureImage)}" alt="Panelist Signature" class="dm-anchored-sig-img"></div>` : ""}
+                                    <div class="dm-panelist-sig">Signature:</div>
+                                    <div class="dm-panelist-date">Date Signed: ${lockedPSig && lockedPSig.dateSigned ? `<span class="dm-anchored-date">${escapeDmHtml(lockedPSig.dateSigned)}</span>` : ""}</div>
+                                ` : `<div class="dm-panelist-cont">${escapeDmHtml(it.panel.name)} <span style="font-weight:400;">(cont.)</span></div>`}
+                            </td>
+                        `;
+                    }
 
-            const codes = pictures.map(p => p.document_code).filter(Boolean);
-            const codeDisplay = codes.length > 1
-                ? `${codes[0]} – ${codes[codes.length - 1]}`
-                : (codes[0] || "DOC2026");
+                    const totalRowsForPanel = it.panel.rows.length;
+                    const isLastRowForPanel = it.rIdx === totalRowsForPanel - 1;
+                    return `
+                        <tr>
+                            ${panelistCell}
+                            <td class="dm-page-cell dm-edit-cell">
+                                <input type="text" id="dm_page_${it.pIdx}_${it.rIdx}" class="dm-inline-input"
+                                    value="${escapeDmHtml(it.row.pageNo)}" placeholder="Page">
+                            </td>
+                            <td class="dm-text-cell dm-edit-cell">
+                                <textarea id="dm_comm_${it.pIdx}_${it.rIdx}" class="dm-inline-textarea" rows="2"
+                                    placeholder="Type comment / recommendation..."
+                                    oninput="autoGrowDmTextarea(this)">${escapeDmHtml(it.row.comments)}</textarea>
+                            </td>
+                            <td class="dm-text-cell dm-edit-cell dm-action-edit-cell">
+                                <textarea id="dm_act_${it.pIdx}_${it.rIdx}" class="dm-inline-textarea" rows="2"
+                                    placeholder="Type action taken..."
+                                    oninput="autoGrowDmTextarea(this)">${escapeDmHtml(it.row.actions)}</textarea>
+                                <div class="dm-row-tools dm-no-print">
+                                    ${isLastRowForPanel ? `<button type="button" class="dm-add-row-btn" onclick="addDefenseMinutesRow(${it.pIdx})" title="Add entry for ${escapeDmHtml(it.panel.name)}"><i class="fa-solid fa-plus"></i> Add Entry</button>` : ""}
+                                    ${totalRowsForPanel > 1 ? `<button type="button" class="dm-del-row-btn" onclick="removeDefenseMinutesRow(${it.pIdx}, ${it.rIdx})" title="Remove entry"><i class="fa-solid fa-trash"></i></button>` : ""}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
 
-            document.getElementById("sendDocumentTitle").innerText =
-                `${category} — ${baseLabel}`;
+                const isLast = pageIdx === pages.length - 1;
 
-            document.getElementById("sendDocumentDetails").innerText =
-                `${codeDisplay} • ${docType} • ${pictures.length} Photo${pictures.length !== 1 ? 's' : ''} Attached (Physical Defense)`;
-
-            document.getElementById("submissionMessage").value = "";
-
-            const noticeContainer =
-                document.getElementById("sendRoutingNoticeContainer");
-            if(noticeContainer){
-                noticeContainer.innerHTML = `
-                    <div class="routing-notice-box">
-                        <p style="color:#64748b;font-size:13px;margin:0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading routing details...</p>
+                return `
+                    <div class="dm-a4-page">
+                        <div class="dm-a4-page-inner">
+                            ${buildDmHeaderHtml()}
+                            <div class="dm-a4-page-body">
+                                ${pageIdx === 0 ? page1TopHtml : ""}
+                                <table class="dm-minutes-table">
+                                    ${pageIdx === 0 ? `
+                                        <thead>
+                                            <tr>
+                                                <th style="width:22%;">Panelists</th>
+                                                <th style="width:10%;">Page No.</th>
+                                                <th style="width:34%;">Comments/Suggestions/Recommendations</th>
+                                                <th style="width:34%;">Action/s Taken</th>
+                                            </tr>
+                                        </thead>
+                                    ` : ""}
+                                    <tbody>
+                                        ${rowsHtml}
+                                    </tbody>
+                                </table>
+                                ${(isLast && !adviserOnSeparatePage) ? adviserBlockHtml : ""}
+                            </div>
+                        </div>
+                        ${buildDmFooterHtml()}
                     </div>
                 `;
-            }
+            }).join("");
 
-            document.getElementById("sendModal").style.display = "flex";
+            const extraAdviserPageHtml = adviserOnSeparatePage
+                ? `
+                    <div class="dm-a4-page">
+                        <div class="dm-a4-page-inner">
+                            ${buildDmHeaderHtml()}
+                            <div class="dm-a4-page-body">
+                                ${adviserBlockHtml}
+                            </div>
+                        </div>
+                        ${buildDmFooterHtml()}
+                    </div>
+                  `
+                : "";
 
-            if(!recipients || recipients.length === 0){
-                await loadRecipients();
-            }
-
-            const syntheticItem = {
-                id: selectedDocumentId,
-                document_type: docType,
-                document_title: `${category} — ${baseLabel} (${pictures.length} photo${pictures.length !== 1 ? 's' : ''})`
-            };
-            renderSendRoutingNotice(syntheticItem);
+            document.getElementById("dmEditorBody").innerHTML = pagesHtml + extraAdviserPageHtml;
+            document.querySelectorAll("#dmEditorBody .dm-inline-textarea").forEach(autoGrowDmTextarea);
         }
 
-        function sendDefenseMinutesPictures(category, baseLabel){
-            return openDefenseMinutesSendModal(category, baseLabel);
+        async function saveDefenseMinutesDraft(openPreviewAfter){
+            if(!dmEditorState) return;
+            syncDmEditorInputsToState();
+
+            const payload = {
+                category: dmEditorState.category,
+                updatedAt: new Date().toISOString(),
+                panelists: dmEditorState.panelists
+            };
+
+            try{
+                localStorage.setItem(getDefenseMinutesStorageKey(dmEditorState.category), JSON.stringify(payload));
+            }catch(e){
+                alert("Could not save defense minutes locally.");
+                return;
+            }
+
+            const cat = dmEditorState.category;
+            const sentRec = getSentTypedDefenseMinutes(cat);
+
+            // If already submitted to Adviser/Panelists, immediately sync edits to the database (keeping locked signatures)
+            if(sentRec && currentGroup){
+                try{
+                    const ctx = await ensureDefenseMinutesContextLoaded();
+                    const matchingSched = (ctx.schedules || []).find(s =>
+                        String(s.defense_type || "").trim().toLowerCase() === String(cat || "").trim().toLowerCase()
+                    );
+                    const resp = await fetch("/typed-defense-minutes/send", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            studentUserId: loggedInUserId,
+                            groupId: currentGroup.group_db_id,
+                            scheduleId: matchingSched ? matchingSched.schedule_id : null,
+                            defenseType: cat,
+                            minutesData: {
+                                meta: dmEditorState.meta,
+                                panelists: dmEditorState.panelists
+                            }
+                        })
+                    });
+                    const resData = await resp.json();
+                    if(resData && resData.success){
+                        closeDefenseMinutesEditor();
+                        await loadStudentDocuments();
+                        alert(resData.message || "Defense minutes updated and synced!");
+                        return;
+                    }
+                }catch(err){
+                    console.warn("Could not sync edited minutes to server:", err);
+                }
+            }
+
+            renderConsultationHub();
+            updateStats();
+
+            if(openPreviewAfter){
+                closeDefenseMinutesEditor();
+                openDefenseMinutesPrintPreview(cat);
+            } else {
+                closeDefenseMinutesEditor();
+                alert("Defense minutes saved! Click Send to submit to your Adviser.");
+            }
+        }
+
+        function formatDmBulletsHtml(text){
+            const lines = String(text || "")
+                .split(/\r?\n/)
+                .map(l => l.trim())
+                .filter(Boolean);
+            if(!lines.length) return "&nbsp;";
+            return lines.map(line => {
+                const clean = line.replace(/^[-•*]\s*/, "");
+                return `<div class="dm-bullet-item">- ${escapeDmHtml(clean)}</div>`;
+            }).join("");
+        }
+
+        async function openDefenseMinutesPrintPreview(category){
+            const ctx = await ensureDefenseMinutesContextLoaded();
+            const meta = resolveDefenseMinutesMeta(category, ctx);
+            const saved = loadSavedDefenseMinutes(category);
+
+            const panelists = meta.panelists.map((p, idx) => {
+                const savedPanel = saved && Array.isArray(saved.panelists) ? saved.panelists[idx] : null;
+                const rows = savedPanel && Array.isArray(savedPanel.rows) && savedPanel.rows.length > 0
+                    ? savedPanel.rows
+                    : [{ pageNo: "", comments: "", actions: "" }];
+                return { name: p.name, role: p.role, rows };
+            });
+
+            let tableRowsHtml = "";
+            panelists.forEach(panel => {
+                const rowCount = panel.rows.length;
+                panel.rows.forEach((r, rIdx) => {
+                    const panelistCell = rIdx === 0
+                        ? `<td rowspan="${rowCount}" class="dm-panelist-cell">
+                                <div class="dm-panelist-name">${escapeDmHtml(panel.name)}</div>
+                                <div class="dm-panelist-role">${escapeDmHtml(panel.role)}</div>
+                                <div class="dm-panelist-sig">Signature:</div>
+                                <div class="dm-panelist-date">Date Signed:</div>
+                           </td>`
+                        : "";
+
+                    tableRowsHtml += `
+                        <tr>
+                            ${panelistCell}
+                            <td class="dm-page-cell">${escapeDmHtml(r.pageNo || "")}</td>
+                            <td class="dm-text-cell">${formatDmBulletsHtml(r.comments)}</td>
+                            <td class="dm-text-cell">${formatDmBulletsHtml(r.actions)}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            const membersHtml = meta.members.length
+                ? meta.members.map((m, i) => `
+                    <div class="dm-member-row">
+                        <span class="dm-member-label">${i === 0 ? "Members:" : ""}</span>
+                        <span class="dm-member-name">${escapeDmHtml(m)}</span>
+                    </div>
+                  `).join("")
+                : `<div class="dm-member-row"><span class="dm-member-label">Members:</span><span class="dm-member-name">N/A</span></div>`;
+
+            document.getElementById("dmPrintSheetViewport").innerHTML = `
+                <div class="dm-a4-sheet" id="dmPrintableSheet">
+                    <table class="dm-print-shell">
+                        <thead>
+                            <tr>
+                                <td>
+                                    <div class="dm-dnsc-header">
+                                        <div class="dm-dnsc-header-left">
+                                            <img src="../Images/dnsc/dnsc_logo.png" alt="DNSC Seal" class="dm-dnsc-seal">
+                                            <div>
+                                                <div class="dm-dnsc-name">DAVAO DEL NORTE<br>STATE COLLEGE</div>
+                                                <div class="dm-dnsc-motto">"Inspiring Change, Creating Futures"</div>
+                                            </div>
+                                        </div>
+                                        <div class="dm-dnsc-header-right">
+                                            <div>president@dnsc.edu.ph <img src="../Images/dnsc/icon_email.png" alt="" class="dm-dnsc-icon"></div>
+                                            <div>dnsc.edu.ph <img src="../Images/dnsc/icon_web.png" alt="" class="dm-dnsc-icon"></div>
+                                            <div>@officialdnsc <img src="../Images/dnsc/icon_fb.png" alt="" class="dm-dnsc-icon"></div>
+                                            <div>New Visayas, Panabo City, 8105</div>
+                                        </div>
+                                    </div>
+                                    <div class="dm-institute-bar">Institute of Computing</div>
+                                </td>
+                            </tr>
+                        </thead>
+
+                        <tfoot>
+                            <tr>
+                                <td>
+                                    <div class="dm-dnsc-footer">
+                                        <div class="dm-footer-vmc">
+                                            <div class="dm-vmc-col">
+                                                <div class="dm-vmc-title">VISION</div>
+                                                <div class="dm-vmc-text">An institution leading in agri-fisheries and socio-cultural development in the ASEAN region.</div>
+                                            </div>
+                                            <div class="dm-vmc-col">
+                                                <div class="dm-vmc-title">MISSION</div>
+                                                <div class="dm-vmc-text">DNSC shall produce future-ready workforce, create innovative solutions and technologies, empower communities, and uphold good governance towards sustainable development.</div>
+                                            </div>
+                                            <div class="dm-vmc-col">
+                                                <div class="dm-vmc-title">CORE VALUES</div>
+                                                <div class="dm-vmc-text">Stewardship<br>Adaptability and Excellence<br>Integrity and Innovativeness<br>Love of God and Country</div>
+                                            </div>
+                                        </div>
+                                        <div class="dm-footer-logos">
+                                            <img src="../Images/dnsc/bagong_pilipinas.png" alt="Bagong Pilipinas">
+                                            <img src="../Images/dnsc/iso_w3.png" alt="ISO 9001:2015">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
+
+                        <tbody>
+                            <tr>
+                                <td class="dm-print-body-cell">
+                                    <div class="dm-doc-title">[${escapeDmHtml(meta.phaseTag)}] DEFENSE MINUTES</div>
+
+                                    <div class="dm-meta-block">
+                                        <div class="dm-meta-line"><strong>Title:</strong> ${escapeDmHtml(meta.title)}</div>
+                                        <div class="dm-meta-split">
+                                            <div><strong>Program:</strong> ${escapeDmHtml(meta.program)}</div>
+                                            <div><strong>Date of Defense:</strong> ${escapeDmHtml(meta.defenseDate)}</div>
+                                        </div>
+                                        <div class="dm-members-block">
+                                            ${membersHtml}
+                                        </div>
+                                    </div>
+
+                                    <table class="dm-minutes-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:22%;">Panelists</th>
+                                                <th style="width:9%;">Page No.</th>
+                                                <th style="width:34.5%;">Comments/Suggestions/Recommendations</th>
+                                                <th style="width:34.5%;">Action/s Taken</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${tableRowsHtml}
+                                        </tbody>
+                                    </table>
+
+                                    <div class="dm-adviser-signoff">
+                                        <div class="dm-adviser-name">${escapeDmHtml(meta.adviserName)}</div>
+                                        <div class="dm-adviser-role">Adviser</div>
+                                        <div class="dm-adviser-date">Date Signed:</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById("defenseMinutesPrintModal").style.display = "flex";
+        }
+
+        function closeDefenseMinutesPrintModal(){
+            document.getElementById("defenseMinutesPrintModal").style.display = "none";
+        }
+
+        async function sendTypedDefenseMinutesToAdviser(category){
+            if(!currentGroup){
+                alert("No capstone group found.");
+                return;
+            }
+            const saved = loadSavedDefenseMinutes(category);
+            if(!saved || !hasSavedDefenseMinutes(category)){
+                alert("Please encode and save your defense minutes first.");
+                return;
+            }
+            const confirmed = await confirm(`Send ${category} Defense Minutes to your Adviser (${currentGroup.adviser_name || "Adviser"}) for review and e-signature?`);
+            if(!confirmed) return;
+
+            const ctx = await ensureDefenseMinutesContextLoaded();
+            const meta = resolveDefenseMinutesMeta(category, ctx);
+            const matchingSched = (ctx.schedules || []).find(s =>
+                String(s.defense_type || "").trim().toLowerCase() === String(category || "").trim().toLowerCase()
+            );
+
+            try{
+                const resp = await fetch("/typed-defense-minutes/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        studentUserId: loggedInUserId,
+                        groupId: currentGroup.group_db_id,
+                        scheduleId: matchingSched ? matchingSched.schedule_id : null,
+                        defenseType: category,
+                        minutesData: {
+                            meta,
+                            panelists: saved.panelists || []
+                        }
+                    })
+                });
+                const data = await resp.json();
+                alert(data.message || (data.success ? "Defense minutes sent to Adviser." : "Failed to send."));
+                if(data.success){
+                    await loadStudentDocuments();
+                }
+            }catch(err){
+                console.error("Send typed defense minutes error:", err);
+                alert("Cannot connect to server.");
+            }
+        }
+
+        function viewSignedDefenseMinutes(category){
+            const sentRec = getSentTypedDefenseMinutes(category);
+            if(!sentRec) return;
+            let minutesData = {};
+            try { minutesData = JSON.parse(sentRec.minutes_json || "{}"); } catch(_) {}
+            const placed = [];
+            try {
+                if(sentRec.adviser_signature_json){
+                    placed.push(JSON.parse(sentRec.adviser_signature_json));
+                }
+            } catch(_) {}
+            try {
+                if(sentRec.panelist_signatures_json){
+                    const arr = JSON.parse(sentRec.panelist_signatures_json);
+                    if(Array.isArray(arr)) placed.push(...arr);
+                }
+            } catch(_) {}
+
+            DefenseMinutesSheet.renderPages(document.getElementById("dmPrintSheetViewport"), {
+                minutesData,
+                placedSignatures: placed,
+                imgBasePath: "../Images/dnsc"
+            });
+            document.getElementById("defenseMinutesPrintModal").style.display = "flex";
+        }
+
+        function printDefenseMinutesSheet(){
+            document.body.classList.add("dm-printing-active");
+            window.print();
+            setTimeout(() => {
+                document.body.classList.remove("dm-printing-active");
+            }, 500);
         }
 
         function uploadFromSlot(

@@ -1040,10 +1040,21 @@
                     document.getElementById("viewProgress").innerText = "100%";
                 }
 
-                // Fetch documents
+                // Fetch documents (include all approved, signed, and completed defense minutes)
                 const docResponse = await fetch(`/group-documents/${group.id}`);
                 const docData = await docResponse.json();
-                groupDocuments = docData.success ? docData.documents.filter(d => d.document_status === 'Approved') : [];
+                groupDocuments = docData.success ? (docData.documents || []).filter(d => {
+                    const st = String(d.document_status || "").trim().toLowerCase();
+                    const rev = String(d.latest_review_status || "").trim().toLowerCase();
+                    return (
+                        d.is_typed_defense_minutes ||
+                        st === "approved" ||
+                        st === "adviser signed" ||
+                        st === "signed" ||
+                        rev === "approved" ||
+                        !!d.signed_file_path
+                    );
+                }) : [];
                 renderModalDocuments();
             } catch (err) {
                 console.error("Error loading group progress or documents:", err);
@@ -1058,15 +1069,15 @@
             let filteredDocs = groupDocuments;
             if (filterValue !== "all") {
                 filteredDocs = groupDocuments.filter(doc => {
-                    const type = String(doc.document_type || "").trim();
+                    const combined = `${doc.document_type || ""} ${doc.document_title || ""}`.toLowerCase();
                     if (filterValue === "Concept Presentation") {
-                        return type.startsWith("Concept Presentation");
+                        return combined.includes("concept") || combined.includes("adviser acceptance") || combined.includes("environmental scanning");
                     } else if (filterValue === "Outline Defense") {
-                        return type.startsWith("Outline Defense");
+                        return combined.includes("outline") || combined.includes("chapter 1 and 2") || combined.includes("chapter 1-2");
                     } else if (filterValue === "Pre-Final Defense") {
-                        return type.startsWith("Pre-Final");
+                        return combined.includes("pre-final") || combined.includes("prefinal") || combined.includes("chapter 3-4");
                     } else if (filterValue === "Final Defense") {
-                        return type.startsWith("Final Defense") || (type.startsWith("Final") && !type.startsWith("Pre-Final"));
+                        return (combined.includes("final") && !combined.includes("pre-final") && !combined.includes("prefinal")) || combined.includes("chapter 1-4");
                     }
                     return false;
                 });
@@ -1079,11 +1090,16 @@
 
             filteredDocs.forEach(doc => {
                 const dateStr = doc.created_at ? new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A";
-                const isSigned = !!doc.signed_file_path;
-                const filePath = isSigned ? doc.signed_file_path : doc.file_path;
+                const isSigned = !!doc.signed_file_path || !!doc.is_typed_defense_minutes || String(doc.document_status || "").toLowerCase().includes("signed");
+                const filePath = doc.signed_file_path || doc.file_path || "";
                 const signatureBadge = isSigned 
                     ? `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 8px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-signature"></i> Signed</span>` 
-                    : "";
+                    : `<span style="background: #ede9fe; color: #6d28d9; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 8px;">Approved</span>`;
+                const actionHtml = filePath
+                    ? `<a href="${filePath}" target="_blank" style="color: #7c3aed; font-size: 16px; padding: 8px; background: #f3e8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;" title="${isSigned ? 'Download / View Signed File' : 'Download / View File'}">
+                            <i class="fa-solid fa-download"></i>
+                        </a>`
+                    : `<span style="font-size: 11px; color: #15803d; font-weight: 700; background: #dcfce7; padding: 5px 10px; border-radius: 8px;">Completed</span>`;
 
                 container.innerHTML += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid #ece3ff;">
@@ -1094,9 +1110,7 @@
                             </h4>
                             <p style="color: #7b6f96; font-size: 12px; margin-top: 4px;">${doc.document_type} • Approved on ${dateStr}</p>
                         </div>
-                        <a href="${filePath}" target="_blank" style="color: #7c3aed; font-size: 16px; padding: 8px; background: #f3e8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;" title="${isSigned ? 'Download / View Signed File' : 'Download / View File'}">
-                            <i class="fa-solid fa-download"></i>
-                        </a>
+                        ${actionHtml}
                     </div>
                 `;
             });

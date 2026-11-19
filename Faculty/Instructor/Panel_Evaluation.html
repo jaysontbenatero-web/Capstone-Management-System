@@ -59,7 +59,7 @@
                 <div class="menu-title">Management</div>
                 <div class="menu-item" onclick="window.location.href='STU_Enroll.html'">
                     <i class="fa-solid fa-user-plus"></i>
-                    <span>Enroll Student</span>
+                    <span>Register Students</span>
                 </div>
                 <div class="menu-item" onclick="window.location.href='Manage_Adviser.html'">
                     <i class="fa-solid fa-user-tie"></i>
@@ -213,8 +213,8 @@
 
                 <div class="receipt-actions" id="receiptActions" style="display:none;">
                     <button class="btn-print" type="button" onclick="window.print()">
-                        <i class="fa-solid fa-print"></i>
-                        Print Evaluation
+                        <i class="fa-solid fa-download"></i>
+                        Download Evaluation
                     </button>
                 </div>
             </section>
@@ -766,6 +766,36 @@
                 }
             });
 
+            // ── CONCEPT PRESENTATION (Official DNSC Sheet Layout) ────────────
+            if (
+                String(defenseType).trim().toLowerCase() === "concept presentation"
+                && conceptData.length > 0
+            ) {
+                renderDnscConceptEvaluationSheet(
+                    sched,
+                    panelEvaluations,
+                    conceptData,
+                    allPresenters,
+                    formattedDate,
+                    viewport
+                );
+                return;
+            }
+
+            // ── OUTLINE / PRE-FINAL / FINAL DEFENSE (Official DNSC Sheet Layout) ─
+            if (outlineData.length > 0) {
+                renderDnscOutlineEvaluationSheet(
+                    sched,
+                    panelEvaluations,
+                    outlineData,
+                    allPresenters,
+                    formattedDate,
+                    defenseType,
+                    viewport
+                );
+                return;
+            }
+
             // ── Header ───────────────────────────────────────────────────────
             const sheetTitle = conceptData.length
                 ? "Concept Proposal Evaluation Sheet"
@@ -951,27 +981,7 @@
                     </table>
                 `;
 
-                // ── Comments & Recommendations ───────────────────────────────
-                const commentsHtml = conceptData.map(({ pe }, i) =>
-                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span class="receipt-quote" style="border:none;padding:0;font-style:italic;color:#374151;">"${escapeHtml(pe.comments || "None")}"</span></div>`
-                ).join("");
-                const recsHtml = conceptData.map(({ pe }, i) =>
-                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span class="receipt-quote" style="border:none;padding:0;font-style:italic;color:#374151;">"${escapeHtml(pe.recommendations || "None")}"</span></div>`
-                ).join("");
-
-                html += `
-                    <div class="receipt-feedback">
-                        <div>
-                            <p><strong>Comments</strong></p>
-                            ${commentsHtml}
-                        </div>
-                        <div class="receipt-feedback-border">
-                            <p><strong>Recommendations</strong></p>
-                            ${recsHtml}
-                        </div>
-                    </div>
-                `;
-
+                html += `</tbody></table>`;
             // ── OUTLINE / PRE-FINAL / FINAL evaluation layout ────────────────
             } else if (outlineData.length) {
                 const numS = allPresenters.length;
@@ -1090,27 +1100,7 @@
                     </table>
                 `;
 
-                // ── Comments & Recommendations ───────────────────────────────
-                const commentsHtml = outlineData.map(({ pe }, i) =>
-                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span style="font-style:italic;color:#374151;">"${escapeHtml(pe.comments || "None")}"</span></div>`
-                ).join("");
-                const recsHtml = outlineData.map(({ pe }, i) =>
-                    `<div style="margin-bottom:6px;"><strong>Panelist ${i + 1}:</strong> <span style="font-style:italic;color:#374151;">"${escapeHtml(pe.recommendations || "None")}"</span></div>`
-                ).join("");
-
-                html += `
-                    <div class="receipt-feedback">
-                        <div>
-                            <p><strong>Comments</strong></p>
-                            ${commentsHtml}
-                        </div>
-                        <div class="receipt-feedback-border">
-                            <p><strong>Recommendations</strong></p>
-                            ${recsHtml}
-                        </div>
-                    </div>
-                `;
-
+                html += `</tbody></table>`;
             } else {
                 // Fallback: no detailed sheets but evaluations submitted
                 html += `
@@ -1148,6 +1138,635 @@
 
             html += `</div>`;
             viewport.innerHTML = html;
+        }
+
+        function buildDnscSignatureHtml(details) {
+            if (!details || !details.signature_attached || !details.signature_image_path) {
+                return `<div class="dnsc-sig-spacer"></div>`;
+            }
+            return `<img src="${escapeHtml(details.signature_image_path)}" alt="Panelist signature" class="dnsc-sig-img">`;
+        }
+
+        function buildDnscSignaturesRowHtml(panelEvaluations, sched, dataList) {
+            return panelEvaluations.map(pe => {
+                const sigDetails = getPanelEvalSignatureDetails(pe);
+                const sigHtml = buildDnscSignatureHtml(sigDetails);
+                const roleLabel = getDnscPanelRoleLabel(pe, sched, dataList);
+                return `
+                    <div class="compiled-sig-block dnsc-sig-block">
+                        <div class="dnsc-sig-img-wrap">${sigHtml}</div>
+                        <div class="sig-line dnsc-sig-line">${escapeHtml(pe.panelist_name)}</div>
+                        <p class="dnsc-sig-caption">${escapeHtml(roleLabel)}</p>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function getDnscPanelRoleLabel(pe, sched, dataList) {
+            const chairId = sched && sched.panelist_id ? Number(sched.panelist_id) : null;
+            const peId = pe && pe.panelist_id ? Number(pe.panelist_id) : null;
+
+            if (chairId && peId === chairId) {
+                return "Panel Chair";
+            }
+
+            if (chairId && (dataList || []).some(({ pe: item }) => Number(item.panelist_id) === chairId)) {
+                const nonChairs = (dataList || []).filter(({ pe: item }) => Number(item.panelist_id) !== chairId);
+                const memberIdx = nonChairs.findIndex(({ pe: item }) => Number(item.panelist_id) === peId);
+                return `Panel Member ${memberIdx >= 0 ? memberIdx + 1 : 1}`;
+            }
+
+            const idx = (dataList || []).findIndex(({ pe: item }) => Number(item.panelist_id) === peId);
+            if (idx <= 0) return "Panel Chair";
+            return `Panel Member ${idx}`;
+        }
+
+        function renderDnscConceptEvaluationSheet(sched, panelEvaluations, conceptData, allPresenters, formattedDate, viewport) {
+            const numPresenters = Math.max(allPresenters.length, 3);
+            const presenterSlots = Array.from({ length: numPresenters }, (_, idx) => allPresenters[idx] || null);
+
+            // Presenters' Names lines
+            const presentersListHtml = presenterSlots.map((p, idx) => {
+                if (!p) {
+                    return `<div class="dnsc-presenter-line"><span class="dnsc-presenter-num">${idx + 1}.</span><span class="dnsc-underline-name">&nbsp;</span></div>`;
+                }
+                const isNotGraded = p.status === 'NOT_GRADED' || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED' || (p.disposition_score === null && p.delivery_score === null);
+                const badge = isNotGraded ? ` <span class="dnsc-not-graded-badge">Not Graded</span>` : "";
+                const rolePart = p.role ? ` — ${escapeHtml(p.role)}` : "";
+                return `<div class="dnsc-presenter-line"><span class="dnsc-presenter-num">${idx + 1}.</span><span class="dnsc-underline-name"><strong>${escapeHtml(p.fullname)}</strong>${rolePart}</span>${badge}</div>`;
+            }).join("");
+
+            // Individual Grade cells across all panelists (1-3 panelists)
+            const presenterNumberHeaders = presenterSlots.map((_, idx) => `<th class="dnsc-score-col">${idx + 1}</th>`).join("");
+
+            const dispositionScoreCells = presenterSlots.map((slotP, sIdx) => {
+                if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
+                const lines = conceptData.map(({ d }, pIdx) => {
+                    const p = (d.presenters || [])[sIdx];
+                    if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                        return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
+                    }
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.disposition_score))}</strong></div>`;
+                }).join("");
+                return `<td class="dnsc-score-col">${lines}</td>`;
+            }).join("");
+
+            const deliveryScoreCells = presenterSlots.map((slotP, sIdx) => {
+                if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
+                const lines = conceptData.map(({ d }, pIdx) => {
+                    const p = (d.presenters || [])[sIdx];
+                    if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                        return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
+                    }
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.delivery_score))}</strong></div>`;
+                }).join("");
+                return `<td class="dnsc-score-col">${lines}</td>`;
+            }).join("");
+
+            const individualAvgCells = presenterSlots.map((slotP, sIdx) => {
+                if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
+                const validWeighted = [];
+                conceptData.forEach(({ d }) => {
+                    const p = (d.presenters || [])[sIdx];
+                    if (p && p.status !== 'NOT_GRADED' && p.disposition_score !== null && p.delivery_score !== null && p.student_status !== 'INACTIVE' && p.student_status !== 'DROPPED') {
+                        validWeighted.push(Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8);
+                    }
+                });
+                if (!validWeighted.length) {
+                    return `<td class="dnsc-score-col dnsc-p-ng">Not Graded</td>`;
+                }
+                const avgW = (validWeighted.reduce((a, b) => a + b, 0) / validWeighted.length).toFixed(1);
+                return `<td class="dnsc-score-col dnsc-avg-cell"><strong>${avgW}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(avgW)})</div></td>`;
+            }).join("");
+
+            // Group Grade
+            const groupPanelHeaders = conceptData.map((_, i) => `<th class="dnsc-score-col">Panel ${i + 1}</th>`).join("");
+            const groupRawScores = conceptData.map(({ d }) => `<td class="dnsc-score-col"><strong>${escapeHtml(String(d.group_score ?? "—"))}</strong></td>`).join("");
+            const avgGroupScore = (conceptData.reduce((s, { d }) => s + Number(d.group_score || 0), 0) / conceptData.length).toFixed(1);
+            const groupGpaCells = conceptData.map(({ d }) => `<td class="dnsc-score-col"><strong>${convert100ToGpa(d.group_score)}</strong></td>`).join("");
+
+            // Verdict checkboxes
+            const outcomeRaw = sched.evaluations_complete ? String(sched.panel_result || "").trim() : "";
+            const outcomeLower = outcomeRaw.toLowerCase();
+            const isPassedExact = outcomeLower === "passed";
+            const isPassedRev = outcomeLower.includes("revision");
+            const isDeferred = !isPassedExact && !isPassedRev && outcomeRaw !== "" && outcomeLower !== "pending";
+
+            const checkNoRev = isPassedExact ? "&#10003;" : "&nbsp;";
+            const checkWithRev = isPassedRev ? "&#10003;" : "&nbsp;";
+            const checkDeferred = isDeferred ? "&#10003;" : "&nbsp;";
+            const deferredText = isDeferred ? escapeHtml(outcomeRaw) : "_____________";
+
+            // Approved Title & Ranked Proposed Titles
+            const titleCounts = new Map();
+            conceptData.forEach(({ d }) => {
+                const t = String(d.selected_title_text || "").trim();
+                if (t) titleCounts.set(t, (titleCounts.get(t) || 0) + 1);
+            });
+            const sortedTitles = Array.from(titleCounts.entries())
+                .sort((a, b) => b[1] - a[1])
+                .map(([t]) => t);
+
+            const approvedTitle = String(sched.project_title || "").trim()
+                || (sortedTitles.length ? sortedTitles[0] : "");
+
+            if (approvedTitle && !sortedTitles.includes(approvedTitle)) {
+                sortedTitles.unshift(approvedTitle);
+            }
+
+            const proposedTitleRows = [0, 1, 2].map(idx => {
+                const titleVal = sortedTitles[idx] ? escapeHtml(sortedTitles[idx]) : "&nbsp;";
+                return `
+                    <tr>
+                        <td class="dnsc-rank-col">${idx + 1}</td>
+                        <td>${titleVal}</td>
+                    </tr>
+                `;
+            }).join("");
+
+            // Panelists list (right side, same level as Presenters 1-3)
+            const panelistsListHtml = conceptData.map(({ pe }, idx) => {
+                const roleLabel = getDnscPanelRoleLabel(pe, sched, conceptData);
+                return `<div class="dnsc-presenter-line"><span class="dnsc-panel-num">Panel ${idx + 1}:</span><span class="dnsc-underline-name"><strong>${escapeHtml(pe.panelist_name)}</strong> (${escapeHtml(roleLabel)})</span></div>`;
+            }).join("");
+
+            // Signatures
+            const sigRowHtml = buildDnscSignaturesRowHtml(panelEvaluations, sched, conceptData);
+
+            viewport.innerHTML = `
+                <div class="receipt-container compiled-report dnsc-concept-sheet">
+                    <!-- Official DNSC Header -->
+                    <div class="dnsc-sheet-header">
+                        <div class="dnsc-header-left">
+                            <img src="../../Images/dnsc/dnsc_logo.png" alt="DNSC Seal" class="dnsc-seal-img">
+                            <div class="dnsc-header-text">
+                                <div class="dnsc-institute">Institute of Computing</div>
+                                <div class="dnsc-college-name">DAVAO DEL NORTE<br>STATE COLLEGE</div>
+                                <div class="dnsc-address">New Visayas, Panabo City, Davao del Norte, 8105</div>
+                                <div class="dnsc-contact-row">
+                                    <span><img src="../../Images/dnsc/icon_email.png" alt="" class="dnsc-contact-icon"> president@dnsc.edu.ph</span>
+                                    <span><img src="../../Images/dnsc/icon_web.png" alt="" class="dnsc-contact-icon"> dnsc.edu.ph</span>
+                                    <span><img src="../../Images/dnsc/icon_fb.png" alt="" class="dnsc-contact-icon"> @officialdnsc</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dnsc-header-meta-tag">
+                            <div><strong>Group:</strong> ${escapeHtml(sched.group_name)}</div>
+                            <div><strong>Schedule:</strong> ${escapeHtml(sched.schedule_code)}</div>
+                        </div>
+                    </div>
+
+                    <div class="dnsc-sheet-title">CONCEPT PROPOSAL EVALUATION SHEET</div>
+
+                    <div class="dnsc-date-row">
+                        <strong>Date:</strong> <span class="dnsc-underline-date">${formattedDate}</span>
+                    </div>
+
+                    <div class="dnsc-presenters-panel-grid">
+                        <div class="dnsc-presenters-section">
+                            <div class="dnsc-presenters-heading">Presenters’ Names:</div>
+                            <div class="dnsc-presenters-lines">
+                                ${presentersListHtml}
+                            </div>
+                        </div>
+                        <div class="dnsc-presenters-section">
+                            <div class="dnsc-presenters-heading">Panelists:</div>
+                            <div class="dnsc-presenters-lines">
+                                ${panelistsListHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Individual Grade -->
+                    <div class="dnsc-section-label">Individual Grade</div>
+                    <table class="dnsc-table dnsc-individual-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="dnsc-criteria-col">Criteria and Weight</th>
+                                <th colspan="${numPresenters}" class="dnsc-score-header">Score</th>
+                            </tr>
+                            <tr>
+                                ${presenterNumberHeaders}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="dnsc-crit-main">Disposition (20%)</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Generally neat in appearance</li>
+                                        <li>Projects an aura of confidence</li>
+                                        <li>Preparedness and teamwork</li>
+                                    </ul>
+                                </td>
+                                ${dispositionScoreCells}
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="dnsc-crit-main">Delivery and Presentation (80%)</div>
+                                    <div class="dnsc-crit-subhead">Organization of Content</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Sense of segmentation</li>
+                                        <li>Presentation is not interrupted to reload a file.</li>
+                                        <li>Smoothness of presentation flow</li>
+                                        <li>No inconsistencies within content</li>
+                                    </ul>
+                                    <div class="dnsc-crit-subhead">Manner of Presentation</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>The presenter does not tend to talk to the screen.</li>
+                                        <li>Does not have some hesitancy in speaking.</li>
+                                        <li>Less consulting of notes and has good eye contact with panelists.</li>
+                                        <li>The volume of voice is adequate and can be heard by everyone.</li>
+                                        <li>Does not delve too long into a specific subject matter.</li>
+                                        <li>Use of clear visuals and appropriate materials for presentation</li>
+                                    </ul>
+                                    <div class="dnsc-crit-subhead">Ability to Defend Ideas and Technical Output</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Ability to respond to questions and criticisms.</li>
+                                        <li>Has good responses to critiques and comments.</li>
+                                        <li>Does not have the tendency to go into other issues when answering questions.</li>
+                                        <li>Attitude towards suggestions given (i.e., receptive, not hostile or indifferent)</li>
+                                    </ul>
+                                </td>
+                                ${deliveryScoreCells}
+                            </tr>
+                            <tr class="dnsc-total-row">
+                                <td><strong>Weighted Average (GPA Equivalent)</strong></td>
+                                ${individualAvgCells}
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Group Grade -->
+                    <div class="dnsc-section-label">Group Grade</div>
+                    <table class="dnsc-table dnsc-group-table">
+                        <thead>
+                            <tr>
+                                <th class="dnsc-criteria-col">Criteria and Weight</th>
+                                ${groupPanelHeaders}
+                                <th class="dnsc-score-col">Average</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="dnsc-crit-main">Concept Papers (100%)</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Mechanics – Spelling/Punctuation/Grammar/Structure</li>
+                                        <li>Completeness</li>
+                                        <li>Content (should be correct and consistent)</li>
+                                    </ul>
+                                </td>
+                                ${groupRawScores}
+                                <td class="dnsc-score-col"><strong>${avgGroupScore}</strong></td>
+                            </tr>
+                            <tr class="dnsc-total-row">
+                                <td><strong>Total</strong></td>
+                                ${groupGpaCells}
+                                <td class="dnsc-score-col"><strong>${convert100ToGpa(avgGroupScore)}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Verdict & Approved Title -->
+                    <div class="dnsc-verdict-block">
+                        <div class="dnsc-verdict-row">
+                            <strong>Verdict:</strong>
+                            <span class="dnsc-checkbox-item"><span class="dnsc-box">[${checkNoRev}]</span> Passed (No revisions needed)</span>
+                            <span class="dnsc-checkbox-item"><span class="dnsc-box">[${checkWithRev}]</span> Passed (With revisions needed)</span>
+                        </div>
+                        <div class="dnsc-approved-title-row">
+                            <strong>Approved Title:</strong>
+                            <span class="dnsc-underline-wide">${escapeHtml(approvedTitle || "N/A")}</span>
+                        </div>
+                    </div>
+
+                    <!-- Proposed Titles Table -->
+                    <table class="dnsc-table dnsc-titles-table">
+                        <thead>
+                            <tr>
+                                <th class="dnsc-rank-col">Rank</th>
+                                <th>Proposed Titles:</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${proposedTitleRows}
+                        </tbody>
+                    </table>
+
+                    <!-- Panelist Signatures -->
+                    <div class="compiled-sig-row dnsc-sig-row">
+                        ${sigRowHtml}
+                    </div>
+
+                    <!-- Official DNSC Footer -->
+                    <div class="dnsc-sheet-footer">
+                        <div class="dnsc-footer-vmc">
+                            <div class="dnsc-vmc-item">
+                                <div class="dnsc-vmc-title">VISION</div>
+                                <div class="dnsc-vmc-text">A premier Higher Institution in Agri-Fisheries and Socio-cultural Development in the ASEAN Region.</div>
+                            </div>
+                            <div class="dnsc-vmc-item">
+                                <div class="dnsc-vmc-title">MISSION</div>
+                                <div class="dnsc-vmc-text">DNSC strives to produce competent human resource, generate, and utilize knowledge and technology, uphold good governance and quality management system for sustainable resources and resilient communities.</div>
+                            </div>
+                            <div class="dnsc-vmc-item">
+                                <div class="dnsc-vmc-title">CORE VALUES</div>
+                                <div class="dnsc-vmc-text">Excellence &bull; Integrity &bull; Innovativeness &bull; Stewardship &bull; Love of God and Country</div>
+                            </div>
+                        </div>
+                        <div class="dnsc-footer-logos">
+                            <img src="../../Images/dnsc/bagong_pilipinas.png" alt="Bagong Pilipinas" class="dnsc-footer-logo">
+                            <img src="../../Images/dnsc/iso_w3.png" alt="ISO 9001:2015 Certified" class="dnsc-footer-logo">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDnscOutlineEvaluationSheet(sched, panelEvaluations, outlineData, allPresenters, formattedDate, defenseType, viewport) {
+            const numPresenters = Math.max(allPresenters.length, 3);
+            const presenterSlots = Array.from({ length: numPresenters }, (_, idx) => allPresenters[idx] || null);
+
+            const presentersListHtml = presenterSlots.map((p, idx) => {
+                if (!p) {
+                    return `<div class="dnsc-presenter-line"><span class="dnsc-presenter-num">${idx + 1}.</span><span class="dnsc-underline-name">&nbsp;</span></div>`;
+                }
+                const isNotGraded = p.status === 'NOT_GRADED' || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED' || (p.disposition_score === null && p.delivery_score === null);
+                const badge = isNotGraded ? ` <span class="dnsc-not-graded-badge">Not Graded</span>` : "";
+                const rolePart = p.role ? ` — ${escapeHtml(p.role)}` : "";
+                return `<div class="dnsc-presenter-line"><span class="dnsc-presenter-num">${idx + 1}.</span><span class="dnsc-underline-name"><strong>${escapeHtml(p.fullname)}</strong>${rolePart}</span>${badge}</div>`;
+            }).join("");
+
+            const presenterNumberHeaders = presenterSlots.map((_, idx) => `<th class="dnsc-score-col">${idx + 1}</th>`).join("");
+
+            const dispositionScoreCells = presenterSlots.map((slotP, sIdx) => {
+                if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
+                const lines = outlineData.map(({ d }, pIdx) => {
+                    const p = (d.presenters || [])[sIdx];
+                    if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                        return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
+                    }
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.disposition_score))}</strong></div>`;
+                }).join("");
+                return `<td class="dnsc-score-col">${lines}</td>`;
+            }).join("");
+
+            const deliveryScoreCells = presenterSlots.map((slotP, sIdx) => {
+                if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
+                const lines = outlineData.map(({ d }, pIdx) => {
+                    const p = (d.presenters || [])[sIdx];
+                    if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                        return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
+                    }
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.delivery_score))}</strong></div>`;
+                }).join("");
+                return `<td class="dnsc-score-col">${lines}</td>`;
+            }).join("");
+
+            const individualAvgCells = presenterSlots.map((slotP, sIdx) => {
+                if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
+                const validWeighted = [];
+                outlineData.forEach(({ d }) => {
+                    const p = (d.presenters || [])[sIdx];
+                    if (p && p.status !== 'NOT_GRADED' && p.disposition_score !== null && p.delivery_score !== null && p.student_status !== 'INACTIVE' && p.student_status !== 'DROPPED') {
+                        validWeighted.push(Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8);
+                    }
+                });
+                if (!validWeighted.length) {
+                    return `<td class="dnsc-score-col dnsc-p-ng">Not Graded</td>`;
+                }
+                const avgW = (validWeighted.reduce((a, b) => a + b, 0) / validWeighted.length).toFixed(1);
+                return `<td class="dnsc-score-col dnsc-avg-cell"><strong>${avgW}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(avgW)})</div></td>`;
+            }).join("");
+
+            // Group Grade (System 50% + Documentation 50%)
+            const groupPanelHeaders = outlineData.map((_, i) => `<th class="dnsc-score-col">Panel ${i + 1}</th>`).join("");
+            const sysCells = outlineData.map(({ d }) => `<td class="dnsc-score-col"><strong>${escapeHtml(String(d.system_score ?? "—"))}</strong></td>`).join("");
+            const docCells = outlineData.map(({ d }) => `<td class="dnsc-score-col"><strong>${escapeHtml(String(d.documentation_score ?? "—"))}</strong></td>`).join("");
+            const avgSys = (outlineData.reduce((s, { d }) => s + Number(d.system_score || 0), 0) / outlineData.length).toFixed(1);
+            const avgDoc = (outlineData.reduce((s, { d }) => s + Number(d.documentation_score || 0), 0) / outlineData.length).toFixed(1);
+            const avgGrp = ((Number(avgSys) + Number(avgDoc)) / 2).toFixed(1);
+
+            const groupTotalCells = outlineData.map(({ d }) => {
+                const a = ((Number(d.system_score || 0) + Number(d.documentation_score || 0)) / 2).toFixed(1);
+                return `<td class="dnsc-score-col"><strong>${a}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(a)})</div></td>`;
+            }).join("");
+
+            // Verdict checkboxes (Outline / Pre-Final / Final DOCX format)
+            const outcomeRaw = sched.evaluations_complete ? String(sched.panel_result || "").trim() : "";
+            const outcomeLower = outcomeRaw.toLowerCase();
+            const isPassedExact = outcomeLower === "passed";
+            const isPassedRev = outcomeLower.includes("revision");
+            const isConditional = outcomeLower.includes("conditional") || outcomeLower.includes("re-defense") || outcomeLower.includes("redefense");
+            const isFailed = outcomeLower === "failed";
+
+            const checkNoRev = isPassedExact ? "&#10003;" : "&nbsp;";
+            const checkWithRev = isPassedRev ? "&#10003;" : "&nbsp;";
+            const checkConditional = isConditional ? "&#10003;" : "&nbsp;";
+            const checkFailed = isFailed ? "&#10003;" : "&nbsp;";
+
+            // Panelists list (right side, same level as Presenters 1-3)
+            const panelistsListHtml = outlineData.map(({ pe }, idx) => {
+                const roleLabel = getDnscPanelRoleLabel(pe, sched, outlineData);
+                return `<div class="dnsc-presenter-line"><span class="dnsc-panel-num">Panel ${idx + 1}:</span><span class="dnsc-underline-name"><strong>${escapeHtml(pe.panelist_name)}</strong> (${escapeHtml(roleLabel)})</span></div>`;
+            }).join("");
+
+            // Signatures
+            const sigRowHtml = buildDnscSignaturesRowHtml(panelEvaluations, sched, outlineData);
+
+            const sheetTitle = `${escapeHtml(defenseType || "Outline Defense").toUpperCase()} EVALUATION SHEET`;
+
+            viewport.innerHTML = `
+                <div class="receipt-container compiled-report dnsc-concept-sheet">
+                    <!-- Official DNSC Header -->
+                    <div class="dnsc-sheet-header">
+                        <div class="dnsc-header-left">
+                            <img src="../../Images/dnsc/dnsc_logo.png" alt="DNSC Seal" class="dnsc-seal-img">
+                            <div class="dnsc-header-text">
+                                <div class="dnsc-institute">Institute of Computing</div>
+                                <div class="dnsc-college-name">DAVAO DEL NORTE<br>STATE COLLEGE</div>
+                                <div class="dnsc-address">New Visayas, Panabo City, Davao del Norte, 8105</div>
+                                <div class="dnsc-contact-row">
+                                    <span><img src="../../Images/dnsc/icon_email.png" alt="" class="dnsc-contact-icon"> president@dnsc.edu.ph</span>
+                                    <span><img src="../../Images/dnsc/icon_web.png" alt="" class="dnsc-contact-icon"> dnsc.edu.ph</span>
+                                    <span><img src="../../Images/dnsc/icon_fb.png" alt="" class="dnsc-contact-icon"> @officialdnsc</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dnsc-header-meta-tag">
+                            <div><strong>Group:</strong> ${escapeHtml(sched.group_name)}</div>
+                            <div><strong>Schedule:</strong> ${escapeHtml(sched.schedule_code)}</div>
+                            ${sched.project_title ? `<div><strong>Title:</strong> ${escapeHtml(sched.project_title)}</div>` : ""}
+                        </div>
+                    </div>
+
+                    <div class="dnsc-sheet-title">${sheetTitle}</div>
+
+                    <div class="dnsc-date-row">
+                        <strong>Date:</strong> <span class="dnsc-underline-date">${formattedDate}</span>
+                    </div>
+
+                    <div class="dnsc-presenters-panel-grid">
+                        <div class="dnsc-presenters-section">
+                            <div class="dnsc-presenters-heading">Presenters’ Names:</div>
+                            <div class="dnsc-presenters-lines">
+                                ${presentersListHtml}
+                            </div>
+                        </div>
+                        <div class="dnsc-presenters-section">
+                            <div class="dnsc-presenters-heading">Panelists:</div>
+                            <div class="dnsc-presenters-lines">
+                                ${panelistsListHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Individual Grade -->
+                    <div class="dnsc-section-label">Individual Grade</div>
+                    <table class="dnsc-table dnsc-individual-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="dnsc-criteria-col">Criteria and Weight</th>
+                                <th colspan="${numPresenters}" class="dnsc-score-header">Score</th>
+                            </tr>
+                            <tr>
+                                ${presenterNumberHeaders}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="dnsc-crit-main">Disposition (20%)</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Generally neat in appearance</li>
+                                        <li>Projects an aura of confidence</li>
+                                        <li>Preparedness and teamwork</li>
+                                    </ul>
+                                </td>
+                                ${dispositionScoreCells}
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="dnsc-crit-main">Delivery and Presentation (80%)</div>
+                                    <div class="dnsc-crit-subhead">Organization of Content</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Sense of segmentation</li>
+                                        <li>Presentation is not interrupted to reload a file.</li>
+                                        <li>Smoothness of presentation flow</li>
+                                        <li>No inconsistencies within content</li>
+                                    </ul>
+                                    <div class="dnsc-crit-subhead">Manner of Presentation</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>The presenter does not tend to talk to the screen.</li>
+                                        <li>Does not have some hesitancy in speaking.</li>
+                                        <li>Less consulting of notes and has good eye contact with panelists.</li>
+                                        <li>The volume of voice is adequate and can be heard by everyone.</li>
+                                        <li>Does not delve too long into a specific subject matter.</li>
+                                        <li>Use of clear visuals and appropriate materials for presentation</li>
+                                    </ul>
+                                    <div class="dnsc-crit-subhead">Ability to Defend Ideas and Technical Output</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Ability to respond to questions and criticisms.</li>
+                                        <li>Has good responses to critiques and comments.</li>
+                                        <li>Does not have the tendency to go into other issues when answering questions.</li>
+                                        <li>Attitude towards suggestions given (i.e., receptive, not hostile or indifferent)</li>
+                                    </ul>
+                                </td>
+                                ${deliveryScoreCells}
+                            </tr>
+                            <tr class="dnsc-total-row">
+                                <td><strong>Weighted Average (GPA Equivalent)</strong></td>
+                                ${individualAvgCells}
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Group Grade -->
+                    <div class="dnsc-section-label">Group Grade</div>
+                    <table class="dnsc-table dnsc-group-table">
+                        <thead>
+                            <tr>
+                                <th class="dnsc-criteria-col">Criteria and Weight</th>
+                                ${groupPanelHeaders}
+                                <th class="dnsc-score-col">Average</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="dnsc-crit-main">System (50%)</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>The design of the system is based on the objectives.</li>
+                                        <li>Technical output as a reliable proof of concept of the study.</li>
+                                        <li>Degree of impact on the panelist.</li>
+                                        <li>Exhibits ease of use and user-friendliness.</li>
+                                    </ul>
+                                </td>
+                                ${sysCells}
+                                <td class="dnsc-score-col"><strong>${avgSys}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="dnsc-crit-main">Documentation (50%)</div>
+                                    <ul class="dnsc-crit-list">
+                                        <li>Mechanics – Spelling/Punctuation/Grammar/Structure</li>
+                                        <li>Completeness</li>
+                                        <li>Content (should be correct and consistent)</li>
+                                    </ul>
+                                </td>
+                                ${docCells}
+                                <td class="dnsc-score-col"><strong>${avgDoc}</strong></td>
+                            </tr>
+                            <tr class="dnsc-total-row">
+                                <td><strong>Total</strong></td>
+                                ${groupTotalCells}
+                                <td class="dnsc-score-col"><strong>${avgGrp}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(avgGrp)})</div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Verdict -->
+                    <div class="dnsc-verdict-block">
+                        <div class="dnsc-verdict-row">
+                            <strong>Verdict:</strong>
+                            <span class="dnsc-checkbox-item"><span class="dnsc-box">[${checkNoRev}]</span> Passed (No revisions needed)</span>
+                            <span class="dnsc-checkbox-item"><span class="dnsc-box">[${checkWithRev}]</span> Passed (With revisions needed)</span>
+                        </div>
+                        <div class="dnsc-verdict-row" style="padding-left:48px;">
+                            <span class="dnsc-checkbox-item"><span class="dnsc-box">[${checkConditional}]</span> Conditional Passed</span>
+                            <span class="dnsc-checkbox-item"><span class="dnsc-box">[${checkFailed}]</span> Failed</span>
+                        </div>
+                    </div>
+
+                    <!-- Panelist Signatures -->
+                    <div class="compiled-sig-row dnsc-sig-row">
+                        ${sigRowHtml}
+                    </div>
+
+                    <!-- Official DNSC Footer -->
+                    <div class="dnsc-sheet-footer">
+                        <div class="dnsc-footer-vmc">
+                            <div class="dnsc-vmc-item">
+                                <div class="dnsc-vmc-title">VISION</div>
+                                <div class="dnsc-vmc-text">A premier Higher Institution in Agri-Fisheries and Socio-cultural Development in the ASEAN Region.</div>
+                            </div>
+                            <div class="dnsc-vmc-item">
+                                <div class="dnsc-vmc-title">MISSION</div>
+                                <div class="dnsc-vmc-text">DNSC strives to produce competent human resource, generate, and utilize knowledge and technology, uphold good governance and quality management system for sustainable resources and resilient communities.</div>
+                            </div>
+                            <div class="dnsc-vmc-item">
+                                <div class="dnsc-vmc-title">CORE VALUES</div>
+                                <div class="dnsc-vmc-text">Excellence &bull; Integrity &bull; Innovativeness &bull; Stewardship &bull; Love of God and Country</div>
+                            </div>
+                        </div>
+                        <div class="dnsc-footer-logos">
+                            <img src="../../Images/dnsc/bagong_pilipinas.png" alt="Bagong Pilipinas" class="dnsc-footer-logo">
+                            <img src="../../Images/dnsc/iso_w3.png" alt="ISO 9001:2015 Certified" class="dnsc-footer-logo">
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function renderConceptReceipt(sched, details, viewport) {
@@ -1267,17 +1886,6 @@
                         </tbody>
                     </table>
 
-                    <div class="receipt-feedback">
-                        <div>
-                            <p><strong>Comments</strong></p>
-                            <p class="receipt-quote">"${escapeHtml(sched.evaluation.comments || "None")}"</p>
-                        </div>
-                        <div class="receipt-feedback-border">
-                            <p><strong>Recommendations</strong></p>
-                            <p class="receipt-quote">"${escapeHtml(sched.evaluation.recommendations || "None")}"</p>
-                        </div>
-                    </div>
-
                     <div class="signature-area">
                         <div>
                             <p><strong>Overall Calculated Team Grade</strong></p>
@@ -1323,16 +1931,6 @@
                         </p>
                         <p>• Final Panel Decision: <strong style="color:#7c3aed;">${escapeHtml(sched.panel_result)}</strong></p>
                         <p>• Final Grade / Score: <strong>${escapeHtml(String(sched.evaluation?.score ?? "N/A"))}</strong></p>
-                    </div>
-
-                    <div style="margin-top:20px;font-size:0.88rem;">
-                        <p><strong>Comments &amp; Observations</strong></p>
-                        <p class="receipt-quote">"${escapeHtml(sched.evaluation?.comments || "No comments recorded.")}"</p>
-                    </div>
-
-                    <div style="margin-top:16px;font-size:0.88rem;">
-                        <p><strong>Panel Recommendations</strong></p>
-                        <p class="receipt-quote">"${escapeHtml(sched.evaluation?.recommendations || "No recommendations recorded.")}"</p>
                     </div>
 
                     <div class="signature-area">

@@ -757,7 +757,7 @@ body{
 
 .proposal-grid{
     display:grid;
-    grid-template-columns:repeat(3,1fr);
+    grid-template-columns:repeat(3,minmax(0,1fr));
     gap:18px;
 }
 
@@ -766,6 +766,8 @@ body{
     border:1px solid #ece3ff;
     border-radius:24px;
     padding:20px;
+    min-width:0;
+    overflow:hidden;
 }
 
 .proposal-icon{
@@ -787,17 +789,28 @@ body{
 }
 
 .proposal-card input[type="text"],
-.proposal-card input[type="file"]{
+.proposal-card input[type="file"],
+.proposal-card textarea{
     width:100%;
+    box-sizing:border-box;
     border:none;
     outline:none;
     background:white;
     border:1px solid #ece3ff;
     border-radius:16px;
-    padding:13px;
+    padding:12px 13px;
     color:#2e1065;
     margin-bottom:12px;
-    font-size:14px;
+    font-size:13px;
+    line-height:1.45;
+    font-family:inherit;
+}
+
+.proposal-card textarea{
+    resize:none;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    white-space:pre-wrap;
 }
 
 .upload-proposal-btn{
@@ -839,17 +852,28 @@ body{
     border:1px solid #dcfce7;
     border-radius:16px;
     padding:12px;
+    min-width:0;
+}
+
+.proposal-file-ready > div{
+    min-width:0;
 }
 
 .proposal-file-ready i{
     color:#16a34a;
     margin-top:3px;
+    flex-shrink:0;
 }
 
 .proposal-file-ready strong{
     display:block;
     color:#2e1065;
     margin-bottom:4px;
+    font-size:13px;
+    line-height:1.45;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    white-space:normal;
 }
 
 .proposal-file-ready a{
@@ -858,6 +882,8 @@ body{
     font-weight:600;
     text-decoration:none;
     margin-bottom:4px;
+    overflow-wrap:anywhere;
+    word-break:break-word;
 }
 
 .proposal-file-ready small{
@@ -1342,4 +1368,4 @@ mark {
     border-radius: 12px;
     padding: 10px 12px;
     margin-bottom: 10px;
-}
+}

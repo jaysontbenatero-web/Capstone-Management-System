@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `adviser_settings` (
   `program_cater` varchar(20) DEFAULT 'Not Set',
   `year_level_cater` varchar(50) DEFAULT 'Not Set',
   `adviser_status` varchar(30) DEFAULT 'Not Configured',
+  `catering_year` int DEFAULT NULL,
   `remarks` text,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

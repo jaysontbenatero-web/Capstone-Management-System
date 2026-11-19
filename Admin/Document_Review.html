@@ -136,21 +136,11 @@
                 <h1>Document Review</h1>
 
                 <p id="adminSubtitle">
-                    Review student documents and send documents to selected users.
+                    Review student documents and e-sign submissions.
                 </p>
             </div>
 
-            <div class="top-actions">
 
-                <button
-                    class="primary-btn"
-                    onclick="openSendModal()"
-                    type="button"
-                >
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Send Document
-                </button>
-            </div>
 
         </div>
 
@@ -384,6 +374,11 @@
                         <p id="eSignAdviserMsg">No message provided.</p>
                     </div>
 
+                    <div id="eSignViewOnlyBanner" style="display:none; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; border-radius:12px; padding:10px 12px; font-size:13px; font-weight:700; margin-bottom:14px; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Signed &amp; Locked — View Only Mode. Signatures and verdicts cannot be modified.</span>
+                    </div>
+
                     <div class="input-group">
                         <label>Dean Notes</label>
                         <textarea
@@ -452,145 +447,6 @@
             </div>
 
         </div>
-    </div>
-
-    <!-- SEND DOCUMENT MODAL -->
-    <div
-        class="modal-overlay"
-        id="sendModal"
-    >
-
-        <div class="modal-box large-modal">
-
-            <div class="modal-header">
-
-                <div>
-                    <h2>
-                        Send Document
-                    </h2>
-
-                    <p>
-                        Upload a document and send it to selected users.
-                    </p>
-                </div>
-
-                <button
-                    class="close-modal-btn"
-                    onclick="closeSendModal()"
-                    type="button"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-
-            </div>
-
-            <div class="form-grid">
-
-                <div class="input-group">
-                    <label>
-                        Document Title
-                    </label>
-
-                    <input
-                        type="text"
-                        id="sendDocumentTitle"
-                        placeholder="Enter document title"
-                    >
-                </div>
-
-                <div class="input-group">
-                    <label>
-                        Document Type
-                    </label>
-
-                    <select id="sendDocumentType">
-                        <option value="Instruction">
-                            Instruction
-                        </option>
-
-                        <option value="Review File">
-                            Review File
-                        </option>
-
-                        <option value="Template">
-                            Template
-                        </option>
-
-                        <option value="Evaluation File">
-                            Evaluation File
-                        </option>
-
-                        <option value="Other">
-                            Other
-                        </option>
-                    </select>
-                </div>
-
-            </div>
-
-            <div class="input-group">
-                <label>
-                    Attach File
-                </label>
-
-                <input
-                    type="file"
-                    id="sendDocumentFile"
-                >
-            </div>
-
-            <div class="input-group">
-                <label>
-                    Message / Comment
-                </label>
-
-                <textarea
-                    id="sendMessage"
-                    placeholder="Write a message for the selected recipients..."
-                ></textarea>
-            </div>
-
-            <div class="input-group">
-                <label>
-                    Search Recipients
-                </label>
-
-                <input
-                    type="text"
-                    id="recipientSearch"
-                    placeholder="Search name, ID, role, or program..."
-                    onkeyup="renderRecipients()"
-                >
-            </div>
-
-            <div
-                class="recipient-list"
-                id="recipientList"
-            >
-                Loading recipients...
-            </div>
-
-            <div class="modal-actions">
-
-                <button
-                    class="cancel-btn"
-                    onclick="closeSendModal()"
-                    type="button"
-                >
-                    Cancel
-                </button>
-
-                <button
-                    class="save-btn"
-                    onclick="sendAdminDocument()"
-                    type="button"
-                >
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Send Document
-                </button>
-
-            </div>
-            </div>
     </div>
 
     <!-- REVIEW MODAL -->
@@ -813,7 +669,6 @@
 
                 renderStats(data.stats);
 
-                renderRecipients();
 
                 renderCurrentTab();
 
@@ -1225,6 +1080,103 @@
             chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
         }
 
+        const DEFENSE_PHASE_CONFIG = [
+            { name: "Concept Presentation", icon: "fa-lightbulb", colorClass: "phase-concept" },
+            { name: "Outline Defense", icon: "fa-clipboard-check", colorClass: "phase-outline" },
+            { name: "Pre-Final Defense", icon: "fa-person-chalkboard", colorClass: "phase-prefinal" },
+            { name: "Final Defense", icon: "fa-graduation-cap", colorClass: "phase-final" },
+            { name: "Other Documents", icon: "fa-folder-open", colorClass: "phase-other" }
+        ];
+
+        function getDocumentDefensePhase(item){
+            const dt = String(item.document_type || item.defense_type || "").toLowerCase();
+            const title = String(item.document_title || "").toLowerCase();
+            const code = String(item.document_code || "").toLowerCase();
+            const combined = `${dt} ${title} ${code}`;
+
+            if(
+                combined.includes("concept presentation") ||
+                combined.includes("proposed concept") ||
+                combined.includes("concept paper") ||
+                combined.includes("adviser acceptance") ||
+                combined.includes("recommendation for concept") ||
+                combined.includes("environmental scanning")
+            ){
+                return "Concept Presentation";
+            }
+
+            if(
+                combined.includes("pre-final") ||
+                combined.includes("prefinal") ||
+                combined.includes("chapter 3-4") ||
+                combined.includes("chapter 3 and 4") ||
+                combined.includes("chapter 3 & 4")
+            ){
+                return "Pre-Final Defense";
+            }
+
+            if(
+                combined.includes("outline") ||
+                combined.includes("chapter 1 and 2") ||
+                combined.includes("chapter 1-2") ||
+                combined.includes("chapter 1 & 2") ||
+                combined.includes("recommendation for outline")
+            ){
+                return "Outline Defense";
+            }
+
+            if(
+                combined.includes("final defense") ||
+                combined.includes("chapter 1-4") ||
+                combined.includes("chapter 1 to 4") ||
+                combined.includes("final")
+            ){
+                return "Final Defense";
+            }
+
+            if(combined.includes("recommendation letter")){
+                return "Pre-Final Defense";
+            }
+
+            return "Other Documents";
+        }
+
+        function togglePhaseSection(phaseDomId){
+            const body = document.getElementById(`phase-body-${phaseDomId}`);
+            const chevron = document.getElementById(`phase-chevron-${phaseDomId}`);
+            if(!body || !chevron) return;
+            const isHidden = body.style.display === "none";
+            body.style.display = isHidden ? "block" : "none";
+            chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+        }
+
+        function buildPhaseSortedHtml(groupDomId, docs){
+            return DEFENSE_PHASE_CONFIG.map((phase, pIdx) => {
+                const phaseDocs = docs.filter(d => getDocumentDefensePhase(d) === phase.name);
+                if(phaseDocs.length === 0) return "";
+                const phaseDomId = `${groupDomId}-phase-${pIdx}`;
+                return `
+                    <div class="phase-subcontainer">
+                        <div class="phase-subcontainer-header" onclick="togglePhaseSection('${phaseDomId}')">
+                            <div class="phase-subcontainer-title">
+                                <span class="phase-icon-badge ${phase.colorClass}">
+                                    <i class="fa-solid ${phase.icon}"></i>
+                                </span>
+                                <span>${phase.name}</span>
+                            </div>
+                            <div class="phase-subcontainer-right">
+                                <span class="phase-count-pill">${phaseDocs.length} File${phaseDocs.length !== 1 ? "s" : ""}</span>
+                                <i class="fa-solid fa-chevron-down phase-chevron" id="phase-chevron-${phaseDomId}" style="transform:rotate(180deg);"></i>
+                            </div>
+                        </div>
+                        <div class="phase-subcontainer-body" id="phase-body-${phaseDomId}" style="display:block;">
+                            ${phaseDocs.map(buildGroupedDocRowHtml).join("")}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
         function renderReceivedDocuments(){
 
             const keyword =
@@ -1315,7 +1267,7 @@
                                 <span class="lbl-action">Action</span>
                             </div>
                         </div>
-                        ${group.docs.map(buildGroupedDocRowHtml).join("")}
+                        ${buildPhaseSortedHtml(domId, group.docs)}
                     </div>
                 `;
 
@@ -1556,198 +1508,6 @@
 
             document.getElementById("reviewModal").style.display =
                 "none";
-
-        }
-
-        function openSendModal(){
-
-            clearSendForm();
-
-            renderRecipients();
-
-            document.getElementById("sendModal").style.display =
-                "flex";
-
-        }
-
-        function closeSendModal(){
-
-            document.getElementById("sendModal").style.display =
-                "none";
-
-        }
-
-        function clearSendForm(){
-
-            document.getElementById("sendDocumentTitle").value =
-                "";
-
-            document.getElementById("sendDocumentType").value =
-                "Instruction";
-
-            document.getElementById("sendDocumentFile").value =
-                "";
-
-            document.getElementById("sendMessage").value =
-                "";
-
-            document.getElementById("recipientSearch").value =
-                "";
-
-        }
-
-        function renderRecipients(){
-
-            const container =
-                document.getElementById("recipientList");
-
-            if(!container){
-                return;
-            }
-
-            const keyword =
-                document.getElementById("recipientSearch")
-                ? document.getElementById("recipientSearch").value.toLowerCase()
-                : "";
-
-            const filtered =
-                recipients.filter(user =>
-                    String(user.fullname || "").toLowerCase().includes(keyword)
-                    ||
-                    String(user.user_id || "").toLowerCase().includes(keyword)
-                    ||
-                    String(user.role || "").toLowerCase().includes(keyword)
-                    ||
-                    String(user.program || "").toLowerCase().includes(keyword)
-                );
-
-            container.innerHTML =
-                "";
-
-            if(filtered.length === 0){
-
-                container.innerHTML =
-                    `<div class="empty-card">No recipients found.</div>`;
-
-                return;
-
-            }
-
-            filtered.forEach(user => {
-
-                const roleText =
-                    user.role === "admin"
-                    ? "Admin"
-                    : user.role === "faculty"
-                    ? "Faculty"
-                    : "Student";
-
-                container.innerHTML +=
-                    `
-                        <label class="recipient-row">
-
-                            <input
-                                type="checkbox"
-                                class="recipient-checkbox"
-                                value="${user.id}"
-                            >
-
-                            <div class="recipient-avatar">
-                                ${user.profile_image ? `<img src="/uploads/profile_images/${user.profile_image}" alt="">` : (user.fullname ? user.fullname.charAt(0).toUpperCase() : "U")}
-                            </div>
-
-                            <div>
-                                <h4>
-                                    ${user.fullname || "User"}
-                                </h4>
-
-                                <p>
-                                    ${user.user_id || "No ID"} • ${roleText} • ${user.program || user.position || "No Program"}
-                                </p>
-                            </div>
-
-                        </label>
-                    `;
-
-            });
-
-        }
-
-        async function sendAdminDocument(){
-
-            const documentTitle =
-                document.getElementById("sendDocumentTitle").value.trim();
-
-            const documentType =
-                document.getElementById("sendDocumentType").value;
-
-            const documentFile =
-                document.getElementById("sendDocumentFile").files[0];
-
-            const message =
-                document.getElementById("sendMessage").value.trim();
-
-            const selectedRecipients =
-                Array.from(
-                    document.querySelectorAll(".recipient-checkbox:checked")
-                ).map(input =>
-                    input.value
-                );
-
-            if(
-                !documentTitle ||
-                !documentType ||
-                !documentFile ||
-                selectedRecipients.length === 0
-            ){
-
-                alert("Please complete the document details, attach a file, and select at least one recipient.");
-
-                return;
-
-            }
-
-            const formData =
-                new FormData();
-
-            formData.append("adminUserId", loggedInAdminId);
-            formData.append("documentTitle", documentTitle);
-            formData.append("documentType", documentType);
-            formData.append("documentFile", documentFile);
-            formData.append("recipientIds", JSON.stringify(selectedRecipients));
-            formData.append("message", message);
-
-            try{
-
-                const response =
-                    await fetch(
-                        "/admin-send-document",
-                        {
-                            method:"POST",
-                            body:formData
-                        }
-                    );
-
-                const data =
-                    await response.json();
-
-                alert(data.message || "Document processed.");
-
-                if(data.success){
-
-                    closeSendModal();
-
-                    loadDocumentReview();
-
-                }
-
-            }catch(error){
-
-                console.log(error);
-
-                alert("Cannot send document.");
-
-            }
 
         }
 
@@ -2010,6 +1770,12 @@
                 clearSignature();
                 initSignatureCanvas();
 
+                const isSignedReadOnly =
+                    item.review_status === 'Approved'
+                    || item.document_status === 'Approved'
+                    || item.document_status === 'Chairperson Signed';
+                toggleESignViewOnlyMode(isSignedReadOnly, item);
+
                 const filePath = String(item.signed_file_path || item.file_path).trim();
 
                 if(!filePath){
@@ -2027,6 +1793,47 @@
             }catch(error){
                 console.error(error);
                 alert("Could not open the e-signature workspace. Please refresh and try again.");
+            }
+        }
+
+        let isESignReadOnly = false;
+
+        function toggleESignViewOnlyMode(isReadOnly, item){
+            isESignReadOnly = Boolean(isReadOnly);
+
+            const banner = document.getElementById("eSignViewOnlyBanner");
+            if(banner) banner.style.display = isESignReadOnly ? "flex" : "none";
+
+            const notesEl = document.getElementById("eSignNotes");
+            if(notesEl){
+                notesEl.readOnly = isESignReadOnly;
+                notesEl.style.background = isESignReadOnly ? "#f8fafc" : "";
+                notesEl.value = isESignReadOnly ? ((item && item.review_comment) || "") : "";
+            }
+
+            const modeTabs = document.querySelector("#eSignModal .signature-mode-tabs");
+            const wrapSaved = document.getElementById("savedSignatureWrapper");
+            const wrapDraw = document.getElementById("drawSignatureWrapper");
+            if(isESignReadOnly){
+                if(modeTabs) modeTabs.style.display = "none";
+                if(wrapSaved) wrapSaved.style.display = "none";
+                if(wrapDraw) wrapDraw.style.display = "none";
+            }else{
+                if(modeTabs) modeTabs.style.display = "flex";
+            }
+
+            const actionStack = document.querySelector("#eSignModal .esign-action-stack");
+            if(actionStack){
+                actionStack.querySelectorAll(".save-btn, .esign-revision-toggle-btn, .reject-outline-btn").forEach(btn => {
+                    btn.style.display = isESignReadOnly ? "none" : "";
+                    btn.disabled = isESignReadOnly;
+                });
+                const closeBtn = actionStack.querySelector(".cancel-btn:not(.reject-outline-btn)");
+                if(closeBtn){
+                    closeBtn.textContent = isESignReadOnly ? "Close" : "Cancel";
+                    closeBtn.disabled = false;
+                    closeBtn.style.opacity = "";
+                }
             }
         }
 
@@ -2161,20 +1968,22 @@
             }
         }
 
-        function placeSavedSignatureOnDocument() {
-            if (!savedSignaturePath) {
-                alert("No saved signature image path found.");
-                return;
-            }
+        function formatSignatureDateMMDDYYYY(date = new Date()){
+            const mm = String(date.getMonth() + 1).padStart(2, "0");
+            const dd = String(date.getDate()).padStart(2, "0");
+            const yyyy = date.getFullYear();
+            return `${mm}/${dd}/${yyyy}`;
+        }
 
-            if (signaturePlaced) {
-                alert('A signature is already placed on this page. Drag it to reposition, or change the page to place it elsewhere.');
-                return;
-            }
+        function syncSignatureDateLabel(sigEl){
+            const dateEl = document.getElementById("draggableSignatureDate");
+            if(!sigEl || !dateEl) return;
+            dateEl.style.left = `${sigEl.offsetLeft}px`;
+            dateEl.style.top = `${sigEl.offsetTop + sigEl.offsetHeight + 2}px`;
+            dateEl.style.width = `${Math.max(sigEl.offsetWidth, 80)}px`;
+        }
 
-            const dataUrl = `${savedSignaturePath}`;
-            const layer = document.getElementById("signaturePlacementLayer");
-
+        function mountSignatureOnLayer(layer, dataUrl){
             layer.innerHTML = `
                 <img
                     id="draggableSignature"
@@ -2183,20 +1992,49 @@
                     alt="Signature"
                     draggable="false"
                 >
+                <div
+                    id="draggableSignatureDate"
+                    style="position:absolute; pointer-events:none; text-align:center; font-size:11px; font-weight:600; color:#1e293b; font-family:Helvetica, Arial, sans-serif; line-height:1.1; white-space:nowrap;"
+                >${formatSignatureDateMMDDYYYY()}</div>
             `;
 
             const sigEl = document.getElementById("draggableSignature");
             if (sigEl) {
                 sigEl.style.left = "40px";
                 sigEl.style.top = "40px";
+                sigEl.addEventListener("load", () => syncSignatureDateLabel(sigEl));
+                syncSignatureDateLabel(sigEl);
                 enableSignatureDrag(sigEl);
             }
+        }
+
+        function placeSavedSignatureOnDocument(){
+            if (isESignReadOnly) {
+                showESignToast('This document is already signed and locked in view-only mode.', 'error');
+                return;
+            }
+            if (!savedSignaturePath) {
+                alert("No saved signature image path found.");
+                return;
+            }
+            if (signaturePlaced) {
+                alert('A signature is already placed on this page. Drag it to reposition, or change the page to place it elsewhere.');
+                return;
+            }
+
+            const dataUrl = `${savedSignaturePath}`;
+            const layer = document.getElementById("signaturePlacementLayer");
+            mountSignatureOnLayer(layer, dataUrl);
             signaturePlaced = true;
             currentSignatureMode = 'saved';
             updatePlaceButtonState();
         }
 
         function placeSignatureOnDocument(){
+            if (isESignReadOnly) {
+                showESignToast('This document is already signed and locked in view-only mode.', 'error');
+                return;
+            }
             if (signaturePlaced) {
                 alert('A signature is already placed on this page. Drag it to reposition, or change the page to place it elsewhere.');
                 return;
@@ -2214,12 +2052,7 @@
 
             const dataUrl = drawCanvas.toDataURL("image/png");
             const layer = document.getElementById("signaturePlacementLayer");
-            layer.innerHTML = `<img id="draggableSignature" class="draggable-signature" src="${dataUrl}" alt="Signature" draggable="false">`;
-
-            const sigEl = document.getElementById("draggableSignature");
-            sigEl.style.left = "40px";
-            sigEl.style.top = "40px";
-            enableSignatureDrag(sigEl);
+            mountSignatureOnLayer(layer, dataUrl);
             signaturePlaced = true;
             currentSignatureMode = 'draw';
             updatePlaceButtonState();
@@ -2264,6 +2097,7 @@
                 const deltaY = event.clientY - signatureDragState.startY;
                 element.style.left = `${signatureDragState.origLeft + deltaX}px`;
                 element.style.top = `${signatureDragState.origTop + deltaY}px`;
+                syncSignatureDateLabel(element);
             };
 
             const onPointerUp = () => { signatureDragState = null; };
@@ -2302,7 +2136,8 @@
                 sigLeft: sigEl.offsetLeft,
                 sigTop: sigEl.offsetTop,
                 sigWidth: sigEl.offsetWidth,
-                sigHeight: sigEl.offsetHeight
+                sigHeight: sigEl.offsetHeight,
+                signedDate: formatSignatureDateMMDDYYYY()
             };
         }
 
@@ -2328,6 +2163,10 @@
         }
 
         async function submitESignature(reviewStatus){
+            if(isESignReadOnly){
+                showESignToast('This document is already signed and locked in view-only mode.', 'error');
+                return;
+            }
             if(!activeSigningRequest){
                 showESignToast('No active signing request.', 'error');
                 return;

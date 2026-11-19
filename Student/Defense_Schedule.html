@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defense Schedules | CMS</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="student-portal.css">
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
+
+    <style>
+        .defense-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .defense-card {
+            background: #ffffff;
+            border: 1px solid #ede9fe;
+            border-radius: 22px;
+            padding: 20px 22px;
+            box-shadow: 0 10px 30px rgba(46, 16, 101, 0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .defense-card.has-ongoing {
+            border: 2px solid #10b981;
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.16);
+        }
+
+        .ongoing-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .ongoing-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #10b981;
+            display: inline-block;
+            animation: ongoingPulse 1.4s infinite;
+        }
+
+        @keyframes ongoingPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+        }
+
+        .defense-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .defense-card-head h3 {
+            margin: 0 0 3px;
+            font-size: 17px;
+            color: #2e1065;
+        }
+
+        .defense-card-head p {
+            margin: 0;
+            font-size: 12px;
+            color: #6d5f85;
+        }
+
+        .status-pill {
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 700;
+            background: #f3e8ff;
+            color: #6d28d9;
+            white-space: nowrap;
+        }
+
+        .status-pill.ongoing {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pill.completed {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .status-pill.cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .defense-meta-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: #faf8ff;
+            border: 1px solid #f1ebff;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            color: #334155;
+        }
+
+        .defense-meta-list div strong {
+            display: block;
+            font-size: 11px;
+            color: #6d28d9;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 2px;
+        }
+
+        .panelists-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            color: #334155;
+        }
+
+        .minutes-btn {
+            border: none;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #ffffff;
+            padding: 11px 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 13.5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .minutes-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.28);
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            background: #ffffff;
+            border: 1px solid #ede9fe;
+            border-radius: 20px;
+            padding: 36px;
+            text-align: center;
+            color: #6d5f85;
+            font-size: 14px;
+        }
+
+        .panel-minutes-card {
+            background: #faf8ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+
+        .panel-minutes-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .panel-role-badge {
+            background: #7c3aed;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            letter-spacing: 0.4px;
+        }
+
+        .bullet-list-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .bullet-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bullet-marker {
+            color: #7c3aed;
+            font-weight: 800;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .bullet-input {
+            flex: 1;
+            padding: 8px 11px;
+            border-radius: 10px;
+            border: 1px solid #ddd6fe;
+            background: #fff;
+            font-size: 13px;
+            color: #1f2937;
+            outline: none;
+        }
+
+        .bullet-input:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        .remove-bullet-btn {
+            border: none;
+            background: #fee2e2;
+            color: #dc2626;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .add-bullet-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .add-bullet-btn {
+            border: none;
+            background: #ede9fe;
+            color: #5b21b6;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 10, 30, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 22px;
+            padding: 24px;
+            max-width: 780px;
+            width: 95%;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .close-modal-btn {
+            border: none;
+            background: #f3e8ff;
+            color: #6d28d9;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole = localStorage.getItem("role");
+        if (userRole !== "student") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access the Student Portal.").then(() => {
+                window.location.href = "../Log-in.html";
+            });
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='StudentDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Capstone</div>
+                <div class="menu-item" id="nav-titles" onclick="window.location.href='Capstone_Titles.html'">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+                <div class="menu-item" id="nav-members" onclick="window.location.href='Members.html'">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+                <div class="menu-item" id="nav-adviser" onclick="window.location.href='Req_Adviser.html'">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+                <div class="menu-item" id="nav-documents" onclick="window.location.href='Documents.html'">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+                <div class="menu-item" id="nav-consultation" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+                <div class="menu-item active" id="nav-defense" onclick="window.location.href='Defense_Schedule.html'">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Defense Schedules</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">Updates</div>
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main admin-main">
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Defense Schedules</h1>
+                <p id="studentGroupSubtitle">View your group's scheduled defenses and record bulleted defense minutes.
+                </p>
+            </div>
+        </div>
+
+        <div class="defense-grid" id="defenseGrid">
+            <div class="empty-state">Loading your defense schedules...</div>
+        </div>
+    </main>
+
+    <!-- VIEW DEFENSE DETAILS MODAL -->
+    <div class="modal-overlay" id="viewDefenseModal">
+        <div class="modal-box" style="max-width:780px; width:95%;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="viewModalTitle" style="margin:0 0 2px; color:#2e1065;">Defense Details</h2>
+                    <p id="viewModalSubtitle" style="margin:0; color:#64748b; font-size:13px;"></p>
+                </div>
+                <button class="close-modal-btn" type="button" onclick="closeViewDefenseModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="viewModalBody" style="max-height:66vh; overflow-y:auto; padding-right:4px;"></div>
+            <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+                <button type="button" onclick="closeViewDefenseModal()"
+                    style="border:none; background:#f1f5f9; color:#334155; padding:10px 18px; border-radius:12px; font-weight:600; cursor:pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEFENSE MINUTES MODAL -->
+    <div class="modal-overlay" id="defenseMinutesModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h2 id="minutesModalTitle" style="margin:0 0 2px; color:#2e1065;">Add Defense Minutes</h2>
+                    <p id="minutesModalSubtitle" style="margin:0; color:#64748b; font-size:13px;">Record bulleted notes
+                        per panelist.</p>
+                </div>
+                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="minutesPanelCardsContainer" style="max-height:60vh; overflow-y:auto; padding-right:4px;"></div>
+
+            <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" onclick="closeDefenseMinutesModal()"
+                    style="border:none; background:#f1f5f9; color:#334155; padding:11px 18px; border-radius:12px; font-weight:600; cursor:pointer;">Cancel</button>
+                <button type="button" id="saveMinutesBtn" onclick="saveDefenseMinutes()"
+                    style="border:none; background:linear-gradient(135deg,#059669,#10b981); color:#fff; padding:11px 20px; border-radius:12px; font-weight:600; cursor:pointer;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loggedInUserId = localStorage.getItem("userId");
+        let studentGroup = null;
+        let defenseSchedules = [];
+        let activeSchedule = null;
+        let activeMinutesEntries = [];
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../Log-in.html";
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatDateText(val) {
+            if (!val) return "TBA";
+            const d = new Date(val);
+            if (Number.isNaN(d.getTime())) return String(val);
+            return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        async function loadStudentDefenses() {
+            const grid = document.getElementById("defenseGrid");
+            try {
+                const res = await fetch(`/student-defense-schedules/${encodeURIComponent(loggedInUserId)}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    grid.innerHTML = `<div class="empty-state">${escapeHtml(data.message || "Failed to load defense schedules.")}</div>`;
+                    return;
+                }
+
+                studentGroup = data.group;
+                defenseSchedules = data.schedules || [];
+
+                if (!studentGroup) {
+                    grid.innerHTML = `<div class="empty-state">You are not part of a capstone group yet.</div>`;
+                    return;
+                }
+
+                document.getElementById("studentGroupSubtitle").innerText =
+                    `${studentGroup.group_name || "Group"} • ${studentGroup.program || "Program"} — View your defense schedules and record minutes.`;
+
+                if (defenseSchedules.length === 0) {
+                    grid.innerHTML = `<div class="empty-state">No defense schedules have been assigned to your group yet.</div>`;
+                    return;
+                }
+
+                grid.innerHTML = defenseSchedules.map(s => {
+                    const isOngoing = Boolean(s.is_ongoing);
+                    const rawStatus = String(s.defense_status || "Scheduled");
+                    const statusLower = rawStatus.toLowerCase();
+                    const verdict = String(s.panel_result || "Pending");
+                    const verdictLower = verdict.toLowerCase();
+
+                    const isRedefense = verdictLower.includes("re-defense") || verdictLower.includes("redefense") || verdictLower.includes("conditional") || verdictLower.includes("formal defense");
+                    const isPassed = verdictLower.includes("passed") && !isRedefense;
+                    const isCompleted = ["completed", "done", "finished"].includes(statusLower) || isPassed;
+                    const isCancelled = statusLower.includes("cancel");
+
+                    const statusText = isOngoing ? "On-Going" : (isRedefense ? "For Re-Defense" : (isCompleted ? "Completed" : rawStatus));
+                    const pillClass = isOngoing ? "ongoing" : (isRedefense ? "cancelled" : (isCompleted ? "completed" : (isCancelled ? "cancelled" : "")));
+
+                    const panelistsHtml = (s.panelists || []).map(p =>
+                        `<div><strong>${escapeHtml(p.roleLabel)}:</strong> ${escapeHtml(p.panelistName)}</div>`
+                    ).join("");
+
+                    const hasMinutes = Array.isArray(s.saved_minutes) && s.saved_minutes.some(e => Array.isArray(e.bullets) && e.bullets.length > 0);
+                    const minStatus = s.minutes_status || null;
+                    const isMinApproved = minStatus === "Approved";
+                    const isAdviserCreated = s.submitted_by_role === "adviser";
+                    const isMinRejected = minStatus === "Rejected";
+                    const isMinDraft = minStatus === "Draft";
+
+                    const isAddMinutesDisabled = isCancelled || isAdviserCreated || isMinApproved || isRedefense;
+                    const disabledReason = (isAdviserCreated || isMinApproved)
+                        ? "Adviser already recorded/approved minutes — click View to read"
+                        : (isRedefense
+                            ? "Disabled: Verdict is for re-defense"
+                            : "");
+
+                    let verdictPillHtml = "";
+                    if (verdict && verdict !== "Pending") {
+                        const vStyle = isPassed
+                            ? "background:#dcfce7; color:#15803d; border:1px solid #bbf7d0;"
+                            : (isRedefense
+                                ? "background:#ffedd5; color:#c2410c; border:1px solid #fdba74;"
+                                : "background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;");
+                        verdictPillHtml = `<span style="padding:5px 11px; border-radius:999px; font-size:11.5px; font-weight:700; ${vStyle}">Verdict: ${escapeHtml(verdict)}</span>`;
+                    }
+
+                    // Highlight comments & recommendations when For Re-Defense / Conditional Passed / For Formal Defense
+                    const evalComments = (s.panel_evaluations || [])
+                        .filter(ev => (ev.comments && ev.comments.trim()) || (ev.recommendations && ev.recommendations.trim()));
+                    const hasFeedback = evalComments.length > 0 || (s.comments && s.comments.trim()) || (s.recommendations && s.recommendations.trim());
+
+                    let redefenseHighlightHtml = "";
+                    if (isRedefense && hasFeedback) {
+                        const firstComment = (evalComments[0] && evalComments[0].comments) || s.comments || "";
+                        const firstRec = (evalComments[0] && evalComments[0].recommendations) || s.recommendations || "";
+                        redefenseHighlightHtml = `
+                            <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5); border:1.5px solid #fb923c; border-radius:12px; padding:10px 12px; font-size:12.5px; color:#9a3412;">
+                                <div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Panel Comments &amp; Recommendations (For Re-Defense)</div>
+                                ${firstComment ? `<div style="margin-bottom:3px;"><strong>Comments:</strong> ${escapeHtml(firstComment.slice(0, 140))}${firstComment.length > 140 ? "..." : ""}</div>` : ""}
+                                ${firstRec ? `<div><strong>Recommendations:</strong> ${escapeHtml(firstRec.slice(0, 140))}${firstRec.length > 140 ? "..." : ""}</div>` : ""}
+                            </div>
+                        `;
+                    }
+
+                    let minutesBadgeHtml = "";
+                    if (hasMinutes && minStatus) {
+                        const badgeBg = isMinApproved ? "#dcfce7; color:#15803d; border:1px solid #bbf7d0;"
+                            : (isMinRejected ? "#fee2e2; color:#dc2626; border:1px solid #fecaca;"
+                                : "#fef3c7; color:#b45309; border:1px solid #fde68a;");
+                        const badgeLabel = isAdviserCreated ? "Adviser Defense Minutes Recorded"
+                            : (isMinApproved ? "Minutes Approved"
+                                : (isMinRejected ? "Minutes Rejected" : "Minutes Draft (Pending Adviser Approval)"));
+                        const previewHtml = isAdviserCreated
+                            ? `<div style="margin-top:6px; font-weight:400; color:#1e293b; font-size:12px;">
+                                ${(s.saved_minutes || []).filter(e => Array.isArray(e.bullets) && e.bullets.length).map(e =>
+                                `<div style="margin-top:4px;"><strong>${escapeHtml(e.roleLabel || "Panel")}${e.panelistName ? ` (${escapeHtml(e.panelistName)})` : ""}:</strong>
+                                        <ul style="margin:2px 0 0; padding-left:16px;">${e.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+                                    </div>`
+                            ).join("")}
+                               </div>`
+                            : "";
+                        minutesBadgeHtml = `
+                            <div style="font-size:12px; font-weight:600; padding:8px 11px; border-radius:10px; ${badgeBg}">
+                                ${badgeLabel}
+                                ${isMinRejected && s.adviser_feedback ? `<div style="font-weight:400; margin-top:3px;">Feedback: ${escapeHtml(s.adviser_feedback)}</div>` : ""}
+                                ${previewHtml}
+                            </div>
+                        `;
+                    }
+
+                    const minutesBtnLabel = isMinDraft || isMinRejected ? "Edit Minutes Draft" : "Add Defense Minutes";
+
+                    return `
+                        <div class="defense-card ${isOngoing ? "has-ongoing" : ""}">
+                            ${isOngoing ? `
+                                <div class="ongoing-banner">
+                                    <span style="display:inline-flex; align-items:center; gap:7px;">
+                                        <span class="ongoing-dot"></span> On-Going Defense Now
+                                    </span>
+                                    <span>${escapeHtml(s.room || "TBA")}</span>
+                                </div>
+                            ` : ""}
+                            <div class="defense-card-head">
+                                <div>
+                                    <h3>${escapeHtml(s.defense_type || "Capstone Defense")}</h3>
+                                    <p>${escapeHtml(s.schedule_code || "No Code")}</p>
+                                </div>
+                                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                                    <span class="status-pill ${pillClass}">${escapeHtml(statusText)}</span>
+                                    ${verdictPillHtml}
+                                </div>
+                            </div>
+
+                            <div class="defense-meta-list">
+                                <div><strong>Date</strong>${formatDateText(s.defense_date)}</div>
+                                <div><strong>Time</strong>${escapeHtml(s.start_time || "TBA")} – ${escapeHtml(s.end_time || "TBA")}</div>
+                                <div><strong>Room / Venue</strong>${escapeHtml(s.room || "TBA")}</div>
+                                <div><strong>Project Title</strong>${escapeHtml(studentGroup.project_title || "Not Set")}</div>
+                            </div>
+
+                            <div class="panelists-box">
+                                ${panelistsHtml}
+                            </div>
+
+                            ${redefenseHighlightHtml}
+                            ${minutesBadgeHtml}
+
+                            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:auto;">
+                                <button type="button" onclick="openViewDefenseModal(${s.schedule_id})" style="flex:1; border:none; background:#ede9fe; color:#5b21b6; padding:11px 14px; border-radius:14px; font-weight:600; font-size:13.5px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px;">
+                                    <i class="fa-solid fa-eye"></i> View
+                                </button>
+                                ${!isCancelled ? `
+                                <button type="button" class="minutes-btn" ${isAddMinutesDisabled ? "disabled" : ""} onclick="${isAddMinutesDisabled ? "" : `openDefenseMinutesModal(${s.schedule_id})`}" title="${escapeHtml(disabledReason)}" style="flex:1; ${isAddMinutesDisabled ? "opacity:0.48; cursor:not-allowed; background:#94a3b8; box-shadow:none; transform:none;" : ""}">
+                                    <i class="fa-solid fa-clipboard-list"></i>
+                                    ${minutesBtnLabel}
+                                </button>
+                                ` : ""}
+                            </div>
+                            ${disabledReason ? `<div style="font-size:11.5px; color:#64748b; text-align:right;">${escapeHtml(disabledReason)}</div>` : ""}
+                        </div>
+                    `;
+                }).join("");
+            } catch (err) {
+                console.log(err);
+                grid.innerHTML = `<div class="empty-state">Cannot connect to server.</div>`;
+            }
+        }
+
+        async function openViewDefenseModal(scheduleId) {
+            const s = defenseSchedules.find(item => Number(item.schedule_id) === Number(scheduleId));
+            if (!s) return;
+
+            document.getElementById("viewModalTitle").innerText = `${s.defense_type || "Defense"} — ${studentGroup ? studentGroup.group_name : ""}`;
+            document.getElementById("viewModalSubtitle").innerText = `${s.schedule_code || ""} • ${formatDateText(s.defense_date)} • ${s.start_time || ""} - ${s.end_time || ""} • ${s.room || "TBA"}`;
+
+            const renderModalBody = () => {
+                const verdict = String(s.panel_result || "Pending");
+                const verdictLower = verdict.toLowerCase();
+                const isRedefense = verdictLower.includes("re-defense") || verdictLower.includes("redefense") || verdictLower.includes("conditional") || verdictLower.includes("formal defense");
+
+                const panelistsHtml = (s.panelists || []).map(p =>
+                    `<div style="font-size:13px; margin-bottom:4px;"><strong>${escapeHtml(p.roleLabel)}:</strong> ${escapeHtml(p.panelistName)}</div>`
+                ).join("");
+
+                const evals = (Array.isArray(s.panel_evaluations) ? s.panel_evaluations : [])
+                    .filter(ev => String(ev.panel_result || "").trim() !== "Did Not Evaluate");
+
+                let feedbackHtml = "";
+                if (evals.length > 0) {
+                    feedbackHtml = evals.map((ev, idx) => {
+                        const matchedPanelist = (s.panelists || []).find(p =>
+                            (ev.panelist_id && p.panelistId && Number(p.panelistId) === Number(ev.panelist_id))
+                            || (ev.panelist_name && p.panelistName && String(p.panelistName).trim().toLowerCase() === String(ev.panelist_name).trim().toLowerCase())
+                        );
+                        const roleTag = matchedPanelist && matchedPanelist.roleLabel
+                            ? `<span style="font-size:11px; font-weight:700; color:#6d28d9; background:#ede9fe; padding:2px 8px; border-radius:999px; margin-left:6px;">${escapeHtml(matchedPanelist.roleLabel)}</span>`
+                            : "";
+                        return `
+                            <div style="background:${isRedefense ? "#fff7ed" : "#faf8ff"}; border:1px solid ${isRedefense ? "#fb923c" : "#ede9fe"}; border-radius:12px; padding:12px; margin-bottom:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px; flex-wrap:wrap;">
+                                    <div>
+                                        <strong style="font-size:13px; color:#2e1065;">${escapeHtml(ev.panelist_name || `Panelist ${idx + 1}`)}</strong>
+                                        ${roleTag}
+                                    </div>
+                                    ${ev.panel_result ? `<span style="font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:999px; background:#fff; border:1px solid #cbd5e1;">${escapeHtml(ev.panel_result)}</span>` : ""}
+                                </div>
+                                <div style="font-size:13px; color:#334155; margin-bottom:4px; line-height:1.5;"><strong>Comments:</strong> ${escapeHtml(ev.comments && String(ev.comments).trim() ? ev.comments : "None")}</div>
+                                <div style="font-size:13px; color:#334155; line-height:1.5;"><strong>Recommendations:</strong> ${escapeHtml(ev.recommendations && String(ev.recommendations).trim() ? ev.recommendations : "None")}</div>
+                            </div>
+                        `;
+                    }).join("");
+                } else if ((s.comments && s.comments.trim()) || (s.recommendations && s.recommendations.trim())) {
+                    feedbackHtml = `
+                        <div style="background:${isRedefense ? "#fff7ed" : "#faf8ff"}; border:1px solid ${isRedefense ? "#fb923c" : "#ede9fe"}; border-radius:12px; padding:12px;">
+                            <div style="font-size:13px; color:#334155; margin-bottom:4px; line-height:1.5;"><strong>Comments:</strong> ${escapeHtml(s.comments || "None")}</div>
+                            <div style="font-size:13px; color:#334155; line-height:1.5;"><strong>Recommendations:</strong> ${escapeHtml(s.recommendations || "None")}</div>
+                        </div>
+                    `;
+                } else {
+                    feedbackHtml = `<div style="font-size:13px; color:#94a3b8; font-style:italic;">No panel comments or recommendations recorded yet.</div>`;
+                }
+
+                const savedMin = Array.isArray(s.saved_minutes) ? s.saved_minutes : [];
+                const hasMinBullets = savedMin.some(e => Array.isArray(e.bullets) && e.bullets.length > 0);
+                const minutesHtml = hasMinBullets
+                    ? savedMin.map(entry => `
+                        <div style="background:#faf8ff; border:1px solid #ede9fe; border-radius:12px; padding:12px; margin-bottom:8px;">
+                            <div style="margin-bottom:6px;">
+                                <span class="panel-role-badge">${escapeHtml(entry.roleLabel || "Panel")}</span>
+                                <strong style="margin-left:8px; font-size:13.5px; color:#2e1065;">${escapeHtml(entry.panelistName || "")}</strong>
+                            </div>
+                            ${Array.isArray(entry.bullets) && entry.bullets.length
+                            ? `<ul style="margin:0; padding-left:18px; font-size:13px; color:#334155; line-height:1.6;">${entry.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
+                            : `<div style="font-size:12px; color:#94a3b8; font-style:italic;">No notes.</div>`}
+                        </div>
+                    `).join("")
+                    : `<div style="font-size:13px; color:#94a3b8; font-style:italic;">No defense minutes recorded yet.</div>`;
+
+                document.getElementById("viewModalBody").innerHTML = `
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#faf8ff; border:1px solid #ede9fe; border-radius:14px; padding:14px; margin-bottom:14px; font-size:13px;">
+                        <div><strong>Status:</strong> ${escapeHtml(s.is_ongoing ? "On-Going" : (s.defense_status || "Scheduled"))}</div>
+                        <div><strong>Verdict:</strong> ${escapeHtml(verdict)}</div>
+                        <div><strong>Room:</strong> ${escapeHtml(s.room || "TBA")}</div>
+                        <div><strong>Project Title:</strong> ${escapeHtml(studentGroup ? (studentGroup.project_title || "Not Set") : "Not Set")}</div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <h4 style="margin:0 0 8px; color:#2e1065; font-size:14px;">Assigned Panelists</h4>
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px;">${panelistsHtml}</div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <h4 style="margin:0 0 8px; color:${isRedefense ? "#c2410c" : "#2e1065"}; font-size:14px;">
+                            Panel Comments &amp; Recommendations ${isRedefense ? "(Highlighted — For Re-Defense)" : ""}
+                        </h4>
+                        ${feedbackHtml}
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px; color:#2e1065; font-size:14px;">
+                            Defense Minutes ${s.minutes_status ? `(${escapeHtml(s.minutes_status)}${s.submitted_by_role === "adviser" ? " — Adviser" : ""})` : ""}
+                        </h4>
+                        ${minutesHtml}
+                    </div>
+                `;
+            };
+
+            renderModalBody();
+            document.getElementById("viewDefenseModal").style.display = "flex";
+
+            try {
+                const res = await fetch(`/defense-panel-evaluations/${encodeURIComponent(scheduleId)}`);
+                const data = await res.json();
+                if (data && data.success && Array.isArray(data.panel_evaluations)) {
+                    s.panel_evaluations = data.panel_evaluations;
+                    if (data.evaluations_complete && data.panel_result) {
+                        s.panel_result = data.panel_result;
+                    }
+                    renderModalBody();
+                }
+            } catch (err) {
+                console.warn("Could not refresh panel evaluations in view modal:", err);
+            }
+        }
+
+        function closeViewDefenseModal() {
+            document.getElementById("viewDefenseModal").style.display = "none";
+        }
+
+        function openDefenseMinutesModal(scheduleId) {
+            const sched = defenseSchedules.find(s => Number(s.schedule_id) === Number(scheduleId));
+            if (!sched) return;
+            activeSchedule = sched;
+
+            document.getElementById("minutesModalTitle").innerText = `Defense Minutes — ${sched.defense_type || "Defense"}`;
+            document.getElementById("minutesModalSubtitle").innerText =
+                `${sched.schedule_code || ""} • ${formatDateText(sched.defense_date)} • ${sched.start_time || ""} - ${sched.end_time || ""} • ${sched.room || "TBA"}`;
+
+            const basePanelists = Array.isArray(sched.panelists) && sched.panelists.length
+                ? sched.panelists
+                : [
+                    { roleLabel: "Panel Chair", panelistName: "Panel Chair" },
+                    { roleLabel: "Panel 1", panelistName: "Panel 1" },
+                    { roleLabel: "Panel 2", panelistName: "Panel 2" }
+                ];
+
+            const saved = Array.isArray(sched.saved_minutes) ? sched.saved_minutes : [];
+            activeMinutesEntries = basePanelists.map((p, idx) => {
+                const matchSaved = saved[idx] || {};
+                const bullets = Array.isArray(matchSaved.bullets) ? matchSaved.bullets.slice() : [];
+                return {
+                    roleLabel: p.roleLabel || `Panel ${idx + 1}`,
+                    panelistId: p.panelistId || null,
+                    panelistName: p.panelistName || p.roleLabel || `Panel ${idx + 1}`,
+                    bullets
+                };
+            });
+
+            renderMinutesPanelCards();
+
+            const isApprovedLock = sched.minutes_status === "Approved";
+            const saveBtn = document.getElementById("saveMinutesBtn");
+            if (saveBtn) {
+                saveBtn.style.display = isApprovedLock ? "none" : "inline-flex";
+                saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes Draft`;
+            }
+
+            document.getElementById("defenseMinutesModal").style.display = "flex";
+        }
+
+        function closeDefenseMinutesModal() {
+            document.getElementById("defenseMinutesModal").style.display = "none";
+            activeSchedule = null;
+            activeMinutesEntries = [];
+        }
+
+        function renderMinutesPanelCards() {
+            const container = document.getElementById("minutesPanelCardsContainer");
+            if (!container) return;
+
+            const isLocked = activeSchedule && activeSchedule.minutes_status === "Approved";
+            const lockNotice = isLocked
+                ? `<div style="background:#dcfce7; border:1px solid #bbf7d0; color:#15803d; border-radius:12px; padding:10px 14px; font-size:13px; font-weight:600; margin-bottom:14px;">These defense minutes have been approved by your adviser (View Only).</div>`
+                : `<div style="background:#fef3c7; border:1px solid #fde68a; color:#92400e; border-radius:12px; padding:10px 14px; font-size:12.5px; font-weight:500; margin-bottom:14px;">Student defense minutes are saved as a <strong>Draft</strong> and require your adviser's approval.</div>`;
+
+            container.innerHTML = lockNotice + activeMinutesEntries.map((entry, pIdx) => {
+                const bulletsHtml = entry.bullets.length
+                    ? entry.bullets.map((b, bIdx) => `
+                        <div class="bullet-row" style="align-items:flex-start;">
+                            <span class="bullet-marker" style="margin-top:8px;">&bull;</span>
+                            <textarea rows="2" class="bullet-input" ${isLocked ? "readonly" : ""} oninput="updateMinutesBullet(${pIdx}, ${bIdx}, this.value)" placeholder="Bullet point..." style="resize:vertical; font-family:inherit; ${isLocked ? "background:#f8fafc;" : ""}">${escapeHtml(b)}</textarea>
+                            ${!isLocked ? `<button type="button" class="remove-bullet-btn" onclick="removeMinutesBullet(${pIdx}, ${bIdx})" title="Remove bullet" style="margin-top:4px;">&times;</button>` : ""}
+                        </div>
+                    `).join("")
+                    : `<div style="font-size:12px; color:#94a3b8; font-style:italic; margin-bottom:4px;">No bullet points added yet.</div>`;
+
+                return `
+                    <div class="panel-minutes-card">
+                        <div class="panel-minutes-head">
+                            <div>
+                                <span class="panel-role-badge">${escapeHtml(entry.roleLabel)}</span>
+                                <strong style="margin-left:8px; font-size:14px; color:#2e1065;">${escapeHtml(entry.panelistName)}</strong>
+                            </div>
+                            <span style="font-size:12px; color:#64748b;">${entry.bullets.length} bullet(s)</span>
+                        </div>
+                        <div class="bullet-list-wrap">${bulletsHtml}</div>
+                        ${!isLocked ? `
+                        <div class="add-bullet-row" style="align-items:flex-start;">
+                            <textarea rows="2" id="newBulletInput_${pIdx}" class="bullet-input" placeholder="Type a comment or recommendation, then click + Add Bullet..." style="resize:vertical; font-family:inherit;"></textarea>
+                            <button type="button" class="add-bullet-btn" onclick="addMinutesBullet(${pIdx})">
+                                <i class="fa-solid fa-plus"></i> Add Bullet
+                            </button>
+                        </div>
+                        ` : ""}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function updateMinutesBullet(panelIdx, bulletIdx, val) {
+            if (activeMinutesEntries[panelIdx]) {
+                activeMinutesEntries[panelIdx].bullets[bulletIdx] = val;
+            }
+        }
+
+        function addMinutesBullet(panelIdx) {
+            const input = document.getElementById(`newBulletInput_${panelIdx}`);
+            if (!input || !activeMinutesEntries[panelIdx]) return;
+            const text = String(input.value || "").replace(/^[•\-\*]\s*/, "").trim();
+            if (!text) return;
+            activeMinutesEntries[panelIdx].bullets.push(text);
+            input.value = "";
+            renderMinutesPanelCards();
+            const nextInput = document.getElementById(`newBulletInput_${panelIdx}`);
+            if (nextInput) nextInput.focus();
+        }
+
+        function removeMinutesBullet(panelIdx, bulletIdx) {
+            if (!activeMinutesEntries[panelIdx]) return;
+            activeMinutesEntries[panelIdx].bullets.splice(bulletIdx, 1);
+            renderMinutesPanelCards();
+        }
+
+        async function saveDefenseMinutes() {
+            if (!activeSchedule || !studentGroup) return;
+
+            activeMinutesEntries.forEach((entry, idx) => {
+                const input = document.getElementById(`newBulletInput_${idx}`);
+                if (input && input.value.trim()) {
+                    const text = input.value.replace(/^[•\-\*]\s*/, "").trim();
+                    if (text) entry.bullets.push(text);
+                }
+                entry.bullets = entry.bullets.map(b => String(b || "").trim()).filter(Boolean);
+            });
+
+            const btn = document.getElementById("saveMinutesBtn");
+            if (btn) { btn.disabled = true; btn.innerText = "Saving..."; }
+
+            try {
+                const res = await fetch("/student-save-defense-minutes", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        studentUserId: loggedInUserId,
+                        scheduleId: activeSchedule.schedule_id,
+                        groupId: studentGroup.group_db_id,
+                        panelEntries: activeMinutesEntries
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message || "Defense minutes saved.");
+                    closeDefenseMinutesModal();
+                    loadStudentDefenses();
+                } else {
+                    alert(data.message || "Failed to save defense minutes.");
+                }
+            } catch (err) {
+                console.log(err);
+                alert("Cannot connect to server.");
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes`; }
+            }
+        }
+
+        loadStudentDefenses();
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

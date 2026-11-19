@@ -2,48 +2,27 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <title>Capstone Titles | CMS</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Capstone Repository | CMS</title>
-
-    <!-- GOOGLE FONT -->
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
-
-    <!-- FONT AWESOME -->
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    >
-
-    <!-- CSS -->
-
-    <link
-        rel="stylesheet"
-        href="Repository.css"
-    >
-
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../Student/Capstone_Titles.css">
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
-
+    
     <link rel="stylesheet" href="../shared/custom-alerts.css">
     <script src="../shared/custom-alerts.js"></script>
 </head>
 
 <body class="admin-portal">
+    <div class="bg1"></div>
+    <div class="bg2"></div>
 
-     <!-- SIDEBAR -->
-<aside class="sidebar admin-sidebar">
+    <aside class="sidebar admin-sidebar">
 
     <div>
 
@@ -89,7 +68,7 @@
             >
                 <i class="fa-solid fa-book-open"></i>
                 <span>
-                    Capstone Repository
+                    Capstone Titles
                 </span>
             </div>
             
@@ -162,348 +141,755 @@
 
     </aside>
 
-    <!-- MAIN -->
-
     <main class="main admin-main">
-
-        <!-- TOPBAR -->
-
         <div class="topbar">
-
-            <h1>Capstone Repository</h1>
-
-            <p>
-                Manage archived capstone titles.
-            </p>
-
+            <div class="welcome">
+                <h1>Capstone Titles</h1>
+                <p>Browse approved capstone projects from BSIT and BSIS archives.</p>
+            </div>
         </div>
 
-        <!-- GRID -->
-
-        <div class="grid">
-
-            <!-- LEFT -->
-
-            <section class="repository-form-card">
-
-                <div class="form-panel-header">
-                    <div class="form-panel-icon">
-                        <i class="fa-solid fa-book-bookmark"></i>
-                    </div>
-                    <div>
-                        <h2>Add Approved Title</h2>
-                        <p>Archive a passed capstone project to the repository.</p>
-                    </div>
+        <!-- Stats Dashboard -->
+        <div class="repo-stats-dashboard">
+            <div class="repo-stat-card total">
+                <div class="stat-icon"><i class="fa-solid fa-database"></i></div>
+                <div class="stat-info">
+                    <h3 id="statTotalCount">0</h3>
+                    <p>Total Titles</p>
                 </div>
-
-                <form class="repository-form" id="repositoryForm" onsubmit="return false;">
-
-                    <div class="form-section">
-                        <p class="form-section-label">
-                            <i class="fa-solid fa-graduation-cap"></i>
-                            Program &amp; Title
-                        </p>
-
-                        <div class="form-group">
-                            <label for="program">Program <span class="required">*</span></label>
-                            <div class="input-with-icon">
-                                <i class="fa-solid fa-building-columns"></i>
-                                <select id="program" class="select-box">
-                                    <option value="">Select program</option>
-                                    <option value="IT">BSIT — Information Technology</option>
-                                    <option value="IS">BSIS — Information Systems</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="title">Capstone Title <span class="required">*</span></label>
-                            <div class="input-with-icon">
-                                <i class="fa-solid fa-heading"></i>
-                                <input type="text" id="title" class="input-box" placeholder="e.g. Smart Campus Navigation System">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-section">
-                        <p class="form-section-label">
-                            <i class="fa-solid fa-file-lines"></i>
-                            Project Summary
-                        </p>
-
-                        <div class="form-group">
-                            <label for="abstract">Abstract <span class="required">*</span></label>
-                            <textarea id="abstract" class="textarea-box textarea-compact" rows="4" placeholder="Brief summary of the project..."></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="objectives">Objectives <span class="required">*</span></label>
-                            <textarea id="objectives" class="textarea-box textarea-compact" rows="4" placeholder="List the main objectives..."></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="research_problem">Research Problem <span class="required">*</span></label>
-                            <textarea id="research_problem" class="textarea-box textarea-compact" rows="3" placeholder="Describe the specific research problem addressed..."></textarea>
-                        </div>
-
-                        <div class="form-group form-group-last">
-                            <label for="methodology">Methodology <span class="required">*</span></label>
-                            <textarea id="methodology" class="textarea-box textarea-compact" rows="3" placeholder="Describe research design, data collection, algorithms, tools used..."></textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-section">
-                        <p class="form-section-label">
-                            <i class="fa-solid fa-users"></i>
-                            People
-                        </p>
-
-                        <div class="form-group">
-                            <label for="researchers">Researchers</label>
-                            <div class="input-with-icon">
-                                <i class="fa-solid fa-user-group"></i>
-                                <input type="text" id="researchers" class="input-box" placeholder="Names separated by commas">
-                            </div>
-                        </div>
-
-                        <div class="form-group form-group-last">
-                            <label for="adviser">Adviser</label>
-                            <div class="input-with-icon">
-                                <i class="fa-solid fa-user-tie"></i>
-                                <input type="text" id="adviser" class="input-box" placeholder="Adviser full name">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-section form-section-last">
-                        <p class="form-section-label">
-                            <i class="fa-solid fa-tags"></i>
-                            Classification
-                        </p>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="category">Category</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-layer-group"></i>
-                                    <select id="category" class="select-box">
-                                        <option value="">Select category</option>
-                                        <option>Artificial Intelligence</option>
-                                        <option>Web Development</option>
-                                        <option>Web Application</option>
-                                        <option>Mobile Development</option>
-                                        <option>Data Analytics</option>
-                                        <option>IoT</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="year">Year</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-calendar"></i>
-                                    <input type="number" id="year" class="input-box" placeholder="2026" min="2000" max="2099">
-                                </div>
-                            </div>
-                        </div>
-
-                        <p class="form-hint">
-                            <i class="fa-solid fa-circle-info"></i>
-                            Fields marked with <span class="required">*</span> are required.
-                        </p>
-                    </div>
-
-                    <div class="form-panel-footer">
-                        <button class="submit-btn" type="button" id="addBtn">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>
-                            Save to Repository
-                        </button>
-                    </div>
-
-                </form>
-
-            </section>
-
-            <!-- RIGHT — independent scroll; does not stretch the form column -->
-
-            <section class="archive-panel">
-
-                <!-- Stats Dashboard -->
-                <div class="repo-stats-dashboard">
-                    <div class="repo-stat-card total">
-                        <div class="stat-icon"><i class="fa-solid fa-database"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statTotalCount">0</h3>
-                            <p>Total Titles</p>
-                        </div>
-                    </div>
-                    <div class="repo-stat-card it">
-                        <div class="stat-icon"><i class="fa-solid fa-laptop-code"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statItCount">0</h3>
-                            <p>BSIT Titles</p>
-                        </div>
-                    </div>
-                    <div class="repo-stat-card is">
-                        <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statIsCount">0</h3>
-                            <p>BSIS Titles</p>
-                        </div>
-                    </div>
-                    <div class="repo-stat-card categories">
-                        <div class="stat-icon"><i class="fa-solid fa-tags"></i></div>
-                        <div class="stat-info">
-                            <h3 id="statCatCount">0</h3>
-                            <p>Categories</p>
-                        </div>
-                    </div>
+            </div>
+            <div class="repo-stat-card it">
+                <div class="stat-icon"><i class="fa-solid fa-laptop-code"></i></div>
+                <div class="stat-info">
+                    <h3 id="statItCount">0</h3>
+                    <p>BSIT Titles</p>
                 </div>
-
-                <!-- Advanced Toolbar -->
-                <div class="repo-toolbar">
-                    <div class="toolbar-row top">
-                        <div class="program-tabs">
-                            <button type="button" class="tab-btn active" data-program="all">All Programs</button>
-                            <button type="button" class="tab-btn" data-program="IT">BSIT</button>
-                            <button type="button" class="tab-btn" data-program="IS">BSIS</button>
-                        </div>
-                        <div class="view-toggles">
-                            <button type="button" class="view-toggle-btn active" id="viewGridBtn" title="Grid View">
-                                <i class="fa-solid fa-grip"></i>
-                            </button>
-                            <button type="button" class="view-toggle-btn" id="viewTableBtn" title="Table View">
-                                <i class="fa-solid fa-list"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="toolbar-row bottom">
-                        <div class="search-wrapper">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input type="text" id="archiveSearch" placeholder="Search title, objectives, problem, methodology, researchers...">
-                        </div>
-                        <span id="searchModeBadge" style="display:none; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; background:#f5f3ff; color:#7c3aed; border:1px solid #ece3ff; white-space:nowrap; align-self:center;"></span>
-                        <div class="filters-wrapper">
-                            <select id="filterCategory" class="toolbar-select">
-                                <option value="all">All Categories</option>
-                                <option value="Artificial Intelligence">Artificial Intelligence</option>
-                                <option value="Web Development">Web Development</option>
-                                <option value="Web Application">Web Application</option>
-                                <option value="Mobile Development">Mobile Development</option>
-                                <option value="Data Analytics">Data Analytics</option>
-                                <option value="IoT">IoT</option>
-                            </select>
-                            <select id="filterYear" class="toolbar-select">
-                                <option value="all">All Years</option>
-                            </select>
-                            <select id="sortRepo" class="toolbar-select">
-                                <option value="year-desc">Newest Year First</option>
-                                <option value="year-asc">Oldest Year First</option>
-                                <option value="title-asc">Title (A-Z)</option>
-                                <option value="title-desc">Title (Z-A)</option>
-                            </select>
-                        </div>
-                    </div>
+            </div>
+            <div class="repo-stat-card is">
+                <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="stat-info">
+                    <h3 id="statIsCount">0</h3>
+                    <p>BSIS Titles</p>
                 </div>
-
-                <!-- Dynamic Repository Container -->
-                <div id="repoContainer" class="repo-grid-layout">
-                    <!-- Cards or table will render here -->
+            </div>
+            <div class="repo-stat-card categories">
+                <div class="stat-icon"><i class="fa-solid fa-tags"></i></div>
+                <div class="stat-info">
+                    <h3 id="statCatCount">0</h3>
+                    <p>Categories</p>
                 </div>
-
-                <!-- Pagination -->
-                <div class="repo-pagination">
-                    <div class="pagination-info" id="paginationInfo">
-                        Showing 0-0 of 0 titles
-                    </div>
-                    <div class="pagination-controls" id="paginationControls">
-                        <!-- Buttons will dynamically render here -->
-                    </div>
-                </div>
-
-            </section>
-
+            </div>
         </div>
 
-    </main>
-
-    <!-- MODAL -->
-
-    <div
-        class="modal"
-        id="modal"
-    >
-
-        <div class="modal-content">
-
-            <h1 id="modalTitle"></h1>
-
-            <div
-                class="modal-abstract"
-                id="modalAbstract"
-            ></div>
-
-            <div class="details-grid">
-
-                <div class="detail-card">
-
-                    <h4>
-                        Program
-                    </h4>
-
-                    <p id="modalProgram"></p>
-
+        <!-- Advanced Toolbar -->
+        <div class="repo-toolbar">
+            <div class="toolbar-row top">
+                <div class="program-tabs">
+                    <button type="button" class="tab-btn active" data-program="all">All Programs</button>
+                    <button type="button" class="tab-btn" data-program="IT">BSIT</button>
+                    <button type="button" class="tab-btn" data-program="IS">BSIS</button>
                 </div>
-
-                <div class="detail-card">
-
-                    <h4>
-                        Researchers
-                    </h4>
-
-                    <p id="modalResearchers"></p>
-
+                <div class="view-toggles">
+                    <button type="button" class="view-toggle-btn active" id="viewGridBtn" title="Grid View">
+                        <i class="fa-solid fa-grip"></i>
+                    </button>
+                    <button type="button" class="view-toggle-btn" id="viewTableBtn" title="Table View">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
                 </div>
-
-                <div class="detail-card">
-
-                    <h4>
-                        Adviser
-                    </h4>
-
-                    <p id="modalAdviser"></p>
-
-                </div>
-
-                <div class="detail-card">
-
-                    <h4>
-                        Year
-                    </h4>
-
-                    <p id="modalYear"></p>
-
-                </div>
-
             </div>
 
-            <button
-                class="close-btn"
-                onclick="closeModal()"
-            >
-
-                Close
-
-            </button>
-
+            <div class="toolbar-row bottom">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="titleSearch"
+                        placeholder="Search title, objectives, problem, methodology, researchers...">
+                </div>
+                <span id="searchModeBadge" style="display:none; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; background:#f5f3ff; color:#7c3aed; border:1px solid #ece3ff; white-space:nowrap; align-self:center;"></span>
+                <div class="filters-wrapper">
+                    <select id="filterCategory" class="toolbar-select">
+                        <option value="all">All Categories</option>
+                        <option value="Artificial Intelligence">Artificial Intelligence</option>
+                        <option value="Web Development">Web Development</option>
+                        <option value="Web Application">Web Application</option>
+                        <option value="Mobile Development">Mobile Development</option>
+                        <option value="Data Analytics">Data Analytics</option>
+                        <option value="IoT">IoT</option>
+                    </select>
+                    <select id="filterYear" class="toolbar-select">
+                        <option value="all">All Years</option>
+                    </select>
+                    <select id="sortRepo" class="toolbar-select">
+                        <option value="year-desc">Newest Year First</option>
+                        <option value="year-asc">Oldest Year First</option>
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
+        <!-- Dynamic Repository Container -->
+        <div id="repoContainer" class="repo-grid-layout">
+            <!-- Cards or table will render here -->
+        </div>
+
+        <!-- Pagination -->
+        <div class="repo-pagination">
+            <div class="pagination-info" id="paginationInfo">
+                Showing 0-0 of 0 titles
+            </div>
+            <div class="pagination-controls" id="paginationControls">
+                <!-- Buttons will dynamically render here -->
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="titleModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <h2 id="modalTitle">Title</h2>
+                    <span class="category-badge cat-default" id="modalCategory">Category</span>
+                </div>
+                <button class="close-btn" onclick="closeTitleModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="modal-meta-grid">
+                <div class="modal-meta-item">
+                    <span>Researchers</span>
+                    <strong id="modalResearchers">–</strong>
+                </div>
+                <div class="modal-meta-item">
+                    <span>Adviser</span>
+                    <strong id="modalAdviser">–</strong>
+                </div>
+                <div class="modal-meta-item">
+                    <span>Year</span>
+                    <strong id="modalYear">–</strong>
+                </div>
+                <div class="modal-meta-item">
+                    <span>Program</span>
+                    <strong id="modalProgram">–</strong>
+                </div>
+            </div>
+
+            <div class="modal-content">
+                <div class="modal-section">
+                    <h4>Abstract</h4>
+                    <div id="modalAbstract" class="preserved-text-content"></div>
+                </div>
+                <div class="modal-section">
+                    <h4>Objectives</h4>
+                    <div id="modalObjectives" class="preserved-text-content"></div>
+                </div>
+                <div class="modal-section" id="modalResearchProblemSection">
+                    <h4>Research Problem</h4>
+                    <div id="modalResearchProblem" class="preserved-text-content"></div>
+                </div>
+                <div class="modal-section" id="modalMethodologySection">
+                    <h4>Methodology</h4>
+                    <div id="modalMethodology" class="preserved-text-content"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="Repository.js"></script>
+    <!-- v2026-11-14-fix1 -->
+    <script>
+        let allTitles = [];
+        let repositoryById = {};
+        let currentSearchQuery = "";
 
-    <script src="../shared/portal-notifications.js" defer></script>
+        // Explorer View States
+        let currentProgram = "all";
+        let currentView = "grid";
+        let currentPage = 1;
+        let itemsPerPage = 10;
+
+        // Semantic search state
+        let _searchDebounceTimer = null;
+        let _lastSearchQuery = "";
+        let _isSemanticSearch = false; // true when results came from /repository-search
+
+        const API_BASE = "";
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../Log-in.html";
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function escapeRegex(string) {
+            return String(string).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        function highlightSearchMatch(text, query) {
+            if (!text) return "";
+            const escaped = escapeHtml(text);
+            if (!query || !query.trim()) return escaped;
+
+            const tokens = query.trim().split(/\s+/).filter(token => token.length >= 2);
+            if (tokens.length === 0) return escaped;
+
+            const uniqueTokens = [...new Set(tokens)];
+            const pattern = uniqueTokens.map(escapeRegex).join("|");
+            const regex = new RegExp(`(${pattern})`, "gi");
+
+            return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
+        }
+
+        function getCategoryClass(category) {
+            const key = String(category || "").trim().toLowerCase();
+            if (key.includes("web")) return "cat-web";
+            if (key.includes("mobile")) return "cat-mobile";
+            if (key.includes("artificial") || key === "ai") return "cat-ai";
+            if (key.includes("data")) return "cat-data";
+            if (key.includes("iot")) return "cat-iot";
+            return "cat-default";
+        }
+
+        // Stats Calculation
+        function updateStatsDashboard(allItems) {
+            const totalCount = allItems.length;
+            const itCount = allItems.filter(item => item.program === "IT" || item.program === "BSIT").length;
+            const isCount = allItems.filter(item => item.program === "IS" || item.program === "BSIS").length;
+
+            // Unique categories count
+            const uniqueCats = new Set();
+            allItems.forEach(item => {
+                if (item.category) uniqueCats.add(item.category.trim());
+            });
+
+            document.getElementById("statTotalCount").textContent = totalCount;
+            document.getElementById("statItCount").textContent = itCount;
+            document.getElementById("statIsCount").textContent = isCount;
+            document.getElementById("statCatCount").textContent = uniqueCats.size;
+        }
+
+        // Populate Dynamic Year Filter dropdown
+        function populateYearFilter(items) {
+            const yearSelect = document.getElementById("filterYear");
+            if (!yearSelect) return;
+
+            const previousSelection = yearSelect.value;
+            const years = [...new Set(items.map(item => item.year).filter(Boolean))];
+            years.sort((a, b) => b - a);
+
+            yearSelect.innerHTML = '<option value="all">All Years</option>';
+
+            years.forEach(year => {
+                const option = document.createElement("option");
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+
+            if (years.includes(Number(previousSelection)) || previousSelection === "all") {
+                yearSelect.value = previousSelection;
+            }
+        }
+
+        // Filters & Sort Application
+        function getFilteredAndSortedItems() {
+            const searchInput = document.getElementById("titleSearch");
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+            currentSearchQuery = query;
+            const categoryFilter = document.getElementById("filterCategory").value;
+            const yearFilter = document.getElementById("filterYear").value;
+            const sortBy = document.getElementById("sortRepo").value;
+
+            let result = [...allTitles];
+
+            // 1. Program Filter
+            if (currentProgram !== "all") {
+                result = result.filter(item => {
+                    if (currentProgram === "IT" || currentProgram === "BSIT") {
+                        return item.program === "IT" || item.program === "BSIT";
+                    } else if (currentProgram === "IS" || currentProgram === "BSIS") {
+                        return item.program === "IS" || item.program === "BSIS";
+                    }
+                    return item.program === currentProgram;
+                });
+            }
+
+            // 2. Category Filter
+            if (categoryFilter !== "all") {
+                result = result.filter(item => item.category === categoryFilter);
+            }
+
+            // 3. Year Filter
+            if (yearFilter !== "all") {
+                result = result.filter(item => String(item.year) === String(yearFilter));
+            }
+
+            // 4. Search Query Filter
+            // When _isSemanticSearch=true the backend already ranked allTitles; skip local filter.
+            if (query && !_isSemanticSearch) {
+                result = result.filter(item => {
+                    return [
+                        item.title,
+                        item.abstract,
+                        item.objectives,
+                        item.research_problem,
+                        item.methodology,
+                        item.category,
+                        item.adviser,
+                        item.researchers,
+                        item.year,
+                        item.program
+                    ].some(value => String(value || "").toLowerCase().includes(query));
+                });
+            }
+
+            // 5. Sorting
+            // In semantic mode preserve server rank order unless user picks an explicit sort
+            if (!_isSemanticSearch || sortBy !== "year-desc") {
+                result.sort((a, b) => {
+                    if (sortBy === "year-desc") {
+                        return (b.year || 0) - (a.year || 0);
+                    } else if (sortBy === "year-asc") {
+                        return (a.year || 0) - (b.year || 0);
+                    } else if (sortBy === "title-asc") {
+                        return String(a.title || "").localeCompare(String(b.title || ""));
+                    } else if (sortBy === "title-desc") {
+                        return String(b.title || "").localeCompare(String(a.title || ""));
+                    }
+                    return 0;
+                });
+            }
+
+            return result;
+        }
+
+        // Build cards layout html
+        function buildGridHtml(items) {
+            if (items.length === 0) {
+                return '<div class="repo-empty-state"><i class="fa-solid fa-folder-open"></i><p>No repository records match your criteria.</p></div>';
+            }
+
+            const query = currentSearchQuery;
+
+            return items.map(item => {
+                const catClass = getCategoryClass(item.category);
+                const categoryLabel = escapeHtml(item.category || "Uncategorized");
+                const programClass = item.program === "IT" ? "prog-it" : "prog-is";
+
+                return `
+                    <article class="title-card">
+                        <div class="title-card-top">
+                            <span class="program-tag ${programClass}">${escapeHtml(item.program)}</span>
+                            <span class="year-badge">${escapeHtml(item.year || "–")}</span>
+                            <span class="category-badge ${catClass}">${categoryLabel}</span>
+                        </div>
+                        <h3 class="title-card-heading" title="${escapeHtml(item.title)}">${highlightSearchMatch(item.title, query)}</h3>
+                        <p class="title-card-researchers" title="${escapeHtml(item.researchers)}">
+                            <i class="fa-solid fa-users"></i>
+                            ${highlightSearchMatch(item.researchers || "Researchers not listed", query)}
+                        </p>
+                        <p class="title-card-adviser">
+                            <i class="fa-solid fa-user-tie"></i>
+                            Adviser: <strong>${highlightSearchMatch(item.adviser || "No adviser", query)}</strong>
+                        </p>
+                        <button class="view-btn" type="button" onclick="openTitleModal(${Number(item.id)})">
+                            <i class="fa-solid fa-eye"></i> View Details
+                        </button>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        // Build table layout html
+        function buildTableHtml(items) {
+            if (items.length === 0) {
+                return '<div class="repo-empty-state"><i class="fa-solid fa-folder-open"></i><p>No repository records match your criteria.</p></div>';
+            }
+
+            const query = currentSearchQuery;
+
+            const tableRows = items.map((item, index) => {
+                const catClass = getCategoryClass(item.category);
+                const categoryLabel = escapeHtml(item.category || "Uncategorized");
+                const programClass = item.program === "IT" ? "prog-badge it" : "prog-badge is";
+
+                return `
+                    <tr>
+                        <td class="text-center">${(currentPage - 1) * itemsPerPage + index + 1}</td>
+                        <td>
+                            <div class="table-title-cell" title="${escapeHtml(item.title)}">${highlightSearchMatch(item.title, query)}</div>
+                        </td>
+                        <td><span class="${programClass}">${escapeHtml(item.program)}</span></td>
+                        <td><span class="category-badge ${catClass}">${categoryLabel}</span></td>
+                        <td>${highlightSearchMatch(item.adviser || "–", query)}</td>
+                        <td class="text-center font-bold">${escapeHtml(item.year || "–")}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="table-action-btn view" onclick="openTitleModal(${Number(item.id)})" title="View Details">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            return `
+                <div class="table-responsive">
+                    <table class="repo-data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;" class="text-center">#</th>
+                                <th>Project Title</th>
+                                <th style="width: 100px;">Program</th>
+                                <th style="width: 140px;">Category</th>
+                                <th>Adviser</th>
+                                <th style="width: 80px;" class="text-center">Year</th>
+                                <th style="width: 100px;" class="text-center">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Main Render Function
+        function renderRepositoryExplorer() {
+            const repoContainer = document.getElementById("repoContainer");
+            const paginationInfo = document.getElementById("paginationInfo");
+            const paginationControls = document.getElementById("paginationControls");
+
+            const filteredAndSorted = getFilteredAndSortedItems();
+            const totalItems = filteredAndSorted.length;
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const paginatedItems = filteredAndSorted.slice(startIndex, endIndex);
+
+            if (currentView === "grid") {
+                repoContainer.className = "repo-grid-layout";
+                repoContainer.innerHTML = buildGridHtml(paginatedItems);
+            } else {
+                repoContainer.className = "repo-table-layout";
+                repoContainer.innerHTML = buildTableHtml(paginatedItems);
+            }
+
+            if (totalItems === 0) {
+                paginationInfo.textContent = "Showing 0-0 of 0 titles";
+            } else {
+                paginationInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalItems} titles`;
+            }
+
+            let paginationButtons = "";
+            if (totalPages > 1) {
+                paginationButtons += `
+                    <button class="pag-btn" ${currentPage === 1 ? "disabled" : ""} onclick="changePage(${currentPage - 1})">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                `;
+
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                        paginationButtons += `
+                            <button class="pag-btn ${currentPage === i ? "active" : ""}" onclick="changePage(${i})">
+                                ${i}
+                            </button>
+                        `;
+                    } else if (i === currentPage - 2 || i === currentPage + 2) {
+                        paginationButtons += `<span class="pag-dots">...</span>`;
+                    }
+                }
+
+                paginationButtons += `
+                    <button class="pag-btn" ${currentPage === totalPages ? "disabled" : ""} onclick="changePage(${currentPage + 1})">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                `;
+            }
+            paginationControls.innerHTML = paginationButtons;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderRepositoryExplorer();
+            document.querySelector(".repo-toolbar").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function initializeExplorerEvents() {
+            const searchInput = document.getElementById("titleSearch");
+            if (searchInput) {
+                searchInput.addEventListener("input", () => {
+                    const q = searchInput.value.trim();
+
+                    // Clear any pending timer
+                    if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
+
+                    // If query cleared â†’ restore full list instantly
+                    if (!q) {
+                        _lastSearchQuery = "";
+                        _isSemanticSearch = false;
+                        currentSearchQuery = "";
+                        currentPage = 1;
+                        // Reload full list from server
+                        const badge = document.getElementById("searchModeBadge");
+                        if (badge) badge.style.display = "none";
+                        loadCapstoneTitles();
+                        return;
+                    }
+
+                    // 400ms debounce before firing semantic search
+                    _searchDebounceTimer = setTimeout(() => {
+                        _searchDebounceTimer = null;
+                        doSemanticSearch(q);
+                    }, 400);
+                });
+            }
+
+            ["filterCategory", "filterYear", "sortRepo"].forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.addEventListener("change", () => {
+                        currentPage = 1;
+                        renderRepositoryExplorer();
+                    });
+                }
+            });
+
+            document.querySelectorAll(".program-tabs .tab-btn").forEach(tab => {
+                tab.addEventListener("click", () => {
+                    document.querySelectorAll(".program-tabs .tab-btn").forEach(t => t.classList.remove("active"));
+                    tab.classList.add("active");
+                    currentProgram = tab.dataset.program;
+                    currentPage = 1;
+                    renderRepositoryExplorer();
+                });
+            });
+
+            const viewGridBtn = document.getElementById("viewGridBtn");
+            const viewTableBtn = document.getElementById("viewTableBtn");
+
+            if (viewGridBtn && viewTableBtn) {
+                viewGridBtn.addEventListener("click", () => {
+                    viewGridBtn.classList.add("active");
+                    viewTableBtn.classList.remove("active");
+                    currentView = "grid";
+                    renderRepositoryExplorer();
+                });
+
+                viewTableBtn.addEventListener("click", () => {
+                    viewTableBtn.classList.add("active");
+                    viewGridBtn.classList.remove("active");
+                    currentView = "table";
+                    renderRepositoryExplorer();
+                });
+            }
+        }
+
+        async function loadCapstoneTitles() {
+            try {
+                const response = await fetch(`${API_BASE}/repository-titles`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    return;
+                }
+
+                allTitles = data.titles || [];
+                _isSemanticSearch = false;
+
+                allTitles.forEach(item => {
+                    repositoryById[item.id] = item;
+                });
+
+                updateStatsDashboard(allTitles);
+                populateYearFilter(allTitles);
+                renderRepositoryExplorer();
+
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        // â”€â”€ Semantic / synonym search via backend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function doSemanticSearch(query) {
+            currentSearchQuery = query;
+            _lastSearchQuery   = query;
+
+            // Show loading state in search bar
+            const searchInput = document.getElementById("titleSearch");
+            if (searchInput) searchInput.style.opacity = "0.6";
+
+            try {
+                const response = await fetch(`${API_BASE}/repository-search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (!data.success) return;
+
+                // Merge back into allTitles (server already ranked them)
+                allTitles = data.titles || [];
+                _isSemanticSearch = true;
+
+                // Show a subtle mode badge
+                const matchCount = data.matchCount ?? allTitles.length;
+                const mode = data.mode || "keyword";
+                console.log(`[Search] mode=${mode}, matched=${matchCount}/${allTitles.length}`);
+
+                // Update the search bar placeholder feedback
+                const badge = document.getElementById("searchModeBadge");
+                if (badge) {
+                    badge.textContent = `${matchCount} match${matchCount !== 1 ? "es" : ""}`;
+                    if (mode === "gemini") {
+                        badge.style.background = "#eff6ff";
+                        badge.style.color = "#1d4ed8";
+                        badge.style.border = "1px solid #bfdbfe";
+                    } else if (mode === "huggingface" || mode === "semantic") {
+                        badge.style.background = "#f5f3ff";
+                        badge.style.color = "#7c3aed";
+                        badge.style.border = "1px solid #ece3ff";
+                    } else {
+                        badge.style.background = "#f3f4f6";
+                        badge.style.color = "#4b5563";
+                        badge.style.border = "1px solid #e5e7eb";
+                    }
+                    badge.style.display = matchCount > 0 ? "inline-block" : "none";
+                }
+
+                currentPage = 1;
+                renderRepositoryExplorer();
+
+            } catch (err) {
+                console.error("[Search] Semantic search failed, using local filter:", err);
+                // Fallback to local keyword filter
+                _isSemanticSearch = false;
+                currentPage = 1;
+                renderRepositoryExplorer();
+            } finally {
+                if (searchInput) searchInput.style.opacity = "1";
+            }
+        }
+
+        function renderPreservedDetailText(rawText, query) {
+            if (!rawText || !String(rawText).trim()) {
+                return '<p style="color: #9ca3af; font-style: italic;">No details provided.</p>';
+            }
+
+            // Normalise line endings
+            let str = String(rawText).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+            // Split into paragraph blocks (separated by one or more blank lines)
+            const blocks = str.split(/\n{2,}/);
+            let htmlParts = [];
+
+            for (const block of blocks) {
+                const trimmed = block.trim();
+                if (!trimmed) continue;
+
+                const lines = trimmed.split('\n');
+
+                // Bullet / numbered list detection (every line starts with a list marker)
+                const isListBlock = lines.every(l => /^\s*[•\-\*]|\s*\d+[\.\)]\s/.test(l));
+                if (isListBlock) {
+                    let listHtml = '<ul style="margin: 8px 0 12px 20px; color: #2e1065; line-height: 1.8; font-size: 14px;">';
+                    lines.forEach(l => {
+                        const itemText = l.replace(/^\s*[•\-\*\d+[\.\)]]\s*/, '').trim();
+                        if (itemText) {
+                            listHtml += `<li style="margin-bottom: 6px;">${highlightSearchMatch(itemText, query)}</li>`;
+                        }
+                    });
+                    listHtml += '</ul>';
+                    htmlParts.push(listHtml);
+                    continue;
+                }
+
+                // Regular paragraph – join lines with \n so pre-wrap preserves them
+                const paragraphText = lines.join('\n');
+                htmlParts.push(
+                    `<p style="color: #2e1065; line-height: 1.8; font-size: 14px; margin-bottom: 14px; word-break: break-word; white-space: pre-wrap;">${highlightSearchMatch(paragraphText, query)}</p>`
+                );
+            }
+
+            return htmlParts.join('\n');
+        }
+
+        async function openTitleModal(id) {
+            try {
+                const response = await fetch(`${API_BASE}/repository-title/${id}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert("Error fetching title details.");
+                    return;
+                }
+
+                const title = data.title;
+                const query = currentSearchQuery;
+                const catClass = getCategoryClass(title.category);
+                const programLabel =
+                    title.program === "IT"
+                        ? "BSIT"
+                        : title.program === "IS"
+                            ? "BSIS"
+                            : (title.program || "–");
+
+                document.getElementById("modalTitle").innerHTML = highlightSearchMatch(title.title, query);
+                document.getElementById("modalCategory").textContent = title.category || "General";
+                document.getElementById("modalCategory").className = `category-badge ${catClass}`;
+                document.getElementById("modalAbstract").innerHTML = renderPreservedDetailText(title.abstract, query);
+                document.getElementById("modalObjectives").innerHTML = renderPreservedDetailText(title.objectives, query);
+                document.getElementById("modalResearchProblem").innerHTML = renderPreservedDetailText(title.research_problem, query);
+                document.getElementById("modalMethodology").innerHTML = renderPreservedDetailText(title.methodology, query);
+                document.getElementById("modalResearchers").innerHTML = highlightSearchMatch(title.researchers, query) || "–";
+                document.getElementById("modalAdviser").innerHTML = highlightSearchMatch(title.adviser, query) || "–";
+                document.getElementById("modalYear").textContent = title.year || "–";
+                document.getElementById("modalProgram").textContent = programLabel;
+
+                document.getElementById("titleModal").style.display = "flex";
+
+                // Smoothly scroll to the first highlighted match inside modal
+                setTimeout(() => {
+                    const firstHighlight = document.querySelector("#titleModal mark.search-highlight");
+                    if (firstHighlight) {
+                        firstHighlight.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                }, 120);
+
+            } catch (error) {
+                console.error("Error fetching title details:", error);
+                alert("Failed to fetch title details.");
+            }
+        }
+
+        function closeTitleModal() {
+            document.getElementById("titleModal").style.display = "none";
+        }
+
+        document.getElementById("titleModal").addEventListener("click", event => {
+            if (event.target.id === "titleModal") {
+                closeTitleModal();
+            }
+        });
+
+        initializeExplorerEvents();
+        loadCapstoneTitles();
+        document.getElementById("nav-titles").classList.add("active");
+    </script>
+    <script src="../shared/portal-notifications.js?v=20261114_01" defer></script>
 </body>
 
 </html>

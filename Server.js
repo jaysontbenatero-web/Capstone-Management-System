@@ -9,11 +9,11 @@ const path = require("path");
 const fs = require("fs");
 const https = require("https");
 const pdfParse = require("pdf-parse");
-const { PDFDocument } = require("pdf-lib");
+const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const nodemailer = require("nodemailer");
 const semEngine = require("./similarity-engine");
 // Pre-load Hugging Face model asynchronously on module load
-semEngine.loadModel().catch(() => {});
+semEngine.loadModel().catch(() => { });
 
 const app = express();
 
@@ -129,7 +129,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-    res.redirect("/Log-in.html");
+    res.sendFile(path.join(__dirname, "Log-in.html"));
 });
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -168,7 +168,7 @@ app.use((req, res, next) => {
 /* ================= PROFILE IMAGE UPLOAD SETUP ================= */
 
 const profileImageStorage = multer.diskStorage({
-    destination:function(req, file, cb){
+    destination: function (req, file, cb) {
 
         const uploadPath =
             path.join(
@@ -177,12 +177,12 @@ const profileImageStorage = multer.diskStorage({
                 "profile_images"
             );
 
-        if(!fs.existsSync(uploadPath)){
+        if (!fs.existsSync(uploadPath)) {
 
             fs.mkdirSync(
                 uploadPath,
                 {
-                    recursive:true
+                    recursive: true
                 }
             );
 
@@ -192,7 +192,7 @@ const profileImageStorage = multer.diskStorage({
 
     },
 
-    filename:function(req, file, cb){
+    filename: function (req, file, cb) {
 
         const uniqueName =
             Date.now()
@@ -206,9 +206,9 @@ const profileImageStorage = multer.diskStorage({
 });
 
 const profileImageUpload = multer({
-    storage:profileImageStorage,
+    storage: profileImageStorage,
 
-    fileFilter:function(req, file, cb){
+    fileFilter: function (req, file, cb) {
 
         const allowedTypes = [
             "image/jpeg",
@@ -217,7 +217,7 @@ const profileImageUpload = multer({
             "image/webp"
         ];
 
-        if(!allowedTypes.includes(file.mimetype)){
+        if (!allowedTypes.includes(file.mimetype)) {
 
             return cb(
                 new Error("Only JPG, PNG, and WEBP images are allowed.")
@@ -229,13 +229,13 @@ const profileImageUpload = multer({
 
     },
 
-    limits:{
-        fileSize:5 * 1024 * 1024
+    limits: {
+        fileSize: 5 * 1024 * 1024
     }
 });
 
 const signatureImageStorage = multer.diskStorage({
-    destination:function(req, file, cb){
+    destination: function (req, file, cb) {
 
         const uploadPath =
             path.join(
@@ -244,15 +244,15 @@ const signatureImageStorage = multer.diskStorage({
                 "signatures"
             );
 
-        if(!fs.existsSync(uploadPath)){
-            fs.mkdirSync(uploadPath, { recursive:true });
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
         }
 
         cb(null, uploadPath);
 
     },
 
-    filename:function(req, file, cb){
+    filename: function (req, file, cb) {
 
         const uniqueName =
             Date.now()
@@ -266,9 +266,9 @@ const signatureImageStorage = multer.diskStorage({
 });
 
 const signatureImageUpload = multer({
-    storage:signatureImageStorage,
+    storage: signatureImageStorage,
 
-    fileFilter:function(req, file, cb){
+    fileFilter: function (req, file, cb) {
 
         const allowedTypes = [
             "image/jpeg",
@@ -290,10 +290,10 @@ const signatureImageUpload = multer({
         const ext =
             path.extname(file.originalname || "").toLowerCase();
 
-        if(
+        if (
             allowedTypes.includes(file.mimetype)
             || allowedExt.includes(ext)
-        ){
+        ) {
 
             return cb(null, true);
 
@@ -305,25 +305,25 @@ const signatureImageUpload = multer({
 
     },
 
-    limits:{
-        fileSize:5 * 1024 * 1024
+    limits: {
+        fileSize: 5 * 1024 * 1024
     }
 });
 
 const titleProposalStorage = multer.diskStorage({
-    destination: function(req, file, cb){
+    destination: function (req, file, cb) {
         const uploadPath = path.join(__dirname, "uploads", "title_proposals");
 
-        if(!fs.existsSync(uploadPath)){
+        if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, {
-                recursive:true
+                recursive: true
             });
         }
 
         cb(null, uploadPath);
     },
 
-    filename: function(req, file, cb){
+    filename: function (req, file, cb) {
         const uniqueName =
             Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
 
@@ -332,17 +332,17 @@ const titleProposalStorage = multer.diskStorage({
 });
 
 const titleProposalUpload = multer({
-    storage:titleProposalStorage,
+    storage: titleProposalStorage,
 
-    fileFilter:function(req, file, cb){
-        if(file.mimetype !== "application/pdf"){
+    fileFilter: function (req, file, cb) {
+        if (file.mimetype !== "application/pdf") {
             return cb(new Error("Only PDF files are allowed."));
         }
 
         cb(null, true);
     },
 
-    limits:{
+    limits: {
         fileSize: 20 * 1024 * 1024
     }
 });
@@ -350,7 +350,7 @@ const titleProposalUpload = multer({
 /* ================= STUDENT DOCUMENT UPLOAD SETUP ================= */
 
 const studentDocumentStorage = multer.diskStorage({
-    destination:function(req, file, cb){
+    destination: function (req, file, cb) {
 
         const uploadPath =
             path.join(
@@ -359,12 +359,12 @@ const studentDocumentStorage = multer.diskStorage({
                 "student_documents"
             );
 
-        if(!fs.existsSync(uploadPath)){
+        if (!fs.existsSync(uploadPath)) {
 
             fs.mkdirSync(
                 uploadPath,
                 {
-                    recursive:true
+                    recursive: true
                 }
             );
 
@@ -374,7 +374,7 @@ const studentDocumentStorage = multer.diskStorage({
 
     },
 
-    filename:function(req, file, cb){
+    filename: function (req, file, cb) {
 
         const uniqueName =
             Date.now()
@@ -388,9 +388,9 @@ const studentDocumentStorage = multer.diskStorage({
 });
 
 const studentDocumentUpload = multer({
-    storage:studentDocumentStorage,
+    storage: studentDocumentStorage,
 
-    fileFilter:function(req, file, cb){
+    fileFilter: function (req, file, cb) {
 
         const allowedTypes = [
             "application/pdf",
@@ -398,7 +398,7 @@ const studentDocumentUpload = multer({
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ];
 
-        if(!allowedTypes.includes(file.mimetype)){
+        if (!allowedTypes.includes(file.mimetype)) {
 
             return cb(
                 new Error("Only PDF, DOC, and DOCX files are allowed.")
@@ -410,8 +410,8 @@ const studentDocumentUpload = multer({
 
     },
 
-    limits:{
-        fileSize:20 * 1024 * 1024
+    limits: {
+        fileSize: 20 * 1024 * 1024
     }
 });
 
@@ -430,7 +430,7 @@ const db = mysql.createPool({
 
 /* ================= CONNECT ================= */
 
-        db.getConnection((err, connection) => {
+db.getConnection((err, connection) => {
     if (err) {
         console.log("MySQL Pool Connection Error:", err);
     } else {
@@ -443,7 +443,7 @@ const db = mysql.createPool({
                 [tbl, col],
                 (e, r) => {
                     if (!e && Array.isArray(r) && r.length === 0) {
-                        db.query(`ALTER TABLE ${tbl} ADD COLUMN ${col} ${def}`, () => {});
+                        db.query(`ALTER TABLE ${tbl} ADD COLUMN ${col} ${def}`, () => { });
                     }
                 }
             );
@@ -451,6 +451,17 @@ const db = mysql.createPool({
         ensureCol("consultations", "decline_reason", "TEXT NULL");
         ensureCol("consultations", "declined_at", "TIMESTAMP NULL");
         ensureCol("users", "consultation_available", "TINYINT(1) NOT NULL DEFAULT 1");
+        db.query(
+            `UPDATE document_submissions
+             SET target_role = 'admin'
+             WHERE target_role IS NULL
+               AND submission_message IN (
+                   'Instructor signed. Pending Chairperson signature.',
+                   'Adviser signed. Pending Dean signature.',
+                   'Chairperson signed. Pending Dean signature.'
+               )`,
+            () => { }
+        );
 
         const checkEmailColumnSql = `
             SELECT 1
@@ -523,7 +534,7 @@ const db = mysql.createPool({
         `;
 
         db.query(checkSignatureColumnSql, (sigCheckErr, sigCheckResult) => {
-            if(sigCheckErr){
+            if (sigCheckErr) {
                 console.error(
                     "Unable to check users.digital_signature column:",
                     sigCheckErr
@@ -531,7 +542,7 @@ const db = mysql.createPool({
                 return;
             }
 
-            if(Array.isArray(sigCheckResult) && sigCheckResult.length > 0){
+            if (Array.isArray(sigCheckResult) && sigCheckResult.length > 0) {
                 console.log("users.digital_signature column already exists");
                 return;
             }
@@ -539,12 +550,12 @@ const db = mysql.createPool({
             db.query(
                 `ALTER TABLE users ADD COLUMN digital_signature VARCHAR(500) NULL`,
                 (sigAddErr) => {
-                    if(sigAddErr){
+                    if (sigAddErr) {
                         console.error(
                             "Unable to add users.digital_signature column:",
                             sigAddErr
                         );
-                    }else{
+                    } else {
                         console.log("users.digital_signature column created");
                     }
                 }
@@ -561,12 +572,12 @@ const db = mysql.createPool({
         `;
 
         db.query(checkSignedFileColumnSql, (signedColErr, signedColResult) => {
-            if(signedColErr){
+            if (signedColErr) {
                 console.error("Unable to check student_documents.signed_file_path column:", signedColErr);
                 return;
             }
 
-            if(Array.isArray(signedColResult) && signedColResult.length > 0){
+            if (Array.isArray(signedColResult) && signedColResult.length > 0) {
                 console.log("student_documents.signed_file_path column already exists");
                 return;
             }
@@ -574,9 +585,9 @@ const db = mysql.createPool({
             db.query(
                 `ALTER TABLE student_documents ADD COLUMN signed_file_path VARCHAR(500) NULL`,
                 (signedAddErr) => {
-                    if(signedAddErr){
+                    if (signedAddErr) {
                         console.error("Unable to add student_documents.signed_file_path column:", signedAddErr);
-                    }else{
+                    } else {
                         console.log("student_documents.signed_file_path column created");
                     }
                 }
@@ -641,9 +652,9 @@ const db = mysql.createPool({
         `;
 
         db.query(createPanelEvaluationsTable, (panelEvalTableErr) => {
-            if(panelEvalTableErr){
+            if (panelEvalTableErr) {
                 console.error("Error creating defense_panel_evaluations table:", panelEvalTableErr);
-            }else{
+            } else {
                 console.log("defense_panel_evaluations table verified/created");
             }
         });
@@ -714,21 +725,21 @@ const db = mysql.createPool({
             db.query(checkSimTableCols, (errCols, colResults) => {
                 if (!errCols && Array.isArray(colResults)) {
                     const existingCols = colResults.map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
-                    db.query(`ALTER TABLE title_similarity_results MODIFY COLUMN matched_repository_id INT NULL`, () => {});
+                    db.query(`ALTER TABLE title_similarity_results MODIFY COLUMN matched_repository_id INT NULL`, () => { });
                     if (!existingCols.includes('matched_source_type')) {
-                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_source_type VARCHAR(50) DEFAULT 'repository'`, () => {});
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_source_type VARCHAR(50) DEFAULT 'repository'`, () => { });
                     }
                     if (!existingCols.includes('matched_approved_title')) {
-                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_approved_title VARCHAR(500) NULL`, () => {});
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_approved_title VARCHAR(500) NULL`, () => { });
                     }
                     if (!existingCols.includes('matched_group_name')) {
-                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_group_name VARCHAR(255) NULL`, () => {});
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN matched_group_name VARCHAR(255) NULL`, () => { });
                     }
                     if (!existingCols.includes('archived_match_details')) {
-                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN archived_match_details LONGTEXT NULL`, () => {});
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN archived_match_details LONGTEXT NULL`, () => { });
                     }
                     if (!existingCols.includes('ongoing_match_details')) {
-                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN ongoing_match_details LONGTEXT NULL`, () => {});
+                        db.query(`ALTER TABLE title_similarity_results ADD COLUMN ongoing_match_details LONGTEXT NULL`, () => { });
                     }
                 }
             });
@@ -763,9 +774,9 @@ const db = mysql.createPool({
             LIMIT 1
         `;
         db.query(checkStudentStatusCol, (stErr, stResult) => {
-            if(!stErr && !(Array.isArray(stResult) && stResult.length > 0)){
+            if (!stErr && !(Array.isArray(stResult) && stResult.length > 0)) {
                 db.query(`ALTER TABLE users ADD COLUMN student_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'`, (addErr) => {
-                    if(addErr){ console.error("Unable to add student_status column:", addErr); }
+                    if (addErr) { console.error("Unable to add student_status column:", addErr); }
                     else { console.log("users.student_status column created"); }
                 });
             }
@@ -780,9 +791,9 @@ const db = mysql.createPool({
             LIMIT 1
         `;
         db.query(checkSubmissionCountCol, (scErr, scResult) => {
-            if(!scErr && !(Array.isArray(scResult) && scResult.length > 0)){
+            if (!scErr && !(Array.isArray(scResult) && scResult.length > 0)) {
                 db.query(`ALTER TABLE student_documents ADD COLUMN submission_count INT DEFAULT 0`, (addErr) => {
-                    if(addErr){ console.error("Unable to add submission_count column:", addErr); }
+                    if (addErr) { console.error("Unable to add submission_count column:", addErr); }
                     else { console.log("student_documents.submission_count column created"); }
                 });
             }
@@ -811,6 +822,91 @@ const db = mysql.createPool({
                 }
             }
         });
+
+        const checkAdvCols = `
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'adviser_settings'
+        `;
+        db.query(checkAdvCols, (aErr, aResult) => {
+            if (!aErr && Array.isArray(aResult)) {
+                const existing = aResult.map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
+                if (!existing.includes('catering_year')) {
+                    db.query("ALTER TABLE adviser_settings ADD COLUMN catering_year INT DEFAULT NULL", (altErr) => {
+                        if (!altErr) {
+                            console.log("adviser_settings.catering_year column verified/created");
+                            db.query(
+                                "UPDATE adviser_settings SET catering_year = YEAR(COALESCE(updated_at, created_at, NOW())) WHERE catering_year IS NULL",
+                                () => { }
+                            );
+                        }
+                    });
+                } else {
+                    db.query(
+                        "UPDATE adviser_settings SET catering_year = YEAR(COALESCE(updated_at, created_at, NOW())) WHERE catering_year IS NULL",
+                        () => { }
+                    );
+                }
+            }
+        });
+
+        db.query(`
+            CREATE TABLE IF NOT EXISTS defense_minutes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                schedule_id INT NOT NULL,
+                group_id INT NOT NULL,
+                adviser_id INT NOT NULL,
+                panel_chair_notes LONGTEXT NULL,
+                panel_1_notes LONGTEXT NULL,
+                panel_2_notes LONGTEXT NULL,
+                extra_notes_json LONGTEXT NULL,
+                minutes_status VARCHAR(30) DEFAULT 'Approved',
+                submitted_by_role VARCHAR(20) DEFAULT 'adviser',
+                adviser_feedback TEXT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_schedule_minutes (schedule_id)
+            )
+        `, () => {
+            console.log("defense_minutes table verified/created");
+            db.query("SHOW COLUMNS FROM defense_minutes", (cErr, cols) => {
+                if (!cErr && Array.isArray(cols)) {
+                    const names = cols.map(c => String(c.Field || "").toLowerCase());
+                    if (!names.includes("minutes_status")) {
+                        db.query("ALTER TABLE defense_minutes ADD COLUMN minutes_status VARCHAR(30) DEFAULT 'Approved'", () => { });
+                    }
+                    if (!names.includes("submitted_by_role")) {
+                        db.query("ALTER TABLE defense_minutes ADD COLUMN submitted_by_role VARCHAR(20) DEFAULT 'adviser'", () => { });
+                    }
+                    if (!names.includes("adviser_feedback")) {
+                        db.query("ALTER TABLE defense_minutes ADD COLUMN adviser_feedback TEXT NULL", () => { });
+                    }
+                }
+            });
+        });
+
+        db.query(`
+            CREATE TABLE IF NOT EXISTS typed_defense_minutes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                group_id INT NOT NULL,
+                schedule_id INT NULL,
+                defense_type VARCHAR(100) NOT NULL,
+                student_user_id VARCHAR(50) NOT NULL,
+                adviser_id INT NULL,
+                minutes_json LONGTEXT NOT NULL,
+                status VARCHAR(60) DEFAULT 'Pending Adviser Signature',
+                adviser_signature_json LONGTEXT NULL,
+                eligible_panelist_ids_json LONGTEXT NULL,
+                panelist_signatures_json LONGTEXT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_group_defense_minutes (group_id, defense_type)
+            )
+        `, (tdmErr) => {
+            if (tdmErr) console.error("Error creating typed_defense_minutes table:", tdmErr);
+            else console.log("typed_defense_minutes table verified/created");
+        });
     }
 });
 
@@ -823,11 +919,11 @@ app.post("/login", (req, res) => {
         password
     } = req.body;
 
-    if(!userId || !password){
+    if (!userId || !password) {
 
         return res.json({
-            success:false,
-            message:"Please enter your User ID and password."
+            success: false,
+            message: "Please enter your User ID and password."
         });
 
     }
@@ -841,21 +937,21 @@ app.post("/login", (req, res) => {
 
     db.query(sql, [userId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error during login."
+                success: false,
+                message: "Database error during login."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                errorType:"user_not_found",
-                message:"User ID not found. Please check your User ID and try again."
+                success: false,
+                errorType: "user_not_found",
+                message: "User ID not found. Please check your User ID and try again."
             });
 
         }
@@ -869,31 +965,31 @@ app.post("/login", (req, res) => {
             : Promise.resolve(storedPwd === String(password));
 
         verifyPromise.then((isMatch) => {
-            if(!isMatch){
+            if (!isMatch) {
                 return res.json({
-                    success:false,
-                    errorType:"incorrect_password",
-                    message:"Incorrect password. Please verify your password and try again."
+                    success: false,
+                    errorType: "incorrect_password",
+                    message: "Incorrect password. Please verify your password and try again."
                 });
             }
 
             return res.json({
-            success:true,
-            message:"Login successful.",
-            fullname:user.fullname,
-            userId:user.user_id,
-            role:user.role,
-            student_position:user.student_position,
-            adviser_access:user.adviser_access || 0,
-            panelist_access:user.panelist_access || 0,
-            instructor_access:user.instructor_access || 0,
-            forcePasswordChange:user.force_password_change || 0
+                success: true,
+                message: "Login successful.",
+                fullname: user.fullname,
+                userId: user.user_id,
+                role: user.role,
+                student_position: user.student_position,
+                adviser_access: user.adviser_access || 0,
+                panelist_access: user.panelist_access || 0,
+                instructor_access: user.instructor_access || 0,
+                forcePasswordChange: user.force_password_change || 0
             });
         }).catch((cmpErr) => {
             console.error("bcrypt compare error:", cmpErr);
             return res.json({
-                success:false,
-                message:"Error verifying password."
+                success: false,
+                message: "Error verifying password."
             });
         });
 
@@ -933,7 +1029,7 @@ app.post("/enroll-faculty", (req, res) => {
         const tempPassword = "FAC" + Math.floor(1000 + Math.random() * 9000);
 
         bcrypt.hash(tempPassword, 10).then((hashedPassword) => {
-        const sqlInsert = `
+            const sqlInsert = `
             INSERT INTO users
             (
                 user_id,
@@ -946,26 +1042,26 @@ app.post("/enroll-faculty", (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?)
         `;
 
-        db.query(
-            sqlInsert,
-            [facultyId, fullname, hashedPassword, "faculty", position, email || null],
-            (err) => {
-                if (err) {
-                    console.log(err);
-                    return res.json({ success: false });
-                }
+            db.query(
+                sqlInsert,
+                [facultyId, fullname, hashedPassword, "faculty", position, email || null],
+                (err) => {
+                    if (err) {
+                        console.log(err);
+                        return res.json({ success: false });
+                    }
 
-                if (email) {
-                    sendCredentialEmail(email, fullname, facultyId, tempPassword, "Faculty");
-                }
+                    if (email) {
+                        sendCredentialEmail(email, fullname, facultyId, tempPassword, "Faculty");
+                    }
 
-                res.json({
-                    success: true,
-                    facultyId,
-                    tempPassword
-                });
-            }
-        );
+                    res.json({
+                        success: true,
+                        facultyId,
+                        tempPassword
+                    });
+                }
+            );
         }).catch((hashErr) => {
             console.error(hashErr);
             res.json({ success: false });
@@ -1216,7 +1312,7 @@ app.post("/enroll-student", (req, res) => {
         const tempPassword = Math.random().toString(36).slice(-8);
 
         bcrypt.hash(tempPassword, 10).then((hashedPassword) => {
-        const sqlInsert = `
+            const sqlInsert = `
             INSERT INTO users
             (
                 user_id,
@@ -1232,36 +1328,36 @@ app.post("/enroll-student", (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        db.query(
-            sqlInsert,
-            [
-                studentId,
-                fullname,
-                hashedPassword,
-                "student",
-                program,
-                year_level,
-                position,
-                enrolledByUserId || null,
-                email || null
-            ],
-            (err) => {
-                if (err) {
-                    console.log(err);
-                    return res.json({ success: false });
-                }
-
-                if (email) {
-                    sendCredentialEmail(email, fullname, studentId, tempPassword, "Student");
-                }
-
-                res.json({
-                    success: true,
+            db.query(
+                sqlInsert,
+                [
                     studentId,
-                    tempPassword
-                });
-            }
-        );
+                    fullname,
+                    hashedPassword,
+                    "student",
+                    program,
+                    year_level,
+                    position,
+                    enrolledByUserId || null,
+                    email || null
+                ],
+                (err) => {
+                    if (err) {
+                        console.log(err);
+                        return res.json({ success: false });
+                    }
+
+                    if (email) {
+                        sendCredentialEmail(email, fullname, studentId, tempPassword, "Student");
+                    }
+
+                    res.json({
+                        success: true,
+                        studentId,
+                        tempPassword
+                    });
+                }
+            );
         }).catch((hashErr) => {
             console.error(hashErr);
             res.json({ success: false });
@@ -1382,11 +1478,11 @@ app.delete("/delete-student/:id", (req, res) => {
                 }
 
                 // 4. Student has NO group. Clean up dependent/orphan records safely.
-                db.query("DELETE FROM user_notifications WHERE user_id = ?", [studentDbId], () => {});
-                db.query("DELETE FROM student_hidden_updates WHERE student_id = ?", [studentDbId], () => {});
-                db.query("DELETE FROM env_scan_student_signatures WHERE student_id = ?", [studentDbId], () => {});
-                db.query("DELETE FROM title_proposals WHERE uploaded_by = ? AND (group_id IS NULL OR group_id = 0)", [studentDbId], () => {});
-                db.query("DELETE FROM student_documents WHERE uploaded_by = ? AND (group_id IS NULL OR group_id = 0)", [studentDbId], () => {});
+                db.query("DELETE FROM user_notifications WHERE user_id = ?", [studentDbId], () => { });
+                db.query("DELETE FROM student_hidden_updates WHERE student_id = ?", [studentDbId], () => { });
+                db.query("DELETE FROM env_scan_student_signatures WHERE student_id = ?", [studentDbId], () => { });
+                db.query("DELETE FROM title_proposals WHERE uploaded_by = ? AND (group_id IS NULL OR group_id = 0)", [studentDbId], () => { });
+                db.query("DELETE FROM student_documents WHERE uploaded_by = ? AND (group_id IS NULL OR group_id = 0)", [studentDbId], () => { });
 
                 // 5. Delete from users table
                 const delUserSql = `DELETE FROM users WHERE id = ? AND role = 'student'`;
@@ -1649,44 +1745,44 @@ app.post("/bulk-enroll-students", (req, res) => {
             const tempPassword = Math.random().toString(36).slice(-8);
 
             bcrypt.hash(tempPassword, 10).then((hashedPassword) => {
-            db.query(
-                insertSql,
-                [
-                    studentId,
-                    row.fullname,
-                    hashedPassword,
-                    row.program,
-                    row.year_level,
-                    row.student_position,
-                    enrolledByUserId || null,
-                    row.email || null
-                ],
-                (err) => {
-                    if (err) {
-                        console.log(err);
-                        results.push({
-                            rowIndex: idx + 1,
-                            fullname: row.fullname,
-                            success: false,
-                            error: "Insert failed"
-                        });
-                    } else {
-                        if (row.email) {
-                            sendCredentialEmail(row.email, row.fullname, studentId, tempPassword, "Student");
+                db.query(
+                    insertSql,
+                    [
+                        studentId,
+                        row.fullname,
+                        hashedPassword,
+                        row.program,
+                        row.year_level,
+                        row.student_position,
+                        enrolledByUserId || null,
+                        row.email || null
+                    ],
+                    (err) => {
+                        if (err) {
+                            console.log(err);
+                            results.push({
+                                rowIndex: idx + 1,
+                                fullname: row.fullname,
+                                success: false,
+                                error: "Insert failed"
+                            });
+                        } else {
+                            if (row.email) {
+                                sendCredentialEmail(row.email, row.fullname, studentId, tempPassword, "Student");
+                            }
+
+                            results.push({
+                                rowIndex: idx + 1,
+                                fullname: row.fullname,
+                                studentId,
+                                tempPassword,
+                                success: true
+                            });
                         }
 
-                        results.push({
-                            rowIndex: idx + 1,
-                            fullname: row.fullname,
-                            studentId,
-                            tempPassword,
-                            success: true
-                        });
+                        insertNext(idx + 1);
                     }
-
-                    insertNext(idx + 1);
-                }
-            );
+                );
             }).catch((hashErr) => {
                 console.error(hashErr);
                 results.push({
@@ -1897,27 +1993,27 @@ app.get("/repository-titles", (req, res) => {
 
 // ── Synonym map (expand query terms before scoring) ─────────────────
 const SYNONYM_MAP = {
-    ojt:         ["ojt", "internship", "practicum", "training", "on-the-job", "field work", "apprentice"],
-    internship:  ["internship", "ojt", "practicum", "training", "on-the-job", "placement"],
-    practicum:   ["practicum", "ojt", "internship", "training", "field work"],
-    inventory:   ["inventory", "stock", "warehouse", "supply chain", "asset tracking", "stockroom"],
-    management:  ["management", "administration", "monitoring", "tracking", "oversight", "control"],
-    tracking:    ["tracking", "monitoring", "tracing", "surveillance", "logging"],
-    monitoring:  ["monitoring", "tracking", "surveillance", "observation", "dashboard"],
-    web:         ["web", "online", "internet", "browser", "website", "web-based", "portal"],
-    mobile:      ["mobile", "android", "ios", "app", "smartphone", "handheld"],
-    system:      ["system", "platform", "application", "tool", "software", "solution"],
-    student:     ["student", "learner", "scholar", "undergraduate", "academic", "pupil"],
-    grade:       ["grade", "score", "marks", "evaluation", "assessment", "rating"],
-    attendance:  ["attendance", "presence", "time-in", "log", "absences"],
-    sales:       ["sales", "revenue", "commerce", "transaction", "ecommerce", "point-of-sale"],
-    library:     ["library", "books", "catalogue", "resources", "lending", "borrowing"],
-    health:      ["health", "medical", "clinic", "hospital", "patient", "wellness"],
-    schedule:    ["schedule", "calendar", "timetable", "appointment", "booking", "planner"],
-    ai:          ["ai", "artificial intelligence", "machine learning", "deep learning", "neural", "nlp"],
-    data:        ["data", "analytics", "statistics", "reporting", "insights", "dashboard"],
-    coffee:      ["coffee", "cafe", "beverage", "brew", "drink", "menu"],
-    shop:        ["shop", "store", "retail", "marketplace", "commerce", "business"],
+    ojt: ["ojt", "internship", "practicum", "training", "on-the-job", "field work", "apprentice"],
+    internship: ["internship", "ojt", "practicum", "training", "on-the-job", "placement"],
+    practicum: ["practicum", "ojt", "internship", "training", "field work"],
+    inventory: ["inventory", "stock", "warehouse", "supply chain", "asset tracking", "stockroom"],
+    management: ["management", "administration", "monitoring", "tracking", "oversight", "control"],
+    tracking: ["tracking", "monitoring", "tracing", "surveillance", "logging"],
+    monitoring: ["monitoring", "tracking", "surveillance", "observation", "dashboard"],
+    web: ["web", "online", "internet", "browser", "website", "web-based", "portal"],
+    mobile: ["mobile", "android", "ios", "app", "smartphone", "handheld"],
+    system: ["system", "platform", "application", "tool", "software", "solution"],
+    student: ["student", "learner", "scholar", "undergraduate", "academic", "pupil"],
+    grade: ["grade", "score", "marks", "evaluation", "assessment", "rating"],
+    attendance: ["attendance", "presence", "time-in", "log", "absences"],
+    sales: ["sales", "revenue", "commerce", "transaction", "ecommerce", "point-of-sale"],
+    library: ["library", "books", "catalogue", "resources", "lending", "borrowing"],
+    health: ["health", "medical", "clinic", "hospital", "patient", "wellness"],
+    schedule: ["schedule", "calendar", "timetable", "appointment", "booking", "planner"],
+    ai: ["ai", "artificial intelligence", "machine learning", "deep learning", "neural", "nlp"],
+    data: ["data", "analytics", "statistics", "reporting", "insights", "dashboard"],
+    coffee: ["coffee", "cafe", "beverage", "brew", "drink", "menu"],
+    shop: ["shop", "store", "retail", "marketplace", "commerce", "business"],
 };
 
 function expandQuery(rawQuery) {
@@ -1999,7 +2095,7 @@ function geminiEmbed(text) {
 function cosineScore(a, b) {
     if (!a || !b || a.length !== b.length) return 0;
     let dot = 0, na = 0, nb = 0;
-    for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+    for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
     if (!na || !nb) return 0;
     return dot / (Math.sqrt(na) * Math.sqrt(nb));
 }
@@ -2078,7 +2174,7 @@ app.get("/repository-search", (req, res) => {
                 if (!batchError && embeddings.length === rows.length) {
                     scored = rows.map((r, i) => {
                         const semSim = cosineScore(queryEmbedding, embeddings[i]);
-                        const kwSim  = keywordScore(r, expandedTerms);
+                        const kwSim = keywordScore(r, expandedTerms);
                         const finalScore = (semSim * 0.70) + (kwSim * 0.30);
                         return { ...r, _score: finalScore, _mode: "gemini" };
                     });
@@ -2110,7 +2206,7 @@ app.get("/repository-search", (req, res) => {
 
                     scored = rows.map((r, i) => {
                         const semSim = semEngine.cosineSimilarity(queryHfEmbed, recordHfEmbeddings[i]);
-                        const kwSim  = keywordScore(r, expandedTerms);
+                        const kwSim = keywordScore(r, expandedTerms);
                         const finalScore = (semSim * 0.70) + (kwSim * 0.30);
                         return { ...r, _score: finalScore, _mode: "huggingface" };
                     });
@@ -2142,7 +2238,7 @@ app.get("/repository-search", (req, res) => {
 
         // Always return all records (UI can show "0% match" items at bottom)
         // But separate them: matched (score > 0) vs unmatched
-        const matched   = scored.filter(r => r._score > 0.05);
+        const matched = scored.filter(r => r._score > 0.05);
         const unmatched = scored.filter(r => r._score <= 0.05);
         const finalList = [...matched, ...unmatched];
 
@@ -2331,10 +2427,10 @@ app.post("/create-group", async (req, res) => {
         console.log("Error checking duplicate group name:", dupErr);
     }
 
-    if(members.length > 3){
+    if (members.length > 3) {
         return res.json({
-            success:false,
-            message:"Only 4 members are allowed per group, including the Project Manager."
+            success: false,
+            message: "Only 4 members are allowed per group, including the Project Manager."
         });
     }
 
@@ -2663,10 +2759,10 @@ app.get("/student-group/:userId", (req, res) => {
 
 app.get("/group-defense-history/:groupDbId", (req, res) => {
     const groupDbId = req.params.groupDbId;
-    if(!groupDbId){
+    if (!groupDbId) {
         return res.json({
-            success:false,
-            message:"Missing group ID."
+            success: false,
+            message: "Missing group ID."
         });
     }
     const sql = `
@@ -2689,7 +2785,7 @@ app.get("/group-defense-history/:groupDbId", (req, res) => {
         ORDER BY ds.id ASC
     `;
     db.query(sql, [groupDbId], (err, result) => {
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({ success: false, message: "Database error." });
         }
@@ -2707,11 +2803,11 @@ app.get("/student-defense-history/:userId", (req, res) => {
     const userId =
         req.params.userId;
 
-    if(!userId){
+    if (!userId) {
 
         return res.json({
-            success:false,
-            message:"Missing student account."
+            success: false,
+            message: "Missing student account."
         });
 
     }
@@ -2749,18 +2845,18 @@ app.get("/student-defense-history/:userId", (req, res) => {
 
     db.query(sql, [userId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load defense history."
+                success: false,
+                message: "Failed to load defense history."
             });
         }
 
         res.json({
-            success:true,
-            defenses:result || []
+            success: true,
+            defenses: result || []
         });
 
     });
@@ -2975,10 +3071,10 @@ app.put("/update-group", async (req, res) => {
         console.log("Error checking duplicate group name:", dupErr);
     }
 
-    if(members.length > 3){
+    if (members.length > 3) {
         return res.json({
-            success:false,
-            message:"Only 4 members are allowed per group, including the Project Manager."
+            success: false,
+            message: "Only 4 members are allowed per group, including the Project Manager."
         });
     }
 
@@ -3011,18 +3107,18 @@ app.put("/update-group", async (req, res) => {
         checkManagerSql,
         [groupId, projectManagerUserId],
         (err, managerResult) => {
-            if(err){
+            if (err) {
                 console.log(err);
                 return res.json({
-                    success:false,
-                    message:"Database error."
+                    success: false,
+                    message: "Database error."
                 });
             }
 
-            if(managerResult.length === 0){
+            if (managerResult.length === 0) {
                 return res.json({
-                    success:false,
-                    message:"Only the Project Manager can update this group."
+                    success: false,
+                    message: "Only the Project Manager can update this group."
                 });
             }
 
@@ -3042,18 +3138,18 @@ app.put("/update-group", async (req, res) => {
                 updateGroupSql,
                 [groupName, projectTitle, managerProgram, groupDbId],
                 (err) => {
-                    if(err){
+                    if (err) {
                         console.log(err);
                         return res.json({
-                            success:false,
-                            message:"Failed to update group details."
+                            success: false,
+                            message: "Failed to update group details."
                         });
                     }
 
-                    if(members.length === 0){
+                    if (members.length === 0) {
                         return res.json({
-                            success:true,
-                            message:"Group updated successfully."
+                            success: true,
+                            message: "Group updated successfully."
                         });
                     }
 
@@ -3067,18 +3163,18 @@ app.put("/update-group", async (req, res) => {
                     `;
 
                     db.query(findStudentsSql, [studentUserIds], (err, studentResult) => {
-                        if(err){
+                        if (err) {
                             console.log(err);
                             return res.json({
-                                success:false,
-                                message:"Database error."
+                                success: false,
+                                message: "Database error."
                             });
                         }
 
-                        if(studentResult.length !== studentUserIds.length){
+                        if (studentResult.length !== studentUserIds.length) {
                             return res.json({
-                                success:false,
-                                message:"One or more student IDs are invalid."
+                                success: false,
+                                message: "One or more student IDs are invalid."
                             });
                         }
 
@@ -3087,10 +3183,10 @@ app.put("/update-group", async (req, res) => {
                             student => student.program !== managerProgram
                         );
 
-                        if(invalidProgramMember){
+                        if (invalidProgramMember) {
                             return res.json({
-                                success:false,
-                                message:`All members must belong to the same program (${managerProgram}). Student ${invalidProgramMember.user_id} belongs to ${invalidProgramMember.program || "None"}.`
+                                success: false,
+                                message: `All members must belong to the same program (${managerProgram}). Student ${invalidProgramMember.user_id} belongs to ${invalidProgramMember.program || "None"}.`
                             });
                         }
 
@@ -3112,22 +3208,22 @@ app.put("/update-group", async (req, res) => {
                             checkMembersGroupSql,
                             [studentDbIds, groupDbId],
                             (err, existingMembers) => {
-                                if(err){
+                                if (err) {
                                     console.log(err);
                                     return res.json({
-                                        success:false,
-                                        message:"Database error."
+                                        success: false,
+                                        message: "Database error."
                                     });
                                 }
 
-                                if(existingMembers.length > 0){
+                                if (existingMembers.length > 0) {
                                     const existingList = existingMembers
                                         .map(item => `${item.user_id} already belongs to ${item.group_id}`)
                                         .join(", ");
 
                                     return res.json({
-                                        success:false,
-                                        message:existingList
+                                        success: false,
+                                        message: existingList
                                     });
                                 }
 
@@ -3138,7 +3234,7 @@ app.put("/update-group", async (req, res) => {
                                         student => student.user_id === member.studentUserId
                                     );
 
-                                    if(foundStudent){
+                                    if (foundStudent) {
                                         values.push([
                                             groupDbId,
                                             foundStudent.id,
@@ -3147,10 +3243,10 @@ app.put("/update-group", async (req, res) => {
                                     }
                                 });
 
-                                if(values.length === 0){
+                                if (values.length === 0) {
                                     return res.json({
-                                        success:true,
-                                        message:"Group updated successfully."
+                                        success: true,
+                                        message: "Group updated successfully."
                                     });
                                 }
 
@@ -3165,17 +3261,17 @@ app.put("/update-group", async (req, res) => {
                                 `;
 
                                 db.query(insertMembersSql, [values], (err) => {
-                                    if(err){
+                                    if (err) {
                                         console.log(err);
                                         return res.json({
-                                            success:false,
-                                            message:"Failed to add new members."
+                                            success: false,
+                                            message: "Failed to add new members."
                                         });
                                     }
 
                                     res.json({
-                                        success:true,
-                                        message:"Group updated successfully."
+                                        success: true,
+                                        message: "Group updated successfully."
                                     });
                                 });
                             }
@@ -3187,9 +3283,115 @@ app.put("/update-group", async (req, res) => {
     );
 });
 
+/* ================= ADVISER MANAGEMENT HELPERS ================= */
+
+function resolveAdviserStatus(rawStatus, groupCapacity, assignedGroups) {
+    const cap = Number(groupCapacity || 0);
+    const assigned = Number(assignedGroups || 0);
+    if (cap <= 0) return "Not Configured";
+    if (rawStatus === "Inactive") return "Inactive";
+    if (assigned >= cap) return "Full";
+    return "Available";
+}
+
+function formatEvenRange(totalGroups, adviserCount) {
+    if (adviserCount <= 0) return "No available advisers";
+    if (totalGroups <= 0) return "0 groups";
+    const minG = Math.floor(totalGroups / adviserCount);
+    const maxG = Math.ceil(totalGroups / adviserCount);
+    const extra = totalGroups % adviserCount;
+    if (minG === maxG) return `${minG} group${minG === 1 ? "" : "s"} each`;
+    return `${minG}–${maxG} groups each (${extra} adviser${extra === 1 ? "" : "s"} take ${maxG}, ${adviserCount - extra} take ${minG})`;
+}
+
+function buildAdviserRecommendationAnalysis(advisers, groupStats, cohortYear) {
+    const totalGroups = Number(groupStats.total_groups || 0);
+    const unassignedGroups = Number(groupStats.unassigned_groups || 0);
+    const itGroups = Number(groupStats.it_groups || 0);
+    const isGroups = Number(groupStats.is_groups || 0);
+
+    const activeAvailable = advisers.filter(a => a.adviser_status === "Available" && Number(a.group_capacity) > 0);
+    const inactiveCount = advisers.filter(a => a.adviser_status === "Inactive").length;
+    const fullCount = advisers.filter(a => a.adviser_status === "Full").length;
+    const notConfiguredCount = advisers.filter(a => a.adviser_status === "Not Configured").length;
+
+    const itOnly = activeAvailable.filter(a => a.program_cater === "BSIT" || a.program_cater === "IT");
+    const isOnly = activeAvailable.filter(a => a.program_cater === "BSIS" || a.program_cater === "IS");
+    const bothProg = activeAvailable.filter(a => a.program_cater === "Both");
+
+    const itCapableCount = itOnly.length + bothProg.length;
+    const isCapableCount = isOnly.length + bothProg.length;
+
+    const totalConfiguredCapacity = activeAvailable.reduce((sum, a) => sum + Number(a.group_capacity || 0), 0);
+    const totalRemainingSlots = activeAvailable.reduce(
+        (sum, a) => sum + Math.max(0, Number(a.group_capacity || 0) - Number(a.assigned_groups || 0)),
+        0
+    );
+
+    let bothForIt = 0;
+    let bothForIs = 0;
+    if (bothProg.length > 0) {
+        if (itGroups > 0 && isGroups === 0) {
+            bothForIt = bothProg.length;
+        } else if (isGroups > 0 && itGroups === 0) {
+            bothForIs = bothProg.length;
+        } else {
+            for (let i = 0; i < bothProg.length; i++) {
+                const itLoad = itGroups / Math.max(1, itOnly.length + bothForIt);
+                const isLoad = isGroups / Math.max(1, isOnly.length + bothForIs);
+                if (itLoad >= isLoad) bothForIt++;
+                else bothForIs++;
+            }
+        }
+    }
+
+    const effectiveItAdvisers = itOnly.length + bothForIt;
+    const effectiveIsAdvisers = isOnly.length + bothForIs;
+
+    const overallRecommendation = formatEvenRange(totalGroups, activeAvailable.length);
+    const itRecommendation = itGroups === 0
+        ? "0 BSIT groups this year"
+        : (itCapableCount === 0
+            ? `${itGroups} BSIT group(s) need at least 1 BSIT/Both adviser`
+            : formatEvenRange(itGroups, effectiveItAdvisers));
+    const isRecommendation = isGroups === 0
+        ? "0 BSIS groups this year"
+        : (isCapableCount === 0
+            ? `${isGroups} BSIS group(s) need at least 1 BSIS/Both adviser`
+            : formatEvenRange(isGroups, effectiveIsAdvisers));
+
+    return {
+        cohortYear,
+        totalGroups,
+        unassignedGroups,
+        itGroups,
+        isGroups,
+        totalAdvisers: advisers.length,
+        availableAdvisers: activeAvailable.length,
+        inactiveAdvisers: inactiveCount,
+        fullAdvisers: fullCount,
+        notConfiguredAdvisers: notConfiguredCount,
+        itOnlyAdvisers: itOnly.length,
+        isOnlyAdvisers: isOnly.length,
+        bothAdvisers: bothProg.length,
+        itCapableCount,
+        isCapableCount,
+        effectiveItAdvisers,
+        effectiveIsAdvisers,
+        totalConfiguredCapacity,
+        totalRemainingSlots,
+        capacityGap: unassignedGroups - totalRemainingSlots,
+        overallRecommendation,
+        itRecommendation,
+        isRecommendation
+    };
+}
+
 /* ================= ADVISER MANAGEMENT ================= */
 
 app.get("/adviser-management", (req, res) => {
+
+    const currentYear = new Date().getFullYear();
 
     const advisersSql = `
         SELECT
@@ -3202,14 +3404,28 @@ app.get("/adviser-management", (req, res) => {
 
             COALESCE(a.group_capacity, 0) AS group_capacity,
             COALESCE(a.program_cater, 'Not Set') AS program_cater,
-            COALESCE(a.year_level_cater, 'Not Set') AS year_level_cater,
-            COALESCE(a.adviser_status, 'Not Configured') AS adviser_status,
-            COALESCE(a.remarks, '') AS remarks
+            COALESCE(a.adviser_status, 'Not Configured') AS raw_adviser_status,
+            COALESCE(a.remarks, '') AS remarks,
+            a.catering_year,
+
+            (
+                SELECT COUNT(*)
+                FROM capstone_groups cg
+                WHERE cg.adviser_id = u.id
+                AND YEAR(COALESCE(cg.created_at, NOW())) = ?
+            ) AS assigned_groups,
+
+            (
+                SELECT COUNT(*)
+                FROM capstone_groups cg
+                WHERE cg.adviser_id = u.id
+            ) AS total_advisory_groups
 
         FROM users u
 
         LEFT JOIN adviser_settings a
             ON u.id = a.faculty_id
+            AND a.catering_year = ?
 
         WHERE u.role IN ('faculty', 'admin')
         AND u.adviser_access = 1
@@ -3217,54 +3433,66 @@ app.get("/adviser-management", (req, res) => {
         ORDER BY u.fullname ASC
     `;
 
-    const totalGroupsSql = `
-        SELECT COUNT(*) AS total_groups
+    const groupStatsSql = `
+        SELECT
+            COUNT(*) AS total_groups,
+            SUM(CASE WHEN adviser_id IS NULL THEN 1 ELSE 0 END) AS unassigned_groups,
+            SUM(CASE WHEN UPPER(TRIM(COALESCE(program, ''))) IN ('IT', 'BSIT') THEN 1 ELSE 0 END) AS it_groups,
+            SUM(CASE WHEN UPPER(TRIM(COALESCE(program, ''))) IN ('IS', 'BSIS') THEN 1 ELSE 0 END) AS is_groups
         FROM capstone_groups
+        WHERE YEAR(COALESCE(created_at, NOW())) = ?
     `;
 
-    db.query(advisersSql, (err, advisersResult) => {
+    db.query(advisersSql, [currentYear, currentYear], (err, advisersResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load advisers."
+                success: false,
+                message: "Failed to load advisers."
             });
         }
 
-        db.query(totalGroupsSql, (err, groupsResult) => {
+        db.query(groupStatsSql, [currentYear], (err, groupsResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to count groups."
+                    success: false,
+                    message: "Failed to count groups."
                 });
             }
 
-            const totalAdvisers =
-                advisersResult.length;
+            const normalizedAdvisers = (advisersResult || []).map(adviser => ({
+                ...adviser,
+                adviser_status: resolveAdviserStatus(
+                    adviser.raw_adviser_status,
+                    adviser.group_capacity,
+                    adviser.assigned_groups
+                )
+            }));
 
-            const totalGroups =
-                groupsResult[0].total_groups;
+            const groupStats = (groupsResult && groupsResult[0]) || {};
+            const totalAdvisers = normalizedAdvisers.length;
+            const totalGroups = Number(groupStats.total_groups || 0);
+            const availableAdvisers = normalizedAdvisers.filter(
+                adviser => adviser.adviser_status === "Available" && Number(adviser.group_capacity) > 0
+            ).length;
 
-            const availableAdvisers =
-                advisersResult.filter(adviser =>
-                    adviser.adviser_status === "Available"
-                    &&
-                    Number(adviser.group_capacity) > 0
-                ).length;
+            const analysis = buildAdviserRecommendationAnalysis(normalizedAdvisers, groupStats, currentYear);
 
             res.json({
-                success:true,
-                advisers:advisersResult,
-                stats:{
+                success: true,
+                advisers: normalizedAdvisers,
+                stats: {
                     totalAdvisers,
                     totalGroups,
-                    availableAdvisers
-                }
+                    availableAdvisers,
+                    cohortYear: currentYear
+                },
+                analysis
             });
 
         });
@@ -3290,30 +3518,30 @@ app.post("/save-adviser-settings", (req, res) => {
     const selectedAdviser =
         adviserId || facultyId;
 
-    if(
+    if (
         !selectedAdviser ||
         !groupCapacity ||
-        !programCater ||
-        !yearLevelCater ||
-        !adviserStatus
-    ){
+        !programCater
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all adviser settings fields."
+            success: false,
+            message: "Please complete all required adviser settings fields."
         });
     }
 
     const capacity =
         Number(groupCapacity);
 
-    if(isNaN(capacity) || capacity <= 0){
+    if (isNaN(capacity) || capacity <= 0) {
 
         return res.json({
-            success:false,
-            message:"Group capacity must be greater than 0."
+            success: false,
+            message: "Group capacity must be greater than 0."
         });
 
     }
+
+    const currentYear = new Date().getFullYear();
 
     const adviserSql = `
         SELECT
@@ -3341,20 +3569,20 @@ app.post("/save-adviser-settings", (req, res) => {
         ],
         (err, adviserResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking adviser."
+                    success: false,
+                    message: "Database error while checking adviser."
                 });
             }
 
-            if(adviserResult.length === 0){
+            if (adviserResult.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Faculty/Admin adviser not found or does not have adviser access."
+                    success: false,
+                    message: "Faculty/Admin adviser not found or does not have adviser access."
                 });
 
             }
@@ -3362,117 +3590,232 @@ app.post("/save-adviser-settings", (req, res) => {
             const adviserDbId =
                 adviserResult[0].id;
 
-            const checkSettingsSql = `
-                SELECT id
-                FROM adviser_settings
-                WHERE faculty_id = ?
-                LIMIT 1
+            const assignedCountSql = `
+                SELECT COUNT(*) AS assigned_groups
+                FROM capstone_groups
+                WHERE adviser_id = ?
+                AND YEAR(COALESCE(created_at, NOW())) = ?
             `;
 
-            db.query(checkSettingsSql, [adviserDbId], (err, settingsResult) => {
-
-                if(err){
-                    console.log(err);
-
+            db.query(assignedCountSql, [adviserDbId, currentYear], (cErr, countRows) => {
+                if (cErr) {
+                    console.log(cErr);
                     return res.json({
-                        success:false,
-                        message:"Database error while checking adviser settings."
+                        success: false,
+                        message: "Database error while checking adviser's assigned groups."
                     });
                 }
 
-                if(settingsResult.length > 0){
+                const assignedCount = Number((countRows && countRows[0] && countRows[0].assigned_groups) || 0);
+                const resolvedStatus =
+                    adviserStatus === "Inactive"
+                        ? "Inactive"
+                        : (assignedCount >= capacity ? "Full" : "Available");
 
-                    const updateSql = `
-                        UPDATE adviser_settings
-                        SET
-                            group_capacity = ?,
-                            program_cater = ?,
-                            year_level_cater = ?,
-                            adviser_status = ?,
-                            remarks = ?
-                        WHERE faculty_id = ?
-                    `;
+                const checkSettingsSql = `
+                    SELECT id
+                    FROM adviser_settings
+                    WHERE faculty_id = ?
+                    LIMIT 1
+                `;
 
-                    db.query(
-                        updateSql,
-                        [
-                            capacity,
-                            programCater,
-                            yearLevelCater,
-                            adviserStatus,
-                            remarks || "",
-                            adviserDbId
-                        ],
-                        (err) => {
+                db.query(checkSettingsSql, [adviserDbId], (err, settingsResult) => {
 
-                            if(err){
-                                console.log(err);
+                    if (err) {
+                        console.log(err);
 
-                                return res.json({
-                                    success:false,
-                                    message:"Failed to update adviser settings."
+                        return res.json({
+                            success: false,
+                            message: "Database error while checking adviser settings."
+                        });
+                    }
+
+                    if (settingsResult.length > 0) {
+
+                        const updateSql = `
+                            UPDATE adviser_settings
+                            SET
+                                group_capacity = ?,
+                                program_cater = ?,
+                                year_level_cater = ?,
+                                adviser_status = ?,
+                                remarks = ?,
+                                catering_year = ?
+                            WHERE faculty_id = ?
+                        `;
+
+                        db.query(
+                            updateSql,
+                            [
+                                capacity,
+                                programCater,
+                                yearLevelCater || "Not Set",
+                                resolvedStatus,
+                                remarks || "",
+                                currentYear,
+                                adviserDbId
+                            ],
+                            (err) => {
+
+                                if (err) {
+                                    console.log(err);
+
+                                    return res.json({
+                                        success: false,
+                                        message: "Failed to update adviser settings."
+                                    });
+                                }
+
+                                res.json({
+                                    success: true,
+                                    adviserStatus: resolvedStatus,
+                                    message: `Adviser settings saved. Status automatically set to ${resolvedStatus}.`
                                 });
+
                             }
+                        );
 
-                            res.json({
-                                success:true,
-                                message:"Adviser settings updated successfully."
-                            });
+                    } else {
 
-                        }
-                    );
+                        const insertSql = `
+                            INSERT INTO adviser_settings
+                            (
+                                faculty_id,
+                                group_capacity,
+                                program_cater,
+                                year_level_cater,
+                                adviser_status,
+                                remarks,
+                                catering_year
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        `;
 
-                }else{
+                        db.query(
+                            insertSql,
+                            [
+                                adviserDbId,
+                                capacity,
+                                programCater,
+                                yearLevelCater || "Not Set",
+                                resolvedStatus,
+                                remarks || "",
+                                currentYear
+                            ],
+                            (err) => {
 
-                    const insertSql = `
-                        INSERT INTO adviser_settings
-                        (
-                            faculty_id,
-                            group_capacity,
-                            program_cater,
-                            year_level_cater,
-                            adviser_status,
-                            remarks
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    `;
+                                if (err) {
+                                    console.log(err);
 
-                    db.query(
-                        insertSql,
-                        [
-                            adviserDbId,
-                            capacity,
-                            programCater,
-                            yearLevelCater,
-                            adviserStatus,
-                            remarks || ""
-                        ],
-                        (err) => {
+                                    return res.json({
+                                        success: false,
+                                        message: "Failed to save adviser settings."
+                                    });
+                                }
 
-                            if(err){
-                                console.log(err);
-
-                                return res.json({
-                                    success:false,
-                                    message:"Failed to save adviser settings."
+                                res.json({
+                                    success: true,
+                                    adviserStatus: resolvedStatus,
+                                    message: `Adviser settings saved. Status automatically set to ${resolvedStatus}.`
                                 });
+
                             }
+                        );
 
-                            res.json({
-                                success:true,
-                                message:"Adviser settings saved successfully."
-                            });
+                    }
 
-                        }
-                    );
-
-                }
-
+                });
             });
 
         }
     );
 
+});
+
+/* ================= APPLY RECOMMENDED ADVISER CAPACITIES ================= */
+
+app.post("/apply-adviser-recommendations", async (req, res) => {
+    const { recommendations } = req.body || {};
+    if (!Array.isArray(recommendations) || recommendations.length === 0) {
+        return res.json({
+            success: false,
+            message: "Please select at least one adviser recommendation to apply."
+        });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+        db.query(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
+    });
+
+    try {
+        let updatedCount = 0;
+        for (const item of recommendations) {
+            const fid = item && (item.facultyId || item.adviserId);
+            const capacity = Number(item && item.groupCapacity);
+            const programCater = String((item && item.programCater) || "").trim();
+            if (!fid || isNaN(capacity) || capacity <= 0 || !["BSIT", "BSIS", "Both"].includes(programCater)) {
+                continue;
+            }
+
+            const adviserRows = await queryAsync(
+                `SELECT id FROM users WHERE (id = ? OR user_id = ?) AND role IN ('faculty', 'admin') AND adviser_access = 1 LIMIT 1`,
+                [fid, fid]
+            );
+            if (!adviserRows || adviserRows.length === 0) continue;
+            const adviserDbId = adviserRows[0].id;
+
+            const countRows = await queryAsync(
+                `SELECT COUNT(*) AS assigned_groups FROM capstone_groups WHERE adviser_id = ? AND YEAR(COALESCE(created_at, NOW())) = ?`,
+                [adviserDbId, currentYear]
+            );
+            const assignedCount = Number((countRows && countRows[0] && countRows[0].assigned_groups) || 0);
+
+            const existingRows = await queryAsync(
+                `SELECT id, adviser_status, catering_year FROM adviser_settings WHERE faculty_id = ? LIMIT 1`,
+                [adviserDbId]
+            );
+            const wasInactiveThisYear = existingRows && existingRows.length > 0
+                && Number(existingRows[0].catering_year) === currentYear
+                && existingRows[0].adviser_status === "Inactive";
+
+            const resolvedStatus = wasInactiveThisYear
+                ? "Inactive"
+                : (assignedCount >= capacity ? "Full" : "Available");
+
+            if (existingRows && existingRows.length > 0) {
+                await queryAsync(
+                    `UPDATE adviser_settings SET group_capacity = ?, program_cater = ?, adviser_status = ?, catering_year = ? WHERE faculty_id = ?`,
+                    [capacity, programCater, resolvedStatus, currentYear, adviserDbId]
+                );
+            } else {
+                await queryAsync(
+                    `INSERT INTO adviser_settings (faculty_id, group_capacity, program_cater, year_level_cater, adviser_status, remarks, catering_year) VALUES (?, ?, ?, 'Not Set', ?, '', ?)`,
+                    [adviserDbId, capacity, programCater, resolvedStatus, currentYear]
+                );
+            }
+            updatedCount++;
+        }
+
+        if (updatedCount === 0) {
+            return res.json({
+                success: false,
+                message: "No valid adviser recommendations were applied."
+            });
+        }
+
+        res.json({
+            success: true,
+            updatedCount,
+            message: `Applied recommended capacities to ${updatedCount} adviser(s) for ${currentYear}.`
+        });
+    } catch (err) {
+        console.log(err);
+        res.json({
+            success: false,
+            message: "Failed to apply adviser recommendations."
+        });
+    }
 });
 
 /* ================= STUDENT LOAD ADVISERS ================= */
@@ -3505,26 +3848,28 @@ app.get("/student-advisers/:userId", (req, res) => {
 
     db.query(groupSql, [userId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while loading group."
+                success: false,
+                message: "Database error while loading group."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"You must create or join a group before requesting an adviser."
+                success: false,
+                message: "You must create or join a group before requesting an adviser."
             });
 
         }
 
         const group =
             groupResult[0];
+
+        const currentYear = new Date().getFullYear();
 
         const advisersSql = `
             SELECT
@@ -3537,14 +3882,14 @@ app.get("/student-advisers/:userId", (req, res) => {
 
                 COALESCE(a.group_capacity, 0) AS group_capacity,
                 COALESCE(a.program_cater, 'Not Set') AS program_cater,
-                COALESCE(a.year_level_cater, 'Not Set') AS year_level_cater,
-                COALESCE(a.adviser_status, 'Not Configured') AS adviser_status,
+                COALESCE(a.adviser_status, 'Not Configured') AS raw_adviser_status,
                 COALESCE(a.remarks, '') AS remarks,
 
                 (
                     SELECT COUNT(*)
                     FROM capstone_groups cg
                     WHERE cg.adviser_id = u.id
+                    AND YEAR(COALESCE(cg.created_at, NOW())) = ?
                 ) AS assigned_groups,
 
                 (
@@ -3560,6 +3905,7 @@ app.get("/student-advisers/:userId", (req, res) => {
 
             LEFT JOIN adviser_settings a
                 ON u.id = a.faculty_id
+                AND a.catering_year = ?
 
             WHERE u.role IN ('faculty', 'admin')
             AND u.adviser_access = 1
@@ -3567,21 +3913,30 @@ app.get("/student-advisers/:userId", (req, res) => {
             ORDER BY u.fullname ASC
         `;
 
-        db.query(advisersSql, [group.id], (err, advisersResult) => {
+        db.query(advisersSql, [currentYear, group.id, currentYear], (err, advisersResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while loading advisers."
+                    success: false,
+                    message: "Database error while loading advisers."
                 });
             }
 
+            const normalizedAdvisers = (advisersResult || []).map(adviser => ({
+                ...adviser,
+                adviser_status: resolveAdviserStatus(
+                    adviser.raw_adviser_status,
+                    adviser.group_capacity,
+                    adviser.assigned_groups
+                )
+            }));
+
             res.json({
-                success:true,
+                success: true,
                 group,
-                advisers:advisersResult
+                advisers: normalizedAdvisers
             });
 
         });
@@ -3600,13 +3955,13 @@ app.post("/request-adviser", (req, res) => {
         message
     } = req.body;
 
-    if(
+    if (
         !studentUserId ||
         !adviserUserId
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Missing adviser request information."
+            success: false,
+            message: "Missing adviser request information."
         });
     }
 
@@ -3632,20 +3987,20 @@ app.post("/request-adviser", (req, res) => {
 
     db.query(groupSql, [studentUserId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking student group."
+                success: false,
+                message: "Database error while checking student group."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"You must belong to a group before requesting an adviser."
+                success: false,
+                message: "You must belong to a group before requesting an adviser."
             });
 
         }
@@ -3653,23 +4008,25 @@ app.post("/request-adviser", (req, res) => {
         const group =
             groupResult[0];
 
-        if(group.adviser_id){
+        if (group.adviser_id) {
 
             return res.json({
-                success:false,
-                message:"Your group already has an assigned adviser."
+                success: false,
+                message: "Your group already has an assigned adviser."
             });
 
         }
 
-        if(!group.program){
+        if (!group.program) {
 
             return res.json({
-                success:false,
-                message:"Please set your group program first in Members > Edit Group."
+                success: false,
+                message: "Please set your group program first in Members > Edit Group."
             });
 
         }
+
+        const currentYear = new Date().getFullYear();
 
         const adviserSql = `
             SELECT
@@ -3680,19 +4037,20 @@ app.post("/request-adviser", (req, res) => {
 
                 COALESCE(a.group_capacity, 0) AS group_capacity,
                 COALESCE(a.program_cater, 'Not Set') AS program_cater,
-                COALESCE(a.year_level_cater, 'Not Set') AS year_level_cater,
-                COALESCE(a.adviser_status, 'Not Configured') AS adviser_status,
+                COALESCE(a.adviser_status, 'Not Configured') AS raw_adviser_status,
 
                 (
                     SELECT COUNT(*)
                     FROM capstone_groups cg
                     WHERE cg.adviser_id = u.id
+                    AND YEAR(COALESCE(cg.created_at, NOW())) = ?
                 ) AS assigned_groups
 
             FROM users u
 
             LEFT JOIN adviser_settings a
                 ON u.id = a.faculty_id
+                AND a.catering_year = ?
 
             WHERE
             (
@@ -3708,90 +4066,98 @@ app.post("/request-adviser", (req, res) => {
         db.query(
             adviserSql,
             [
+                currentYear,
+                currentYear,
                 adviserUserId,
                 adviserUserId
             ],
             (err, adviserResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Database error while checking adviser."
+                        success: false,
+                        message: "Database error while checking adviser."
                     });
                 }
 
-                if(adviserResult.length === 0){
+                if (adviserResult.length === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"Selected adviser was not found or does not have adviser access."
+                        success: false,
+                        message: "Selected adviser was not found or does not have adviser access."
                     });
 
                 }
 
-                const adviser =
-                    adviserResult[0];
+                const adviser = {
+                    ...adviserResult[0],
+                    adviser_status: resolveAdviserStatus(
+                        adviserResult[0].raw_adviser_status,
+                        adviserResult[0].group_capacity,
+                        adviserResult[0].assigned_groups
+                    )
+                };
 
                 const groupProgramFull =
                     group.program === "IS"
-                    ? "BSIS"
-                    : group.program === "IT"
-                    ? "BSIT"
-                    : group.program;
+                        ? "BSIS"
+                        : group.program === "IT"
+                            ? "BSIT"
+                            : group.program;
 
                 const adviserProgram =
                     adviser.program_cater;
 
-                if(
+                if (
                     adviserProgram === "Not Set" ||
                     adviserProgram === null ||
                     adviserProgram === ""
-                ){
+                ) {
                     return res.json({
-                        success:false,
-                        message:"Cannot request this adviser because their program setting is not configured yet."
+                        success: false,
+                        message: "Cannot request this adviser because their program setting is not configured yet."
                     });
                 }
 
-                if(
+                if (
                     adviserProgram !== "Both"
                     &&
                     adviserProgram !== groupProgramFull
-                ){
+                ) {
                     return res.json({
-                        success:false,
-                        message:`Cannot request this adviser. Your group is ${groupProgramFull}, but this adviser only caters ${adviserProgram}.`
+                        success: false,
+                        message: `Cannot request this adviser. Your group is ${groupProgramFull}, but this adviser only caters ${adviserProgram}.`
                     });
                 }
 
-                if(adviser.adviser_status !== "Available"){
+                if (adviser.adviser_status !== "Available") {
 
                     return res.json({
-                        success:false,
-                        message:`Cannot request this adviser because their status is ${adviser.adviser_status}.`
-                    });
-
-                }
-
-                if(Number(adviser.group_capacity) <= 0){
-
-                    return res.json({
-                        success:false,
-                        message:"Cannot request this adviser because their group capacity is not configured."
+                        success: false,
+                        message: `Cannot request this adviser because their status is ${adviser.adviser_status}.`
                     });
 
                 }
 
-                if(
+                if (Number(adviser.group_capacity) <= 0) {
+
+                    return res.json({
+                        success: false,
+                        message: "Cannot request this adviser because their group capacity is not configured."
+                    });
+
+                }
+
+                if (
                     Number(adviser.assigned_groups)
                     >=
                     Number(adviser.group_capacity)
-                ){
+                ) {
                     return res.json({
-                        success:false,
-                        message:"Cannot request this adviser because their capacity is already full."
+                        success: false,
+                        message: "Cannot request this adviser because their capacity is already full."
                     });
                 }
 
@@ -3805,20 +4171,20 @@ app.post("/request-adviser", (req, res) => {
 
                 db.query(checkProposalsSql, [group.id], (err, proposalResult) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Database error while checking title proposals."
+                            success: false,
+                            message: "Database error while checking title proposals."
                         });
                     }
 
-                    if(Number(proposalResult[0].proposal_count) < 3){
+                    if (Number(proposalResult[0].proposal_count) < 3) {
 
                         return res.json({
-                            success:false,
-                            message:"Please save all 3 title proposals (title + PDF) on this page before requesting an adviser."
+                            success: false,
+                            message: "Please save all 3 title proposals (title + PDF) on this page before requesting an adviser."
                         });
 
                     }
@@ -3833,20 +4199,20 @@ app.post("/request-adviser", (req, res) => {
 
                     db.query(checkPendingSql, [group.id], (err, pendingResult) => {
 
-                        if(err){
+                        if (err) {
                             console.log(err);
 
                             return res.json({
-                                success:false,
-                                message:"Database error while checking pending requests."
+                                success: false,
+                                message: "Database error while checking pending requests."
                             });
                         }
 
-                        if(pendingResult.length > 0){
+                        if (pendingResult.length > 0) {
 
                             return res.json({
-                                success:false,
-                                message:"Your group already has a pending adviser request."
+                                success: false,
+                                message: "Your group already has a pending adviser request."
                             });
 
                         }
@@ -3871,12 +4237,12 @@ app.post("/request-adviser", (req, res) => {
                             ],
                             (err) => {
 
-                                if(err){
+                                if (err) {
                                     console.log(err);
 
                                     return res.json({
-                                        success:false,
-                                        message:"Failed to send adviser request."
+                                        success: false,
+                                        message: "Failed to send adviser request."
                                     });
                                 }
 
@@ -3896,8 +4262,8 @@ app.post("/request-adviser", (req, res) => {
                                 );
 
                                 return res.json({
-                                    success:true,
-                                    message:"Adviser request sent successfully."
+                                    success: true,
+                                    message: "Adviser request sent successfully."
                                 });
 
                             }
@@ -3997,34 +4363,34 @@ ORDER BY u.fullname ASC
 
     db.query(groupsSql, (err, groupsResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load capstone groups."
+                success: false,
+                message: "Failed to load capstone groups."
             });
         }
 
         db.query(membersSql, (err, membersResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load group members."
+                    success: false,
+                    message: "Failed to load group members."
                 });
             }
 
             db.query(advisersSql, (err, advisersResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load advisers."
+                        success: false,
+                        message: "Failed to load advisers."
                     });
                 }
 
@@ -4040,7 +4406,7 @@ ORDER BY u.fullname ASC
                 });
 
                 res.json({
-                    success:true,
+                    success: true,
                     groups,
                     advisers: advisersResult
                 });
@@ -4069,11 +4435,11 @@ app.put("/admin-update-capstone-group", (req, res) => {
         adviserUserId
     } = req.body;
 
-    if(!groupId || !groupName || !projectTitle || !program){
+    if (!groupId || !groupName || !projectTitle || !program) {
 
         return res.json({
-            success:false,
-            message:"Please complete group name, project title, and program."
+            success: false,
+            message: "Please complete group name, project title, and program."
         });
 
     }
@@ -4088,20 +4454,20 @@ app.put("/admin-update-capstone-group", (req, res) => {
 
     db.query(getGroupSql, [groupId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error."
+                success: false,
+                message: "Database error."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Group not found."
+                success: false,
+                message: "Group not found."
             });
 
         }
@@ -4109,7 +4475,7 @@ app.put("/admin-update-capstone-group", (req, res) => {
         const groupDbId = groupResult[0].id;
         const currentAdviserId = groupResult[0].adviser_id;
 
-        if(!adviserUserId){
+        if (!adviserUserId) {
 
             const updateWithoutAdviserSql = `
                 UPDATE capstone_groups
@@ -4137,18 +4503,18 @@ app.put("/admin-update-capstone-group", (req, res) => {
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to update group."
+                            success: false,
+                            message: "Failed to update group."
                         });
                     }
 
                     return res.json({
-                        success:true,
-                        message:"Group updated successfully."
+                        success: true,
+                        message: "Group updated successfully."
                     });
 
                 }
@@ -4185,20 +4551,20 @@ app.put("/admin-update-capstone-group", (req, res) => {
 
         db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking adviser."
+                    success: false,
+                    message: "Database error while checking adviser."
                 });
             }
 
-            if(adviserResult.length === 0){
+            if (adviserResult.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Selected adviser was not found."
+                    success: false,
+                    message: "Selected adviser was not found."
                 });
 
             }
@@ -4207,37 +4573,37 @@ app.put("/admin-update-capstone-group", (req, res) => {
 
             const groupProgramFull =
                 program === "IS"
-                ? "BSIS"
-                : program === "IT"
-                ? "BSIT"
-                : program;
+                    ? "BSIS"
+                    : program === "IT"
+                        ? "BSIT"
+                        : program;
 
-            if(
+            if (
                 adviser.program_cater !== "Both"
                 &&
                 adviser.program_cater !== "Not Set"
                 &&
                 adviser.program_cater !== groupProgramFull
-            ){
+            ) {
 
                 return res.json({
-                    success:false,
-                    message:`Cannot assign adviser. This group is ${groupProgramFull}, but the adviser caters ${adviser.program_cater}.`
+                    success: false,
+                    message: `Cannot assign adviser. This group is ${groupProgramFull}, but the adviser caters ${adviser.program_cater}.`
                 });
 
             }
 
-            if(
+            if (
                 adviser.group_capacity > 0
                 &&
                 adviser.assigned_groups >= adviser.group_capacity
                 &&
                 currentAdviserId !== adviser.id
-            ){
+            ) {
 
                 return res.json({
-                    success:false,
-                    message:"Cannot assign adviser because their capacity is already full."
+                    success: false,
+                    message: "Cannot assign adviser because their capacity is already full."
                 });
 
             }
@@ -4269,18 +4635,18 @@ app.put("/admin-update-capstone-group", (req, res) => {
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to update group."
+                            success: false,
+                            message: "Failed to update group."
                         });
                     }
 
                     res.json({
-                        success:true,
-                        message:"Group updated successfully."
+                        success: true,
+                        message: "Group updated successfully."
                     });
 
                 }
@@ -4307,20 +4673,20 @@ app.delete("/admin-delete-capstone-group/:groupId", (req, res) => {
 
     db.query(findGroupSql, [groupId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error."
+                success: false,
+                message: "Database error."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Group not found."
+                success: false,
+                message: "Group not found."
             });
 
         }
@@ -4334,12 +4700,12 @@ app.delete("/admin-delete-capstone-group/:groupId", (req, res) => {
 
         db.query(deleteRequestsSql, [groupDbId], (err) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to delete adviser requests."
+                    success: false,
+                    message: "Failed to delete adviser requests."
                 });
             }
 
@@ -4350,12 +4716,12 @@ app.delete("/admin-delete-capstone-group/:groupId", (req, res) => {
 
             db.query(deleteMembersSql, [groupDbId], (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to delete group members."
+                        success: false,
+                        message: "Failed to delete group members."
                     });
                 }
 
@@ -4366,18 +4732,18 @@ app.delete("/admin-delete-capstone-group/:groupId", (req, res) => {
 
                 db.query(deleteGroupSql, [groupDbId], (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to delete group."
+                            success: false,
+                            message: "Failed to delete group."
                         });
                     }
 
                     res.json({
-                        success:true,
-                        message:"Group deleted successfully."
+                        success: true,
+                        message: "Group deleted successfully."
                     });
 
                 });
@@ -4475,34 +4841,34 @@ ORDER BY u.fullname ASC
 
     db.query(groupsSql, (err, groupsResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load capstone groups."
+                success: false,
+                message: "Failed to load capstone groups."
             });
         }
 
         db.query(membersSql, (err, membersResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load group members."
+                    success: false,
+                    message: "Failed to load group members."
                 });
             }
 
             db.query(advisersSql, (err, advisersResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load advisers."
+                        success: false,
+                        message: "Failed to load advisers."
                     });
                 }
 
@@ -4516,9 +4882,9 @@ ORDER BY u.fullname ASC
                 });
 
                 res.json({
-                    success:true,
+                    success: true,
                     groups,
-                    advisers:advisersResult
+                    advisers: advisersResult
                 });
 
             });
@@ -4542,20 +4908,20 @@ app.put("/instructor-update-capstone-group", (req, res) => {
         adviserUserId
     } = req.body;
 
-    if(!groupId){
+    if (!groupId) {
 
         return res.json({
-            success:false,
-            message:"Group ID is required."
+            success: false,
+            message: "Group ID is required."
         });
 
     }
 
-    if(progress < 0 || progress > 100){
+    if (progress < 0 || progress > 100) {
 
         return res.json({
-            success:false,
-            message:"Progress must be between 0 and 100."
+            success: false,
+            message: "Progress must be between 0 and 100."
         });
 
     }
@@ -4572,27 +4938,27 @@ app.put("/instructor-update-capstone-group", (req, res) => {
 
     db.query(getGroupSql, [groupId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error."
+                success: false,
+                message: "Database error."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Group not found."
+                success: false,
+                message: "Group not found."
             });
 
         }
 
         const group = groupResult[0];
 
-        if(!adviserUserId){
+        if (!adviserUserId) {
 
             const updateSql = `
                 UPDATE capstone_groups
@@ -4614,18 +4980,18 @@ app.put("/instructor-update-capstone-group", (req, res) => {
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to update group."
+                            success: false,
+                            message: "Failed to update group."
                         });
                     }
 
                     res.json({
-                        success:true,
-                        message:"Group monitoring details updated successfully."
+                        success: true,
+                        message: "Group monitoring details updated successfully."
                     });
 
                 }
@@ -4662,20 +5028,20 @@ app.put("/instructor-update-capstone-group", (req, res) => {
 
         db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking adviser."
+                    success: false,
+                    message: "Database error while checking adviser."
                 });
             }
 
-            if(adviserResult.length === 0){
+            if (adviserResult.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Selected adviser was not found."
+                    success: false,
+                    message: "Selected adviser was not found."
                 });
 
             }
@@ -4684,37 +5050,37 @@ app.put("/instructor-update-capstone-group", (req, res) => {
 
             const groupProgramFull =
                 group.program === "IS"
-                ? "BSIS"
-                : group.program === "IT"
-                ? "BSIT"
-                : group.program;
+                    ? "BSIS"
+                    : group.program === "IT"
+                        ? "BSIT"
+                        : group.program;
 
-            if(
+            if (
                 adviser.program_cater !== "Both"
                 &&
                 adviser.program_cater !== "Not Set"
                 &&
                 adviser.program_cater !== groupProgramFull
-            ){
+            ) {
 
                 return res.json({
-                    success:false,
-                    message:`Cannot assign adviser. This group is ${groupProgramFull}, but the adviser caters ${adviser.program_cater}.`
+                    success: false,
+                    message: `Cannot assign adviser. This group is ${groupProgramFull}, but the adviser caters ${adviser.program_cater}.`
                 });
 
             }
 
-            if(
+            if (
                 adviser.group_capacity > 0
                 &&
                 adviser.assigned_groups >= adviser.group_capacity
                 &&
                 group.adviser_id !== adviser.id
-            ){
+            ) {
 
                 return res.json({
-                    success:false,
-                    message:"Cannot assign adviser because their capacity is already full."
+                    success: false,
+                    message: "Cannot assign adviser because their capacity is already full."
                 });
 
             }
@@ -4740,18 +5106,18 @@ app.put("/instructor-update-capstone-group", (req, res) => {
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to update group."
+                            success: false,
+                            message: "Failed to update group."
                         });
                     }
 
                     res.json({
-                        success:true,
-                        message:"Group monitoring details updated successfully."
+                        success: true,
+                        message: "Group monitoring details updated successfully."
                     });
 
                 }
@@ -5020,7 +5386,7 @@ async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryReco
              * ONGOING APPROVED STUDY COMPARISON (HF SEMANTIC DOMAIN PIPELINE)
              * ══════════════════════════════════════════════════════════════════ */
             const titleMatch = calculateMatchScore(proposedTitle, repo.title, 'title');
-            const bodyMatch  = calculateMatchScore(proposedPdfText, bodyText, 'body');
+            const bodyMatch = calculateMatchScore(proposedPdfText, bodyText, 'body');
 
             if (semEngine.isModelReady()) {
                 try {
@@ -5029,7 +5395,7 @@ async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryReco
                         (hasPdfText && bodyText) ? semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000), bodyText.slice(0, 2000)) : Promise.resolve(0)
                     ]);
                     semTitleScore = sTitle || 0;
-                    semBodyScore  = sBody  || 0;
+                    semBodyScore = sBody || 0;
                     semanticScore = (hasPdfText && bodyText)
                         ? (semTitleScore * 0.35 + semBodyScore * 0.65)
                         : semTitleScore;
@@ -5040,7 +5406,7 @@ async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryReco
 
             // Semantic cosine similarity drives the ranking, complemented by keyword/synonym match
             const blendedTitleScore = semTitleScore > 0 ? (semTitleScore * 0.70 + titleMatch.score * 0.30) : titleMatch.score;
-            const blendedBodyScore  = semBodyScore > 0  ? (semBodyScore  * 0.70 + bodyMatch.score  * 0.30) : bodyMatch.score;
+            const blendedBodyScore = semBodyScore > 0 ? (semBodyScore * 0.70 + bodyMatch.score * 0.30) : bodyMatch.score;
             const blendedScore = (hasPdfText && bodyText)
                 ? (blendedTitleScore * 0.35 + blendedBodyScore * 0.65)
                 : blendedTitleScore;
@@ -5051,31 +5417,31 @@ async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryReco
                 highestPercentage = percentage;
                 bestMatch = repo;
                 bestMatchDetails = {
-                    matchedTitleWords:          titleMatch.matchedWords,
-                    matchedObjAbstractWords:    bodyMatch.matchedWords,
-                    matchedObjObjectivesWords:  [],
-                    matchedResearchProbWords:   [],
-                    matchedMethodologyWords:    [],
-                    synonymTitleWords:          titleMatch.matchedSynonymWords,
-                    synonymAbstractWords:       bodyMatch.matchedSynonymWords,
-                    synonymObjectivesWords:     [],
-                    synonymResearchProbWords:   [],
-                    synonymMethodologyWords:    [],
-                    conceptTitleWords:          titleMatch.conceptWords || [],
-                    conceptWords:               bodyMatch.conceptWords || [],
-                    repoSynonymTitleWords:         titleMatch.matchedRepoSynonymWords,
-                    repoSynonymAbstractWords:      bodyMatch.matchedRepoSynonymWords,
-                    repoSynonymObjectivesWords:    [],
-                    repoSynonymResearchProbWords:  [],
-                    repoSynonymMethodologyWords:   [],
-                    repoConceptWords:              bodyMatch.repoConceptWords || [],
+                    matchedTitleWords: titleMatch.matchedWords,
+                    matchedObjAbstractWords: bodyMatch.matchedWords,
+                    matchedObjObjectivesWords: [],
+                    matchedResearchProbWords: [],
+                    matchedMethodologyWords: [],
+                    synonymTitleWords: titleMatch.matchedSynonymWords,
+                    synonymAbstractWords: bodyMatch.matchedSynonymWords,
+                    synonymObjectivesWords: [],
+                    synonymResearchProbWords: [],
+                    synonymMethodologyWords: [],
+                    conceptTitleWords: titleMatch.conceptWords || [],
+                    conceptWords: bodyMatch.conceptWords || [],
+                    repoSynonymTitleWords: titleMatch.matchedRepoSynonymWords,
+                    repoSynonymAbstractWords: bodyMatch.matchedRepoSynonymWords,
+                    repoSynonymObjectivesWords: [],
+                    repoSynonymResearchProbWords: [],
+                    repoSynonymMethodologyWords: [],
+                    repoConceptWords: bodyMatch.repoConceptWords || [],
                     sectionScores: {
-                        title:          Math.round(blendedTitleScore * 100),
-                        abstract:       Math.round(blendedBodyScore  * 100),
-                        objectives:     Math.round(blendedBodyScore  * 100),
-                        researchProblem:0,
-                        methodology:    0,
-                        body:           Math.round(blendedBodyScore  * 100)
+                        title: Math.round(blendedTitleScore * 100),
+                        abstract: Math.round(blendedBodyScore * 100),
+                        objectives: Math.round(blendedBodyScore * 100),
+                        researchProblem: 0,
+                        methodology: 0,
+                        body: Math.round(blendedBodyScore * 100)
                     },
                     semanticScore: semEngine.isModelReady() ? Math.round(semanticScore * 100) : null
                 };
@@ -5084,30 +5450,30 @@ async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryReco
             /* ══════════════════════════════════════════════════════════════════
              * ARCHIVED REPOSITORY STUDY COMPARISON (HF SEMANTIC DOMAIN PIPELINE)
              * ══════════════════════════════════════════════════════════════════ */
-            const titleMatch          = calculateMatchScore(proposedTitle,   repo.title,             'title');
-            const abstractMatch       = calculateMatchScore(proposedPdfText, repo.abstract,          'abstract');
-            const objectivesMatch     = calculateMatchScore(proposedPdfText, repo.objectives,        'objectives');
-            const researchProbMatch   = calculateMatchScore(proposedPdfText, repo.research_problem || '', 'research_problem');
-            const methodologyMatch    = calculateMatchScore(proposedPdfText, repo.methodology || '',      'methodology');
+            const titleMatch = calculateMatchScore(proposedTitle, repo.title, 'title');
+            const abstractMatch = calculateMatchScore(proposedPdfText, repo.abstract, 'abstract');
+            const objectivesMatch = calculateMatchScore(proposedPdfText, repo.objectives, 'objectives');
+            const researchProbMatch = calculateMatchScore(proposedPdfText, repo.research_problem || '', 'research_problem');
+            const methodologyMatch = calculateMatchScore(proposedPdfText, repo.methodology || '', 'methodology');
 
             let semAbstractScore = 0, semObjectivesScore = 0, semResearchProbScore = 0, semMethodologyScore = 0;
 
             if (semEngine.isModelReady()) {
                 try {
                     [semTitleScore, semAbstractScore, semObjectivesScore,
-                     semResearchProbScore, semMethodologyScore] = await Promise.all([
-                        semEngine.computeSemanticSimilarity(cleanPropTitle || proposedTitle, cleanRepoTitle || repo.title),
-                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.abstract || '').slice(0, 2000)),
-                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.objectives || '').slice(0, 2000)),
-                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.research_problem || '').slice(0, 2000)),
-                        semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000),  (repo.methodology || '').slice(0, 2000))
-                    ]);
+                        semResearchProbScore, semMethodologyScore] = await Promise.all([
+                            semEngine.computeSemanticSimilarity(cleanPropTitle || proposedTitle, cleanRepoTitle || repo.title),
+                            semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000), (repo.abstract || '').slice(0, 2000)),
+                            semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000), (repo.objectives || '').slice(0, 2000)),
+                            semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000), (repo.research_problem || '').slice(0, 2000)),
+                            semEngine.computeSemanticSimilarity(proposedPdfText.slice(0, 2000), (repo.methodology || '').slice(0, 2000))
+                        ]);
 
                     semBodyScore =
-                        semAbstractScore     * 0.40 +
-                        semObjectivesScore   * 0.40 +
+                        semAbstractScore * 0.40 +
+                        semObjectivesScore * 0.40 +
                         semResearchProbScore * 0.10 +
-                        semMethodologyScore  * 0.10;
+                        semMethodologyScore * 0.10;
 
                     semanticScore = (hasPdfText)
                         ? (semTitleScore * 0.35 + semBodyScore * 0.65)
@@ -5117,17 +5483,17 @@ async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryReco
                 }
             }
 
-            const blendedTitleScore    = semTitleScore > 0 ? (semTitleScore * 0.70 + titleMatch.score * 0.30) : titleMatch.score;
+            const blendedTitleScore = semTitleScore > 0 ? (semTitleScore * 0.70 + titleMatch.score * 0.30) : titleMatch.score;
             const blendedAbstractScore = semAbstractScore > 0 ? (semAbstractScore * 0.70 + abstractMatch.score * 0.30) : abstractMatch.score;
-            const blendedObjScore      = semObjectivesScore > 0 ? (semObjectivesScore * 0.70 + objectivesMatch.score * 0.30) : objectivesMatch.score;
-            const blendedProbScore     = semResearchProbScore > 0 ? (semResearchProbScore * 0.70 + researchProbMatch.score * 0.30) : researchProbMatch.score;
-            const blendedMethScore     = semMethodologyScore > 0 ? (semMethodologyScore * 0.70 + methodologyMatch.score * 0.30) : methodologyMatch.score;
+            const blendedObjScore = semObjectivesScore > 0 ? (semObjectivesScore * 0.70 + objectivesMatch.score * 0.30) : objectivesMatch.score;
+            const blendedProbScore = semResearchProbScore > 0 ? (semResearchProbScore * 0.70 + researchProbMatch.score * 0.30) : researchProbMatch.score;
+            const blendedMethScore = semMethodologyScore > 0 ? (semMethodologyScore * 0.70 + methodologyMatch.score * 0.30) : methodologyMatch.score;
 
             const blendedBodyScore =
                 blendedAbstractScore * 0.40 +
-                blendedObjScore      * 0.40 +
-                blendedProbScore     * 0.10 +
-                blendedMethScore     * 0.10;
+                blendedObjScore * 0.40 +
+                blendedProbScore * 0.10 +
+                blendedMethScore * 0.10;
 
             const blendedScore = (hasPdfText)
                 ? (blendedTitleScore * 0.35 + blendedBodyScore * 0.65)
@@ -5139,30 +5505,30 @@ async function runSimilarityCheck(proposedTitle, proposedPdfText, repositoryReco
                 highestPercentage = percentage;
                 bestMatch = repo;
                 bestMatchDetails = {
-                    matchedTitleWords:          titleMatch.matchedWords,
-                    matchedObjAbstractWords:    abstractMatch.matchedWords,
-                    matchedObjObjectivesWords:  objectivesMatch.matchedWords,
-                    matchedResearchProbWords:   researchProbMatch.matchedWords,
-                    matchedMethodologyWords:    methodologyMatch.matchedWords,
-                    synonymTitleWords:          titleMatch.matchedSynonymWords,
-                    synonymAbstractWords:       abstractMatch.matchedSynonymWords,
-                    synonymObjectivesWords:     objectivesMatch.matchedSynonymWords,
-                    synonymResearchProbWords:   researchProbMatch.matchedSynonymWords,
-                    synonymMethodologyWords:    methodologyMatch.matchedSynonymWords,
-                    conceptTitleWords:          titleMatch.conceptWords || [],
-                    conceptWords:               (abstractMatch.conceptWords || []).concat(objectivesMatch.conceptWords || []),
-                    repoSynonymTitleWords:         titleMatch.matchedRepoSynonymWords,
-                    repoSynonymAbstractWords:      abstractMatch.matchedRepoSynonymWords,
-                    repoSynonymObjectivesWords:    objectivesMatch.matchedRepoSynonymWords,
-                    repoSynonymResearchProbWords:  researchProbMatch.matchedRepoSynonymWords,
-                    repoSynonymMethodologyWords:   methodologyMatch.matchedRepoSynonymWords,
-                    repoConceptWords:              (abstractMatch.repoConceptWords || []).concat(objectivesMatch.repoConceptWords || []),
+                    matchedTitleWords: titleMatch.matchedWords,
+                    matchedObjAbstractWords: abstractMatch.matchedWords,
+                    matchedObjObjectivesWords: objectivesMatch.matchedWords,
+                    matchedResearchProbWords: researchProbMatch.matchedWords,
+                    matchedMethodologyWords: methodologyMatch.matchedWords,
+                    synonymTitleWords: titleMatch.matchedSynonymWords,
+                    synonymAbstractWords: abstractMatch.matchedSynonymWords,
+                    synonymObjectivesWords: objectivesMatch.matchedSynonymWords,
+                    synonymResearchProbWords: researchProbMatch.matchedSynonymWords,
+                    synonymMethodologyWords: methodologyMatch.matchedSynonymWords,
+                    conceptTitleWords: titleMatch.conceptWords || [],
+                    conceptWords: (abstractMatch.conceptWords || []).concat(objectivesMatch.conceptWords || []),
+                    repoSynonymTitleWords: titleMatch.matchedRepoSynonymWords,
+                    repoSynonymAbstractWords: abstractMatch.matchedRepoSynonymWords,
+                    repoSynonymObjectivesWords: objectivesMatch.matchedRepoSynonymWords,
+                    repoSynonymResearchProbWords: researchProbMatch.matchedRepoSynonymWords,
+                    repoSynonymMethodologyWords: methodologyMatch.matchedRepoSynonymWords,
+                    repoConceptWords: (abstractMatch.repoConceptWords || []).concat(objectivesMatch.repoConceptWords || []),
                     sectionScores: {
-                        title:          Math.round(blendedTitleScore    * 100),
-                        abstract:       Math.round(blendedAbstractScore * 100),
-                        objectives:     Math.round(blendedObjScore      * 100),
-                        researchProblem:Math.round(blendedProbScore     * 100),
-                        methodology:    Math.round(blendedMethScore     * 100)
+                        title: Math.round(blendedTitleScore * 100),
+                        abstract: Math.round(blendedAbstractScore * 100),
+                        objectives: Math.round(blendedObjScore * 100),
+                        researchProblem: Math.round(blendedProbScore * 100),
+                        methodology: Math.round(blendedMethScore * 100)
                     },
                     semanticScore: semEngine.isModelReady() ? Math.round(semanticScore * 100) : null
                 };
@@ -5313,9 +5679,9 @@ function getComparisonRecords(currentGroupId, callback) {
                 return true;
             };
 
-        // Fetch Approved Concept Papers from student_documents (Concept Presentation • Proposed concept paper 1-3)
-        // These are the approved ongoing studies that must be checked against
-        const conceptDocsSql = `
+            // Fetch Approved Concept Papers from student_documents (Concept Presentation • Proposed concept paper 1-3)
+            // These are the approved ongoing studies that must be checked against
+            const conceptDocsSql = `
             SELECT 
                 sd.id,
                 sd.group_id,
@@ -5347,52 +5713,52 @@ function getComparisonRecords(currentGroupId, callback) {
             ORDER BY sd.id DESC
         `;
 
-        db.query(conceptDocsSql, [currentGroupId || 0], async (errDoc, docRows) => {
-            if (errDoc) {
-                console.error("Error fetching approved concept papers for similarity:", errDoc);
-                docRows = [];
-            }
-
-            const ongoingRecords = [];
-            const seenTitles = new Set();
-
-            for (const doc of (docRows || [])) {
-                if (!shouldIncludeForGroup(doc.group_id, doc.tp_id)) continue;
-                const cleanTitle = (doc.proposed_title || doc.title || "").trim();
-                if (!cleanTitle) continue;
-                const dedupKey = (cleanTitle + '|' + (doc.group_name || '')).toLowerCase();
-                if (seenTitles.has(dedupKey)) continue;
-                seenTitles.add(dedupKey);
-
-                let bodyText = (doc.cached_text && doc.cached_text.trim()) ? doc.cached_text.trim() : '';
-                if (!bodyText && doc.file_path) {
-                    const cleanPath = doc.file_path.replace(/^\//, '');
-                    const fullPath = path.join(__dirname, cleanPath);
-                    if (fs.existsSync(fullPath)) {
-                        try {
-                            bodyText = await extractTextFromPdf(fullPath);
-                        } catch (pErr) {
-                            console.error("Error extracting text from approved concept paper PDF:", pErr);
-                        }
-                    }
+            db.query(conceptDocsSql, [currentGroupId || 0], async (errDoc, docRows) => {
+                if (errDoc) {
+                    console.error("Error fetching approved concept papers for similarity:", errDoc);
+                    docRows = [];
                 }
 
-                ongoingRecords.push({
-                    sourceType: 'approved_proposal',
-                    id: doc.id,
-                    title: cleanTitle,
-                    abstract: bodyText,
-                    objectives: bodyText,
-                    research_problem: '',
-                    methodology: '',
-                    bodyText: bodyText,
-                    group_name: doc.group_name || "Approved Group",
-                    file_path: doc.file_path || ''
-                });
-            }
+                const ongoingRecords = [];
+                const seenTitles = new Set();
 
-            // Also check for any approved title_proposals from other groups
-            const propSql = `
+                for (const doc of (docRows || [])) {
+                    if (!shouldIncludeForGroup(doc.group_id, doc.tp_id)) continue;
+                    const cleanTitle = (doc.proposed_title || doc.title || "").trim();
+                    if (!cleanTitle) continue;
+                    const dedupKey = (cleanTitle + '|' + (doc.group_name || '')).toLowerCase();
+                    if (seenTitles.has(dedupKey)) continue;
+                    seenTitles.add(dedupKey);
+
+                    let bodyText = (doc.cached_text && doc.cached_text.trim()) ? doc.cached_text.trim() : '';
+                    if (!bodyText && doc.file_path) {
+                        const cleanPath = doc.file_path.replace(/^\//, '');
+                        const fullPath = path.join(__dirname, cleanPath);
+                        if (fs.existsSync(fullPath)) {
+                            try {
+                                bodyText = await extractTextFromPdf(fullPath);
+                            } catch (pErr) {
+                                console.error("Error extracting text from approved concept paper PDF:", pErr);
+                            }
+                        }
+                    }
+
+                    ongoingRecords.push({
+                        sourceType: 'approved_proposal',
+                        id: doc.id,
+                        title: cleanTitle,
+                        abstract: bodyText,
+                        objectives: bodyText,
+                        research_problem: '',
+                        methodology: '',
+                        bodyText: bodyText,
+                        group_name: doc.group_name || "Approved Group",
+                        file_path: doc.file_path || ''
+                    });
+                }
+
+                // Also check for any approved title_proposals from other groups
+                const propSql = `
                 SELECT 
                     tp.id,
                     tp.proposed_title AS title,
@@ -5407,41 +5773,41 @@ function getComparisonRecords(currentGroupId, callback) {
                   AND TRIM(tp.proposed_title) != ''
             `;
 
-            db.query(propSql, [currentGroupId || 0], (err3, propRows) => {
-                if (err3) {
-                    console.error("Error fetching title_proposals for similarity:", err3);
-                    propRows = [];
-                }
+                db.query(propSql, [currentGroupId || 0], (err3, propRows) => {
+                    if (err3) {
+                        console.error("Error fetching title_proposals for similarity:", err3);
+                        propRows = [];
+                    }
 
-                (propRows || []).forEach(p => {
-                    if (!shouldIncludeForGroup(p.group_id, p.id)) return;
-                    const cleanTitle = (p.title || "").trim();
-                    if (!cleanTitle) return;
-                    const dedupKey = (cleanTitle + '|' + (p.group_name || '')).toLowerCase();
-                    if (seenTitles.has(dedupKey)) return;
-                    seenTitles.add(dedupKey);
+                    (propRows || []).forEach(p => {
+                        if (!shouldIncludeForGroup(p.group_id, p.id)) return;
+                        const cleanTitle = (p.title || "").trim();
+                        if (!cleanTitle) return;
+                        const dedupKey = (cleanTitle + '|' + (p.group_name || '')).toLowerCase();
+                        if (seenTitles.has(dedupKey)) return;
+                        seenTitles.add(dedupKey);
 
-                    const bodyText = (p.cached_text && p.cached_text.trim()) ? p.cached_text.trim() : cleanTitle;
-                    ongoingRecords.push({
-                        sourceType: 'approved_proposal',
-                        id: p.id,
-                        title: cleanTitle,
-                        abstract: bodyText,
-                        objectives: bodyText,
-                        research_problem: '',
-                        methodology: '',
-                        bodyText: bodyText,
-                        group_name: p.group_name || "Approved Group"
+                        const bodyText = (p.cached_text && p.cached_text.trim()) ? p.cached_text.trim() : cleanTitle;
+                        ongoingRecords.push({
+                            sourceType: 'approved_proposal',
+                            id: p.id,
+                            title: cleanTitle,
+                            abstract: bodyText,
+                            objectives: bodyText,
+                            research_problem: '',
+                            methodology: '',
+                            bodyText: bodyText,
+                            group_name: p.group_name || "Approved Group"
+                        });
+                    });
+
+                    callback({
+                        archivedRecords,
+                        ongoingRecords,
+                        allRecords: [...archivedRecords, ...ongoingRecords]
                     });
                 });
-
-                callback({
-                    archivedRecords,
-                    ongoingRecords,
-                    allRecords: [...archivedRecords, ...ongoingRecords]
-                });
             });
-        });
         });
     });
 }
@@ -5608,6 +5974,164 @@ async function extractTextFromPdf(filePath) {
     }
 }
 
+async function extractTitleFromPdfBuffer(dataBuffer, fallbackName = "") {
+    try {
+        const data = await pdfParse(dataBuffer);
+        const rawText = String(data?.text || "");
+        const lines = rawText.split(/\r?\n/).map(l => l.replace(/\s+/g, " ").trim());
+
+        // Unmistakable footer / letterhead lines that can NEVER be part of a study title
+        const STRICT_FOOTER_OR_LETTERHEAD = [
+            /dnsc\.edu\.ph/i,
+            /\.edu\.ph/i,
+            /tel\.?\s*no\.?/i,
+            /telefax/i,
+            /\+63/i,
+            /president@/i,
+            /@officialdnsc/i,
+            /inspiring\s+change/i,
+            /creating\s+futures/i,
+            /bacong\s+pilipinas/i,
+            /^(vision|mission|core\s+values?|stewardship)\s*:?$/i,
+            /^(vision|mission|core\s+values?)\s*:/i,
+            /institution\s+leading\s+in/i,
+            /agri[\-\s]?fisheries/i,
+            /cultural\s+development\s+in\s+the/i,
+            /^asean\s+region\.?$/i,
+            /future[\-\s]?ready\s+workforce/i,
+            /create\s+innovative\s+solutions/i,
+            /empower\s+communities/i,
+            /governance\s+towards\s+sustainable/i,
+            /^adaptability\s+and\s+excellence\.?$/i,
+            /^integrity\s+and\s+innovativeness\.?$/i,
+            /^love\s+of\s+god\s+and\s+country\.?$/i,
+            /iso\s*9001/i,
+            /(?:document|doc\.?)\s*(?:code|control|no\.?)\s*:/i,
+            /effectivity\s*date/i,
+            /revision\s*(?:no\.?|number)/i,
+            /(?:www\.|https?:\/\/)/i,
+            /^[-\u2013]?\s*\d{1,4}\s*[-\u2013]?$/,
+            /^\d+\s+of\s+\d+$/i,
+            /^page\s+\d+(\s+of\s+\d+)?$/i
+        ];
+
+        // Header-only lines (exact/standalone institutional header lines skipped BEFORE a title starts)
+        const HEADER_ONLY_LINES = [
+            ...STRICT_FOOTER_OR_LETTERHEAD,
+            /^(?:republic\s+of\s+the\s+philippines)(?:\s+davao\s+del\s+norte\s+state\s+college)?$/i,
+            /^davao\s+del\s+norte(\s+state\s+college)?$/i,
+            /^state\s+college$/i,
+            /^institute\s+of\s+computing$/i,
+            /^college\s+of\s+[a-z\s&]+$/i,
+            /^department\s+of\s+[a-z\s&]+$/i,
+            /^university\s+of\s+[a-z\s&]+$/i,
+            /^bachelor\s+of\s+science\s+in\s+/i,
+            /^new\s+visayas[,\s]*(?:panabo\s+city)?[,\s\d]*$/i,
+            /^panabo\s+city[,\s]*(?:davao\s+del\s+norte)?[,\s\d]*$/i,
+            /^(?:a\s+)?(concept\s+paper|title\s+proposal|capstone\s+project(\s+proposal)?|thesis\s+proposal)\s*$/i,
+            /^in\s+partial\s+fulfillment/i,
+            /^presented\s+to\s+the\s+faculty/i
+        ];
+
+        // Explicit section/field markers that signal the title has ENDED
+        const STOP_SECTION = [
+            /^(?:project\s+teams?|proponents?|researchers?|authors?|group\s+members?|members?|team\s+members?)\s*:?$/i,
+            /^(?:project\s+manager|project\s+analyst|project\s+developer|lead|leader|programmer|developer|designer|analyst|documentarian|tester|researchers?|proponents?|authors?|members?|group\s+members?|team\s+members?)\s*:/i,
+            /^(?:year\s*(?:&|and)\s*program|program|year\s+level|section|group\s+name|group|course|subject|school\s+year|academic\s+year)\s*:/i,
+            /^(?:submitted\s+by|prepared\s+by|presented\s+by|submitted\s+to|presented\s+to|adviser|advisor|instructor|professor|date\s+submitted|submission\s+date|date)\s*:/i,
+            /^(?:abstract|background\s+of\s+the\s+study|introduction|rationale|overview|executive\s+summary|objectives?|general\s+objectives?|specific\s+objectives?|statement\s+of\s+the\s+problem|research\s+problem|problem\s+statement|methodology|scope\s+and\s+delimitation|significance\s+of\s+the\s+study|table\s+of\s+contents|chapter\s+1|chapter\s+i)\b/i,
+            /^(?:a\s+capstone\s+project|a\s+thesis|presented\s+to\s+the\s+faculty|in\s+partial\s+fulfillment)/i,
+            /^(?:by\s*:?\s*)$/i,
+            /^[\u2022\-\*]\s+/
+        ];
+
+        const topLines = lines.slice(0, 100);
+
+        // 1. Explicit "Title: [Title Name Here]" (or standalone "PROPOSED TITLE" line) anywhere in top lines
+        for (let i = 0; i < topLines.length; i++) {
+            const line = topLines[i];
+            if (!line) continue;
+            const labelMatch = line.match(/(?:^|\b)(?:proposed\s+title|project\s+title|capstone\s+title|study\s+title|research\s+title|t\s*i\s*t\s*l\s*e|t\s*t\s*i\s*l\s*e)(?:\s*#?\s*\d+)?(?:\s*:\s*(.*)|\s*)$/i);
+            if (labelMatch) {
+                const isExplicitColon = line.includes(":");
+                const firstPart = (labelMatch[1] || "").trim();
+                if (!isExplicitColon && firstPart) continue;
+                const parts = [];
+                if (firstPart) parts.push(firstPart);
+                for (let j = i + 1; j < Math.min(i + 12, topLines.length); j++) {
+                    const next = topLines[j];
+                    if (!next) {
+                        if (parts.length > 0) break;
+                        continue;
+                    }
+                    if (STOP_SECTION.some(re => re.test(next)) || STRICT_FOOTER_OR_LETTERHEAD.some(re => re.test(next))) break;
+                    if (parts.join(" ").length >= 460) break;
+                    parts.push(next);
+                }
+                const candidate = parts.join(" ").replace(/\s+/g, " ").trim();
+                if (candidate.length >= 4) return candidate.slice(0, 480);
+            }
+        }
+
+        // 2. First substantial title block near top of page 1
+        const collected = [];
+        for (let i = 0; i < topLines.length; i++) {
+            const line = topLines[i];
+            if (!line) {
+                if (collected.length > 0 && collected.join(" ").length >= 12) break;
+                continue;
+            }
+            if (STOP_SECTION.some(re => re.test(line))) {
+                if (collected.length > 0) break;
+                continue;
+            }
+            if (collected.length === 0 && HEADER_ONLY_LINES.some(re => re.test(line))) {
+                continue;
+            }
+            if (collected.length > 0 && STRICT_FOOTER_OR_LETTERHEAD.some(re => re.test(line))) {
+                break;
+            }
+            if (line.length < 2) continue;
+
+            collected.push(line);
+            if (collected.length >= 8 || collected.join(" ").length >= 460) break;
+        }
+
+        const blockTitle = collected.join(" ").replace(/\s+/g, " ").trim();
+        if (blockTitle.length >= 6) {
+            return blockTitle.slice(0, 480);
+        }
+
+        // 3. Fallback to PDF metadata Title if non-generic
+        const metaTitle = String(data?.info?.Title || "").replace(/\s+/g, " ").trim();
+        if (
+            metaTitle.length >= 6 &&
+            !/^(microsoft\s+word|untitled|document\d*|presentation\d*)/i.test(metaTitle) &&
+            !/\.(docx?|pdf)$/i.test(metaTitle)
+        ) {
+            return metaTitle.slice(0, 250);
+        }
+
+        const cleanFallback = String(fallbackName || "").replace(/\.pdf$/i, "").replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim();
+        return cleanFallback.slice(0, 250);
+    } catch (err) {
+        console.error("extractTitleFromPdfBuffer error:", err);
+        const cleanFallback = String(fallbackName || "").replace(/\.pdf$/i, "").replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim();
+        return cleanFallback.slice(0, 250);
+    }
+}
+
+async function extractTitleFromPdfFile(filePath, fallbackName = "") {
+    try {
+        const buf = fs.readFileSync(filePath);
+        return await extractTitleFromPdfBuffer(buf, fallbackName);
+    } catch (err) {
+        console.error("extractTitleFromPdfFile error:", err);
+        const cleanFallback = String(fallbackName || "").replace(/\.pdf$/i, "").replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim();
+        return cleanFallback.slice(0, 250);
+    }
+}
+
 /* ================= ONGOING STUDY BODY LIVE FETCH ================= */
 /* Returns the latest extracted text (PDF body text) for a matched ongoing group.
    Called by the frontend compare modal when displaying an ongoing study. */
@@ -5696,19 +6220,19 @@ app.get("/title-proposals/:userId", (req, res) => {
     `;
 
     db.query(groupSql, [userId], (err, groupResult) => {
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while loading group."
+                success: false,
+                message: "Database error while loading group."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
             return res.json({
-                success:false,
-                message:"You must belong to a group first."
+                success: false,
+                message: "You must belong to a group first."
             });
         }
 
@@ -5746,18 +6270,18 @@ app.get("/title-proposals/:userId", (req, res) => {
         `;
 
         db.query(proposalsSql, [groupDbId], (err, proposalsResult) => {
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load title proposals."
+                    success: false,
+                    message: "Failed to load title proposals."
                 });
             }
 
             res.json({
-                success:true,
-                proposals:proposalsResult
+                success: true,
+                proposals: proposalsResult
             });
         });
     });
@@ -5775,11 +6299,11 @@ app.post("/save-title-proposal", (req, res) => {
         proposedObjectives
     } = req.body;
 
-    if(!studentUserId || !titleNumber || !proposedTitle){
+    if (!studentUserId || !titleNumber || !proposedTitle) {
 
         return res.json({
-            success:false,
-            message:"Please enter the proposed title."
+            success: false,
+            message: "Please enter the proposed title."
         });
     }
 
@@ -5796,19 +6320,19 @@ app.post("/save-title-proposal", (req, res) => {
 
     db.query(groupSql, [studentUserId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking group."
+                success: false,
+                message: "Database error while checking group."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
             return res.json({
-                success:false,
-                message:"You must belong to a group before saving title proposals."
+                success: false,
+                message: "You must belong to a group before saving title proposals."
             });
         }
 
@@ -5849,12 +6373,12 @@ app.post("/save-title-proposal", (req, res) => {
             ],
             (err2) => {
 
-                if(err2){
+                if (err2) {
                     console.log(err2);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to save title proposal."
+                        success: false,
+                        message: "Failed to save title proposal."
                     });
                 }
 
@@ -5868,8 +6392,8 @@ app.post("/save-title-proposal", (req, res) => {
                 db.query(getProposalIdSql, [groupDbId, titleNumber], (err3, proposalResult) => {
                     if (err3 || proposalResult.length === 0) {
                         return res.json({
-                            success:true,
-                            message:`Title proposal ${titleNumber} saved.`
+                            success: true,
+                            message: `Title proposal ${titleNumber} saved.`
                         });
                     }
 
@@ -5955,15 +6479,15 @@ app.post("/save-title-proposal", (req, res) => {
                                         console.error("Error saving similarity result:", err5);
                                     }
                                     return res.json({
-                                        success:true,
-                                        message:`Title proposal ${titleNumber} saved & similarity check completed.`
+                                        success: true,
+                                        message: `Title proposal ${titleNumber} saved & similarity check completed.`
                                     });
                                 }
                             );
                         } else {
                             return res.json({
-                                success:true,
-                                message:`Title proposal ${titleNumber} saved.`
+                                success: true,
+                                message: `Title proposal ${titleNumber} saved.`
                             });
                         }
                     });
@@ -5977,6 +6501,39 @@ app.post("/save-title-proposal", (req, res) => {
 });
 
 
+/* ================= EXTRACT PDF TITLE (AUTO-FILL PROPOSAL TITLE) ================= */
+
+const pdfTitleExtractUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 }
+});
+
+app.post(
+    "/extract-pdf-title",
+    pdfTitleExtractUpload.single("proposalFile"),
+    async (req, res) => {
+        if (!req.file || !req.file.buffer) {
+            return res.json({
+                success: false,
+                message: "No PDF file was uploaded."
+            });
+        }
+
+        const extractedTitle = await extractTitleFromPdfBuffer(req.file.buffer, req.file.originalname);
+        if (!extractedTitle) {
+            return res.json({
+                success: false,
+                message: "Could not detect a readable title from this PDF. Please upload a text-based PDF containing your study title."
+            });
+        }
+
+        return res.json({
+            success: true,
+            title: extractedTitle
+        });
+    }
+);
+
 /* ================= UPLOAD TITLE PROPOSAL ================= */
 
 app.post(
@@ -5985,14 +6542,14 @@ app.post(
     (req, res) => {
         const {
             studentUserId,
-            titleNumber,
-            proposedTitle
+            titleNumber
         } = req.body;
+        let proposedTitle = String(req.body.proposedTitle || "").trim();
 
-        if(!studentUserId || !titleNumber || !proposedTitle || !req.file){
+        if (!studentUserId || !titleNumber || !req.file) {
             return res.json({
-                success:false,
-                message:"Please complete the title proposal and upload a PDF file."
+                success: false,
+                message: "Please attach a PDF file for your title proposal."
             });
         }
 
@@ -6008,19 +6565,19 @@ app.post(
         `;
 
         db.query(groupSql, [studentUserId], async (err, groupResult) => {
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking group."
+                    success: false,
+                    message: "Database error while checking group."
                 });
             }
 
-            if(groupResult.length === 0){
+            if (groupResult.length === 0) {
                 return res.json({
-                    success:false,
-                    message:"You must belong to a group before uploading title proposals."
+                    success: false,
+                    message: "You must belong to a group before uploading title proposals."
                 });
             }
 
@@ -6034,11 +6591,24 @@ app.post(
                 `/uploads/title_proposals/${req.file.filename}`;
             const physicalPath = req.file.path;
 
+            // Enforce server-side PDF title extraction so students cannot bypass similarity by editing the title manually
+            const extractedPdfTitle = await extractTitleFromPdfFile(physicalPath, req.file.originalname);
+            if (extractedPdfTitle) {
+                proposedTitle = extractedPdfTitle;
+            }
+            if (!proposedTitle) {
+                try { fs.unlinkSync(physicalPath); } catch (_) { }
+                return res.json({
+                    success: false,
+                    message: "Could not extract a study title from the uploaded PDF. Please upload a text-based PDF containing your title."
+                });
+            }
+
             // Extract objectives from PDF
             let parsedObjectives = "";
             try {
                 parsedObjectives = await extractTextFromPdf(physicalPath);
-            } catch(e) {
+            } catch (e) {
                 console.error("Error parsing objectives from uploaded PDF:", e);
             }
 
@@ -6114,12 +6684,12 @@ app.post(
                         uploadedBy
                     ],
                     (err) => {
-                        if(err){
+                        if (err) {
                             console.log(err);
 
                             return res.json({
-                                success:false,
-                                message:"Failed to save title proposal."
+                                success: false,
+                                message: "Failed to save title proposal."
                             });
                         }
 
@@ -6188,15 +6758,15 @@ app.post(
                             LIMIT 1
                         `;
                         db.query(checkDocSql, [groupDbId, docType], (err2, checkResult) => {
-                            if(err2){
+                            if (err2) {
                                 console.log("Error checking document sync:", err2);
                                 return res.json({
-                                    success:true,
-                                    message:`Title Proposal ${titleNumber} uploaded, but document sync failed.`
+                                    success: true,
+                                    message: `Title Proposal ${titleNumber} uploaded, but document sync failed.`
                                 });
                             }
 
-                            if(checkResult.length > 0){
+                            if (checkResult.length > 0) {
                                 // Update existing document
                                 const docId = checkResult[0].id;
                                 const updateDocSql = `
@@ -6214,16 +6784,16 @@ app.post(
                                     AND document_status != 'Approved'
                                 `;
                                 db.query(updateDocSql, [proposedTitle, req.file.originalname, filePath, uploadedBy, docId], (err3) => {
-                                    if(err3){
+                                    if (err3) {
                                         console.log("Error updating document sync:", err3);
                                         return res.json({
-                                            success:true,
-                                            message:`Title Proposal ${titleNumber} uploaded, but document sync update failed.`
+                                            success: true,
+                                            message: `Title Proposal ${titleNumber} uploaded, but document sync update failed.`
                                         });
                                     }
                                     return res.json({
-                                        success:true,
-                                        message:`Title Proposal ${titleNumber} uploaded successfully and checked for similarity.`
+                                        success: true,
+                                        message: `Title Proposal ${titleNumber} uploaded successfully and checked for similarity.`
                                     });
                                 });
                             } else {
@@ -6237,7 +6807,7 @@ app.post(
                                 `;
                                 db.query(lastDocumentSql, (err3, lastResult) => {
                                     let nextNumber = 1;
-                                    if(!err3 && lastResult && lastResult.length > 0){
+                                    if (!err3 && lastResult && lastResult.length > 0) {
                                         const lastCode = lastResult[0].document_code;
                                         const numberPart = parseInt(lastCode.split("-")[1]);
                                         nextNumber = numberPart + 1;
@@ -6272,16 +6842,16 @@ app.post(
                                             filePath
                                         ],
                                         (err4) => {
-                                            if(err4){
+                                            if (err4) {
                                                 console.log("Error inserting document sync:", err4);
                                                 return res.json({
-                                                    success:true,
-                                                    message:`Title Proposal ${titleNumber} uploaded, but document sync insert failed.`
+                                                    success: true,
+                                                    message: `Title Proposal ${titleNumber} uploaded, but document sync insert failed.`
                                                 });
                                             }
                                             return res.json({
-                                                success:true,
-                                                message:`Title Proposal ${titleNumber} uploaded successfully and checked for similarity.`
+                                                success: true,
+                                                message: `Title Proposal ${titleNumber} uploaded successfully and checked for similarity.`
                                             });
                                         }
                                     );
@@ -6341,20 +6911,20 @@ app.get("/adviser-requests/:adviserUserId", (req, res) => {
 
     db.query(requestsSql, [adviserUserId], (err, requestsResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load adviser requests."
+                success: false,
+                message: "Failed to load adviser requests."
             });
         }
 
-        if(requestsResult.length === 0){
+        if (requestsResult.length === 0) {
 
             return res.json({
-                success:true,
-                requests:[]
+                success: true,
+                requests: []
             });
 
         }
@@ -6380,12 +6950,12 @@ app.get("/adviser-requests/:adviserUserId", (req, res) => {
 
         db.query(membersSql, [groupIds], (err, membersResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load group members."
+                    success: false,
+                    message: "Failed to load group members."
                 });
             }
 
@@ -6423,12 +6993,12 @@ app.get("/adviser-requests/:adviserUserId", (req, res) => {
 
             db.query(proposalsSql, [groupIds], (err, proposalsResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load title proposals."
+                        success: false,
+                        message: "Failed to load title proposals."
                     });
                 }
 
@@ -6450,7 +7020,7 @@ app.get("/adviser-requests/:adviserUserId", (req, res) => {
                     });
 
                 res.json({
-                    success:true,
+                    success: true,
                     requests
                 });
 
@@ -6474,11 +7044,11 @@ app.delete("/delete-adviser-request/:requestId", (req, res) => {
         adviserUserId
     } = req.body;
 
-    if(!requestId || !adviserUserId){
+    if (!requestId || !adviserUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing request information."
+            success: false,
+            message: "Missing request information."
         });
 
     }
@@ -6513,20 +7083,20 @@ app.delete("/delete-adviser-request/:requestId", (req, res) => {
         ],
         (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking request."
+                    success: false,
+                    message: "Database error while checking request."
                 });
             }
 
-            if(result.length === 0){
+            if (result.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Request not found or you do not have permission to delete it."
+                    success: false,
+                    message: "Request not found or you do not have permission to delete it."
                 });
 
             }
@@ -6536,11 +7106,11 @@ app.delete("/delete-adviser-request/:requestId", (req, res) => {
 
             const removeAssignedAdviser = () => {
 
-                if(
+                if (
                     request.request_status === "Accepted"
                     &&
                     request.current_group_adviser_id === request.adviser_id
-                ){
+                ) {
 
                     const unassignSql = `
                         UPDATE capstone_groups
@@ -6555,12 +7125,12 @@ app.delete("/delete-adviser-request/:requestId", (req, res) => {
                         ],
                         (err) => {
 
-                            if(err){
+                            if (err) {
                                 console.log(err);
 
                                 return res.json({
-                                    success:false,
-                                    message:"Failed to remove adviser assignment."
+                                    success: false,
+                                    message: "Failed to remove adviser assignment."
                                 });
                             }
 
@@ -6569,7 +7139,7 @@ app.delete("/delete-adviser-request/:requestId", (req, res) => {
                         }
                     );
 
-                }else{
+                } else {
 
                     deleteRequest();
 
@@ -6591,18 +7161,18 @@ app.delete("/delete-adviser-request/:requestId", (req, res) => {
                     ],
                     (err) => {
 
-                        if(err){
+                        if (err) {
                             console.log(err);
 
                             return res.json({
-                                success:false,
-                                message:"Failed to delete adviser request."
+                                success: false,
+                                message: "Failed to delete adviser request."
                             });
                         }
 
                         res.json({
-                            success:true,
-                            message:"Adviser request deleted successfully."
+                            success: true,
+                            message: "Adviser request deleted successfully."
                         });
 
                     }
@@ -6626,11 +7196,11 @@ app.put("/remove-adviser-assignment", (req, res) => {
         adviserUserId
     } = req.body;
 
-    if(!requestId || !adviserUserId){
+    if (!requestId || !adviserUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing request information."
+            success: false,
+            message: "Missing request information."
         });
 
     }
@@ -6665,20 +7235,20 @@ app.put("/remove-adviser-assignment", (req, res) => {
         ],
         (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking assignment."
+                    success: false,
+                    message: "Database error while checking assignment."
                 });
             }
 
-            if(result.length === 0){
+            if (result.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Request not found or you do not have permission to update it."
+                    success: false,
+                    message: "Request not found or you do not have permission to update it."
                 });
 
             }
@@ -6686,20 +7256,20 @@ app.put("/remove-adviser-assignment", (req, res) => {
             const request =
                 result[0];
 
-            if(request.request_status !== "Accepted"){
+            if (request.request_status !== "Accepted") {
 
                 return res.json({
-                    success:false,
-                    message:"Only accepted adviser requests can remove adviser assignment."
+                    success: false,
+                    message: "Only accepted adviser requests can remove adviser assignment."
                 });
 
             }
 
-            if(request.current_group_adviser_id !== request.adviser_id){
+            if (request.current_group_adviser_id !== request.adviser_id) {
 
                 return res.json({
-                    success:false,
-                    message:"This group is no longer assigned to you."
+                    success: false,
+                    message: "This group is no longer assigned to you."
                 });
 
             }
@@ -6717,12 +7287,12 @@ app.put("/remove-adviser-assignment", (req, res) => {
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to remove adviser assignment."
+                            success: false,
+                            message: "Failed to remove adviser assignment."
                         });
                     }
 
@@ -6739,18 +7309,18 @@ app.put("/remove-adviser-assignment", (req, res) => {
                         ],
                         (err) => {
 
-                            if(err){
+                            if (err) {
                                 console.log(err);
 
                                 return res.json({
-                                    success:false,
-                                    message:"Assignment removed, but failed to update request status."
+                                    success: false,
+                                    message: "Assignment removed, but failed to update request status."
                                 });
                             }
 
                             res.json({
-                                success:true,
-                                message:"Adviser assignment removed successfully. The group no longer has this adviser."
+                                success: true,
+                                message: "Adviser assignment removed successfully. The group no longer has this adviser."
                             });
 
                         }
@@ -6765,6 +7335,51 @@ app.put("/remove-adviser-assignment", (req, res) => {
 });
 
 /* ================= ADVISER LOAD ASSIGNED CAPSTONE GROUPS ================= */
+
+function isDefenseScheduleOngoingNow(schedule) {
+    if (!schedule) return false;
+    const statusLower = String(schedule.defense_status || "").toLowerCase().trim();
+    if (["cancelled", "completed", "done", "finished"].includes(statusLower)) return false;
+    if (statusLower === "on-going" || statusLower === "ongoing") return true;
+
+    if (!schedule.defense_date || !schedule.start_time || !schedule.end_time) return false;
+    const d = new Date(schedule.defense_date);
+    if (Number.isNaN(d.getTime())) return false;
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    const startDt = new Date(`${dateStr}T${String(schedule.start_time).slice(0, 8)}`);
+    const endDt = new Date(`${dateStr}T${String(schedule.end_time).slice(0, 8)}`);
+    if (Number.isNaN(startDt.getTime()) || Number.isNaN(endDt.getTime())) return false;
+    const now = new Date();
+    return now >= startDt && now <= endDt;
+}
+
+function notifyAdviserForOngoingDefenses(adviserDbId, ongoingItems) {
+    if (!adviserDbId || !Array.isArray(ongoingItems) || ongoingItems.length === 0) return;
+    ongoingItems.forEach(item => {
+        const code = item.schedule_code || `SCH-${item.schedule_id}`;
+        const checkSql = `
+            SELECT id
+            FROM user_notifications
+            WHERE user_id = ?
+            AND notification_type = 'Defense'
+            AND notification_message LIKE ?
+            LIMIT 1
+        `;
+        db.query(checkSql, [adviserDbId, `%${code}%`], (chkErr, chkRows) => {
+            if (chkErr || (chkRows && chkRows.length > 0)) return;
+            const title = `On-Going Defense: ${item.group_name || "Your Group"}`;
+            const msg = `Your advisory group ${item.group_name || ""} (${code}) has an on-going ${item.defense_type || "Capstone"} defense now (${item.start_time || ""} - ${item.end_time || ""}, ${item.room || "TBA"}).`;
+            db.query(
+                `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type) VALUES (?, ?, ?, 'Defense')`,
+                [adviserDbId, title, msg],
+                () => { }
+            );
+        });
+    });
+}
 
 app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
 
@@ -6786,6 +7401,7 @@ app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
             pm.user_id AS project_manager_user_id,
             pm.fullname AS project_manager_name,
 
+            adviser.id AS adviser_db_id,
             adviser.user_id AS adviser_user_id,
             adviser.fullname AS adviser_name,
             adviser.position AS adviser_position
@@ -6807,24 +7423,25 @@ app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
 
     db.query(groupsSql, [adviserUserId], (err, groupsResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load assigned capstone groups."
+                success: false,
+                message: "Failed to load assigned capstone groups."
             });
         }
 
-        if(groupsResult.length === 0){
+        if (groupsResult.length === 0) {
 
             return res.json({
-                success:true,
-                groups:[]
+                success: true,
+                groups: []
             });
 
         }
 
+        const adviserDbId = groupsResult[0].adviser_db_id;
         const groupDbIds =
             groupsResult.map(group =>
                 group.group_db_id
@@ -6854,12 +7471,12 @@ app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
 
         db.query(membersSql, [groupDbIds], (err, membersResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load group members."
+                    success: false,
+                    message: "Failed to load group members."
                 });
             }
 
@@ -6883,35 +7500,175 @@ app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
 
             db.query(proposalsSql, [groupDbIds], (err, proposalsResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load title proposals."
+                        success: false,
+                        message: "Failed to load title proposals."
                     });
                 }
 
-                const groups =
-                    groupsResult.map(group => {
+                const schedulesSql = `
+                    SELECT
+                        ds.id AS schedule_id,
+                        ds.schedule_code,
+                        ds.group_id,
+                        ds.defense_type,
+                        ds.defense_date,
+                        ds.start_time,
+                        ds.end_time,
+                        ds.room_name AS room,
+                        ds.defense_status,
+                        ds.panelist_id AS chair_id,
+                        chair.fullname AS chair_name
+                    FROM defense_schedules ds
+                    LEFT JOIN users chair ON ds.panelist_id = chair.id
+                    WHERE ds.group_id IN (?)
+                    AND LOWER(COALESCE(ds.defense_status, '')) != 'cancelled'
+                    ORDER BY ds.defense_date ASC, ds.start_time ASC
+                `;
 
-                        return {
-                            ...group,
+                db.query(schedulesSql, [groupDbIds], (schedErr, schedRows) => {
+                    const allSchedules = (!schedErr && Array.isArray(schedRows)) ? schedRows : [];
+                    const scheduleIds = allSchedules.map(s => s.schedule_id);
 
-                            members:membersResult.filter(member =>
-                                member.group_id === group.group_db_id
-                            ),
+                    const loadPanelistsAndMinutes = (panelistsRows, minutesRows) => {
+                        const ongoingNotifyList = [];
 
-                            proposals:proposalsResult.filter(proposal =>
-                                proposal.group_id === group.group_db_id
-                            )
-                        };
+                        const groups = groupsResult.map(group => {
+                            const groupSchedules = allSchedules.filter(s => Number(s.group_id) === Number(group.group_db_id));
+                            const ongoingSched = groupSchedules.find(isDefenseScheduleOngoingNow) || null;
 
-                    });
+                            let ongoing_defense = null;
+                            if (ongoingSched) {
+                                const assignedPanelists = (panelistsRows || [])
+                                    .filter(p => Number(p.schedule_id) === Number(ongoingSched.schedule_id));
 
-                res.json({
-                    success:true,
-                    groups
+                                const chairEntry = ongoingSched.chair_name
+                                    ? { roleLabel: "Panel Chair", panelistId: ongoingSched.chair_id, panelistName: ongoingSched.chair_name }
+                                    : null;
+
+                                const otherPanelists = assignedPanelists
+                                    .filter(p => !ongoingSched.chair_id || Number(p.panelist_id) !== Number(ongoingSched.chair_id))
+                                    .map((p, idx) => ({
+                                        roleLabel: `Panel ${idx + 1}`,
+                                        panelistId: p.panelist_id,
+                                        panelistName: p.fullname
+                                    }));
+
+                                const panelList = [];
+                                if (chairEntry) panelList.push(chairEntry);
+                                else panelList.push({ roleLabel: "Panel Chair", panelistId: null, panelistName: "Panel Chair" });
+
+                                if (otherPanelists.length > 0) {
+                                    panelList.push(...otherPanelists);
+                                } else {
+                                    panelList.push({ roleLabel: "Panel 1", panelistId: null, panelistName: "Panel 1" });
+                                    panelList.push({ roleLabel: "Panel 2", panelistId: null, panelistName: "Panel 2" });
+                                }
+
+                                const savedMin = (minutesRows || []).find(m => Number(m.schedule_id) === Number(ongoingSched.schedule_id)) || null;
+                                let savedEntries = null;
+                                if (savedMin && savedMin.extra_notes_json) {
+                                    try { savedEntries = JSON.parse(savedMin.extra_notes_json); } catch (e) { savedEntries = null; }
+                                }
+
+                                ongoing_defense = {
+                                    schedule_id: ongoingSched.schedule_id,
+                                    schedule_code: ongoingSched.schedule_code,
+                                    defense_type: ongoingSched.defense_type,
+                                    defense_date: ongoingSched.defense_date,
+                                    start_time: ongoingSched.start_time,
+                                    end_time: ongoingSched.end_time,
+                                    room: ongoingSched.room,
+                                    defense_status: ongoingSched.defense_status,
+                                    panelists: panelList,
+                                    saved_minutes: savedEntries
+                                };
+
+                                ongoingNotifyList.push({
+                                    schedule_id: ongoingSched.schedule_id,
+                                    schedule_code: ongoingSched.schedule_code,
+                                    group_name: group.group_name,
+                                    defense_type: ongoingSched.defense_type,
+                                    start_time: ongoingSched.start_time,
+                                    end_time: ongoingSched.end_time,
+                                    room: ongoingSched.room
+                                });
+                            }
+
+                            const groupMinutesList = (minutesRows || []).filter(m => Number(m.group_id) === Number(group.group_db_id));
+                            let latest_minutes = null;
+                            if (groupMinutesList.length > 0) {
+                                const sortedMin = groupMinutesList.slice().sort((a, b) => {
+                                    const aDraft = (a.minutes_status === "Draft" || a.minutes_status === "Pending Review") ? 1 : 0;
+                                    const bDraft = (b.minutes_status === "Draft" || b.minutes_status === "Pending Review") ? 1 : 0;
+                                    if (aDraft !== bDraft) return bDraft - aDraft;
+                                    return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+                                });
+                                const minRec = sortedMin[0];
+                                const minSched = groupSchedules.find(s => Number(s.schedule_id) === Number(minRec.schedule_id)) || null;
+                                let parsedEntries = null;
+                                if (minRec.extra_notes_json) {
+                                    try { parsedEntries = JSON.parse(minRec.extra_notes_json); } catch (e) { parsedEntries = null; }
+                                }
+                                latest_minutes = {
+                                    schedule_id: minRec.schedule_id,
+                                    schedule_code: minSched ? minSched.schedule_code : "",
+                                    defense_type: minSched ? minSched.defense_type : "Capstone Defense",
+                                    defense_date: minSched ? minSched.defense_date : null,
+                                    start_time: minSched ? minSched.start_time : null,
+                                    end_time: minSched ? minSched.end_time : null,
+                                    room: minSched ? minSched.room : "TBA",
+                                    minutes_status: minRec.minutes_status || "Approved",
+                                    submitted_by_role: minRec.submitted_by_role || "adviser",
+                                    adviser_feedback: minRec.adviser_feedback || "",
+                                    entries: parsedEntries
+                                };
+                            }
+
+                            return {
+                                ...group,
+                                ongoing_defense,
+                                latest_minutes,
+                                members: membersResult.filter(member =>
+                                    member.group_id === group.group_db_id
+                                ),
+                                proposals: proposalsResult.filter(proposal =>
+                                    proposal.group_id === group.group_db_id
+                                )
+                            };
+                        });
+
+                        notifyAdviserForOngoingDefenses(adviserDbId, ongoingNotifyList);
+
+                        res.json({
+                            success: true,
+                            groups
+                        });
+                    };
+
+                    if (scheduleIds.length === 0) {
+                        return loadPanelistsAndMinutes([], []);
+                    }
+
+                    db.query(
+                        `SELECT dsp.schedule_id, dsp.panelist_id, u.fullname FROM defense_schedule_panelists dsp JOIN users u ON dsp.panelist_id = u.id WHERE dsp.schedule_id IN (?) ORDER BY dsp.id ASC`,
+                        [scheduleIds],
+                        (pErr, pRows) => {
+                            db.query(
+                                `SELECT * FROM defense_minutes WHERE schedule_id IN (?)`,
+                                [scheduleIds],
+                                (mErr, mRows) => {
+                                    loadPanelistsAndMinutes(
+                                        (!pErr && Array.isArray(pRows)) ? pRows : [],
+                                        (!mErr && Array.isArray(mRows)) ? mRows : []
+                                    );
+                                }
+                            );
+                        }
+                    );
                 });
 
             });
@@ -6920,6 +7677,854 @@ app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
 
     });
 
+});
+
+/* ================= SAVE ADVISER DEFENSE MINUTES ================= */
+
+app.post("/save-defense-minutes", (req, res) => {
+    const { adviserUserId, scheduleId, groupId, panelEntries } = req.body || {};
+    if (!adviserUserId || !scheduleId || !groupId || !Array.isArray(panelEntries)) {
+        return res.json({ success: false, message: "Missing defense minutes information." });
+    }
+
+    const verifySql = `
+        SELECT u.id AS adviser_db_id
+        FROM users u
+        JOIN capstone_groups cg ON cg.adviser_id = u.id
+        WHERE u.user_id = ?
+        AND cg.id = ?
+        LIMIT 1
+    `;
+
+    db.query(verifySql, [adviserUserId, groupId], (vErr, vRows) => {
+        if (vErr) {
+            console.log(vErr);
+            return res.json({ success: false, message: "Database error while verifying adviser." });
+        }
+        if (!vRows || vRows.length === 0) {
+            return res.json({ success: false, message: "You are not assigned as adviser for this group." });
+        }
+
+        const adviserDbId = vRows[0].adviser_db_id;
+        const toBulletText = (entry) => {
+            if (!entry || !Array.isArray(entry.bullets)) return "";
+            return entry.bullets.map(b => `• ${String(b || "").trim()}`).filter(b => b !== "•").join("\n");
+        };
+
+        const chairText = toBulletText(panelEntries[0]);
+        const p1Text = toBulletText(panelEntries[1]);
+        const p2Text = toBulletText(panelEntries[2]);
+        const jsonText = JSON.stringify(panelEntries);
+
+        const upsertSql = `
+            INSERT INTO defense_minutes
+                (schedule_id, group_id, adviser_id, panel_chair_notes, panel_1_notes, panel_2_notes, extra_notes_json, minutes_status, submitted_by_role)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', 'adviser')
+            ON DUPLICATE KEY UPDATE
+                panel_chair_notes = VALUES(panel_chair_notes),
+                panel_1_notes = VALUES(panel_1_notes),
+                panel_2_notes = VALUES(panel_2_notes),
+                extra_notes_json = VALUES(extra_notes_json),
+                minutes_status = 'Approved',
+                submitted_by_role = 'adviser',
+                updated_at = CURRENT_TIMESTAMP
+        `;
+
+        db.query(upsertSql, [scheduleId, groupId, adviserDbId, chairText, p1Text, p2Text, jsonText], (sErr) => {
+            if (sErr) {
+                console.log(sErr);
+                return res.json({ success: false, message: "Failed to save defense minutes." });
+            }
+            res.json({ success: true, message: "Defense minutes saved successfully." });
+        });
+    });
+});
+
+/* ================= ADVISER REVIEW STUDENT DEFENSE MINUTES ================= */
+
+app.put("/review-student-defense-minutes", (req, res) => {
+    const { adviserUserId, scheduleId, groupId, decision, adviserFeedback, panelEntries } = req.body || {};
+    if (!adviserUserId || !scheduleId || !groupId || !["Approved", "Rejected"].includes(decision)) {
+        return res.json({ success: false, message: "Missing or invalid review details." });
+    }
+    if (decision === "Rejected" && !String(adviserFeedback || "").trim()) {
+        return res.json({ success: false, message: "Please provide feedback explaining why the defense minutes were rejected." });
+    }
+
+    const verifySql = `
+        SELECT u.id AS adviser_db_id, u.fullname AS adviser_name, cg.group_name
+        FROM users u
+        JOIN capstone_groups cg ON cg.adviser_id = u.id
+        WHERE u.user_id = ?
+        AND cg.id = ?
+        LIMIT 1
+    `;
+
+    db.query(verifySql, [adviserUserId, groupId], (vErr, vRows) => {
+        if (vErr) {
+            console.log(vErr);
+            return res.json({ success: false, message: "Database error while verifying adviser." });
+        }
+        if (!vRows || vRows.length === 0) {
+            return res.json({ success: false, message: "You are not assigned as adviser for this group." });
+        }
+
+        const { adviser_name: adviserName, group_name: groupName } = vRows[0];
+
+        const toBulletText = (entry) => {
+            if (!entry || !Array.isArray(entry.bullets)) return "";
+            return entry.bullets.map(b => `• ${String(b || "").trim()}`).filter(b => b !== "•").join("\n");
+        };
+
+        const updateSql = Array.isArray(panelEntries)
+            ? `
+                UPDATE defense_minutes
+                SET
+                    panel_chair_notes = ?,
+                    panel_1_notes = ?,
+                    panel_2_notes = ?,
+                    extra_notes_json = ?,
+                    minutes_status = ?,
+                    adviser_feedback = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE schedule_id = ? AND group_id = ?
+              `
+            : `
+                UPDATE defense_minutes
+                SET
+                    minutes_status = ?,
+                    adviser_feedback = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE schedule_id = ? AND group_id = ?
+              `;
+
+        const params = Array.isArray(panelEntries)
+            ? [
+                toBulletText(panelEntries[0]),
+                toBulletText(panelEntries[1]),
+                toBulletText(panelEntries[2]),
+                JSON.stringify(panelEntries),
+                decision,
+                adviserFeedback || "",
+                scheduleId,
+                groupId
+            ]
+            : [decision, adviserFeedback || "", scheduleId, groupId];
+
+        db.query(updateSql, params, (uErr) => {
+            if (uErr) {
+                console.log(uErr);
+                return res.json({ success: false, message: "Failed to update defense minutes status." });
+            }
+
+            db.query(
+                `SELECT DISTINCT student_id FROM group_members WHERE group_id = ?`,
+                [groupId],
+                (mErr, mRows) => {
+                    if (!mErr && Array.isArray(mRows) && mRows.length > 0) {
+                        const title = `Defense Minutes ${decision}`;
+                        const msg = decision === "Approved"
+                            ? `${adviserName} approved your defense minutes for ${groupName}.`
+                            : `${adviserName} rejected your defense minutes draft for ${groupName}. Feedback: ${adviserFeedback}`;
+                        const values = mRows.map(r => [r.student_id, title, msg, "Defense"]);
+                        db.query(
+                            `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type) VALUES ?`,
+                            [values],
+                            () => { }
+                        );
+                    }
+                }
+            );
+
+            res.json({ success: true, message: `Student defense minutes marked as ${decision}.` });
+        });
+    });
+});
+
+/* ================= STUDENT DEFENSE SCHEDULES & MINUTES ================= */
+
+app.get("/student-defense-schedules/:studentUserId", (req, res) => {
+    const studentUserId = req.params.studentUserId;
+    if (!studentUserId) {
+        return res.json({ success: false, message: "Missing student user ID." });
+    }
+
+    const groupSql = `
+        SELECT cg.id AS group_db_id, cg.group_id, cg.group_name, cg.project_title, cg.program, u.id AS student_db_id
+        FROM users u
+        JOIN group_members gm ON gm.student_id = u.id
+        JOIN capstone_groups cg ON gm.group_id = cg.id
+        WHERE u.user_id = ?
+        LIMIT 1
+    `;
+
+    db.query(groupSql, [studentUserId], (gErr, gRows) => {
+        if (gErr) {
+            console.log(gErr);
+            return res.json({ success: false, message: "Failed to load student group." });
+        }
+        if (!gRows || gRows.length === 0) {
+            return res.json({ success: true, group: null, schedules: [] });
+        }
+
+        const group = gRows[0];
+        const schedSql = `
+            SELECT
+                ds.id AS schedule_id,
+                ds.schedule_code,
+                ds.group_id,
+                ds.defense_type,
+                ds.defense_date,
+                ds.start_time,
+                ds.end_time,
+                ds.room_name AS room,
+                ds.defense_status,
+                ds.panel_result,
+                ds.comments,
+                ds.recommendations,
+                ds.score,
+                ds.panelist_id AS chair_id,
+                chair.fullname AS chair_name
+            FROM defense_schedules ds
+            LEFT JOIN users chair ON ds.panelist_id = chair.id
+            WHERE ds.group_id = ?
+            ORDER BY ds.defense_date DESC, ds.start_time DESC
+        `;
+
+        db.query(schedSql, [group.group_db_id], (sErr, schedRows) => {
+            if (sErr) {
+                console.log(sErr);
+                return res.json({ success: false, message: "Failed to load defense schedules." });
+            }
+            const schedulesRaw = schedRows || [];
+            if (schedulesRaw.length === 0) {
+                return res.json({ success: true, group, schedules: [] });
+            }
+
+            const scheduleIds = schedulesRaw.map(s => s.schedule_id);
+            db.query(
+                `SELECT dsp.schedule_id, dsp.panelist_id, u.fullname FROM defense_schedule_panelists dsp JOIN users u ON dsp.panelist_id = u.id WHERE dsp.schedule_id IN (?) ORDER BY dsp.id ASC`,
+                [scheduleIds],
+                (pErr, pRows) => {
+                    db.query(
+                        `SELECT * FROM defense_minutes WHERE schedule_id IN (?)`,
+                        [scheduleIds],
+                        (mErr, mRows) => {
+                            db.query(
+                                `SELECT dpe.schedule_id, dpe.panel_result, dpe.comments, dpe.recommendations, dpe.score, u.fullname AS panelist_name FROM defense_panel_evaluations dpe LEFT JOIN users u ON dpe.panelist_id = u.id WHERE dpe.schedule_id IN (?) ORDER BY dpe.id ASC`,
+                                [scheduleIds],
+                                (eErr, evalRows) => {
+                                    const schedules = schedulesRaw.map(s => {
+                                        const assigned = (!pErr && Array.isArray(pRows))
+                                            ? pRows.filter(p => Number(p.schedule_id) === Number(s.schedule_id))
+                                            : [];
+
+                                        const panelList = [];
+                                        if (s.chair_name) {
+                                            panelList.push({ roleLabel: "Panel Chair", panelistId: s.chair_id, panelistName: s.chair_name });
+                                        } else {
+                                            panelList.push({ roleLabel: "Panel Chair", panelistId: null, panelistName: "Panel Chair" });
+                                        }
+                                        const others = assigned.filter(p => !s.chair_id || Number(p.panelist_id) !== Number(s.chair_id));
+                                        if (others.length > 0) {
+                                            others.forEach((p, idx) => panelList.push({ roleLabel: `Panel ${idx + 1}`, panelistId: p.panelist_id, panelistName: p.fullname }));
+                                        } else {
+                                            panelList.push({ roleLabel: "Panel 1", panelistId: null, panelistName: "Panel 1" });
+                                            panelList.push({ roleLabel: "Panel 2", panelistId: null, panelistName: "Panel 2" });
+                                        }
+
+                                        const savedMin = (!mErr && Array.isArray(mRows))
+                                            ? mRows.find(m => Number(m.schedule_id) === Number(s.schedule_id))
+                                            : null;
+                                        let savedEntries = null;
+                                        if (savedMin && savedMin.extra_notes_json) {
+                                            try { savedEntries = JSON.parse(savedMin.extra_notes_json); } catch (e) { savedEntries = null; }
+                                        }
+
+                                        const evals = (!eErr && Array.isArray(evalRows))
+                                            ? evalRows.filter(ev => Number(ev.schedule_id) === Number(s.schedule_id))
+                                            : [];
+
+                                        return {
+                                            ...s,
+                                            is_ongoing: isDefenseScheduleOngoingNow(s),
+                                            panelists: panelList,
+                                            panel_evaluations: evals,
+                                            saved_minutes: savedEntries,
+                                            minutes_status: savedMin ? (savedMin.minutes_status || "Draft") : null,
+                                            submitted_by_role: savedMin ? (savedMin.submitted_by_role || "student") : null,
+                                            adviser_feedback: savedMin ? (savedMin.adviser_feedback || "") : ""
+                                        };
+                                    });
+
+                                    res.json({ success: true, group, schedules });
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        });
+    });
+});
+
+app.post("/student-save-defense-minutes", (req, res) => {
+    const { studentUserId, scheduleId, groupId, panelEntries } = req.body || {};
+    if (!studentUserId || !scheduleId || !groupId || !Array.isArray(panelEntries)) {
+        return res.json({ success: false, message: "Missing defense minutes information." });
+    }
+
+    const verifySql = `
+        SELECT u.id AS student_db_id, u.fullname AS student_name, cg.group_name, cg.adviser_id
+        FROM users u
+        JOIN group_members gm ON gm.student_id = u.id
+        JOIN capstone_groups cg ON gm.group_id = cg.id
+        WHERE u.user_id = ?
+        AND gm.group_id = ?
+        LIMIT 1
+    `;
+
+    db.query(verifySql, [studentUserId, groupId], (vErr, vRows) => {
+        if (vErr) {
+            console.log(vErr);
+            return res.json({ success: false, message: "Database error while verifying student membership." });
+        }
+        if (!vRows || vRows.length === 0) {
+            return res.json({ success: false, message: "You are not a member of this group." });
+        }
+
+        const { student_db_id: studentDbId, student_name: studentName, group_name: groupName, adviser_id: groupAdviserId } = vRows[0];
+
+        db.query(
+            `SELECT ds.defense_status, ds.panel_result, dm.minutes_status, dm.submitted_by_role FROM defense_schedules ds LEFT JOIN defense_minutes dm ON dm.schedule_id = ds.id WHERE ds.id = ? LIMIT 1`,
+            [scheduleId],
+            (chkErr, chkRows) => {
+                const row = (!chkErr && chkRows && chkRows.length > 0) ? chkRows[0] : {};
+                const resLower = String(row.panel_result || "").toLowerCase();
+                if (row.submitted_by_role === "adviser" || row.minutes_status === "Approved") {
+                    return res.json({ success: false, message: "Adding defense minutes is disabled because your adviser has already created or approved the defense minutes." });
+                }
+                if (resLower.includes("re-defense") || resLower.includes("redefense") || resLower.includes("conditional") || resLower.includes("formal defense")) {
+                    return res.json({ success: false, message: "Adding defense minutes is disabled because the verdict is for re-defense." });
+                }
+
+                const toBulletText = (entry) => {
+                    if (!entry || !Array.isArray(entry.bullets)) return "";
+                    return entry.bullets.map(b => `• ${String(b || "").trim()}`).filter(b => b !== "•").join("\n");
+                };
+
+                const chairText = toBulletText(panelEntries[0]);
+                const p1Text = toBulletText(panelEntries[1]);
+                const p2Text = toBulletText(panelEntries[2]);
+                const jsonText = JSON.stringify(panelEntries);
+
+                const upsertSql = `
+                INSERT INTO defense_minutes
+                    (schedule_id, group_id, adviser_id, panel_chair_notes, panel_1_notes, panel_2_notes, extra_notes_json, minutes_status, submitted_by_role, adviser_feedback)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'Draft', 'student', NULL)
+                ON DUPLICATE KEY UPDATE
+                    panel_chair_notes = VALUES(panel_chair_notes),
+                    panel_1_notes = VALUES(panel_1_notes),
+                    panel_2_notes = VALUES(panel_2_notes),
+                    extra_notes_json = VALUES(extra_notes_json),
+                    minutes_status = 'Draft',
+                    submitted_by_role = 'student',
+                    adviser_feedback = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+            `;
+
+                db.query(upsertSql, [scheduleId, groupId, studentDbId, chairText, p1Text, p2Text, jsonText], (sErr) => {
+                    if (sErr) {
+                        console.log(sErr);
+                        return res.json({ success: false, message: "Failed to save defense minutes draft." });
+                    }
+
+                    if (groupAdviserId) {
+                        db.query(
+                            `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type) VALUES (?, ?, ?, 'Defense')`,
+                            [groupAdviserId, `Defense Minutes Draft: ${groupName}`, `${studentName} saved a defense minutes draft for ${groupName} awaiting your approval.`],
+                            () => { }
+                        );
+                    }
+
+                    res.json({ success: true, message: "Defense minutes saved as Draft (pending adviser approval)." });
+                });
+            });
+    });
+});
+
+/* ================= TYPED DEFENSE MINUTES WORKFLOW ================= */
+
+app.post("/typed-defense-minutes/send", (req, res) => {
+    const { studentUserId, groupId, scheduleId, defenseType, minutesData } = req.body || {};
+    if (!studentUserId || !groupId || !defenseType || !minutesData) {
+        return res.json({ success: false, message: "Missing defense minutes details." });
+    }
+
+    const lookupSql = `
+        SELECT cg.id AS group_db_id, cg.group_name, cg.adviser_id, u.fullname AS student_name
+        FROM capstone_groups cg
+        JOIN users u ON u.user_id = ?
+        WHERE cg.id = ?
+        LIMIT 1
+    `;
+
+    db.query(lookupSql, [studentUserId, groupId], (err, rows) => {
+        if (err || !rows || rows.length === 0) {
+            return res.json({ success: false, message: "Group or student not found." });
+        }
+
+        const info = rows[0];
+        if (!info.adviser_id) {
+            return res.json({ success: false, message: "No adviser assigned to this group yet." });
+        }
+
+        db.query(
+            "SELECT * FROM typed_defense_minutes WHERE group_id = ? AND defense_type = ? LIMIT 1",
+            [info.group_db_id, defenseType],
+            (exErr, exRows) => {
+                const existing = (!exErr && exRows && exRows[0]) ? exRows[0] : null;
+                if (existing) {
+                    const hasAdvSig = Boolean(existing.adviser_signature_json);
+                    let eligible = [];
+                    let sigs = [];
+                    try { eligible = JSON.parse(existing.eligible_panelist_ids_json || "[]"); } catch (_) { }
+                    try { sigs = JSON.parse(existing.panelist_signatures_json || "[]"); } catch (_) { }
+                    if (!Array.isArray(sigs)) sigs = [];
+
+                    // Keep only approved/signed panelist entries; drop rejections/revision requests so those panelists can re-review
+                    const keptSigs = sigs.filter(s => s && s.signatureImage && s.reviewStatus !== "Subject to Change" && s.reviewStatus !== "Rejected");
+                    const nextStatus = hasAdvSig ? "Pending Panelist Signatures" : "Pending Adviser Signature";
+
+                    db.query(
+                        `UPDATE typed_defense_minutes
+                         SET schedule_id = COALESCE(?, schedule_id),
+                             student_user_id = ?,
+                             adviser_id = ?,
+                             minutes_json = ?,
+                             status = ?,
+                             panelist_signatures_json = ?,
+                             updated_at = NOW()
+                         WHERE id = ?`,
+                        [scheduleId || null, studentUserId, info.adviser_id, JSON.stringify(minutesData), nextStatus, JSON.stringify(keptSigs), existing.id],
+                        (uErr) => {
+                            if (uErr) {
+                                console.error("Update typed defense minutes error:", uErr);
+                                return res.json({ success: false, message: "Failed to update defense minutes." });
+                            }
+                            if (!hasAdvSig) {
+                                insertUserNotificationsByDbIds(
+                                    [info.adviser_id],
+                                    "Updated Defense Minutes for E-Signature",
+                                    `${info.student_name} (${info.group_name}) updated ${defenseType} minutes for your review and e-signature.`,
+                                    "Defense Minutes"
+                                );
+                            } else {
+                                const keptIds = new Set(keptSigs.map(s => Number(s.panelistId)));
+                                const toNotify = (eligible || []).map(Number).filter(pid => pid && !keptIds.has(pid));
+                                if (toNotify.length > 0) {
+                                    insertUserNotificationsByDbIds(
+                                        toNotify,
+                                        "Updated Defense Minutes for Review",
+                                        `${info.student_name} (${info.group_name}) updated ${defenseType} minutes for your review and e-signature.`,
+                                        "Defense Minutes"
+                                    );
+                                }
+                            }
+                            res.json({
+                                success: true,
+                                message: hasAdvSig
+                                    ? "Defense minutes updated! Existing signatures were kept and pending panelists were notified."
+                                    : "Defense minutes sent to your Adviser for review and e-signature."
+                            });
+                        }
+                    );
+                    return;
+                }
+
+                const insertSql = `
+                    INSERT INTO typed_defense_minutes
+                    (group_id, schedule_id, defense_type, student_user_id, adviser_id, minutes_json, status)
+                    VALUES (?, ?, ?, ?, ?, ?, 'Pending Adviser Signature')
+                `;
+
+                db.query(
+                    insertSql,
+                    [info.group_db_id, scheduleId || null, defenseType, studentUserId, info.adviser_id, JSON.stringify(minutesData)],
+                    (uErr) => {
+                        if (uErr) {
+                            console.error("Save typed defense minutes error:", uErr);
+                            return res.json({ success: false, message: "Failed to send defense minutes." });
+                        }
+
+                        insertUserNotificationsByDbIds(
+                            [info.adviser_id],
+                            "New Defense Minutes for E-Signature",
+                            `${info.student_name} (${info.group_name}) submitted ${defenseType} minutes for your review and e-signature.`,
+                            "Defense Minutes"
+                        );
+
+                        res.json({
+                            success: true,
+                            message: "Defense minutes sent to your Adviser for review and e-signature."
+                        });
+                    }
+                );
+            }
+        );
+    });
+});
+
+app.get("/typed-defense-minutes/student/:userId", (req, res) => {
+    const userId = req.params.userId;
+    const sql = `
+        SELECT tdm.*
+        FROM typed_defense_minutes tdm
+        JOIN group_members gm ON gm.group_id = tdm.group_id
+        JOIN users u ON gm.student_id = u.id
+        WHERE u.user_id = ?
+        ORDER BY tdm.updated_at DESC
+    `;
+    db.query(sql, [userId], (err, rows) => {
+        if (err) return res.json({ success: false, minutes: [] });
+        res.json({ success: true, minutes: rows || [] });
+    });
+});
+
+app.get("/typed-defense-minutes/adviser/:userId", (req, res) => {
+    const userId = req.params.userId;
+    const sql = `
+        SELECT
+            tdm.*,
+            cg.group_name,
+            cg.program,
+            cg.project_title,
+            stu.fullname AS sender_name,
+            stu.user_id AS sender_user_id
+        FROM typed_defense_minutes tdm
+        JOIN users adv ON tdm.adviser_id = adv.id
+        JOIN capstone_groups cg ON tdm.group_id = cg.id
+        LEFT JOIN users stu ON tdm.student_user_id = stu.user_id
+        WHERE adv.user_id = ?
+        ORDER BY tdm.updated_at DESC
+    `;
+    db.query(sql, [userId], (err, rows) => {
+        if (err) {
+            console.error("Load adviser typed defense minutes error:", err);
+            return res.json({ success: false, minutes: [] });
+        }
+        res.json({ success: true, minutes: rows || [] });
+    });
+});
+
+app.post("/typed-defense-minutes/adviser-sign", (req, res) => {
+    const { id, adviserUserId, reviewStatus, reviewComment, signatureImage, dateSigned, pageIndex, xPct, yPct, widthPct } = req.body || {};
+    const effectiveStatus = String(reviewStatus || "Approved").trim();
+    const isApproval = effectiveStatus === "Approved";
+
+    if (!id || !adviserUserId || (isApproval && !signatureImage)) {
+        return res.json({ success: false, message: "Missing signature or defense minutes ID." });
+    }
+
+    db.query("SELECT id, fullname FROM users WHERE user_id = ? LIMIT 1", [adviserUserId], (uErr, uRows) => {
+        if (uErr || !uRows || uRows.length === 0) {
+            return res.json({ success: false, message: "Adviser not found." });
+        }
+        const adviser = uRows[0];
+
+        db.query(
+            "SELECT tdm.*, cg.group_name FROM typed_defense_minutes tdm JOIN capstone_groups cg ON tdm.group_id = cg.id WHERE tdm.id = ? LIMIT 1",
+            [id],
+            (mErr, mRows) => {
+                if (mErr || !mRows || mRows.length === 0) {
+                    return res.json({ success: false, message: "Defense minutes record not found." });
+                }
+                const record = mRows[0];
+                if (Number(record.adviser_id) !== Number(adviser.id)) {
+                    return res.json({ success: false, message: "You are not the adviser for this group." });
+                }
+
+                // Handle Adviser Request Revision ("Subject to Change") or Reject ("Rejected")
+                if (!isApproval) {
+                    const cleanNote = String(reviewComment || "").trim();
+                    db.query(
+                        `UPDATE typed_defense_minutes SET adviser_signature_json = NULL, status = ?, updated_at = NOW() WHERE id = ?`,
+                        [effectiveStatus, id],
+                        (upErr) => {
+                            if (upErr) {
+                                console.error("Adviser reject/revision defense minutes error:", upErr);
+                                return res.json({ success: false, message: "Failed to save adviser verdict." });
+                            }
+
+                            db.query("SELECT student_id FROM group_members WHERE group_id = ?", [record.group_id], (gmErr, gmRows) => {
+                                if (!gmErr && Array.isArray(gmRows) && gmRows.length > 0) {
+                                    insertUserNotificationsByDbIds(
+                                        gmRows.map(r => r.student_id),
+                                        `Defense Minutes ${effectiveStatus === "Rejected" ? "Rejected by Adviser" : "Needs Revision"}`,
+                                        `Your Adviser ${adviser.fullname} marked your ${record.defense_type} minutes as "${effectiveStatus}".${cleanNote ? `\n\nAdviser Note:\n${cleanNote}` : ""}`,
+                                        "Defense Minutes"
+                                    );
+                                }
+                            });
+
+                            return res.json({
+                                success: true,
+                                status: effectiveStatus,
+                                message: effectiveStatus === "Rejected"
+                                    ? "Defense minutes rejected and student notified."
+                                    : "Revision requested and student notified."
+                            });
+                        }
+                    );
+                    return;
+                }
+
+                const resolveScheduleAndForward = (resolvedScheduleId) => {
+                    const evalSql = resolvedScheduleId
+                        ? `SELECT DISTINCT panelist_id FROM defense_panel_evaluations WHERE schedule_id = ? AND panel_result IS NOT NULL AND TRIM(panel_result) != '' AND panel_result != 'Did Not Evaluate'`
+                        : null;
+
+                    const finalizeAdviserSign = (eligiblePanelistIds) => {
+                        const adviserSigObj = {
+                            adviserId: adviser.id,
+                            signedBy: adviser.fullname,
+                            reviewComment: reviewComment || "",
+                            signatureImage,
+                            dateSigned: dateSigned || new Date().toLocaleDateString("en-US"),
+                            pageIndex: Number(pageIndex || 0),
+                            xPct: Number(xPct ?? 8),
+                            yPct: Number(yPct ?? 72),
+                            widthPct: Number(widthPct ?? 24),
+                            signedAt: new Date().toISOString()
+                        };
+                        const nextStatus = eligiblePanelistIds.length > 0 ? "Pending Panelist Signatures" : "Completed";
+
+                        db.query(
+                            `UPDATE typed_defense_minutes SET adviser_signature_json = ?, eligible_panelist_ids_json = ?, status = ?, updated_at = NOW() WHERE id = ?`,
+                            [JSON.stringify(adviserSigObj), JSON.stringify(eligiblePanelistIds), nextStatus, id],
+                            (upErr) => {
+                                if (upErr) {
+                                    console.error("Adviser sign defense minutes error:", upErr);
+                                    return res.json({ success: false, message: "Failed to save adviser signature." });
+                                }
+
+                                if (eligiblePanelistIds.length > 0) {
+                                    insertUserNotificationsByDbIds(
+                                        eligiblePanelistIds,
+                                        "Defense Minutes Ready for E-Signature",
+                                        `Adviser ${adviser.fullname} signed the ${record.defense_type} minutes for ${record.group_name}. Please review and affix your e-signature in Panelist Document Review.`,
+                                        "Defense Minutes"
+                                    );
+                                }
+
+                                db.query("SELECT student_id FROM group_members WHERE group_id = ?", [record.group_id], (gmErr, gmRows) => {
+                                    if (!gmErr && Array.isArray(gmRows) && gmRows.length > 0) {
+                                        const notePart = reviewComment && String(reviewComment).trim()
+                                            ? `\n\nAdviser Feedback:\n${String(reviewComment).trim()}`
+                                            : "";
+                                        insertUserNotificationsByDbIds(
+                                            gmRows.map(r => r.student_id),
+                                            "Defense Minutes Signed by Adviser",
+                                            `Your Adviser ${adviser.fullname} has signed your ${record.defense_type} minutes and forwarded it to the grading panelists.${notePart}`,
+                                            "Defense Minutes"
+                                        );
+                                    }
+                                });
+
+                                res.json({
+                                    success: true,
+                                    status: nextStatus,
+                                    eligibleCount: eligiblePanelistIds.length,
+                                    message: eligiblePanelistIds.length > 0
+                                        ? `E-signature saved and forwarded to ${eligiblePanelistIds.length} grading panelist(s).`
+                                        : "E-signature saved."
+                                });
+                            }
+                        );
+                    };
+
+                    if (!evalSql) {
+                        return finalizeAdviserSign([]);
+                    }
+                    db.query(evalSql, [resolvedScheduleId], (eErr, eRows) => {
+                        const ids = (!eErr && Array.isArray(eRows)) ? eRows.map(r => Number(r.panelist_id)).filter(Boolean) : [];
+                        finalizeAdviserSign(ids);
+                    });
+                };
+
+                if (record.schedule_id) {
+                    resolveScheduleAndForward(record.schedule_id);
+                } else {
+                    db.query(
+                        "SELECT id FROM defense_schedules WHERE group_id = ? AND LOWER(TRIM(defense_type)) = LOWER(TRIM(?)) ORDER BY id DESC LIMIT 1",
+                        [record.group_id, record.defense_type],
+                        (sErr, sRows) => {
+                            const sid = (!sErr && sRows && sRows[0]) ? sRows[0].id : null;
+                            resolveScheduleAndForward(sid);
+                        }
+                    );
+                }
+            }
+        );
+    });
+});
+
+app.get("/typed-defense-minutes/panelist/:userId", (req, res) => {
+    const userId = req.params.userId;
+    db.query("SELECT id, fullname FROM users WHERE user_id = ? LIMIT 1", [userId], (uErr, uRows) => {
+        if (uErr || !uRows || uRows.length === 0) {
+            return res.json({ success: false, minutes: [] });
+        }
+        const panelistDbId = Number(uRows[0].id);
+
+        const sql = `
+            SELECT
+                tdm.*,
+                cg.group_name,
+                cg.program,
+                cg.project_title,
+                adv.fullname AS adviser_name,
+                stu.fullname AS sender_name
+            FROM typed_defense_minutes tdm
+            JOIN capstone_groups cg ON tdm.group_id = cg.id
+            LEFT JOIN users adv ON tdm.adviser_id = adv.id
+            LEFT JOIN users stu ON tdm.student_user_id = stu.user_id
+            WHERE tdm.status IN ('Pending Panelist Signatures', 'Completed', 'Subject to Change', 'Rejected')
+            ORDER BY tdm.updated_at DESC
+        `;
+        db.query(sql, (err, rows) => {
+            if (err) return res.json({ success: false, minutes: [] });
+            const filtered = (rows || []).filter(r => {
+                try {
+                    const eligible = JSON.parse(r.eligible_panelist_ids_json || "[]");
+                    return Array.isArray(eligible) && eligible.map(Number).includes(panelistDbId);
+                } catch (_) {
+                    return false;
+                }
+            });
+            res.json({ success: true, panelistDbId, minutes: filtered });
+        });
+    });
+});
+
+app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
+    const { id, panelistUserId, reviewStatus, reviewComment, signatureImage, dateSigned, pageIndex, xPct, yPct, widthPct } = req.body || {};
+    const effectiveStatus = String(reviewStatus || "Approved").trim();
+    const isApproval = effectiveStatus === "Approved";
+
+    if (!id || !panelistUserId || (isApproval && !signatureImage)) {
+        return res.json({ success: false, message: "Missing signature or defense minutes ID." });
+    }
+
+    db.query("SELECT id, fullname FROM users WHERE user_id = ? LIMIT 1", [panelistUserId], (uErr, uRows) => {
+        if (uErr || !uRows || uRows.length === 0) {
+            return res.json({ success: false, message: "Panelist not found." });
+        }
+        const panelist = uRows[0];
+
+        db.query(
+            "SELECT tdm.*, cg.group_name FROM typed_defense_minutes tdm JOIN capstone_groups cg ON tdm.group_id = cg.id WHERE tdm.id = ? LIMIT 1",
+            [id],
+            (mErr, mRows) => {
+                if (mErr || !mRows || mRows.length === 0) {
+                    return res.json({ success: false, message: "Defense minutes record not found." });
+                }
+                const record = mRows[0];
+
+                let eligible = [];
+                try { eligible = JSON.parse(record.eligible_panelist_ids_json || "[]").map(Number); } catch (_) { }
+                if (!eligible.includes(Number(panelist.id))) {
+                    return res.json({ success: false, message: "You are not listed as a grading panelist for this defense." });
+                }
+
+                let sigs = [];
+                try { sigs = JSON.parse(record.panelist_signatures_json || "[]"); } catch (_) { sigs = []; }
+                if (!Array.isArray(sigs)) sigs = [];
+
+                const newEntry = {
+                    panelistId: Number(panelist.id),
+                    signedBy: panelist.fullname,
+                    reviewStatus: effectiveStatus,
+                    reviewComment: reviewComment || "",
+                    signatureImage: isApproval ? signatureImage : null,
+                    dateSigned: isApproval ? (dateSigned || new Date().toLocaleDateString("en-US")) : "",
+                    pageIndex: Number(pageIndex || 0),
+                    xPct: Number(xPct ?? 8),
+                    yPct: Number(yPct ?? 40),
+                    widthPct: Number(widthPct ?? 18),
+                    signedAt: new Date().toISOString()
+                };
+
+                const existingIdx = sigs.findIndex(s => Number(s.panelistId) === Number(panelist.id));
+                if (existingIdx >= 0) sigs[existingIdx] = newEntry;
+                else sigs.push(newEntry);
+
+                const approvedIds = new Set(sigs.filter(s => s && s.signatureImage && s.reviewStatus !== "Subject to Change" && s.reviewStatus !== "Rejected").map(s => Number(s.panelistId)));
+                const hasRevisionOrReject = sigs.some(s => s && (s.reviewStatus === "Subject to Change" || s.reviewStatus === "Rejected"));
+                const allSigned = !hasRevisionOrReject && eligible.length > 0 && eligible.every(pid => approvedIds.has(pid));
+
+                let nextStatus = "Pending Panelist Signatures";
+                if (!isApproval) {
+                    nextStatus = effectiveStatus;
+                } else if (allSigned) {
+                    nextStatus = "Completed";
+                } else if (hasRevisionOrReject) {
+                    const firstIssue = sigs.find(s => s.reviewStatus === "Subject to Change" || s.reviewStatus === "Rejected");
+                    nextStatus = firstIssue ? firstIssue.reviewStatus : "Pending Panelist Signatures";
+                }
+
+                db.query(
+                    "UPDATE typed_defense_minutes SET panelist_signatures_json = ?, status = ?, updated_at = NOW() WHERE id = ?",
+                    [JSON.stringify(sigs), nextStatus, id],
+                    (upErr) => {
+                        if (upErr) {
+                            console.error("Panelist sign defense minutes error:", upErr);
+                            return res.json({ success: false, message: "Failed to save panelist review." });
+                        }
+
+                        if (!isApproval) {
+                            db.query("SELECT student_id FROM group_members WHERE group_id = ?", [record.group_id], (gmErr, gmRows) => {
+                                if (!gmErr && Array.isArray(gmRows) && gmRows.length > 0) {
+                                    insertUserNotificationsByDbIds(
+                                        gmRows.map(r => r.student_id),
+                                        `Defense Minutes ${effectiveStatus === "Rejected" ? "Rejected" : "Needs Revision"}`,
+                                        `Panelist ${panelist.fullname} marked your ${record.defense_type} minutes as "${effectiveStatus}".${reviewComment ? `\n\nPanelist Note:\n${reviewComment}` : ""}`,
+                                        "Defense Minutes"
+                                    );
+                                }
+                            });
+                        } else if (allSigned || (reviewComment && String(reviewComment).trim())) {
+                            db.query("SELECT student_id FROM group_members WHERE group_id = ?", [record.group_id], (gmErr, gmRows) => {
+                                if (!gmErr && Array.isArray(gmRows) && gmRows.length > 0) {
+                                    const trimmedNote = reviewComment ? String(reviewComment).trim() : "";
+                                    const msg = allSigned
+                                        ? `All grading panelists have signed your ${record.defense_type} minutes.${trimmedNote ? `\n\nPanelist Note (${panelist.fullname}):\n${trimmedNote}` : ""}`
+                                        : `Panelist ${panelist.fullname} signed your ${record.defense_type} minutes.\n\nPanelist Note:\n${trimmedNote}`;
+                                    insertUserNotificationsByDbIds(
+                                        gmRows.map(r => r.student_id),
+                                        allSigned ? "Defense Minutes Fully Signed" : "Panelist Note on Defense Minutes",
+                                        msg,
+                                        "Defense Minutes"
+                                    );
+                                }
+                            });
+                        }
+
+                        res.json({
+                            success: true,
+                            status: nextStatus,
+                            allSigned,
+                            message: !isApproval
+                                ? `Defense minutes marked as "${effectiveStatus}".`
+                                : allSigned
+                                    ? "E-signature saved! All grading panelists have now signed these defense minutes."
+                                    : "E-signature saved successfully."
+                        });
+                    }
+                );
+            }
+        );
+    });
 });
 
 /* ================= ADVISER DASHBOARD DATA ================= */
@@ -6937,12 +8542,12 @@ app.get("/adviser-dashboard-data/:adviserUserId", (req, res) => {
     `;
 
     db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({ success: false, message: "Database error while loading adviser." });
         }
 
-        if(adviserResult.length === 0){
+        if (adviserResult.length === 0) {
             return res.json({ success: false, message: "Adviser not found or access disabled." });
         }
 
@@ -7034,20 +8639,20 @@ app.get("/student-documents/:userId", (req, res) => {
 
     db.query(groupSql, [userId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while loading group."
+                success: false,
+                message: "Database error while loading group."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"You must belong to a group before uploading documents."
+                success: false,
+                message: "You must belong to a group before uploading documents."
             });
 
         }
@@ -7124,12 +8729,12 @@ app.get("/student-documents/:userId", (req, res) => {
 
         db.query(documentsSql, [group.group_db_id], (err, documentsResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load documents."
+                    success: false,
+                    message: "Failed to load documents."
                 });
             }
 
@@ -7196,9 +8801,9 @@ app.get("/student-documents/:userId", (req, res) => {
 
                         return {
                             ...row,
-                            adviser_locked:adviserLocked,
-                            can_send:!adviserLocked && slotHasStudentDocumentFile(row),
-                            can_upload_replace:!adviserLocked
+                            adviser_locked: adviserLocked,
+                            can_send: !adviserLocked && slotHasStudentDocumentFile(row),
+                            can_upload_replace: !adviserLocked
                         };
 
                     });
@@ -7219,7 +8824,7 @@ app.get("/student-documents/:userId", (req, res) => {
 
                 db.query(proposalsSql, [group.group_db_id], (err2, proposalsResult) => {
 
-                    if(err2){
+                    if (err2) {
                         console.log(err2);
                     }
 
@@ -7269,14 +8874,14 @@ app.get("/student-documents/:userId", (req, res) => {
                         const isConceptGraded = gradedSet.has("Concept Presentation") || Array.from(gradedSet).some(t => t.toLowerCase().includes("concept"));
 
                         res.json({
-                            success:true,
-                            group:{
+                            success: true,
+                            group: {
                                 ...group,
                                 concept_presentation_graded: isConceptGraded
                             },
                             documents,
-                            title_proposals:proposalsResult || [],
-                            defense_verdicts:defenseVerdicts || [],
+                            title_proposals: proposalsResult || [],
+                            defense_verdicts: defenseVerdicts || [],
                             concept_presentation_graded: isConceptGraded,
                             graded_defense_types: Array.from(gradedSet)
                         });
@@ -7292,7 +8897,7 @@ app.get("/student-documents/:userId", (req, res) => {
 
 });
 
-function slotHasStudentDocumentFile(documentRow){
+function slotHasStudentDocumentFile(documentRow) {
 
     return !!(
         documentRow
@@ -7302,12 +8907,12 @@ function slotHasStudentDocumentFile(documentRow){
 
 }
 
-function syncTitleProposalFromStudentDocument(groupDbId, documentType, documentTitle, fileName, filePath, uploadedBy, callback){
+function syncTitleProposalFromStudentDocument(groupDbId, documentType, documentTitle, fileName, filePath, uploadedBy, callback) {
 
     const match =
         String(documentType || "").match(/^Concept Presentation • Proposed concept paper \((\d)\)$/);
 
-    if(!match){
+    if (!match) {
         return callback(null);
     }
 
@@ -7366,7 +8971,7 @@ app.post(
             documentTitle
         } = req.body;
 
-        if(
+        if (
             !studentUserId
             ||
             !documentType
@@ -7374,11 +8979,11 @@ app.post(
             !documentTitle
             ||
             !req.file
-        ){
+        ) {
 
             return res.json({
-                success:false,
-                message:"Please complete all document information and upload a file."
+                success: false,
+                message: "Please complete all document information and upload a file."
             });
 
         }
@@ -7401,20 +9006,20 @@ app.post(
 
         db.query(groupSql, [studentUserId], (err, groupResult) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking group."
+                    success: false,
+                    message: "Database error while checking group."
                 });
             }
 
-            if(groupResult.length === 0){
+            if (groupResult.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"You must belong to a group before uploading documents."
+                    success: false,
+                    message: "You must belong to a group before uploading documents."
                 });
 
             }
@@ -7447,20 +9052,20 @@ app.post(
                 [groupDbId, documentType],
                 (err, existingResult) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to check existing document slot."
+                            success: false,
+                            message: "Failed to check existing document slot."
                         });
                     }
 
                     const saveDocument = (doneCallback) => {
 
-                        if(
+                        if (
                             existingResult.length > 0
-                        ){
+                        ) {
 
                             const updateSql = `
                                 UPDATE student_documents
@@ -7477,7 +9082,7 @@ app.post(
                                 WHERE id = ?
                             `;
 
-                            db.query("DELETE FROM env_scan_student_signatures WHERE document_id = ?", [existingResult[0].id], () => {});
+                            db.query("DELETE FROM env_scan_student_signatures WHERE document_id = ?", [existingResult[0].id], () => { });
 
                             return db.query(
                                 updateSql,
@@ -7504,18 +9109,18 @@ app.post(
 
                         db.query(lastDocumentSql, (err2, lastResult) => {
 
-                            if(err2){
+                            if (err2) {
                                 console.log(err2);
 
                                 return res.json({
-                                    success:false,
-                                    message:"Failed to generate document code."
+                                    success: false,
+                                    message: "Failed to generate document code."
                                 });
                             }
 
                             let nextNumber = 1;
 
-                            if(lastResult.length > 0){
+                            if (lastResult.length > 0) {
 
                                 const lastCode =
                                     lastResult[0].document_code;
@@ -7570,12 +9175,12 @@ app.post(
                     const saveAndSync = () => {
                         saveDocument((err3) => {
 
-                            if(err3){
+                            if (err3) {
                                 console.log(err3);
 
                                 return res.json({
-                                    success:false,
-                                    message:"Failed to save document."
+                                    success: false,
+                                    message: "Failed to save document."
                                 });
                             }
 
@@ -7588,13 +9193,13 @@ app.post(
                                 uploadedBy,
                                 (err4) => {
 
-                                    if(err4){
+                                    if (err4) {
                                         console.log(err4);
                                     }
 
                                     res.json({
-                                        success:true,
-                                        message:"Document uploaded successfully."
+                                        success: true,
+                                        message: "Document uploaded successfully."
                                     });
 
                                 }
@@ -7636,16 +9241,16 @@ app.post(
                                         }
                                     }
                                     return res.json({
-                                        success:false,
-                                        message:"This document was approved by your adviser and cannot be replaced."
+                                        success: false,
+                                        message: "This document was approved by your adviser and cannot be replaced."
                                     });
                                 });
                                 return;
                             }
 
                             return res.json({
-                                success:false,
-                                message:"This document was approved by your adviser and cannot be replaced."
+                                success: false,
+                                message: "This document was approved by your adviser and cannot be replaced."
                             });
                         }
 
@@ -7674,11 +9279,11 @@ app.delete("/delete-student-document/:documentId", (req, res) => {
         studentUserId
     } = req.body;
 
-    if(!documentId || !studentUserId){
+    if (!documentId || !studentUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing document information."
+            success: false,
+            message: "Missing document information."
         });
 
     }
@@ -7708,20 +9313,20 @@ app.delete("/delete-student-document/:documentId", (req, res) => {
         ],
         (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Database error while checking document."
+                    success: false,
+                    message: "Database error while checking document."
                 });
             }
 
-            if(result.length === 0){
+            if (result.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Document not found or you do not have permission to delete it."
+                    success: false,
+                    message: "Document not found or you do not have permission to delete it."
                 });
 
             }
@@ -7729,11 +9334,11 @@ app.delete("/delete-student-document/:documentId", (req, res) => {
             const document =
                 result[0];
 
-            if(String(document.document_status || "").trim() === "Approved"){
+            if (String(document.document_status || "").trim() === "Approved") {
 
                 return res.json({
-                    success:false,
-                    message:"This document was approved by your adviser and cannot be deleted."
+                    success: false,
+                    message: "This document was approved by your adviser and cannot be deleted."
                 });
 
             }
@@ -7744,7 +9349,7 @@ app.delete("/delete-student-document/:documentId", (req, res) => {
                     document.file_path.replace("/uploads", "uploads")
                 );
 
-            if(fs.existsSync(fullPath)){
+            if (fs.existsSync(fullPath)) {
 
                 fs.unlinkSync(fullPath);
 
@@ -7757,37 +9362,37 @@ app.delete("/delete-student-document/:documentId", (req, res) => {
 
             db.query(deleteSql, [documentId], (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to delete document record."
+                        success: false,
+                        message: "Failed to delete document record."
                     });
                 }
 
                 // Sync with title_proposals if it's a Proposed concept paper (1-3)
                 const docType = String(document.document_type || "");
                 const docTypeMatch = docType.match(/^Concept Presentation • Proposed concept paper \((\d)\)$/);
-                if(docTypeMatch){
+                if (docTypeMatch) {
                     const titleNumber = parseInt(docTypeMatch[1]);
                     const deleteProposalSql = `
                         DELETE FROM title_proposals
                         WHERE group_id = ? AND title_number = ?
                     `;
                     db.query(deleteProposalSql, [document.group_id, titleNumber], (errProposal) => {
-                        if(errProposal){
+                        if (errProposal) {
                             console.log("Error deleting synchronized title proposal:", errProposal);
                         }
                         return res.json({
-                            success:true,
-                            message:"Document deleted successfully."
+                            success: true,
+                            message: "Document deleted successfully."
                         });
                     });
                 } else {
                     res.json({
-                        success:true,
-                        message:"Document deleted successfully."
+                        success: true,
+                        message: "Document deleted successfully."
                     });
                 }
 
@@ -7804,7 +9409,7 @@ app.get("/student-received-documents/:userId", (req, res) => {
 
     const userId = req.params.userId;
 
-    if(!userId){
+    if (!userId) {
         return res.json({
             success: false,
             message: "Missing user ID."
@@ -7820,12 +9425,12 @@ app.get("/student-received-documents/:userId", (req, res) => {
 
     db.query(studentSql, [userId], (err, studentResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({ success: false, message: "Failed to find student account." });
         }
 
-        if(studentResult.length === 0){
+        if (studentResult.length === 0) {
             return res.json({ success: false, message: "Student account not found." });
         }
 
@@ -7872,7 +9477,7 @@ app.get("/student-received-documents/:userId", (req, res) => {
 
         db.query(receivedSql, [studentDbId], (err, receivedDocuments) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
                 return res.json({ success: false, message: "Failed to load received documents." });
             }
@@ -7902,16 +9507,16 @@ app.post("/create-announcement", (req, res) => {
         announcementContent
     } = req.body;
 
-    if(
+    if (
         !adminUserId ||
         !announcementTitle ||
         !announcementType ||
         !audience ||
         !announcementContent
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required announcement fields."
+            success: false,
+            message: "Please complete all required announcement fields."
         });
     }
 
@@ -7925,19 +9530,19 @@ app.post("/create-announcement", (req, res) => {
 
     db.query(adminSql, [adminUserId], (err, adminResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking admin account."
+                success: false,
+                message: "Database error while checking admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Only admin accounts can create announcements."
+                success: false,
+                message: "Only admin accounts can create announcements."
             });
         }
 
@@ -7975,20 +9580,20 @@ app.post("/create-announcement", (req, res) => {
             ],
             (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to create announcement."
+                        success: false,
+                        message: "Failed to create announcement."
                     });
                 }
 
                 notifyUsersAboutAnnouncement(announcementTitle, announcementContent, audience, targetProgram);
 
                 return res.json({
-                    success:true,
-                    message:"Announcement published successfully."
+                    success: true,
+                    message: "Announcement published successfully."
                 });
 
             }
@@ -8011,16 +9616,16 @@ app.post("/create-announcement", (req, res) => {
         announcementContent
     } = req.body;
 
-    if(
+    if (
         !adminUserId ||
         !announcementTitle ||
         !announcementType ||
         !audience ||
         !announcementContent
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required announcement fields."
+            success: false,
+            message: "Please complete all required announcement fields."
         });
     }
 
@@ -8034,19 +9639,19 @@ app.post("/create-announcement", (req, res) => {
 
     db.query(adminSql, [adminUserId], (err, adminResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking admin account."
+                success: false,
+                message: "Database error while checking admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Only admin accounts can create announcements."
+                success: false,
+                message: "Only admin accounts can create announcements."
             });
         }
 
@@ -8084,20 +9689,20 @@ app.post("/create-announcement", (req, res) => {
             ],
             (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to create announcement."
+                        success: false,
+                        message: "Failed to create announcement."
                     });
                 }
 
                 notifyUsersAboutAnnouncement(announcementTitle, announcementContent, audience, targetProgram);
 
                 res.json({
-                    success:true,
-                    message:"Announcement published successfully."
+                    success: true,
+                    message: "Announcement published successfully."
                 });
 
             }
@@ -8138,18 +9743,18 @@ app.get("/admin-announcements", (req, res) => {
 
     db.query(sql, (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load announcements."
+                success: false,
+                message: "Failed to load announcements."
             });
         }
 
         res.json({
-            success:true,
-            announcements:result
+            success: true,
+            announcements: result
         });
 
     });
@@ -8174,7 +9779,7 @@ app.put("/update-announcement/:announcementId", (req, res) => {
         announcementStatus
     } = req.body;
 
-    if(
+    if (
         !announcementId ||
         !adminUserId ||
         !announcementTitle ||
@@ -8182,10 +9787,10 @@ app.put("/update-announcement/:announcementId", (req, res) => {
         !audience ||
         !announcementContent ||
         !announcementStatus
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required announcement fields."
+            success: false,
+            message: "Please complete all required announcement fields."
         });
     }
 
@@ -8199,19 +9804,19 @@ app.put("/update-announcement/:announcementId", (req, res) => {
 
     db.query(adminSql, [adminUserId], (err, adminResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking admin account."
+                success: false,
+                message: "Database error while checking admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Only admin accounts can update announcements."
+                success: false,
+                message: "Only admin accounts can update announcements."
             });
         }
 
@@ -8240,18 +9845,18 @@ app.put("/update-announcement/:announcementId", (req, res) => {
             ],
             (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to update announcement."
+                        success: false,
+                        message: "Failed to update announcement."
                     });
                 }
 
                 res.json({
-                    success:true,
-                    message:"Announcement updated successfully."
+                    success: true,
+                    message: "Announcement updated successfully."
                 });
 
             }
@@ -8273,10 +9878,10 @@ app.delete("/delete-announcement/:announcementId", (req, res) => {
         adminUserId
     } = req.body;
 
-    if(!announcementId || !adminUserId){
+    if (!announcementId || !adminUserId) {
         return res.json({
-            success:false,
-            message:"Missing announcement information."
+            success: false,
+            message: "Missing announcement information."
         });
     }
 
@@ -8290,19 +9895,19 @@ app.delete("/delete-announcement/:announcementId", (req, res) => {
 
     db.query(adminSql, [adminUserId], (err, adminResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking admin account."
+                success: false,
+                message: "Database error while checking admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Only admin accounts can delete announcements."
+                success: false,
+                message: "Only admin accounts can delete announcements."
             });
         }
 
@@ -8313,18 +9918,18 @@ app.delete("/delete-announcement/:announcementId", (req, res) => {
 
         db.query(deleteSql, [announcementId], (err) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to delete announcement."
+                    success: false,
+                    message: "Failed to delete announcement."
                 });
             }
 
             res.json({
-                success:true,
-                message:"Announcement deleted successfully."
+                success: true,
+                message: "Announcement deleted successfully."
             });
 
         });
@@ -8335,7 +9940,7 @@ app.delete("/delete-announcement/:announcementId", (req, res) => {
 
 /* ================= USER DIGITAL SIGNATURE ================= */
 
-function saveUserDigitalSignature(req, res){
+function saveUserDigitalSignature(req, res) {
 
     const portalUserId =
         req.body.portalUserId
@@ -8343,20 +9948,20 @@ function saveUserDigitalSignature(req, res){
         || req.body.facultyUserId
         || req.body.adminUserId;
 
-    if(!portalUserId){
+    if (!portalUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing account ID. Please log in again."
+            success: false,
+            message: "Missing account ID. Please log in again."
         });
 
     }
 
-    if(!req.file){
+    if (!req.file) {
 
         return res.json({
-            success:false,
-            message:"Please select a signature image to upload."
+            success: false,
+            message: "Please select a signature image to upload."
         });
 
     }
@@ -8370,20 +9975,20 @@ function saveUserDigitalSignature(req, res){
 
     db.query(getOldSql, [portalUserId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check current signature."
+                success: false,
+                message: "Failed to check current signature."
             });
         }
 
-        if(!result || result.length === 0){
+        if (!result || result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Account not found."
+                success: false,
+                message: "Account not found."
             });
 
         }
@@ -8405,19 +10010,19 @@ function saveUserDigitalSignature(req, res){
             [newSignaturePath, portalUserId],
             (updateErr) => {
 
-                if(updateErr){
+                if (updateErr) {
                     console.log(updateErr);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to save digital signature."
+                        success: false,
+                        message: "Failed to save digital signature."
                     });
                 }
 
-                if(
+                if (
                     oldSignature
                     && oldSignature !== newSignaturePath
-                ){
+                ) {
 
                     const oldFilePath =
                         path.join(
@@ -8425,16 +10030,16 @@ function saveUserDigitalSignature(req, res){
                             oldSignature.replace(/^\//, "")
                         );
 
-                    if(fs.existsSync(oldFilePath)){
+                    if (fs.existsSync(oldFilePath)) {
                         fs.unlinkSync(oldFilePath);
                     }
 
                 }
 
                 res.json({
-                    success:true,
-                    message:"Digital signature saved successfully.",
-                    digital_signature:newSignaturePath
+                    success: true,
+                    message: "Digital signature saved successfully.",
+                    digital_signature: newSignaturePath
                 });
 
             }
@@ -8451,29 +10056,29 @@ app.post("/update-user-digital-signature", (req, res) => {
         res,
         (uploadErr) => {
 
-            if(uploadErr instanceof multer.MulterError){
+            if (uploadErr instanceof multer.MulterError) {
 
-                if(uploadErr.code === "LIMIT_FILE_SIZE"){
+                if (uploadErr.code === "LIMIT_FILE_SIZE") {
 
                     return res.json({
-                        success:false,
-                        message:"Signature image must be 5 MB or smaller."
+                        success: false,
+                        message: "Signature image must be 5 MB or smaller."
                     });
 
                 }
 
                 return res.json({
-                    success:false,
-                    message:uploadErr.message
+                    success: false,
+                    message: uploadErr.message
                 });
 
             }
 
-            if(uploadErr){
+            if (uploadErr) {
 
                 return res.json({
-                    success:false,
-                    message:uploadErr.message || "Invalid signature file."
+                    success: false,
+                    message: uploadErr.message || "Invalid signature file."
                 });
 
             }
@@ -8493,11 +10098,11 @@ app.put("/remove-user-digital-signature", (req, res) => {
         || req.body.facultyUserId
         || req.body.adminUserId;
 
-    if(!portalUserId){
+    if (!portalUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing user account."
+            success: false,
+            message: "Missing user account."
         });
 
     }
@@ -8511,11 +10116,11 @@ app.put("/remove-user-digital-signature", (req, res) => {
 
     db.query(getOldSql, [portalUserId], (err, result) => {
 
-        if(err || !result || result.length === 0){
+        if (err || !result || result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Account not found."
+                success: false,
+                message: "Account not found."
             });
 
         }
@@ -8528,16 +10133,16 @@ app.put("/remove-user-digital-signature", (req, res) => {
             [portalUserId],
             (updateErr) => {
 
-                if(updateErr){
+                if (updateErr) {
                     console.log(updateErr);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to remove digital signature."
+                        success: false,
+                        message: "Failed to remove digital signature."
                     });
                 }
 
-                if(oldSignature){
+                if (oldSignature) {
 
                     const oldFilePath =
                         path.join(
@@ -8545,15 +10150,15 @@ app.put("/remove-user-digital-signature", (req, res) => {
                             oldSignature.replace(/^\//, "")
                         );
 
-                    if(fs.existsSync(oldFilePath)){
+                    if (fs.existsSync(oldFilePath)) {
                         fs.unlinkSync(oldFilePath);
                     }
 
                 }
 
                 res.json({
-                    success:true,
-                    message:"Digital signature removed."
+                    success: true,
+                    message: "Digital signature removed."
                 });
 
             }
@@ -8601,27 +10206,27 @@ app.get("/student-settings/:userId", (req, res) => {
 
     db.query(sql, [userId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load student settings."
+                success: false,
+                message: "Failed to load student settings."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Student account not found."
+                success: false,
+                message: "Student account not found."
             });
 
         }
 
         res.json({
-            success:true,
-            student:result[0]
+            success: true,
+            student: result[0]
         });
 
     });
@@ -8641,16 +10246,16 @@ app.put("/update-student-profile", (req, res) => {
         studentPosition
     } = req.body;
 
-    if(
+    if (
         !studentUserId ||
         !fullname ||
         !program ||
         !yearLevel ||
         !studentPosition
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all profile fields."
+            success: false,
+            message: "Please complete all profile fields."
         });
     }
 
@@ -8676,27 +10281,27 @@ app.put("/update-student-profile", (req, res) => {
         ],
         (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to update student profile."
+                    success: false,
+                    message: "Failed to update student profile."
                 });
             }
 
-            if(result.affectedRows === 0){
+            if (result.affectedRows === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Student account not found."
+                    success: false,
+                    message: "Student account not found."
                 });
 
             }
 
             res.json({
-                success:true,
-                message:"Profile updated successfully."
+                success: true,
+                message: "Profile updated successfully."
             });
 
         }
@@ -8715,22 +10320,22 @@ app.put("/change-student-password", (req, res) => {
         newPassword
     } = req.body;
 
-    if(
+    if (
         !studentUserId ||
         !currentPassword ||
         !newPassword
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all password fields."
+            success: false,
+            message: "Please complete all password fields."
         });
     }
 
-    if(newPassword.length < 6){
+    if (newPassword.length < 6) {
 
         return res.json({
-            success:false,
-            message:"New password must be at least 6 characters."
+            success: false,
+            message: "New password must be at least 6 characters."
         });
 
     }
@@ -8745,20 +10350,20 @@ app.put("/change-student-password", (req, res) => {
 
     db.query(checkSql, [studentUserId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking password."
+                success: false,
+                message: "Database error while checking password."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Student account not found."
+                success: false,
+                message: "Student account not found."
             });
 
         }
@@ -8770,62 +10375,62 @@ app.put("/change-student-password", (req, res) => {
             : Promise.resolve(storedPwd === String(currentPassword));
 
         verifyPromise.then(async (isMatch) => {
-        if(!isMatch){
+            if (!isMatch) {
 
-            return res.json({
-                success:false,
-                message:"Current password is incorrect."
-            });
+                return res.json({
+                    success: false,
+                    message: "Current password is incorrect."
+                });
 
-        }
+            }
 
-        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
+            const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
-        const updateSql = `
+            const updateSql = `
             UPDATE users
             SET password = ?
             WHERE user_id = ?
             AND role = 'student'
         `;
 
-        db.query(
-            updateSql,
-            [
-                hashedNewPassword,
-                studentUserId
-            ],
-            (err) => {
+            db.query(
+                updateSql,
+                [
+                    hashedNewPassword,
+                    studentUserId
+                ],
+                (err) => {
 
-                if(err){
-                    console.log(err);
+                    if (err) {
+                        console.log(err);
 
-                    return res.json({
-                        success:false,
-                        message:"Failed to change password."
-                    });
-                }
+                        return res.json({
+                            success: false,
+                            message: "Failed to change password."
+                        });
+                    }
 
-                const studentDbId = result[0].id;
-                const notifSql = `
+                    const studentDbId = result[0].id;
+                    const notifSql = `
                     INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                     VALUES (?, 'Security Update', 'Your password has been changed successfully.', 'System')
                 `;
-                db.query(notifSql, [studentDbId], (notifErr) => {
-                    if (notifErr) console.error("Failed to insert password change notification:", notifErr);
-                });
+                    db.query(notifSql, [studentDbId], (notifErr) => {
+                        if (notifErr) console.error("Failed to insert password change notification:", notifErr);
+                    });
 
-                res.json({
-                    success:true,
-                    message:"Password changed successfully."
-                });
+                    res.json({
+                        success: true,
+                        message: "Password changed successfully."
+                    });
 
-            }
-        );
+                }
+            );
         }).catch((errHash) => {
             console.error(errHash);
             res.json({
-                success:false,
-                message:"Failed to process password change."
+                success: false,
+                message: "Failed to process password change."
             });
         });
 
@@ -8845,11 +10450,11 @@ app.post(
             studentUserId
         } = req.body;
 
-        if(!studentUserId || !req.file){
+        if (!studentUserId || !req.file) {
 
             return res.json({
-                success:false,
-                message:"Please select an image to upload."
+                success: false,
+                message: "Please select an image to upload."
             });
 
         }
@@ -8864,20 +10469,20 @@ app.post(
 
         db.query(getOldSql, [studentUserId], (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to check current profile image."
+                    success: false,
+                    message: "Failed to check current profile image."
                 });
             }
 
-            if(result.length === 0){
+            if (result.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Student account not found."
+                    success: false,
+                    message: "Student account not found."
                 });
 
             }
@@ -8903,16 +10508,16 @@ app.post(
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to update profile image."
+                            success: false,
+                            message: "Failed to update profile image."
                         });
                     }
 
-                    if(oldImage){
+                    if (oldImage) {
 
                         const oldImagePath =
                             path.join(
@@ -8920,7 +10525,7 @@ app.post(
                                 oldImage.replace("/uploads", "uploads")
                             );
 
-                        if(fs.existsSync(oldImagePath)){
+                        if (fs.existsSync(oldImagePath)) {
 
                             fs.unlinkSync(oldImagePath);
 
@@ -8929,9 +10534,9 @@ app.post(
                     }
 
                     res.json({
-                        success:true,
-                        message:"Profile image updated successfully.",
-                        profileImage:newImagePath
+                        success: true,
+                        message: "Profile image updated successfully.",
+                        profileImage: newImagePath
                     });
 
                 }
@@ -8949,11 +10554,11 @@ app.get("/document-recipients", (req, res) => {
     const studentUserId =
         String(req.query.studentUserId || "").trim();
 
-    if(!studentUserId){
+    if (!studentUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing student user id."
+            success: false,
+            message: "Missing student user id."
         });
 
     }
@@ -8977,20 +10582,20 @@ app.get("/document-recipients", (req, res) => {
 
     db.query(groupSql, [studentUserId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load group for recipients."
+                success: false,
+                message: "Failed to load group for recipients."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
 
             return res.json({
-                success:true,
-                recipients:[]
+                success: true,
+                recipients: []
             });
 
         }
@@ -9015,12 +10620,12 @@ app.get("/document-recipients", (req, res) => {
 
         db.query(usersSql, [], (err2, usersResult) => {
 
-            if(err2){
+            if (err2) {
                 console.log(err2);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load faculty recipients."
+                    success: false,
+                    message: "Failed to load faculty recipients."
                 });
             }
 
@@ -9041,16 +10646,16 @@ app.get("/document-recipients", (req, res) => {
 
             // Sort recipients: adviser first, instructor second, then the rest
             const ordered = recipients.sort((a, b) => {
-                if(a.recipient_type === "adviser") return -1;
-                if(b.recipient_type === "adviser") return 1;
-                if(a.recipient_type === "instructor") return -1;
-                if(b.recipient_type === "instructor") return 1;
+                if (a.recipient_type === "adviser") return -1;
+                if (b.recipient_type === "adviser") return 1;
+                if (a.recipient_type === "instructor") return -1;
+                if (b.recipient_type === "instructor") return 1;
                 return 0;
             });
 
             res.json({
-                success:true,
-                recipients:ordered
+                success: true,
+                recipients: ordered
             });
 
         });
@@ -9074,21 +10679,21 @@ app.post("/send-student-document", (req, res) => {
 
     const rawList = recipients || recipientIds;
 
-    if(
+    if (
         !studentUserId ||
         !documentId ||
         !rawList ||
         !Array.isArray(rawList) ||
         rawList.length === 0
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please select at least one recipient."
+            success: false,
+            message: "Please select at least one recipient."
         });
     }
 
     const normalizedRecipients = rawList.map(item => {
-        if(item && typeof item === "object"){
+        if (item && typeof item === "object") {
             return {
                 receiverId: item.receiverId || item.id || item.user_id,
                 targetRole: item.targetRole || item.role || null
@@ -9110,19 +10715,19 @@ app.post("/send-student-document", (req, res) => {
 
     db.query(senderSql, [studentUserId], (err, senderResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking student."
+                success: false,
+                message: "Database error while checking student."
             });
         }
 
-        if(senderResult.length === 0){
+        if (senderResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Student account not found."
+                success: false,
+                message: "Student account not found."
             });
         }
 
@@ -9164,36 +10769,36 @@ app.post("/send-student-document", (req, res) => {
             ],
             (err, documentResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Database error while checking document."
+                        success: false,
+                        message: "Database error while checking document."
                     });
                 }
 
-                if(documentResult.length === 0){
+                if (documentResult.length === 0) {
                     return res.json({
-                        success:false,
-                        message:"Document not found or you do not have permission to send it."
+                        success: false,
+                        message: "Document not found or you do not have permission to send it."
                     });
                 }
 
                 const documentRow =
                     documentResult[0];
 
-                if(String(documentRow.document_status || "").trim() === "Approved"){
+                if (String(documentRow.document_status || "").trim() === "Approved") {
                     return res.json({
-                        success:false,
-                        message:"This document was approved by your adviser and is locked. It cannot be sent again."
+                        success: false,
+                        message: "This document was approved by your adviser and is locked. It cannot be sent again."
                     });
                 }
 
-                if(!slotHasStudentDocumentFile(documentRow)){
+                if (!slotHasStudentDocumentFile(documentRow)) {
                     return res.json({
-                        success:false,
-                        message:"Please upload a file before sending this document."
+                        success: false,
+                        message: "Please upload a file before sending this document."
                     });
                 }
 
@@ -9351,27 +10956,27 @@ app.get("/faculty-settings/:userId", (req, res) => {
 
     db.query(sql, [userId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load faculty settings."
+                success: false,
+                message: "Failed to load faculty settings."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Faculty account not found."
+                success: false,
+                message: "Faculty account not found."
             });
 
         }
 
         res.json({
-            success:true,
-            faculty:result[0]
+            success: true,
+            faculty: result[0]
         });
 
     });
@@ -9390,15 +10995,15 @@ app.put("/update-faculty-profile", (req, res) => {
         program
     } = req.body;
 
-    if(
+    if (
         !facultyUserId ||
         !fullname ||
         !position ||
         !program
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all profile fields."
+            success: false,
+            message: "Please complete all profile fields."
         });
     }
 
@@ -9422,27 +11027,27 @@ app.put("/update-faculty-profile", (req, res) => {
         ],
         (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to update faculty profile."
+                    success: false,
+                    message: "Failed to update faculty profile."
                 });
             }
 
-            if(result.affectedRows === 0){
+            if (result.affectedRows === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Faculty account not found."
+                    success: false,
+                    message: "Faculty account not found."
                 });
 
             }
 
             res.json({
-                success:true,
-                message:"Profile updated successfully."
+                success: true,
+                message: "Profile updated successfully."
             });
 
         }
@@ -9461,22 +11066,22 @@ app.put("/change-faculty-password", (req, res) => {
         newPassword
     } = req.body;
 
-    if(
+    if (
         !facultyUserId ||
         !currentPassword ||
         !newPassword
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all password fields."
+            success: false,
+            message: "Please complete all password fields."
         });
     }
 
-    if(newPassword.length < 6){
+    if (newPassword.length < 6) {
 
         return res.json({
-            success:false,
-            message:"New password must be at least 6 characters."
+            success: false,
+            message: "New password must be at least 6 characters."
         });
 
     }
@@ -9491,20 +11096,20 @@ app.put("/change-faculty-password", (req, res) => {
 
     db.query(checkSql, [facultyUserId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking password."
+                success: false,
+                message: "Database error while checking password."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Faculty account not found."
+                success: false,
+                message: "Faculty account not found."
             });
 
         }
@@ -9516,62 +11121,62 @@ app.put("/change-faculty-password", (req, res) => {
             : Promise.resolve(storedPwd === String(currentPassword));
 
         verifyPromise.then(async (isMatch) => {
-        if(!isMatch){
+            if (!isMatch) {
 
-            return res.json({
-                success:false,
-                message:"Current password is incorrect."
-            });
+                return res.json({
+                    success: false,
+                    message: "Current password is incorrect."
+                });
 
-        }
+            }
 
-        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
+            const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
-        const updateSql = `
+            const updateSql = `
             UPDATE users
             SET password = ?
             WHERE user_id = ?
             AND role IN ('faculty', 'admin')
         `;
 
-        db.query(
-            updateSql,
-            [
-                hashedNewPassword,
-                facultyUserId
-            ],
-            (err) => {
+            db.query(
+                updateSql,
+                [
+                    hashedNewPassword,
+                    facultyUserId
+                ],
+                (err) => {
 
-                if(err){
-                    console.log(err);
+                    if (err) {
+                        console.log(err);
 
-                    return res.json({
-                        success:false,
-                        message:"Failed to change password."
-                    });
-                }
+                        return res.json({
+                            success: false,
+                            message: "Failed to change password."
+                        });
+                    }
 
-                const facultyDbId = result[0].id;
-                const notifSql = `
+                    const facultyDbId = result[0].id;
+                    const notifSql = `
                     INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                     VALUES (?, 'Security Update', 'Your password has been changed successfully.', 'System')
                 `;
-                db.query(notifSql, [facultyDbId], (notifErr) => {
-                    if (notifErr) console.error("Failed to insert password change notification:", notifErr);
-                });
+                    db.query(notifSql, [facultyDbId], (notifErr) => {
+                        if (notifErr) console.error("Failed to insert password change notification:", notifErr);
+                    });
 
-                res.json({
-                    success:true,
-                    message:"Password changed successfully."
-                });
+                    res.json({
+                        success: true,
+                        message: "Password changed successfully."
+                    });
 
-            }
-        );
+                }
+            );
         }).catch((errHash) => {
             console.error(errHash);
             res.json({
-                success:false,
-                message:"Failed to process password change."
+                success: false,
+                message: "Failed to process password change."
             });
         });
 
@@ -9591,11 +11196,11 @@ app.post(
             facultyUserId
         } = req.body;
 
-        if(!facultyUserId || !req.file){
+        if (!facultyUserId || !req.file) {
 
             return res.json({
-                success:false,
-                message:"Please select an image to upload."
+                success: false,
+                message: "Please select an image to upload."
             });
 
         }
@@ -9610,20 +11215,20 @@ app.post(
 
         db.query(getOldSql, [facultyUserId], (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to check current profile image."
+                    success: false,
+                    message: "Failed to check current profile image."
                 });
             }
 
-            if(result.length === 0){
+            if (result.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Faculty account not found."
+                    success: false,
+                    message: "Faculty account not found."
                 });
 
             }
@@ -9649,16 +11254,16 @@ app.post(
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to update profile image."
+                            success: false,
+                            message: "Failed to update profile image."
                         });
                     }
 
-                    if(oldImage){
+                    if (oldImage) {
 
                         const oldImagePath =
                             path.join(
@@ -9666,7 +11271,7 @@ app.post(
                                 oldImage.replace("/uploads", "uploads")
                             );
 
-                        if(fs.existsSync(oldImagePath)){
+                        if (fs.existsSync(oldImagePath)) {
 
                             fs.unlinkSync(oldImagePath);
 
@@ -9675,9 +11280,9 @@ app.post(
                     }
 
                     res.json({
-                        success:true,
-                        message:"Profile image updated successfully.",
-                        profileImage:newImagePath
+                        success: true,
+                        message: "Profile image updated successfully.",
+                        profileImage: newImagePath
                     });
 
                 }
@@ -9717,27 +11322,27 @@ app.get("/admin-settings/:userId", (req, res) => {
 
     db.query(sql, [userId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load admin settings."
+                success: false,
+                message: "Failed to load admin settings."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Admin account not found."
+                success: false,
+                message: "Admin account not found."
             });
 
         }
 
         res.json({
-            success:true,
-            admin:result[0]
+            success: true,
+            admin: result[0]
         });
 
     });
@@ -9756,15 +11361,15 @@ app.put("/update-admin-profile", (req, res) => {
         program
     } = req.body;
 
-    if(
+    if (
         !adminUserId ||
         !fullname ||
         !position ||
         !program
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all profile fields."
+            success: false,
+            message: "Please complete all profile fields."
         });
     }
 
@@ -9789,27 +11394,27 @@ app.put("/update-admin-profile", (req, res) => {
             ],
             (err, result) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to update admin profile."
+                        success: false,
+                        message: "Failed to update admin profile."
                     });
                 }
 
-                if(result.affectedRows === 0){
+                if (result.affectedRows === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"Admin account not found."
+                        success: false,
+                        message: "Admin account not found."
                     });
 
                 }
 
                 res.json({
-                    success:true,
-                    message:"Admin profile updated successfully."
+                    success: true,
+                    message: "Admin profile updated successfully."
                 });
 
             }
@@ -9858,22 +11463,22 @@ app.put("/change-admin-password", (req, res) => {
         newPassword
     } = req.body;
 
-    if(
+    if (
         !adminUserId ||
         !currentPassword ||
         !newPassword
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all password fields."
+            success: false,
+            message: "Please complete all password fields."
         });
     }
 
-    if(newPassword.length < 6){
+    if (newPassword.length < 6) {
 
         return res.json({
-            success:false,
-            message:"New password must be at least 6 characters."
+            success: false,
+            message: "New password must be at least 6 characters."
         });
 
     }
@@ -9888,20 +11493,20 @@ app.put("/change-admin-password", (req, res) => {
 
     db.query(checkSql, [adminUserId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking password."
+                success: false,
+                message: "Database error while checking password."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Admin account not found."
+                success: false,
+                message: "Admin account not found."
             });
 
         }
@@ -9913,62 +11518,62 @@ app.put("/change-admin-password", (req, res) => {
             : Promise.resolve(storedPwd === String(currentPassword));
 
         verifyPromise.then(async (isMatch) => {
-        if(!isMatch){
+            if (!isMatch) {
 
-            return res.json({
-                success:false,
-                message:"Current password is incorrect."
-            });
+                return res.json({
+                    success: false,
+                    message: "Current password is incorrect."
+                });
 
-        }
+            }
 
-        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
+            const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
-        const updateSql = `
+            const updateSql = `
             UPDATE users
             SET password = ?
             WHERE user_id = ?
             AND role = 'admin'
         `;
 
-        db.query(
-            updateSql,
-            [
-                hashedNewPassword,
-                adminUserId
-            ],
-            (err) => {
+            db.query(
+                updateSql,
+                [
+                    hashedNewPassword,
+                    adminUserId
+                ],
+                (err) => {
 
-                if(err){
-                    console.log(err);
+                    if (err) {
+                        console.log(err);
 
-                    return res.json({
-                        success:false,
-                        message:"Failed to change password."
-                    });
-                }
+                        return res.json({
+                            success: false,
+                            message: "Failed to change password."
+                        });
+                    }
 
-                const adminDbId = result[0].id;
-                const notifSql = `
+                    const adminDbId = result[0].id;
+                    const notifSql = `
                     INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                     VALUES (?, 'Security Update', 'Your password has been changed successfully.', 'System')
                 `;
-                db.query(notifSql, [adminDbId], (notifErr) => {
-                    if (notifErr) console.error("Failed to insert password change notification:", notifErr);
-                });
+                    db.query(notifSql, [adminDbId], (notifErr) => {
+                        if (notifErr) console.error("Failed to insert password change notification:", notifErr);
+                    });
 
-                res.json({
-                    success:true,
-                    message:"Password changed successfully."
-                });
+                    res.json({
+                        success: true,
+                        message: "Password changed successfully."
+                    });
 
-            }
-        );
+                }
+            );
         }).catch((errHash) => {
             console.error(errHash);
             res.json({
-                success:false,
-                message:"Failed to process password change."
+                success: false,
+                message: "Failed to process password change."
             });
         });
 
@@ -9988,11 +11593,11 @@ app.post(
             adminUserId
         } = req.body;
 
-        if(!adminUserId || !req.file){
+        if (!adminUserId || !req.file) {
 
             return res.json({
-                success:false,
-                message:"Please select an image to upload."
+                success: false,
+                message: "Please select an image to upload."
             });
 
         }
@@ -10007,20 +11612,20 @@ app.post(
 
         db.query(getOldSql, [adminUserId], (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to check current profile image."
+                    success: false,
+                    message: "Failed to check current profile image."
                 });
             }
 
-            if(result.length === 0){
+            if (result.length === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Admin account not found."
+                    success: false,
+                    message: "Admin account not found."
                 });
 
             }
@@ -10046,16 +11651,16 @@ app.post(
                 ],
                 (err) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to update profile image."
+                            success: false,
+                            message: "Failed to update profile image."
                         });
                     }
 
-                    if(oldImage){
+                    if (oldImage) {
 
                         const oldImagePath =
                             path.join(
@@ -10063,7 +11668,7 @@ app.post(
                                 oldImage.replace("/uploads", "uploads")
                             );
 
-                        if(fs.existsSync(oldImagePath)){
+                        if (fs.existsSync(oldImagePath)) {
 
                             fs.unlinkSync(oldImagePath);
 
@@ -10072,9 +11677,9 @@ app.post(
                     }
 
                     res.json({
-                        success:true,
-                        message:"Profile image updated successfully.",
-                        profileImage:newImagePath
+                        success: true,
+                        message: "Profile image updated successfully.",
+                        profileImage: newImagePath
                     });
 
                 }
@@ -10096,31 +11701,31 @@ app.put("/toggle-admin-role-access", (req, res) => {
         accessValue
     } = req.body;
 
-    if(
+    if (
         !adminUserId ||
         !accessType ||
         accessValue === undefined
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Missing role access information."
+            success: false,
+            message: "Missing role access information."
         });
     }
 
     const allowedColumns = {
-        adviser:"adviser_access",
-        panelist:"panelist_access",
-        instructor:"instructor_access"
+        adviser: "adviser_access",
+        panelist: "panelist_access",
+        instructor: "instructor_access"
     };
 
     const column =
         allowedColumns[accessType];
 
-    if(!column){
+    if (!column) {
 
         return res.json({
-            success:false,
-            message:"Invalid access type."
+            success: false,
+            message: "Invalid access type."
         });
 
     }
@@ -10140,27 +11745,27 @@ app.put("/toggle-admin-role-access", (req, res) => {
         ],
         (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to update role access."
+                    success: false,
+                    message: "Failed to update role access."
                 });
             }
 
-            if(result.affectedRows === 0){
+            if (result.affectedRows === 0) {
 
                 return res.json({
-                    success:false,
-                    message:"Admin account not found."
+                    success: false,
+                    message: "Admin account not found."
                 });
 
             }
 
             res.json({
-                success:true,
-                message:"Role access updated successfully."
+                success: true,
+                message: "Role access updated successfully."
             });
 
         }
@@ -10181,30 +11786,30 @@ app.post("/faculty-create-announcement", (req, res) => {
         announcementContent
     } = req.body;
 
-    if(
+    if (
         !facultyUserId ||
         !announcementTitle ||
         !announcementType ||
         !audience ||
         !announcementContent
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required announcement fields."
+            success: false,
+            message: "Please complete all required announcement fields."
         });
     }
 
-    if(audience !== "Students" && audience !== "Program"){
+    if (audience !== "Students" && audience !== "Program") {
         return res.json({
-            success:false,
-            message:"Faculty can only send announcements to students or specific programs."
+            success: false,
+            message: "Faculty can only send announcements to students or specific programs."
         });
     }
 
-    if(audience === "Program" && !targetProgram){
+    if (audience === "Program" && !targetProgram) {
         return res.json({
-            success:false,
-            message:"Please select a target program."
+            success: false,
+            message: "Please select a target program."
         });
     }
 
@@ -10218,19 +11823,19 @@ app.post("/faculty-create-announcement", (req, res) => {
 
     db.query(facultySql, [facultyUserId], (err, facultyResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking faculty account."
+                success: false,
+                message: "Database error while checking faculty account."
             });
         }
 
-        if(facultyResult.length === 0){
+        if (facultyResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Faculty account not found."
+                success: false,
+                message: "Faculty account not found."
             });
         }
 
@@ -10268,18 +11873,20 @@ app.post("/faculty-create-announcement", (req, res) => {
             ],
             (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to create announcement."
+                        success: false,
+                        message: "Failed to create announcement."
                     });
                 }
 
+                notifyUsersAboutAnnouncement(announcementTitle, announcementContent, audience, targetProgram);
+
                 res.json({
-                    success:true,
-                    message:"Announcement published successfully."
+                    success: true,
+                    message: "Announcement published successfully."
                 });
 
             }
@@ -10307,19 +11914,19 @@ app.get("/faculty-announcements/:facultyUserId", (req, res) => {
 
     db.query(facultySql, [facultyUserId], (err, facultyResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking faculty account."
+                success: false,
+                message: "Database error while checking faculty account."
             });
         }
 
-        if(facultyResult.length === 0){
+        if (facultyResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Faculty account not found."
+                success: false,
+                message: "Faculty account not found."
             });
         }
 
@@ -10354,18 +11961,18 @@ app.get("/faculty-announcements/:facultyUserId", (req, res) => {
 
         db.query(sql, [facultyDbId], (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load announcements."
+                    success: false,
+                    message: "Failed to load announcements."
                 });
             }
 
             res.json({
-                success:true,
-                announcements:result
+                success: true,
+                announcements: result
             });
 
         });
@@ -10391,31 +11998,31 @@ app.put("/faculty-update-announcement/:announcementId", (req, res) => {
         announcementContent
     } = req.body;
 
-    if(
+    if (
         !announcementId ||
         !facultyUserId ||
         !announcementTitle ||
         !announcementType ||
         !audience ||
         !announcementContent
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required announcement fields."
+            success: false,
+            message: "Please complete all required announcement fields."
         });
     }
 
-    if(audience !== "Students" && audience !== "Program"){
+    if (audience !== "Students" && audience !== "Program") {
         return res.json({
-            success:false,
-            message:"Faculty can only send announcements to students or specific programs."
+            success: false,
+            message: "Faculty can only send announcements to students or specific programs."
         });
     }
 
-    if(audience === "Program" && !targetProgram){
+    if (audience === "Program" && !targetProgram) {
         return res.json({
-            success:false,
-            message:"Please select a target program."
+            success: false,
+            message: "Please select a target program."
         });
     }
 
@@ -10429,19 +12036,19 @@ app.put("/faculty-update-announcement/:announcementId", (req, res) => {
 
     db.query(facultySql, [facultyUserId], (err, facultyResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking faculty account."
+                success: false,
+                message: "Database error while checking faculty account."
             });
         }
 
-        if(facultyResult.length === 0){
+        if (facultyResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Faculty account not found."
+                success: false,
+                message: "Faculty account not found."
             });
         }
 
@@ -10474,25 +12081,25 @@ app.put("/faculty-update-announcement/:announcementId", (req, res) => {
             ],
             (err, result) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to update announcement."
+                        success: false,
+                        message: "Failed to update announcement."
                     });
                 }
 
-                if(result.affectedRows === 0){
+                if (result.affectedRows === 0) {
                     return res.json({
-                        success:false,
-                        message:"Announcement not found or you do not have permission to edit it."
+                        success: false,
+                        message: "Announcement not found or you do not have permission to edit it."
                     });
                 }
 
                 res.json({
-                    success:true,
-                    message:"Announcement updated successfully."
+                    success: true,
+                    message: "Announcement updated successfully."
                 });
 
             }
@@ -10514,10 +12121,10 @@ app.delete("/faculty-delete-announcement/:announcementId", (req, res) => {
         facultyUserId
     } = req.body;
 
-    if(!announcementId || !facultyUserId){
+    if (!announcementId || !facultyUserId) {
         return res.json({
-            success:false,
-            message:"Missing announcement information."
+            success: false,
+            message: "Missing announcement information."
         });
     }
 
@@ -10531,19 +12138,19 @@ app.delete("/faculty-delete-announcement/:announcementId", (req, res) => {
 
     db.query(facultySql, [facultyUserId], (err, facultyResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking faculty account."
+                success: false,
+                message: "Database error while checking faculty account."
             });
         }
 
-        if(facultyResult.length === 0){
+        if (facultyResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Faculty account not found."
+                success: false,
+                message: "Faculty account not found."
             });
         }
 
@@ -10564,25 +12171,25 @@ app.delete("/faculty-delete-announcement/:announcementId", (req, res) => {
             ],
             (err, result) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to delete announcement."
+                        success: false,
+                        message: "Failed to delete announcement."
                     });
                 }
 
-                if(result.affectedRows === 0){
+                if (result.affectedRows === 0) {
                     return res.json({
-                        success:false,
-                        message:"Announcement not found or you do not have permission to delete it."
+                        success: false,
+                        message: "Announcement not found or you do not have permission to delete it."
                     });
                 }
 
                 res.json({
-                    success:true,
-                    message:"Announcement deleted successfully."
+                    success: true,
+                    message: "Announcement deleted successfully."
                 });
 
             }
@@ -10633,28 +12240,28 @@ app.get("/defense-schedule-data", (req, res) => {
 
     db.query(groupsSql, (err, groups) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load capstone groups."
+                success: false,
+                message: "Failed to load capstone groups."
             });
         }
 
         db.query(panelistsSql, (err, panelists) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load panelists."
+                    success: false,
+                    message: "Failed to load panelists."
                 });
             }
 
             res.json({
-                success:true,
+                success: true,
                 groups,
                 panelists
             });
@@ -10698,18 +12305,18 @@ app.get("/defense-group-members/:groupDbId", (req, res) => {
 
     db.query(sql, [groupDbId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load group members."
+                success: false,
+                message: "Failed to load group members."
             });
         }
 
         res.json({
-            success:true,
-            members:result
+            success: true,
+            members: result
         });
 
     });
@@ -10776,12 +12383,12 @@ app.get("/defense-schedules", (req, res) => {
 
     db.query(schedulesSql, [loggedInUserId], (err, schedules) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load defense schedules."
+                success: false,
+                message: "Failed to load defense schedules."
             });
         }
 
@@ -10803,12 +12410,12 @@ app.get("/defense-schedules", (req, res) => {
 
         db.query(membersSql, (err, members) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load schedule members."
+                    success: false,
+                    message: "Failed to load schedule members."
                 });
             }
 
@@ -10831,12 +12438,12 @@ app.get("/defense-schedules", (req, res) => {
 
             db.query(panelistsSql, (err, panelists) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load schedule panelists."
+                        success: false,
+                        message: "Failed to load schedule panelists."
                     });
                 }
 
@@ -10876,26 +12483,26 @@ app.get("/defense-schedules", (req, res) => {
                                 is_owner:
                                     Number(schedule.is_owner) === 1,
 
-                                members:members.filter(member =>
+                                members: members.filter(member =>
                                     Number(member.group_id)
                                     === Number(schedule.group_db_id)
                                 ),
 
-                                panelists:schedulePanelists,
+                                panelists: schedulePanelists,
 
-                                evaluations_required:evaluationsRequired,
+                                evaluations_required: evaluationsRequired,
 
-                                evaluations_submitted:evaluationsSubmitted,
+                                evaluations_submitted: evaluationsSubmitted,
 
-                                evaluations_complete:evaluationsComplete,
+                                evaluations_complete: evaluationsComplete,
 
-                                evaluation:evaluationsSubmitted > 0
+                                evaluation: evaluationsSubmitted > 0
                                     ? {
-                                        score:schedule.score,
-                                        panel_result:schedule.panel_result,
-                                        comments:schedule.comments,
-                                        recommendations:schedule.recommendations,
-                                        approved_title_id:schedule.approved_title_id,
+                                        score: schedule.score,
+                                        panel_result: schedule.panel_result,
+                                        comments: schedule.comments,
+                                        recommendations: schedule.recommendations,
+                                        approved_title_id: schedule.approved_title_id,
                                         concept_evaluation_details:
                                             schedule.concept_evaluation_details,
                                         outline_evaluation_details:
@@ -10907,13 +12514,13 @@ app.get("/defense-schedules", (req, res) => {
                         });
 
                     res.json({
-                        success:true,
-                        schedules:scheduleList
+                        success: true,
+                        schedules: scheduleList
                     });
 
                 };
 
-                if(scheduleIds.length === 0){
+                if (scheduleIds.length === 0) {
 
                     return finishScheduleList([]);
 
@@ -10933,12 +12540,12 @@ app.get("/defense-schedules", (req, res) => {
                     [scheduleIds],
                     (countErr, evaluationCounts) => {
 
-                        if(countErr){
+                        if (countErr) {
                             console.log(countErr);
 
                             return res.json({
-                                success:false,
-                                message:"Failed to load panel evaluation counts."
+                                success: false,
+                                message: "Failed to load panel evaluation counts."
                             });
                         }
 
@@ -10976,7 +12583,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
         notes
     } = req.body;
 
-    if(
+    if (
         !scheduleId ||
         !instructorUserId ||
         !groupDbId ||
@@ -10987,10 +12594,10 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
         !startTime ||
         !endTime ||
         !defenseStatus
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required schedule fields and select at least one panelist."
+            success: false,
+            message: "Please complete all required schedule fields and select at least one panelist."
         });
     }
 
@@ -11005,19 +12612,19 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
 
     db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking instructor account."
+                success: false,
+                message: "Database error while checking instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Instructor account not found or no instructor access."
+                success: false,
+                message: "Instructor account not found or no instructor access."
             });
         }
 
@@ -11041,20 +12648,20 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
             ],
             (err, ownerResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Database error while checking schedule ownership."
+                        success: false,
+                        message: "Database error while checking schedule ownership."
                     });
                 }
 
-                if(ownerResult.length === 0){
+                if (ownerResult.length === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"You can only update defense schedules that you created."
+                        success: false,
+                        message: "You can only update defense schedules that you created."
                     });
 
                 }
@@ -11146,20 +12753,20 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                         ],
                         (err, conflictResult) => {
 
-                            if(err){
+                            if (err) {
                                 console.log(err);
 
                                 return res.json({
-                                    success:false,
-                                    message:"Database error while checking room conflict."
+                                    success: false,
+                                    message: "Database error while checking room conflict."
                                 });
                             }
 
-                            if(conflictResult.length > 0){
+                            if (conflictResult.length > 0) {
 
                                 return res.json({
-                                    success:false,
-                                    message:"This room is already scheduled during the selected time."
+                                    success: false,
+                                    message: "This room is already scheduled during the selected time."
                                 });
 
                             }
@@ -11174,20 +12781,20 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
 
                             db.query(panelistSql, [panelistIds], (err, panelistResult) => {
 
-                                if(err){
+                                if (err) {
                                     console.log(err);
 
                                     return res.json({
-                                        success:false,
-                                        message:"Database error while checking panelists."
+                                        success: false,
+                                        message: "Database error while checking panelists."
                                     });
                                 }
 
-                                if(panelistResult.length !== panelistIds.length){
+                                if (panelistResult.length !== panelistIds.length) {
 
                                     return res.json({
-                                        success:false,
-                                        message:"One or more selected panelists are invalid."
+                                        success: false,
+                                        message: "One or more selected panelists are invalid."
                                     });
 
                                 }
@@ -11261,20 +12868,20 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                                             ],
                                             (err, result) => {
 
-                                                if(err){
+                                                if (err) {
                                                     console.log(err);
 
                                                     return res.json({
-                                                        success:false,
-                                                        message:"Failed to update defense schedule."
+                                                        success: false,
+                                                        message: "Failed to update defense schedule."
                                                     });
                                                 }
 
-                                                if(result.affectedRows === 0){
+                                                if (result.affectedRows === 0) {
 
                                                     return res.json({
-                                                        success:false,
-                                                        message:"No defense schedule was updated."
+                                                        success: false,
+                                                        message: "No defense schedule was updated."
                                                     });
 
                                                 }
@@ -11286,12 +12893,12 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
 
                                                 db.query(deleteOldPanelistsSql, [scheduleId], (err) => {
 
-                                                    if(err){
+                                                    if (err) {
                                                         console.log(err);
 
                                                         return res.json({
-                                                            success:false,
-                                                            message:"Schedule updated, but failed to reset panelists."
+                                                            success: false,
+                                                            message: "Schedule updated, but failed to reset panelists."
                                                         });
                                                     }
 
@@ -11312,12 +12919,12 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
 
                                                     db.query(insertPanelistsSql, [panelistValues], (err) => {
 
-                                                        if(err){
+                                                        if (err) {
                                                             console.log(err);
 
                                                             return res.json({
-                                                                success:false,
-                                                                message:"Schedule updated, but failed to save panelists."
+                                                                success: false,
+                                                                message: "Schedule updated, but failed to save panelists."
                                                             });
                                                         }
 
@@ -11371,8 +12978,8 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                                                         }
 
                                                         res.json({
-                                                            success:true,
-                                                            message:"Defense schedule updated successfully."
+                                                            success: true,
+                                                            message: "Defense schedule updated successfully."
                                                         });
 
                                                     });
@@ -11412,11 +13019,11 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
         notes
     } = req.body;
 
-    if(!scheduleId || !instructorUserId){
+    if (!scheduleId || !instructorUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing schedule information."
+            success: false,
+            message: "Missing schedule information."
         });
 
     }
@@ -11432,20 +13039,20 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
     db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking instructor account."
+                success: false,
+                message: "Database error while checking instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Instructor account not found or no instructor access."
+                success: false,
+                message: "Instructor account not found or no instructor access."
             });
 
         }
@@ -11475,20 +13082,20 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
             ],
             (err, scheduleResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Database error while checking schedule."
+                        success: false,
+                        message: "Database error while checking schedule."
                     });
                 }
 
-                if(scheduleResult.length === 0){
+                if (scheduleResult.length === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"You can only delete defense schedules that you created."
+                        success: false,
+                        message: "You can only delete defense schedules that you created."
                     });
 
                 }
@@ -11505,19 +13112,19 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
                 db.query(checkEvalsSql, [scheduleId], (evalErr, evalRows) => {
 
-                    if(evalErr){
+                    if (evalErr) {
                         console.log(evalErr);
                         return res.json({
-                            success:false,
-                            message:"Database error while checking evaluations."
+                            success: false,
+                            message: "Database error while checking evaluations."
                         });
                     }
 
                     const evalCount = evalRows?.[0]?.evalCount || 0;
-                    if(evalCount > 0){
+                    if (evalCount > 0) {
                         return res.json({
-                            success:false,
-                            message:"Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this schedule."
+                            success: false,
+                            message: "Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this schedule."
                         });
                     }
 
@@ -11529,75 +13136,75 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
                     db.query(panelistsSql, [scheduleId], (err, panelistResult) => {
 
-                    if(err){
-                        console.log(err);
+                        if (err) {
+                            console.log(err);
 
-                        return res.json({
-                            success:false,
-                            message:"Database error while checking schedule panelists."
-                        });
-                    }
+                            return res.json({
+                                success: false,
+                                message: "Database error while checking schedule panelists."
+                            });
+                        }
 
-                    const panelistIds =
-                        panelistResult.map(item =>
-                            item.panelist_id
-                        );
+                        const panelistIds =
+                            panelistResult.map(item =>
+                                item.panelist_id
+                            );
 
-                    const deleteSql = `
+                        const deleteSql = `
                         DELETE FROM defense_schedules
                         WHERE id = ?
                         AND created_by = ?
                     `;
 
-                    db.query(
-                        deleteSql,
-                        [
-                            scheduleId,
-                            instructorDbId
-                        ],
-                        (err, result) => {
+                        db.query(
+                            deleteSql,
+                            [
+                                scheduleId,
+                                instructorDbId
+                            ],
+                            (err, result) => {
 
-                            if(err){
-                                console.log(err);
+                                if (err) {
+                                    console.log(err);
 
-                                return res.json({
-                                    success:false,
-                                    message:"Failed to delete defense schedule."
+                                    return res.json({
+                                        success: false,
+                                        message: "Failed to delete defense schedule."
+                                    });
+                                }
+
+                                if (result.affectedRows === 0) {
+
+                                    return res.json({
+                                        success: false,
+                                        message: "No defense schedule was deleted."
+                                    });
+
+                                }
+
+                                const cancelReasonText = [reason, notes].filter(Boolean).join(" - ");
+
+                                notifyDefenseUsersWithDetails(
+                                    schedule.group_id,
+                                    panelistIds,
+                                    "Defense Schedule Cancelled",
+                                    "cancelled",
+                                    schedule.defense_date,
+                                    schedule.start_time,
+                                    schedule.end_time,
+                                    schedule.room_name,
+                                    cancelReasonText
+                                );
+
+                                res.json({
+                                    success: true,
+                                    message: "Defense schedule deleted successfully."
                                 });
-                            }
-
-                            if(result.affectedRows === 0){
-
-                                return res.json({
-                                    success:false,
-                                    message:"No defense schedule was deleted."
-                                });
 
                             }
+                        );
 
-                            const cancelReasonText = [reason, notes].filter(Boolean).join(" - ");
-
-                            notifyDefenseUsersWithDetails(
-                                schedule.group_id,
-                                panelistIds,
-                                "Defense Schedule Cancelled",
-                                "cancelled",
-                                schedule.defense_date,
-                                schedule.start_time,
-                                schedule.end_time,
-                                schedule.room_name,
-                                cancelReasonText
-                            );
-
-                            res.json({
-                                success:true,
-                                message:"Defense schedule deleted successfully."
-                            });
-
-                        }
-                    );
-
-                });
+                    });
 
                 });
 
@@ -11684,7 +13291,7 @@ app.post("/force-complete-defense-schedule/:scheduleId", (req, res) => {
 
                     const nextStage = getGroupStageAfterDefense(schedule.defense_type, compiledResult);
                     if (nextStage && schedule.group_id) {
-                        db.query("UPDATE capstone_groups SET stage = ?, progress = ? WHERE id = ?", [nextStage, getProgressPercentForStage(nextStage), schedule.group_id], () => {});
+                        db.query("UPDATE capstone_groups SET stage = ?, progress = ? WHERE id = ?", [nextStage, getProgressPercentForStage(nextStage), schedule.group_id], () => { });
                     }
 
                     const memberSql = `SELECT student_id FROM group_members WHERE group_id = ?`;
@@ -11834,7 +13441,7 @@ app.post("/update-environmental-scanning-status", (req, res) => {
                     }
 
                     // Reset student signatures so that a new file can be signed cleanly
-                    db.query("DELETE FROM env_scan_student_signatures WHERE document_id = ?", [documentId], () => {});
+                    db.query("DELETE FROM env_scan_student_signatures WHERE document_id = ?", [documentId], () => { });
 
                     const updateSubmissionsSql = `
                         UPDATE document_submissions
@@ -11843,7 +13450,7 @@ app.post("/update-environmental-scanning-status", (req, res) => {
                             reviewed_at = NOW()
                         WHERE document_id = ?
                     `;
-                    db.query(updateSubmissionsSql, [statusToSet, `Declined by Organization: ${fullReason}`, documentId], () => {});
+                    db.query(updateSubmissionsSql, [statusToSet, `Declined by Organization: ${fullReason}`, documentId], () => { });
 
                     const prog = String(student.program || "").toUpperCase();
                     let chairPosition = 'Program Chairperson IT';
@@ -11909,43 +13516,43 @@ app.post("/update-environmental-scanning-status", (req, res) => {
 
 const CONSULTATION_CATALOG = [
     {
-        category:"Concept Presentation",
-        items:[
-            { label:"Proposed concept paper", slots:3 },
-            { label:"Adviser acceptance for advisory", slots:1 },
-            { label:"Environmental scanning", slots:3 },
-            { label:"Recommendation for concept presentation", slots:1 }
+        category: "Concept Presentation",
+        items: [
+            { label: "Proposed concept paper", slots: 3 },
+            { label: "Adviser acceptance for advisory", slots: 1 },
+            { label: "Environmental scanning", slots: 3 },
+            { label: "Recommendation for concept presentation", slots: 1 }
         ]
     },
     {
-        category:"Outline Defense",
-        items:[
-            { label:"Chapter 1 and 2", slots:1 },
-            { label:"Recommendation for outline defense", slots:1 },
-            { label:"Defense minutes", slots:1 }
+        category: "Outline Defense",
+        items: [
+            { label: "Chapter 1 and 2", slots: 1 },
+            { label: "Recommendation for outline defense", slots: 1 },
+            { label: "Defense minutes", slots: 1 }
         ]
     },
     {
-        category:"Pre-Final Defense",
-        items:[
-            { label:"Chapter 3-4", slots:1 },
-            { label:"Recommendation letter", slots:1 },
-            { label:"Defense minutes", slots:1 }
+        category: "Pre-Final Defense",
+        items: [
+            { label: "Chapter 3-4", slots: 1 },
+            { label: "Recommendation letter", slots: 1 },
+            { label: "Defense minutes", slots: 1 }
         ]
     },
     {
-        category:"Final Defense",
-        items:[
-            { label:"Chapter 1-4", slots:1 },
-            { label:"Recommendation letter", slots:1 },
-            { label:"Defense minutes", slots:1 }
+        category: "Final Defense",
+        items: [
+            { label: "Chapter 1-4", slots: 1 },
+            { label: "Recommendation letter", slots: 1 },
+            { label: "Defense minutes", slots: 1 }
         ]
     }
 ];
 
-function buildConsultationSlotDocumentType(category, baseLabel, slotIndex, totalSlots){
+function buildConsultationSlotDocumentType(category, baseLabel, slotIndex, totalSlots) {
 
-    if(totalSlots > 1){
+    if (totalSlots > 1) {
         return `${category} • ${baseLabel} (${slotIndex})`;
     }
 
@@ -11953,7 +13560,7 @@ function buildConsultationSlotDocumentType(category, baseLabel, slotIndex, total
 
 }
 
-function getConsultationSlotTypeCandidates(category, baseLabel, slotIndex, totalSlots){
+function getConsultationSlotTypeCandidates(category, baseLabel, slotIndex, totalSlots) {
 
     const candidates = [
         buildConsultationSlotDocumentType(
@@ -11964,28 +13571,28 @@ function getConsultationSlotTypeCandidates(category, baseLabel, slotIndex, total
         )
     ];
 
-    if(slotIndex === 1 && totalSlots > 1){
+    if (slotIndex === 1 && totalSlots > 1) {
         candidates.push(
             `${category} • ${baseLabel} (${totalSlots})`
         );
     }
 
-    if(totalSlots === 1){
+    if (totalSlots === 1) {
         candidates.push(`${category} • ${baseLabel}`);
     }
 
     // Flexible aliases for chapter documents and recommendation letters
     const lowerLabel = String(baseLabel || "").toLowerCase();
-    if(lowerLabel.includes("chapter 1 and 2") || lowerLabel.includes("chapter 1-2")){
+    if (lowerLabel.includes("chapter 1 and 2") || lowerLabel.includes("chapter 1-2")) {
         candidates.push(`${category} • Chapter 1 and 2`);
         candidates.push(`${category} • Chapter 1-2`);
         candidates.push(`${category} • Chapter 1 to 2`);
-    } else if(lowerLabel.includes("chapter 1-4") || lowerLabel.includes("chapter 1 to 4") || lowerLabel.includes("chapter 3-4")){
+    } else if (lowerLabel.includes("chapter 1-4") || lowerLabel.includes("chapter 1 to 4") || lowerLabel.includes("chapter 3-4")) {
         candidates.push(`${category} • Chapter 1-4`);
         candidates.push(`${category} • Chapter 1 to 4`);
         candidates.push(`${category} • Chapter 3-4`);
     }
-    if(lowerLabel.includes("recommendation")){
+    if (lowerLabel.includes("recommendation")) {
         candidates.push(`${category} • Recommendation letter`);
         candidates.push(`${category} • Recommendation for outline defense`);
         candidates.push(`${category} • Recommendation for concept presentation`);
@@ -11995,7 +13602,7 @@ function getConsultationSlotTypeCandidates(category, baseLabel, slotIndex, total
 
 }
 
-function isDefenseMinutesCatalogItem(label, documentType){
+function isDefenseMinutesCatalogItem(label, documentType) {
 
     const labelValue =
         String(label || "").trim().toLowerCase();
@@ -12009,20 +13616,20 @@ function isDefenseMinutesCatalogItem(label, documentType){
 
 }
 
-function getConsultationPhaseCategoryForDefenseType(defenseType){
+function getConsultationPhaseCategoryForDefenseType(defenseType) {
 
     const value =
         String(defenseType || "").toLowerCase().trim();
 
-    if(value.includes("pre-final") || value.includes("prefinal")){
+    if (value.includes("pre-final") || value.includes("prefinal")) {
         return "Pre-Final Defense";
     }
 
-    if(value.includes("outline")){
+    if (value.includes("outline")) {
         return "Outline Defense";
     }
 
-    if(value.includes("final") && !value.includes("pre")){
+    if (value.includes("final") && !value.includes("pre")) {
         return "Final Defense";
     }
 
@@ -12030,7 +13637,7 @@ function getConsultationPhaseCategoryForDefenseType(defenseType){
 
 }
 
-function defenseTypesMatch(storedType, expectedType){
+function defenseTypesMatch(storedType, expectedType) {
 
     const stored =
         String(storedType || "").toLowerCase().trim();
@@ -12038,11 +13645,11 @@ function defenseTypesMatch(storedType, expectedType){
     const expected =
         String(expectedType || "").toLowerCase().trim();
 
-    if(!stored || !expected){
+    if (!stored || !expected) {
         return false;
     }
 
-    if(stored === expected){
+    if (stored === expected) {
         return true;
     }
 
@@ -12056,15 +13663,15 @@ function defenseTypesMatch(storedType, expectedType){
 
 }
 
-function formatConsultationDocumentLabel(documentType){
+function formatConsultationDocumentLabel(documentType) {
 
     const parts =
         String(documentType || "")
-        .split(" • ")
-        .map(part => part.trim())
-        .filter(Boolean);
+            .split(" • ")
+            .map(part => part.trim())
+            .filter(Boolean);
 
-    if(parts.length > 1){
+    if (parts.length > 1) {
         return parts.slice(1).join(" • ");
     }
 
@@ -12072,7 +13679,7 @@ function formatConsultationDocumentLabel(documentType){
 
 }
 
-function documentMatchesDefenseScheduleType(documentType, defenseType){
+function documentMatchesDefenseScheduleType(documentType, defenseType) {
 
     const phaseCategory =
         getConsultationPhaseCategoryForDefenseType(defenseType);
@@ -12084,26 +13691,26 @@ function documentMatchesDefenseScheduleType(documentType, defenseType){
 
 }
 
-function normalizeTitleProposalRow(row){
+function normalizeTitleProposalRow(row) {
 
     return {
-        id:row.id,
-        group_id:row.group_id,
-        title_number:row.title_number,
-        title:row.proposed_title,
-        proposed_title:row.proposed_title,
-        summary:"",
-        file_name:row.file_name,
-        file_path:row.file_path,
-        status:row.status,
-        created_at:row.created_at
+        id: row.id,
+        group_id: row.group_id,
+        title_number: row.title_number,
+        title: row.proposed_title,
+        proposed_title: row.proposed_title,
+        summary: "",
+        file_name: row.file_name,
+        file_path: row.file_path,
+        status: row.status,
+        created_at: row.created_at
     };
 
 }
 
-function getCatalogPhasesForScheduleCheck(defenseType, requireAllPhases){
+function getCatalogPhasesForScheduleCheck(defenseType, requireAllPhases) {
 
-    if(requireAllPhases){
+    if (requireAllPhases) {
         return CONSULTATION_CATALOG;
     }
 
@@ -12121,7 +13728,7 @@ function getCatalogPhasesForScheduleCheck(defenseType, requireAllPhases){
 
 }
 
-function findDocumentForConsultationSlot(documents, category, baseLabel, slotIndex, totalSlots){
+function findDocumentForConsultationSlot(documents, category, baseLabel, slotIndex, totalSlots) {
 
     const candidates =
         getConsultationSlotTypeCandidates(
@@ -12131,14 +13738,14 @@ function findDocumentForConsultationSlot(documents, category, baseLabel, slotInd
             totalSlots
         );
 
-    for(const docType of candidates){
+    for (const docType of candidates) {
 
         const matches =
             (documents || []).filter(doc =>
                 String(doc.document_type || "") === docType
             );
 
-        if(matches.length > 0){
+        if (matches.length > 0) {
 
             return matches.sort((a, b) =>
                 Number(b.id) - Number(a.id)
@@ -12152,7 +13759,7 @@ function findDocumentForConsultationSlot(documents, category, baseLabel, slotInd
 
 }
 
-function buildPhaseApprovalSummary(documents, phase, options){
+function buildPhaseApprovalSummary(documents, phase, options) {
 
     const excludeDefenseMinutes =
         options && options.excludeDefenseMinutesFromSchedule;
@@ -12166,7 +13773,7 @@ function buildPhaseApprovalSummary(documents, phase, options){
 
     (phase.items || []).forEach(item => {
 
-        for(let slotIndex = 1; slotIndex <= item.slots; slotIndex++){
+        for (let slotIndex = 1; slotIndex <= item.slots; slotIndex++) {
 
             const documentType =
                 buildConsultationSlotDocumentType(
@@ -12176,15 +13783,15 @@ function buildPhaseApprovalSummary(documents, phase, options){
                     item.slots
                 );
 
-            if(
+            if (
                 excludeDefenseMinutes
                 && isDefenseMinutesCatalogItem(item.label, documentType)
-            ){
+            ) {
                 continue;
             }
 
             // BSIT programs do not require Environmental Scanning
-            if(isBSIT && String(item.label || '').toLowerCase().includes('environmental')){
+            if (isBSIT && String(item.label || '').toLowerCase().includes('environmental')) {
                 continue;
             }
 
@@ -12201,25 +13808,25 @@ function buildPhaseApprovalSummary(documents, phase, options){
 
             const slotLabel =
                 item.slots > 1
-                ? `${item.label} (${slotIndex})`
-                : item.label;
+                    ? `${item.label} (${slotIndex})`
+                    : item.label;
 
-            if(
+            if (
                 documentRecord
                 && String(documentRecord.document_status || "") === "Approved"
-            ){
+            ) {
 
                 approvedCount++;
 
-            }else{
+            } else {
 
                 missing.push({
-                    phase:phase.category,
-                    label:slotLabel,
-                    status:documentRecord
+                    phase: phase.category,
+                    label: slotLabel,
+                    status: documentRecord
                         ? String(documentRecord.document_status || "Pending")
                         : "Not uploaded",
-                    document_type:documentType
+                    document_type: documentType
                 });
 
             }
@@ -12229,16 +13836,16 @@ function buildPhaseApprovalSummary(documents, phase, options){
     });
 
     return {
-        category:phase.category,
+        category: phase.category,
         missing,
-        approved_count:approvedCount,
-        total_slots:requiredSlots,
-        complete:missing.length === 0
+        approved_count: approvedCount,
+        total_slots: requiredSlots,
+        complete: missing.length === 0
     };
 
 }
 
-function buildMissingApprovedForDefenseSchedule(documents, defenseType, options){
+function buildMissingApprovedForDefenseSchedule(documents, defenseType, options) {
 
     const phases =
         getCatalogPhasesForScheduleCheck(
@@ -12261,7 +13868,7 @@ function buildMissingApprovedForDefenseSchedule(documents, defenseType, options)
 
 }
 
-function buildMissingApprovedForDefenseScheduleWithProgram(documents, defenseType, options, groupProgram){
+function buildMissingApprovedForDefenseScheduleWithProgram(documents, defenseType, options, groupProgram) {
 
     const isBSIT = (String(groupProgram || '').trim().toUpperCase() === 'IT' || String(groupProgram || '').trim().toUpperCase() === 'BSIT');
 
@@ -12286,7 +13893,7 @@ function buildMissingApprovedForDefenseScheduleWithProgram(documents, defenseTyp
 
 }
 
-function fetchGroupStudentDocuments(groupDbId, callback){
+function fetchGroupStudentDocuments(groupDbId, callback) {
 
     const sql = `
         SELECT
@@ -12300,7 +13907,14 @@ function fetchGroupStudentDocuments(groupDbId, callback){
             sd.document_status,
             sd.is_sent,
             sd.created_at,
-            sd.signed_file_path
+            sd.signed_file_path,
+            (
+                SELECT ds.review_status
+                FROM document_submissions ds
+                WHERE ds.document_id = sd.id
+                ORDER BY ds.id DESC
+                LIMIT 1
+            ) AS latest_review_status
         FROM student_documents sd
         WHERE sd.group_id = ?
         ORDER BY sd.id DESC
@@ -12310,16 +13924,16 @@ function fetchGroupStudentDocuments(groupDbId, callback){
 
 }
 
-function getPriorDefenseTypeForSchedule(defenseType){
+function getPriorDefenseTypeForSchedule(defenseType) {
 
     const value =
         String(defenseType || "").toLowerCase().trim();
 
-    if(value.includes("pre-final") || value.includes("prefinal")){
+    if (value.includes("pre-final") || value.includes("prefinal")) {
         return "Outline Defense";
     }
 
-    if(value.includes("final") && !value.includes("pre")){
+    if (value.includes("final") && !value.includes("pre")) {
         return "Pre-Final Defense";
     }
 
@@ -12327,16 +13941,16 @@ function getPriorDefenseTypeForSchedule(defenseType){
 
 }
 
-function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback){
+function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback) {
 
     const priorDefenseType =
         getPriorDefenseTypeForSchedule(defenseType);
 
-    if(!priorDefenseType){
+    if (!priorDefenseType) {
 
         return callback(null, {
-            ok:true,
-            prior_defense_type:null
+            ok: true,
+            prior_defense_type: null
         });
 
     }
@@ -12354,7 +13968,7 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
 
     db.query(schedulesSql, [groupDbId], (scheduleErr, scheduleRows) => {
 
-        if(scheduleErr){
+        if (scheduleErr) {
             return callback(scheduleErr);
         }
 
@@ -12363,14 +13977,14 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
                 defenseTypesMatch(row.defense_type, priorDefenseType)
             );
 
-        if(!priorSchedule){
+        if (!priorSchedule) {
 
             return callback(null, {
-                ok:false,
-                prior_defense_type:priorDefenseType,
-                evaluations_submitted:0,
-                evaluations_required:0,
-                message:`No ${priorDefenseType} schedule found. Complete that defense before scheduling ${defenseType}.`
+                ok: false,
+                prior_defense_type: priorDefenseType,
+                evaluations_submitted: 0,
+                evaluations_required: 0,
+                message: `No ${priorDefenseType} schedule found. Complete that defense before scheduling ${defenseType}.`
             });
 
         }
@@ -12386,7 +14000,7 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
             [priorSchedule.id],
             (panelistErr, panelistRows) => {
 
-                if(panelistErr){
+                if (panelistErr) {
                     return callback(panelistErr);
                 }
 
@@ -12404,7 +14018,7 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
                     [priorSchedule.id],
                     (evaluationErr, evaluationRows) => {
 
-                        if(evaluationErr){
+                        if (evaluationErr) {
                             return callback(evaluationErr);
                         }
 
@@ -12415,67 +14029,25 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
                             (evaluationsRequired > 0 && evaluationsSubmitted >= evaluationsRequired)
                             || (priorSchedule.defense_status === 'Completed' && evaluationsSubmitted >= 2);
 
-                        if(!ok){
+                        if (!ok) {
                             return callback(null, {
-                                ok:false,
-                                prior_defense_type:priorDefenseType,
-                                evaluations_submitted:evaluationsSubmitted,
-                                evaluations_required:evaluationsRequired,
-                                message:`${priorDefenseType} panel evaluations are incomplete (${evaluationsSubmitted}/${evaluationsRequired}). All panelists must submit grades before scheduling ${defenseType}.`
+                                ok: false,
+                                prior_defense_type: priorDefenseType,
+                                evaluations_submitted: evaluationsSubmitted,
+                                evaluations_required: evaluationsRequired,
+                                message: `${priorDefenseType} panel evaluations are incomplete (${evaluationsSubmitted}/${evaluationsRequired}). All panelists must submit grades before scheduling ${defenseType}.`
                             });
                         }
 
-                        // Check if the prior defense phase requires defense minutes approval before scheduling the next phase
-                        const priorRequiresMinutes = priorDefenseType === "Outline Defense" || priorDefenseType === "Pre-Final Defense";
-                        if(priorRequiresMinutes){
-                            const minutesPattern = priorDefenseType === "Outline Defense" ? "%outline%defense minutes%" : "%pre-final%defense minutes%";
-                            const minutesAltPattern = priorDefenseType === "Outline Defense" ? "%outline%minutes%" : "%prefinal%defense minutes%";
-
-                            const checkPriorMinutesSql = `
-                                SELECT id, document_status
-                                FROM student_documents
-                                WHERE group_id = ?
-                                  AND (
-                                      LOWER(document_type) LIKE LOWER(?)
-                                      OR LOWER(document_type) LIKE LOWER(?)
-                                      OR LOWER(document_title) LIKE LOWER(?)
-                                  )
-                                  AND document_status = 'Approved'
-                                LIMIT 1
-                            `;
-
-                            db.query(checkPriorMinutesSql, [groupDbId, minutesPattern, minutesAltPattern, minutesPattern], (minErr, minRows) => {
-                                if(minErr){
-                                    return callback(minErr);
-                                }
-
-                                if(!minRows || minRows.length === 0){
-                                    return callback(null, {
-                                        ok:false,
-                                        prior_defense_type:priorDefenseType,
-                                        evaluations_submitted:evaluationsSubmitted,
-                                        evaluations_required:evaluationsRequired,
-                                        message:`Cannot create defense schedule for ${defenseType}. The group's ${priorDefenseType} minutes must be uploaded and approved by the adviser first.`
-                                    });
-                                }
-
-                                callback(null, {
-                                    ok:true,
-                                    prior_defense_type:priorDefenseType,
-                                    evaluations_submitted:evaluationsSubmitted,
-                                    evaluations_required:evaluationsRequired,
-                                    message:null
-                                });
-                            });
-                        } else {
-                            callback(null, {
-                                ok:true,
-                                prior_defense_type:priorDefenseType,
-                                evaluations_submitted:evaluationsSubmitted,
-                                evaluations_required:evaluationsRequired,
-                                message:null
-                            });
-                        }
+                        // Defense minutes are completed after the defense schedule, so do not block
+                        // scheduling Pre-Final Defense or Final Defense on uploaded defense minutes.
+                        callback(null, {
+                            ok: true,
+                            prior_defense_type: priorDefenseType,
+                            evaluations_submitted: evaluationsSubmitted,
+                            evaluations_required: evaluationsRequired,
+                            message: null
+                        });
 
                     }
                 );
@@ -12487,7 +14059,7 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
 
 }
 
-function validateGroupDocumentsForScheduleCreate(groupDbId, defenseType, options, callback){
+function validateGroupDocumentsForScheduleCreate(groupDbId, defenseType, options, callback) {
 
     // Fetch group program first to handle BSIT vs BSIS document requirements
     db.query('SELECT program FROM capstone_groups WHERE id = ? LIMIT 1', [groupDbId], (progErr, progRows) => {
@@ -12496,12 +14068,12 @@ function validateGroupDocumentsForScheduleCreate(groupDbId, defenseType, options
 
         fetchGroupStudentDocuments(groupDbId, (docErr, documents) => {
 
-            if(docErr){
+            if (docErr) {
                 return callback(docErr);
             }
 
             const scheduleOptions = {
-                excludeDefenseMinutesFromSchedule:true,
+                excludeDefenseMinutesFromSchedule: true,
                 requireAllPhases:
                     options && options.requireAllPhases
             };
@@ -12515,9 +14087,9 @@ function validateGroupDocumentsForScheduleCreate(groupDbId, defenseType, options
                 );
 
             callback(null, {
-                documents:documents || [],
-                summaries:approvalResult.summaries,
-                missing:approvalResult.missing,
+                documents: documents || [],
+                summaries: approvalResult.summaries,
+                missing: approvalResult.missing,
                 documents_ready_for_schedule:
                     approvalResult.missing.length === 0
             });
@@ -12528,7 +14100,7 @@ function validateGroupDocumentsForScheduleCreate(groupDbId, defenseType, options
 
 }
 
-function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, callback){
+function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, callback) {
 
     const excludeScheduleId = options && options.excludeScheduleId ? Number(options.excludeScheduleId) : null;
 
@@ -12542,20 +14114,20 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
     `;
 
     db.query(schedulesSql, [groupDbId], (schedulesErr, scheduleRows) => {
-        if(schedulesErr){
+        if (schedulesErr) {
             return callback(schedulesErr);
         }
 
         const rows = scheduleRows || [];
 
         // 1. Check for ongoing/pending schedules (Scheduled or Ongoing) for this presentation type
-        const ongoingSchedule = rows.find(row => 
+        const ongoingSchedule = rows.find(row =>
             (row.defense_status === 'Scheduled' || row.defense_status === 'Ongoing') &&
             defenseTypesMatch(row.defense_type, defenseType) &&
             (!excludeScheduleId || Number(row.id) !== excludeScheduleId)
         );
 
-        if(ongoingSchedule){
+        if (ongoingSchedule) {
             return callback(null, {
                 documents: [],
                 summaries: [],
@@ -12574,7 +14146,7 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
             (row.panel_result === 'Passed' || row.panel_result === 'Passed with Revisions')
         );
 
-        if(completedPassedSchedule){
+        if (completedPassedSchedule) {
             return callback(null, {
                 documents: [],
                 summaries: [],
@@ -12593,7 +14165,7 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
             options,
             (docErr, documentResult) => {
 
-                if(docErr){
+                if (docErr) {
                     return callback(docErr);
                 }
 
@@ -12602,7 +14174,7 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
                     defenseType,
                     (panelErr, priorPanel) => {
 
-                        if(panelErr){
+                        if (panelErr) {
                             return callback(panelErr);
                         }
 
@@ -12620,12 +14192,12 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
                         let message =
                             "This group is ready for scheduling.";
 
-                        if(!documentsReady){
+                        if (!documentsReady) {
 
                             message =
                                 `Cannot create defense schedule. All required consultation documents for "${defenseType}" must be approved first.`;
 
-                        }else if(!panelReady){
+                        } else if (!panelReady) {
 
                             message =
                                 priorPanel.message
@@ -12641,12 +14213,12 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
                         );
                         let isRedefense = false;
                         let redefenseVerdict = null;
-                        if(priorCompletedForType){
+                        if (priorCompletedForType) {
                             const res = String(priorCompletedForType.panel_result || "").trim();
-                            if(res === "Conditional Passed" || res === "Conditional Pass"){
+                            if (res === "Conditional Passed" || res === "Conditional Pass") {
                                 isRedefense = true;
                                 redefenseVerdict = "Conditional Passed";
-                            }else if(res === "For Formal Defense" || res === "For Re-Defense"){
+                            } else if (res === "For Formal Defense" || res === "For Re-Defense") {
                                 isRedefense = true;
                                 redefenseVerdict = "For Formal Defense";
                             }
@@ -12654,10 +14226,10 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
 
                         callback(null, {
                             ...documentResult,
-                            prior_panel_evaluations:priorPanel,
-                            ready_for_schedule:readyForSchedule,
-                            is_redefense:isRedefense,
-                            redefense_verdict:redefenseVerdict,
+                            prior_panel_evaluations: priorPanel,
+                            ready_for_schedule: readyForSchedule,
+                            is_redefense: isRedefense,
+                            redefense_verdict: redefenseVerdict,
                             message
                         });
 
@@ -12675,30 +14247,60 @@ app.get("/group-documents/:groupDbId", (req, res) => {
     const groupDbId =
         req.params.groupDbId;
 
-    if(!groupDbId){
+    if (!groupDbId) {
 
         return res.json({
-            success:false,
-            message:"Missing group."
+            success: false,
+            message: "Missing group."
         });
 
     }
 
     fetchGroupStudentDocuments(groupDbId, (err, documents) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to load group documents."
+                success: false,
+                message: "Failed to load group documents."
             });
         }
 
-        res.json({
-            success:true,
-            documents:documents || []
-        });
+        const docList = Array.isArray(documents) ? [...documents] : [];
+
+        db.query(
+            `SELECT id, defense_type, status, updated_at, created_at
+             FROM typed_defense_minutes
+             WHERE group_id = ? AND status = 'Completed'
+             ORDER BY updated_at DESC`,
+            [groupDbId],
+            (dmErr, dmRows) => {
+                if (!dmErr && Array.isArray(dmRows)) {
+                    dmRows.forEach(dm => {
+                        docList.push({
+                            id: `tdm-${dm.id}`,
+                            typed_dm_id: dm.id,
+                            document_code: "DEF-MIN",
+                            document_type: `${dm.defense_type} • Defense minutes`,
+                            document_title: `${dm.defense_type} — Defense Minutes (E-Signed)`,
+                            file_name: `${dm.defense_type} Defense Minutes`,
+                            file_path: "",
+                            signed_file_path: "",
+                            document_status: "Approved",
+                            latest_review_status: "Approved",
+                            is_typed_defense_minutes: true,
+                            created_at: dm.updated_at || dm.created_at
+                        });
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    documents: docList
+                });
+            }
+        );
 
     });
 
@@ -12716,11 +14318,11 @@ app.get("/group-consultation-approval-status/:groupDbId", (req, res) => {
         req.query.requireAllPhases === "1"
         || req.query.requireAllPhases === "true";
 
-    if(!groupDbId){
+    if (!groupDbId) {
 
         return res.json({
-            success:false,
-            message:"Missing group."
+            success: false,
+            message: "Missing group."
         });
 
     }
@@ -12731,26 +14333,26 @@ app.get("/group-consultation-approval-status/:groupDbId", (req, res) => {
         { requireAllPhases },
         (err, result) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to verify group document approvals."
+                    success: false,
+                    message: "Failed to verify group document approvals."
                 });
             }
 
             res.json({
-                success:true,
-                ready_for_schedule:result.ready_for_schedule,
-                already_passed:result.already_passed || false,
-                documents_ready_for_schedule:result.documents_ready_for_schedule,
-                message:result.message,
-                missing_for_schedule:result.missing || [],
-                required_phase_summaries:result.summaries || [],
-                prior_panel_evaluations:result.prior_panel_evaluations || null,
-                is_redefense:result.is_redefense || false,
-                redefense_verdict:result.redefense_verdict || null
+                success: true,
+                ready_for_schedule: result.ready_for_schedule,
+                already_passed: result.already_passed || false,
+                documents_ready_for_schedule: result.documents_ready_for_schedule,
+                message: result.message,
+                missing_for_schedule: result.missing || [],
+                required_phase_summaries: result.summaries || [],
+                prior_panel_evaluations: result.prior_panel_evaluations || null,
+                is_redefense: result.is_redefense || false,
+                redefense_verdict: result.redefense_verdict || null
             });
 
         }
@@ -12775,7 +14377,7 @@ app.post("/create-defense-schedule", (req, res) => {
         notes
     } = req.body;
 
-    if(
+    if (
         !instructorUserId ||
         !groupDbId ||
         !panelistIds ||
@@ -12784,36 +14386,36 @@ app.post("/create-defense-schedule", (req, res) => {
         !defenseDate ||
         !startTime ||
         !endTime
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required schedule fields and select at least one panelist."
+            success: false,
+            message: "Please complete all required schedule fields and select at least one panelist."
         });
     }
 
     validateGroupReadyForScheduleCreate(
         groupDbId,
         defenseType || "Concept Presentation",
-        { requireAllPhases:false },
+        { requireAllPhases: false },
         (validationErr, validationResult) => {
 
-            if(validationErr){
+            if (validationErr) {
                 console.log(validationErr);
 
                 return res.json({
-                    success:false,
-                    message:"Could not verify group document approvals. Please try again."
+                    success: false,
+                    message: "Could not verify group document approvals. Please try again."
                 });
             }
 
-            if(!validationResult.ready_for_schedule){
+            if (!validationResult.ready_for_schedule) {
 
                 return res.json({
-                    success:false,
-                    message:validationResult.message
+                    success: false,
+                    message: validationResult.message
                         || "This group is not ready for scheduling yet.",
-                    missing_documents:validationResult.missing || [],
-                    prior_panel_evaluations:validationResult.prior_panel_evaluations || null
+                    missing_documents: validationResult.missing || [],
+                    prior_panel_evaluations: validationResult.prior_panel_evaluations || null
                 });
 
             }
@@ -12827,29 +14429,29 @@ app.post("/create-defense-schedule", (req, res) => {
         LIMIT 1
     `;
 
-    db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
+            db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-        if(err){
-            console.log(err);
+                if (err) {
+                    console.log(err);
 
-            return res.json({
-                success:false,
-                message:"Database error while checking instructor account."
-            });
-        }
+                    return res.json({
+                        success: false,
+                        message: "Database error while checking instructor account."
+                    });
+                }
 
-        if(instructorResult.length === 0){
-            return res.json({
-                success:false,
-                message:"Instructor account not found or no instructor access."
-            });
-        }
+                if (instructorResult.length === 0) {
+                    return res.json({
+                        success: false,
+                        message: "Instructor account not found or no instructor access."
+                    });
+                }
 
-        const createdBy =
-            instructorResult[0].id;
+                const createdBy =
+                    instructorResult[0].id;
 
-        // Check adviser and instructor restrictions: student group adviser & instructors cannot be panelists
-        const groupRestrictionsSql = `
+                // Check adviser and instructor restrictions: student group adviser & instructors cannot be panelists
+                const groupRestrictionsSql = `
             SELECT cg.adviser_id, GROUP_CONCAT(DISTINCT ins.id) AS instructor_ids_str
             FROM capstone_groups cg
             LEFT JOIN group_members gm ON cg.id = gm.group_id
@@ -12858,35 +14460,35 @@ app.post("/create-defense-schedule", (req, res) => {
             WHERE cg.id = ?
             GROUP BY cg.id
         `;
-        db.query(groupRestrictionsSql, [groupDbId], (grpErr, grpRows) => {
-            if (grpErr) {
-                console.log(grpErr);
-                return res.json({
-                    success: false,
-                    message: "Database error while validating group restrictions."
-                });
-            }
+                db.query(groupRestrictionsSql, [groupDbId], (grpErr, grpRows) => {
+                    if (grpErr) {
+                        console.log(grpErr);
+                        return res.json({
+                            success: false,
+                            message: "Database error while validating group restrictions."
+                        });
+                    }
 
-            if (grpRows && grpRows.length > 0) {
-                const forbiddenIds = new Set();
-                if (grpRows[0].adviser_id) forbiddenIds.add(Number(grpRows[0].adviser_id));
-                if (grpRows[0].instructor_ids_str) {
-                    grpRows[0].instructor_ids_str.split(',').forEach(id => {
-                        if (id) forbiddenIds.add(Number(id));
-                    });
-                }
-                forbiddenIds.add(Number(createdBy));
+                    if (grpRows && grpRows.length > 0) {
+                        const forbiddenIds = new Set();
+                        if (grpRows[0].adviser_id) forbiddenIds.add(Number(grpRows[0].adviser_id));
+                        if (grpRows[0].instructor_ids_str) {
+                            grpRows[0].instructor_ids_str.split(',').forEach(id => {
+                                if (id) forbiddenIds.add(Number(id));
+                            });
+                        }
+                        forbiddenIds.add(Number(createdBy));
 
-                const hasForbidden = panelistIds.some(pid => forbiddenIds.has(Number(pid)));
-                if (hasForbidden) {
-                    return res.json({
-                        success: false,
-                        message: "The student group's adviser and instructors cannot be selected as panelists for this group."
-                    });
-                }
-            }
+                        const hasForbidden = panelistIds.some(pid => forbiddenIds.has(Number(pid)));
+                        if (hasForbidden) {
+                            return res.json({
+                                success: false,
+                                message: "The student group's adviser and instructors cannot be selected as panelists for this group."
+                            });
+                        }
+                    }
 
-            const panelistSql = `
+                    const panelistSql = `
                 SELECT id
                 FROM users
                 WHERE id IN (?)
@@ -12894,26 +14496,26 @@ app.post("/create-defense-schedule", (req, res) => {
                 AND panelist_access = 1
             `;
 
-            db.query(panelistSql, [panelistIds], (err, panelistResult) => {
+                    db.query(panelistSql, [panelistIds], (err, panelistResult) => {
 
-                if(err){
-                    console.log(err);
+                        if (err) {
+                            console.log(err);
 
-                    return res.json({
-                        success:false,
-                        message:"Database error while checking panelists."
-                    });
-                }
+                            return res.json({
+                                success: false,
+                                message: "Database error while checking panelists."
+                            });
+                        }
 
-                if(panelistResult.length !== panelistIds.length){
-                    return res.json({
-                        success:false,
-                        message:"One or more selected panelists are invalid."
-                    });
-                }
+                        if (panelistResult.length !== panelistIds.length) {
+                            return res.json({
+                                success: false,
+                                message: "One or more selected panelists are invalid."
+                            });
+                        }
 
-                // Check if group already has an active defense schedule for this defense type
-                const groupDupSql = `
+                        // Check if group already has an active defense schedule for this defense type
+                        const groupDupSql = `
                     SELECT id FROM defense_schedules
                     WHERE group_id = ?
                     AND defense_type = ?
@@ -12921,24 +14523,24 @@ app.post("/create-defense-schedule", (req, res) => {
                     LIMIT 1
                 `;
 
-                db.query(groupDupSql, [groupDbId, defenseType || "Concept Presentation"], (dupErr, dupRows) => {
+                        db.query(groupDupSql, [groupDbId, defenseType || "Concept Presentation"], (dupErr, dupRows) => {
 
-                    if(dupErr){
-                        console.log(dupErr);
-                        return res.json({
-                            success:false,
-                            message:"Database error while checking group schedule."
-                        });
-                    }
+                            if (dupErr) {
+                                console.log(dupErr);
+                                return res.json({
+                                    success: false,
+                                    message: "Database error while checking group schedule."
+                                });
+                            }
 
-                    if(dupRows && dupRows.length > 0){
-                        return res.json({
-                            success:false,
-                            message:`This group already has an active defense schedule for ${defenseType || 'this defense type'}.`
-                        });
-                    }
+                            if (dupRows && dupRows.length > 0) {
+                                return res.json({
+                                    success: false,
+                                    message: `This group already has an active defense schedule for ${defenseType || 'this defense type'}.`
+                                });
+                            }
 
-                    const conflictSql = `
+                            const conflictSql = `
                         SELECT id
                         FROM defense_schedules
                         WHERE defense_date = ?
@@ -12950,34 +14552,34 @@ app.post("/create-defense-schedule", (req, res) => {
                         LIMIT 1
                     `;
 
-                    db.query(
-                        conflictSql,
-                        [
-                            defenseDate,
-                            roomName,
-                            startTime,
-                            endTime
-                        ],
-                        (err, conflictResult) => {
+                            db.query(
+                                conflictSql,
+                                [
+                                    defenseDate,
+                                    roomName,
+                                    startTime,
+                                    endTime
+                                ],
+                                (err, conflictResult) => {
 
-                            if(err){
-                                console.log(err);
+                                    if (err) {
+                                        console.log(err);
 
-                                return res.json({
-                                    success:false,
-                                    message:"Database error while checking room conflict."
-                                });
-                            }
+                                        return res.json({
+                                            success: false,
+                                            message: "Database error while checking room conflict."
+                                        });
+                                    }
 
-                            if(conflictResult.length > 0){
-                                return res.json({
-                                    success:false,
-                                    message:"This room is already scheduled during the selected time."
-                                });
-                            }
+                                    if (conflictResult.length > 0) {
+                                        return res.json({
+                                            success: false,
+                                            message: "This room is already scheduled during the selected time."
+                                        });
+                                    }
 
-                            // Check panelist conflicts with other defense schedules
-                            const panelistConflictSql = `
+                                    // Check panelist conflicts with other defense schedules
+                                    const panelistConflictSql = `
                                 SELECT dsp.panelist_id, u.fullname
                                 FROM defense_schedule_panelists dsp
                                 JOIN defense_schedules ds ON dsp.schedule_id = ds.id
@@ -12989,30 +14591,30 @@ app.post("/create-defense-schedule", (req, res) => {
                                 LIMIT 1
                             `;
 
-                            db.query(panelistConflictSql, [panelistIds, defenseDate, startTime, endTime], (panConfErr, panConfResult) => {
+                                    db.query(panelistConflictSql, [panelistIds, defenseDate, startTime, endTime], (panConfErr, panConfResult) => {
 
-                                if(panConfErr){
-                                    console.log(panConfErr);
-                                    return res.json({
-                                        success:false,
-                                        message:"Database error checking panelist availability."
-                                    });
-                                }
+                                        if (panConfErr) {
+                                            console.log(panConfErr);
+                                            return res.json({
+                                                success: false,
+                                                message: "Database error checking panelist availability."
+                                            });
+                                        }
 
-                                if(panConfResult && panConfResult.length > 0){
-                                    return res.json({
-                                        success:false,
-                                        message:`Panelist ${panConfResult[0].fullname} is already scheduled for another defense at this date and time.`
-                                    });
-                                }
+                                        if (panConfResult && panConfResult.length > 0) {
+                                            return res.json({
+                                                success: false,
+                                                message: `Panelist ${panConfResult[0].fullname} is already scheduled for another defense at this date and time.`
+                                            });
+                                        }
 
-                                const scheduleCode =
-                                    "DEF2026-" + Date.now();
+                                        const scheduleCode =
+                                            "DEF2026-" + Date.now();
 
-                    const primaryPanelistId =
-                        panelistIds[0];
+                                        const primaryPanelistId =
+                                            panelistIds[0];
 
-                    const insertScheduleSql = `
+                                        const insertScheduleSql = `
                         INSERT INTO defense_schedules
                         (
                             schedule_code,
@@ -13029,41 +14631,41 @@ app.post("/create-defense-schedule", (req, res) => {
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
 
-                    db.query(
-                        insertScheduleSql,
-                        [
-                            scheduleCode,
-                            groupDbId,
-                            primaryPanelistId,
-                            createdBy,
-                            roomName,
-                            defenseDate,
-                            startTime,
-                            endTime,
-                            defenseType || "Capstone Defense",
-                            notes || ""
-                        ],
-                        (err, insertResult) => {
+                                        db.query(
+                                            insertScheduleSql,
+                                            [
+                                                scheduleCode,
+                                                groupDbId,
+                                                primaryPanelistId,
+                                                createdBy,
+                                                roomName,
+                                                defenseDate,
+                                                startTime,
+                                                endTime,
+                                                defenseType || "Capstone Defense",
+                                                notes || ""
+                                            ],
+                                            (err, insertResult) => {
 
-                            if(err){
-                                console.log(err);
+                                                if (err) {
+                                                    console.log(err);
 
-                                return res.json({
-                                    success:false,
-                                    message:"Failed to create defense schedule."
-                                });
-                            }
+                                                    return res.json({
+                                                        success: false,
+                                                        message: "Failed to create defense schedule."
+                                                    });
+                                                }
 
-                            const scheduleId =
-                                insertResult.insertId;
+                                                const scheduleId =
+                                                    insertResult.insertId;
 
-                            const panelistValues =
-                                panelistIds.map(panelistId => [
-                                    scheduleId,
-                                    panelistId
-                                ]);
+                                                const panelistValues =
+                                                    panelistIds.map(panelistId => [
+                                                        scheduleId,
+                                                        panelistId
+                                                    ]);
 
-                            const insertPanelistsSql = `
+                                                const insertPanelistsSql = `
                                 INSERT INTO defense_schedule_panelists
                                 (
                                     schedule_id,
@@ -13072,50 +14674,50 @@ app.post("/create-defense-schedule", (req, res) => {
                                 VALUES ?
                             `;
 
-                            db.query(insertPanelistsSql, [panelistValues], (err) => {
+                                                db.query(insertPanelistsSql, [panelistValues], (err) => {
 
-                                if(err){
-                                    console.log(err);
+                                                    if (err) {
+                                                        console.log(err);
 
-                                    return res.json({
-                                        success:false,
-                                        message:"Schedule created, but failed to save panelists."
+                                                        return res.json({
+                                                            success: false,
+                                                            message: "Schedule created, but failed to save panelists."
+                                                        });
+                                                    }
+
+                                                    notifyDefenseUsersWithDetails(
+                                                        groupDbId,
+                                                        panelistIds,
+                                                        "Defense Schedule Created",
+                                                        "created",
+                                                        defenseDate,
+                                                        startTime,
+                                                        endTime,
+                                                        roomName
+                                                    );
+
+                                                    res.json({
+                                                        success: true,
+                                                        message: "Defense schedule created successfully."
+                                                    });
+
+                                                });
+
+                                            }
+                                        );
+
                                     });
-                                }
 
-                                notifyDefenseUsersWithDetails(
-                                    groupDbId,
-                                    panelistIds,
-                                    "Defense Schedule Created",
-                                    "created",
-                                    defenseDate,
-                                    startTime,
-                                    endTime,
-                                    roomName
-                                );
-
-                                res.json({
-                                    success:true,
-                                    message:"Defense schedule created successfully."
                                 });
 
-                            });
-
                         }
-                    );
+                        );
+
+                    });
 
                 });
 
-                });
-
-                }
-            );
-
-        });
-
-        });
-
-    });
+            });
 
         }
     );
@@ -13143,7 +14745,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
         notes
     } = req.body;
 
-    if(
+    if (
         !scheduleId ||
         !instructorUserId ||
         !groupDbId ||
@@ -13154,10 +14756,10 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
         !startTime ||
         !endTime ||
         !defenseStatus
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required schedule fields and select at least one panelist."
+            success: false,
+            message: "Please complete all required schedule fields and select at least one panelist."
         });
     }
 
@@ -13172,19 +14774,19 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
 
     db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking instructor account."
+                success: false,
+                message: "Database error while checking instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Instructor account not found or no instructor access."
+                success: false,
+                message: "Instructor account not found or no instructor access."
             });
         }
 
@@ -13219,25 +14821,25 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
             AND panelist_access = 1
         `;
 
-        db.query(panelistSql, [panelistIds], (err, panelistResult) => {
+            db.query(panelistSql, [panelistIds], (err, panelistResult) => {
 
-            if(err){
-                console.log(err);
+                if (err) {
+                    console.log(err);
 
-                return res.json({
-                    success:false,
-                    message:"Database error while checking panelists."
-                });
-            }
+                    return res.json({
+                        success: false,
+                        message: "Database error while checking panelists."
+                    });
+                }
 
-            if(panelistResult.length !== panelistIds.length){
-                return res.json({
-                    success:false,
-                    message:"One or more selected panelists are invalid."
-                });
-            }
+                if (panelistResult.length !== panelistIds.length) {
+                    return res.json({
+                        success: false,
+                        message: "One or more selected panelists are invalid."
+                    });
+                }
 
-            const conflictSql = `
+                const conflictSql = `
                 SELECT id
                 FROM defense_schedules
                 WHERE defense_date = ?
@@ -13249,37 +14851,37 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                 LIMIT 1
             `;
 
-            db.query(
-                conflictSql,
-                [
-                    defenseDate,
-                    roomName,
-                    scheduleId,
-                    startTime,
-                    endTime
-                ],
-                (err, conflictResult) => {
+                db.query(
+                    conflictSql,
+                    [
+                        defenseDate,
+                        roomName,
+                        scheduleId,
+                        startTime,
+                        endTime
+                    ],
+                    (err, conflictResult) => {
 
-                    if(err){
-                        console.log(err);
+                        if (err) {
+                            console.log(err);
 
-                        return res.json({
-                            success:false,
-                            message:"Database error while checking room conflict."
-                        });
-                    }
+                            return res.json({
+                                success: false,
+                                message: "Database error while checking room conflict."
+                            });
+                        }
 
-                    if(conflictResult.length > 0){
-                        return res.json({
-                            success:false,
-                            message:"This room is already scheduled during the selected time."
-                        });
-                    }
+                        if (conflictResult.length > 0) {
+                            return res.json({
+                                success: false,
+                                message: "This room is already scheduled during the selected time."
+                            });
+                        }
 
-                    const primaryPanelistId =
-                        panelistIds[0];
+                        const primaryPanelistId =
+                            panelistIds[0];
 
-                    const updateSql = `
+                        const updateSql = `
                         UPDATE defense_schedules
                         SET
                             group_id = ?,
@@ -13294,61 +14896,61 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                         WHERE id = ?
                     `;
 
-                    db.query(
-                        updateSql,
-                        [
-                            groupDbId,
-                            primaryPanelistId,
-                            roomName,
-                            defenseDate,
-                            startTime,
-                            endTime,
-                            defenseType || "Capstone Defense",
-                            defenseStatus,
-                            notes || "",
-                            scheduleId
-                        ],
-                        (err, result) => {
+                        db.query(
+                            updateSql,
+                            [
+                                groupDbId,
+                                primaryPanelistId,
+                                roomName,
+                                defenseDate,
+                                startTime,
+                                endTime,
+                                defenseType || "Capstone Defense",
+                                defenseStatus,
+                                notes || "",
+                                scheduleId
+                            ],
+                            (err, result) => {
 
-                            if(err){
-                                console.log(err);
+                                if (err) {
+                                    console.log(err);
 
-                                return res.json({
-                                    success:false,
-                                    message:"Failed to update defense schedule."
-                                });
-                            }
+                                    return res.json({
+                                        success: false,
+                                        message: "Failed to update defense schedule."
+                                    });
+                                }
 
-                            if(result.affectedRows === 0){
-                                return res.json({
-                                    success:false,
-                                    message:"Defense schedule not found."
-                                });
-                            }
+                                if (result.affectedRows === 0) {
+                                    return res.json({
+                                        success: false,
+                                        message: "Defense schedule not found."
+                                    });
+                                }
 
-                            const deleteOldPanelistsSql = `
+                                const deleteOldPanelistsSql = `
                                 DELETE FROM defense_schedule_panelists
                                 WHERE schedule_id = ?
                             `;
 
-                            db.query(deleteOldPanelistsSql, [scheduleId], (err) => {
+                                db.query(deleteOldPanelistsSql, [scheduleId], (err) => {
 
-                                if(err){
-                                    console.log(err);
+                                    if (err) {
+                                        console.log(err);
 
-                                    return res.json({
-                                        success:false,
-                                        message:"Schedule updated, but failed to reset panelists."
-                                    });
-                                }
+                                        return res.json({
+                                            success: false,
+                                            message: "Schedule updated, but failed to reset panelists."
+                                        });
+                                    }
 
-                                const panelistValues =
-                                    panelistIds.map(panelistId => [
-                                        scheduleId,
-                                        panelistId
-                                    ]);
+                                    const panelistValues =
+                                        panelistIds.map(panelistId => [
+                                            scheduleId,
+                                            panelistId
+                                        ]);
 
-                                const insertPanelistsSql = `
+                                    const insertPanelistsSql = `
                                     INSERT INTO defense_schedule_panelists
                                     (
                                         schedule_id,
@@ -13357,66 +14959,66 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                                     VALUES ?
                                 `;
 
-                                db.query(insertPanelistsSql, [panelistValues], (err) => {
+                                    db.query(insertPanelistsSql, [panelistValues], (err) => {
 
-                                    if(err){
-                                        console.log(err);
+                                        if (err) {
+                                            console.log(err);
 
-                                        return res.json({
-                                            success:false,
-                                            message:"Schedule updated, but failed to save panelists."
-                                        });
-                                    }
+                                            return res.json({
+                                                success: false,
+                                                message: "Schedule updated, but failed to save panelists."
+                                            });
+                                        }
 
-                                    notifyDefenseUsersWithDetails(
-                                        groupDbId,
-                                        panelistIds,
-                                        "Defense Schedule Updated",
-                                        "updated",
-                                        defenseDate,
-                                        startTime,
-                                        endTime,
-                                        roomName
-                                    );
+                                        notifyDefenseUsersWithDetails(
+                                            groupDbId,
+                                            panelistIds,
+                                            "Defense Schedule Updated",
+                                            "updated",
+                                            defenseDate,
+                                            startTime,
+                                            endTime,
+                                            roomName
+                                        );
 
-                                    if (defenseStatus === 'Completed') {
-                                        const membersSql = `
+                                        if (defenseStatus === 'Completed') {
+                                            const membersSql = `
                                             SELECT student_id
                                             FROM group_members
                                             WHERE group_id = ?
                                         `;
-                                        db.query(membersSql, [groupDbId], (memberErr, memberRows) => {
-                                            if (!memberErr && memberRows) {
-                                                insertUserNotificationsByDbIds(
-                                                    memberRows.map(row => row.student_id),
-                                                    "Defense Completed",
-                                                    `Your ${defenseType || "defense"} has been marked as Completed.`,
-                                                    "Defense Evaluation"
-                                                );
-                                            }
-                                        });
-                                    }
+                                            db.query(membersSql, [groupDbId], (memberErr, memberRows) => {
+                                                if (!memberErr && memberRows) {
+                                                    insertUserNotificationsByDbIds(
+                                                        memberRows.map(row => row.student_id),
+                                                        "Defense Completed",
+                                                        `Your ${defenseType || "defense"} has been marked as Completed.`,
+                                                        "Defense Evaluation"
+                                                    );
+                                                }
+                                            });
+                                        }
 
-                                    res.json({
-                                        success:true,
-                                        message:"Defense schedule updated successfully."
+                                        res.json({
+                                            success: true,
+                                            message: "Defense schedule updated successfully."
+                                        });
+
                                     });
 
                                 });
 
-                            });
+                            }
+                        );
 
-                        }
-                    );
+                    }
+                );
 
-                }
-            );
+            });
 
         });
 
     });
-
-});
 
 });
 
@@ -13432,10 +15034,10 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
         instructorUserId
     } = req.body;
 
-    if(!scheduleId || !instructorUserId){
+    if (!scheduleId || !instructorUserId) {
         return res.json({
-            success:false,
-            message:"Missing schedule information."
+            success: false,
+            message: "Missing schedule information."
         });
     }
 
@@ -13453,19 +15055,19 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
     db.query(scheduleSql, [scheduleId], (err, scheduleResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking schedule."
+                success: false,
+                message: "Database error while checking schedule."
             });
         }
 
-        if(scheduleResult.length === 0){
+        if (scheduleResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Defense schedule not found."
+                success: false,
+                message: "Defense schedule not found."
             });
         }
 
@@ -13481,19 +15083,19 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
         db.query(checkEvalsSql, [scheduleId], (evalErr, evalRows) => {
 
-            if(evalErr){
+            if (evalErr) {
                 console.log(evalErr);
                 return res.json({
-                    success:false,
-                    message:"Database error while checking evaluations."
+                    success: false,
+                    message: "Database error while checking evaluations."
                 });
             }
 
             const evalCount = evalRows?.[0]?.evalCount || 0;
-            if(evalCount > 0){
+            if (evalCount > 0) {
                 return res.json({
-                    success:false,
-                    message:"Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this schedule."
+                    success: false,
+                    message: "Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this schedule."
                 });
             }
 
@@ -13505,19 +15107,19 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
             db.query(panelistsSql, [scheduleId], (err, panelistResult) => {
 
-            if(err){
-                console.log(err);
+                if (err) {
+                    console.log(err);
 
-                return res.json({
-                    success:false,
-                    message:"Database error while checking schedule panelists."
-                });
-            }
+                    return res.json({
+                        success: false,
+                        message: "Database error while checking schedule panelists."
+                    });
+                }
 
-            const panelistIds =
-                panelistResult.map(item => item.panelist_id);
+                const panelistIds =
+                    panelistResult.map(item => item.panelist_id);
 
-            const instructorSql = `
+                const instructorSql = `
                 SELECT id
                 FROM users
                 WHERE user_id = ?
@@ -13526,61 +15128,61 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
                 LIMIT 1
             `;
 
-            db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
+                db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-                if(err){
-                    console.log(err);
+                    if (err) {
+                        console.log(err);
 
-                    return res.json({
-                        success:false,
-                        message:"Database error while checking instructor account."
-                    });
-                }
+                        return res.json({
+                            success: false,
+                            message: "Database error while checking instructor account."
+                        });
+                    }
 
-                if(instructorResult.length === 0){
-                    return res.json({
-                        success:false,
-                        message:"Instructor account not found or no instructor access."
-                    });
-                }
+                    if (instructorResult.length === 0) {
+                        return res.json({
+                            success: false,
+                            message: "Instructor account not found or no instructor access."
+                        });
+                    }
 
-                const deleteSql = `
+                    const deleteSql = `
                     DELETE FROM defense_schedules
                     WHERE id = ?
                 `;
 
-                db.query(deleteSql, [scheduleId], (err) => {
+                    db.query(deleteSql, [scheduleId], (err) => {
 
-                    if(err){
-                        console.log(err);
+                        if (err) {
+                            console.log(err);
 
-                        return res.json({
-                            success:false,
-                            message:"Failed to delete defense schedule."
+                            return res.json({
+                                success: false,
+                                message: "Failed to delete defense schedule."
+                            });
+                        }
+
+                        notifyDefenseUsersWithDetails(
+                            schedule.group_id,
+                            panelistIds,
+                            "Defense Schedule Deleted",
+                            "deleted",
+                            schedule.defense_date,
+                            schedule.start_time,
+                            schedule.end_time,
+                            schedule.room_name
+                        );
+
+                        res.json({
+                            success: true,
+                            message: "Defense schedule deleted successfully."
                         });
-                    }
 
-                    notifyDefenseUsersWithDetails(
-                        schedule.group_id,
-                        panelistIds,
-                        "Defense Schedule Deleted",
-                        "deleted",
-                        schedule.defense_date,
-                        schedule.start_time,
-                        schedule.end_time,
-                        schedule.room_name
-                    );
-
-                    res.json({
-                        success:true,
-                        message:"Defense schedule deleted successfully."
                     });
 
                 });
 
             });
-
-        });
 
         });
 
@@ -13591,16 +15193,16 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
 
 /* ================= DEFENSE NOTIFICATION HELPER ================= */
 
-function getPanelistNamesText(panelistIds, callback){
+function getPanelistNamesText(panelistIds, callback) {
 
     const ids =
         Array.isArray(panelistIds)
-        ? panelistIds.filter(Boolean)
-        : panelistIds
-        ? [panelistIds]
-        : [];
+            ? panelistIds.filter(Boolean)
+            : panelistIds
+                ? [panelistIds]
+                : [];
 
-    if(ids.length === 0){
+    if (ids.length === 0) {
 
         callback("No panelists listed");
 
@@ -13617,7 +15219,7 @@ function getPanelistNamesText(panelistIds, callback){
 
     db.query(namesSql, [ids], (err, rows) => {
 
-        if(err || !rows || rows.length === 0){
+        if (err || !rows || rows.length === 0) {
 
             callback("No panelists listed");
 
@@ -13636,25 +15238,25 @@ function getPanelistNamesText(panelistIds, callback){
 
 }
 
-function buildDefenseNotificationMessage(action, defenseDate, startTime, endTime, roomName, panelistNamesText, cancelReason){
+function buildDefenseNotificationMessage(action, defenseDate, startTime, endTime, roomName, panelistNamesText, cancelReason) {
 
     const panelLine =
         `Panel: ${panelistNamesText || "No panelists listed"}.`;
     const reasonLine = cancelReason ? ` Reason: ${cancelReason}.` : "";
 
-    if(action === "created"){
+    if (action === "created") {
 
         return `A defense schedule has been created on ${defenseDate} from ${startTime} to ${endTime} at ${roomName}. ${panelLine}`;
 
     }
 
-    if(action === "updated"){
+    if (action === "updated") {
 
         return `A defense schedule was updated. New schedule: ${defenseDate} from ${startTime} to ${endTime} at ${roomName}. ${panelLine}`;
 
     }
 
-    if(action === "deleted" || action === "cancelled"){
+    if (action === "deleted" || action === "cancelled") {
 
         return `A defense schedule on ${defenseDate} from ${startTime} to ${endTime} at ${roomName} has been cancelled.${reasonLine} ${panelLine}`;
 
@@ -13664,7 +15266,7 @@ function buildDefenseNotificationMessage(action, defenseDate, startTime, endTime
 
 }
 
-function notifyDefenseUsersWithDetails(groupDbId, panelistIds, title, action, defenseDate, startTime, endTime, roomName, cancelReason){
+function notifyDefenseUsersWithDetails(groupDbId, panelistIds, title, action, defenseDate, startTime, endTime, roomName, cancelReason) {
 
     getPanelistNamesText(panelistIds, (panelistNamesText) => {
 
@@ -13690,17 +15292,22 @@ function notifyDefenseUsersWithDetails(groupDbId, panelistIds, title, action, de
 
 }
 
-function notifyDefenseUsers(groupDbId, panelistIds, title, message){
+function notifyDefenseUsers(groupDbId, panelistIds, title, message) {
 
     const membersSql = `
         SELECT student_id AS user_id
         FROM group_members
         WHERE group_id = ?
+        UNION
+        SELECT adviser_id AS user_id
+        FROM capstone_groups
+        WHERE id = ?
+          AND adviser_id IS NOT NULL
     `;
 
-    db.query(membersSql, [groupDbId], (err, members) => {
+    db.query(membersSql, [groupDbId, groupDbId], (err, members) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return;
         }
@@ -13708,13 +15315,13 @@ function notifyDefenseUsers(groupDbId, panelistIds, title, message){
         const receiverIds =
             members.map(member => member.user_id);
 
-        if(Array.isArray(panelistIds)){
+        if (Array.isArray(panelistIds)) {
 
             panelistIds.forEach(panelistId => {
                 receiverIds.push(panelistId);
             });
 
-        }else{
+        } else {
 
             receiverIds.push(panelistIds);
 
@@ -13723,7 +15330,7 @@ function notifyDefenseUsers(groupDbId, panelistIds, title, message){
         const uniqueReceiverIds =
             [...new Set(receiverIds)];
 
-        if(uniqueReceiverIds.length === 0){
+        if (uniqueReceiverIds.length === 0) {
             return;
         }
 
@@ -13748,7 +15355,7 @@ function notifyDefenseUsers(groupDbId, panelistIds, title, message){
 
         db.query(insertSql, [values], (err) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
             }
 
@@ -13781,20 +15388,20 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
 
     db.query(studentSql, [studentUserId], (err, studentResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check student account."
+                success: false,
+                message: "Failed to check student account."
             });
         }
 
-        if(studentResult.length === 0){
+        if (studentResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Student account not found."
+                success: false,
+                message: "Student account not found."
             });
 
         }
@@ -13845,12 +15452,12 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
 
         db.query(announcementsSql, [studentProgram], (err, announcements) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load announcements."
+                    success: false,
+                    message: "Failed to load announcements."
                 });
             }
 
@@ -13888,12 +15495,12 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
 
             db.query(defenseSql, [studentDbId], (err, defenseSchedules) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load defense schedules."
+                        success: false,
+                        message: "Failed to load defense schedules."
                     });
                 }
 
@@ -13915,12 +15522,12 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
 
                 db.query(panelistsSql, (err, panelists) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to load defense panelists."
+                            success: false,
+                            message: "Failed to load defense panelists."
                         });
                     }
 
@@ -13929,7 +15536,7 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
 
                             return {
                                 ...schedule,
-                                panelists:panelists.filter(panelist =>
+                                panelists: panelists.filter(panelist =>
                                     Number(panelist.schedule_id) === Number(schedule.id)
                                 )
                             };
@@ -13951,12 +15558,12 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
 
                     db.query(notificationsSql, [studentDbId], (err, notifications) => {
 
-                        if(err){
+                        if (err) {
                             console.log(err);
 
                             return res.json({
-                                success:false,
-                                message:"Failed to load system notifications."
+                                success: false,
+                                message: "Failed to load system notifications."
                             });
                         }
 
@@ -13970,12 +15577,12 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
 
                         db.query(hiddenSql, [studentDbId], (err, hiddenUpdates) => {
 
-                            if(err){
+                            if (err) {
                                 console.log(err);
 
                                 return res.json({
-                                    success:false,
-                                    message:"Failed to load hidden updates."
+                                    success: false,
+                                    message: "Failed to load hidden updates."
                                 });
                             }
 
@@ -14004,11 +15611,11 @@ app.get("/student-notifications/:studentUserId", (req, res) => {
                                 );
 
                             res.json({
-                                success:true,
+                                success: true,
                                 student,
-                                announcements:visibleAnnouncements,
-                                defenseSchedules:visibleDefenseSchedules,
-                                notifications:visibleNotifications
+                                announcements: visibleAnnouncements,
+                                defenseSchedules: visibleDefenseSchedules,
+                                notifications: visibleNotifications
                             });
 
                         });
@@ -14037,11 +15644,11 @@ app.put("/mark-student-notification-read/:notificationId", (req, res) => {
         studentUserId
     } = req.body;
 
-    if(!notificationId || !studentUserId){
+    if (!notificationId || !studentUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing notification information."
+            success: false,
+            message: "Missing notification information."
         });
 
     }
@@ -14056,20 +15663,20 @@ app.put("/mark-student-notification-read/:notificationId", (req, res) => {
 
     db.query(studentSql, [studentUserId], (err, studentResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check student account."
+                success: false,
+                message: "Failed to check student account."
             });
         }
 
-        if(studentResult.length === 0){
+        if (studentResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Student account not found."
+                success: false,
+                message: "Student account not found."
             });
 
         }
@@ -14092,18 +15699,18 @@ app.put("/mark-student-notification-read/:notificationId", (req, res) => {
             ],
             (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to mark notification as read."
+                        success: false,
+                        message: "Failed to mark notification as read."
                     });
                 }
 
                 res.json({
-                    success:true,
-                    message:"Notification marked as read."
+                    success: true,
+                    message: "Notification marked as read."
                 });
 
             }
@@ -14122,11 +15729,11 @@ app.put("/mark-all-student-notifications-read", (req, res) => {
         studentUserId
     } = req.body;
 
-    if(!studentUserId){
+    if (!studentUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing student information."
+            success: false,
+            message: "Missing student information."
         });
 
     }
@@ -14141,20 +15748,20 @@ app.put("/mark-all-student-notifications-read", (req, res) => {
 
     db.query(studentSql, [studentUserId], (err, studentResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check student account."
+                success: false,
+                message: "Failed to check student account."
             });
         }
 
-        if(studentResult.length === 0){
+        if (studentResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Student account not found."
+                success: false,
+                message: "Student account not found."
             });
 
         }
@@ -14170,18 +15777,18 @@ app.put("/mark-all-student-notifications-read", (req, res) => {
 
         db.query(updateSql, [studentDbId], (err) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to mark notifications as read."
+                    success: false,
+                    message: "Failed to mark notifications as read."
                 });
             }
 
             res.json({
-                success:true,
-                message:"All system notifications marked as read."
+                success: true,
+                message: "All system notifications marked as read."
             });
 
         });
@@ -14422,14 +16029,14 @@ app.post("/hide-student-update", (req, res) => {
         updateId
     } = req.body;
 
-    if(
+    if (
         !studentUserId ||
         !updateType ||
         !updateId
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Missing update information."
+            success: false,
+            message: "Missing update information."
         });
     }
 
@@ -14439,11 +16046,11 @@ app.post("/hide-student-update", (req, res) => {
         "system"
     ];
 
-    if(!allowedTypes.includes(updateType)){
+    if (!allowedTypes.includes(updateType)) {
 
         return res.json({
-            success:false,
-            message:"Invalid update type."
+            success: false,
+            message: "Invalid update type."
         });
 
     }
@@ -14458,20 +16065,20 @@ app.post("/hide-student-update", (req, res) => {
 
     db.query(studentSql, [studentUserId], (err, studentResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check student account."
+                success: false,
+                message: "Failed to check student account."
             });
         }
 
-        if(studentResult.length === 0){
+        if (studentResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Student account not found."
+                success: false,
+                message: "Student account not found."
             });
 
         }
@@ -14498,18 +16105,18 @@ app.post("/hide-student-update", (req, res) => {
             ],
             (err) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to hide update."
+                        success: false,
+                        message: "Failed to hide update."
                     });
                 }
 
                 res.json({
-                    success:true,
-                    message:"Update removed from your view."
+                    success: true,
+                    message: "Update removed from your view."
                 });
 
             }
@@ -14521,7 +16128,7 @@ app.post("/hide-student-update", (req, res) => {
 
 /* ================= ADVISER REQUEST NOTIFICATION HELPER ================= */
 
-function notifyGroupMembersAboutAdviserRequest(groupDbId, title, message){
+function notifyGroupMembersAboutAdviserRequest(groupDbId, title, message) {
 
     const membersSql = `
         SELECT student_id
@@ -14531,12 +16138,12 @@ function notifyGroupMembersAboutAdviserRequest(groupDbId, title, message){
 
     db.query(membersSql, [groupDbId], (err, members) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return;
         }
 
-        if(members.length === 0){
+        if (members.length === 0) {
             return;
         }
 
@@ -14561,7 +16168,7 @@ function notifyGroupMembersAboutAdviserRequest(groupDbId, title, message){
 
         db.query(insertSql, [values], (err) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
             }
 
@@ -14582,8 +16189,15 @@ function notifyUsersAboutAnnouncement(announcementTitle, announcementContent, au
     } else if (audience === "Faculty") {
         sql += " AND role = 'faculty'";
     } else if (audience === "Program" && targetProgram) {
-        sql += " AND program = ?";
-        params.push(targetProgram);
+        const progUpper = String(targetProgram).trim().toUpperCase();
+        if (progUpper === "IT" || progUpper === "BSIT") {
+            sql += " AND UPPER(TRIM(COALESCE(program, ''))) IN ('IT', 'BSIT')";
+        } else if (progUpper === "IS" || progUpper === "BSIS") {
+            sql += " AND UPPER(TRIM(COALESCE(program, ''))) IN ('IS', 'BSIS')";
+        } else {
+            sql += " AND program = ?";
+            params.push(targetProgram);
+        }
     }
 
     db.query(sql, params, (err, users) => {
@@ -14640,29 +16254,29 @@ app.post("/respond-adviser-request", (req, res) => {
     const adviserFeedback =
         req.body.adviserFeedback || "";
 
-    if(
+    if (
         !requestId ||
         !adviserUserId ||
         !responseStatus
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Missing adviser request response information."
+            success: false,
+            message: "Missing adviser request response information."
         });
     }
 
     const finalStatus =
         responseStatus === "Accept" || responseStatus === "Accepted"
-        ? "Accepted"
-        : responseStatus === "Decline" || responseStatus === "Declined"
-        ? "Declined"
-        : "";
+            ? "Accepted"
+            : responseStatus === "Decline" || responseStatus === "Declined"
+                ? "Declined"
+                : "";
 
-    if(!finalStatus){
+    if (!finalStatus) {
 
         return res.json({
-            success:false,
-            message:"Invalid adviser request response."
+            success: false,
+            message: "Invalid adviser request response."
         });
 
     }
@@ -14683,22 +16297,22 @@ app.post("/respond-adviser-request", (req, res) => {
 
     db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
 
-        if(err){
+        if (err) {
             console.log("Adviser check error:", err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking adviser account."
+                success: false,
+                message: "Database error while checking adviser account."
             });
         }
 
-        
 
-        if(adviserResult.length === 0){
+
+        if (adviserResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Adviser account not found or does not have adviser access."
+                success: false,
+                message: "Adviser account not found or does not have adviser access."
             });
 
         }
@@ -14738,22 +16352,22 @@ app.post("/respond-adviser-request", (req, res) => {
             ],
             (err, requestResult) => {
 
-                if(err){
+                if (err) {
                     console.log("Request check error:", err);
 
                     return res.json({
-                        success:false,
-                        message:"Database error while checking adviser request."
+                        success: false,
+                        message: "Database error while checking adviser request."
                     });
                 }
 
-                
 
-                if(requestResult.length === 0){
+
+                if (requestResult.length === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"Adviser request not found for this adviser."
+                        success: false,
+                        message: "Adviser request not found for this adviser."
                     });
 
                 }
@@ -14761,16 +16375,16 @@ app.post("/respond-adviser-request", (req, res) => {
                 const request =
                     requestResult[0];
 
-                if(request.request_status !== "Pending"){
+                if (request.request_status !== "Pending") {
 
                     return res.json({
-                        success:false,
-                        message:`This request is already ${request.request_status}.`
+                        success: false,
+                        message: `This request is already ${request.request_status}.`
                     });
 
                 }
 
-                if(finalStatus === "Accepted"){
+                if (finalStatus === "Accepted") {
 
                     const acceptSql = `
                         UPDATE adviser_requests
@@ -14781,22 +16395,22 @@ app.post("/respond-adviser-request", (req, res) => {
 
                     db.query(acceptSql, [adviserFeedback, requestId], (err, acceptResult) => {
 
-                        if(err){
+                        if (err) {
                             console.log("Accept update error:", err);
 
                             return res.json({
-                                success:false,
-                                message:"Cannot update request. SQL error while accepting."
+                                success: false,
+                                message: "Cannot update request. SQL error while accepting."
                             });
                         }
 
-                        
 
-                        if(acceptResult.affectedRows === 0){
+
+                        if (acceptResult.affectedRows === 0) {
 
                             return res.json({
-                                success:false,
-                                message:"Cannot update request. No request row was changed."
+                                success: false,
+                                message: "Cannot update request. No request row was changed."
                             });
 
                         }
@@ -14815,16 +16429,16 @@ app.post("/respond-adviser-request", (req, res) => {
                             ],
                             (err, assignResult) => {
 
-                                if(err){
+                                if (err) {
                                     console.log("Assign adviser error:", err);
 
                                     return res.json({
-                                        success:false,
-                                        message:"Request accepted, but adviser assignment failed."
+                                        success: false,
+                                        message: "Request accepted, but adviser assignment failed."
                                     });
                                 }
 
-                                
+
 
                                 const declineOtherSql = `
                                     UPDATE adviser_requests
@@ -14842,12 +16456,12 @@ app.post("/respond-adviser-request", (req, res) => {
                                     ],
                                     (err) => {
 
-                                        if(err){
+                                        if (err) {
                                             console.log("Decline other pending requests error:", err);
                                         }
 
                                         let finalMessage = `${adviserName} accepted your adviser request for "${request.group_name}". Your group now has an assigned adviser.`;
-                                        if(adviserFeedback){
+                                        if (adviserFeedback) {
                                             finalMessage += `\n\nAdviser Feedback:\n${adviserFeedback}`;
                                         }
 
@@ -14858,8 +16472,8 @@ app.post("/respond-adviser-request", (req, res) => {
                                         );
 
                                         return res.json({
-                                            success:true,
-                                            message:"Adviser request accepted successfully."
+                                            success: true,
+                                            message: "Adviser request accepted successfully."
                                         });
 
                                     }
@@ -14870,7 +16484,7 @@ app.post("/respond-adviser-request", (req, res) => {
 
                     });
 
-                }else if(finalStatus === "Declined"){
+                } else if (finalStatus === "Declined") {
 
                     const declineSql = `
                         UPDATE adviser_requests
@@ -14881,28 +16495,28 @@ app.post("/respond-adviser-request", (req, res) => {
 
                     db.query(declineSql, [adviserFeedback, requestId], (err, declineResult) => {
 
-                        if(err){
+                        if (err) {
                             console.log("Decline update error:", err);
 
                             return res.json({
-                                success:false,
-                                message:"Cannot update request. SQL error while declining."
+                                success: false,
+                                message: "Cannot update request. SQL error while declining."
                             });
                         }
 
-                       
 
-                        if(declineResult.affectedRows === 0){
+
+                        if (declineResult.affectedRows === 0) {
 
                             return res.json({
-                                success:false,
-                                message:"Cannot update request. No request row was changed."
+                                success: false,
+                                message: "Cannot update request. No request row was changed."
                             });
 
                         }
 
                         let finalMessage = `${adviserName} declined your adviser request for "${request.group_name}". You may request another available adviser.`;
-                        if(adviserFeedback){
+                        if (adviserFeedback) {
                             finalMessage += `\n\nAdviser Feedback:\n${adviserFeedback}`;
                         }
 
@@ -14913,8 +16527,8 @@ app.post("/respond-adviser-request", (req, res) => {
                         );
 
                         return res.json({
-                            success:true,
-                            message:"Adviser request declined successfully."
+                            success: true,
+                            message: "Adviser request declined successfully."
                         });
 
                     });
@@ -14956,20 +16570,20 @@ app.get("/panelist-dashboard/:userId", (req, res) => {
 
     db.query(panelistSql, [userId], (err, panelistResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check panelist account."
+                success: false,
+                message: "Failed to check panelist account."
             });
         }
 
-        if(panelistResult.length === 0){
+        if (panelistResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Panelist account not found or panelist access is disabled."
+                success: false,
+                message: "Panelist account not found or panelist access is disabled."
             });
 
         }
@@ -15021,12 +16635,12 @@ app.get("/panelist-dashboard/:userId", (req, res) => {
 
         db.query(schedulesSql, [panelistDbId], (err, schedules) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load assigned defenses."
+                    success: false,
+                    message: "Failed to load assigned defenses."
                 });
             }
 
@@ -15075,12 +16689,12 @@ app.get("/panelist-dashboard/:userId", (req, res) => {
 
             db.query(documentsSql, [panelistDbId], (err, documents) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load received documents."
+                        success: false,
+                        message: "Failed to load received documents."
                     });
                 }
 
@@ -15115,9 +16729,9 @@ app.get("/panelist-dashboard/:userId", (req, res) => {
                     documents.length;
 
                 res.json({
-                    success:true,
+                    success: true,
                     panelist,
-                    stats:{
+                    stats: {
                         assignedDefenses,
                         upcomingDefenses,
                         completedDefenses,
@@ -15163,20 +16777,20 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
     db.query(panelistSql, [userId], (err, panelistResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check panelist account."
+                success: false,
+                message: "Failed to check panelist account."
             });
         }
 
-        if(panelistResult.length === 0){
+        if (panelistResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Panelist account not found or panelist access is disabled."
+                success: false,
+                message: "Panelist account not found or panelist access is disabled."
             });
 
         }
@@ -15229,12 +16843,12 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
         db.query(schedulesSql, [panelistDbId], (err, schedules) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load assigned defenses."
+                    success: false,
+                    message: "Failed to load assigned defenses."
                 });
             }
 
@@ -15265,12 +16879,12 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
             db.query(membersSql, (err, members) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load group members."
+                        success: false,
+                        message: "Failed to load group members."
                     });
                 }
 
@@ -15293,20 +16907,20 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
                 db.query(panelistsSql, (err, panelists) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to load defense panelists."
+                            success: false,
+                            message: "Failed to load defense panelists."
                         });
                     }
 
                     const groupDbIds = [
                         ...new Set(
                             schedules
-                            .map(schedule => Number(schedule.group_db_id))
-                            .filter(id => id > 0)
+                                .map(schedule => Number(schedule.group_db_id))
+                                .filter(id => id > 0)
                         )
                     ];
 
@@ -15345,33 +16959,33 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
                                 const titleProposals =
                                     (proposals || [])
-                                    .filter(proposal =>
-                                        Number(proposal.group_id)
-                                        === Number(schedule.group_db_id)
-                                    )
-                                    .map(normalizeTitleProposalRow);
+                                        .filter(proposal =>
+                                            Number(proposal.group_id)
+                                            === Number(schedule.group_db_id)
+                                        )
+                                        .map(normalizeTitleProposalRow);
 
                                 const scheduleDocuments =
                                     (documents || [])
-                                    .filter(documentItem =>
-                                        Number(documentItem.group_id)
-                                        === Number(schedule.group_db_id)
-                                        && documentMatchesDefenseScheduleType(
-                                            documentItem.document_type,
-                                            schedule.defense_type
+                                        .filter(documentItem =>
+                                            Number(documentItem.group_id)
+                                            === Number(schedule.group_db_id)
+                                            && documentMatchesDefenseScheduleType(
+                                                documentItem.document_type,
+                                                schedule.defense_type
+                                            )
                                         )
-                                    )
-                                    .map(documentItem => ({
-                                        id:documentItem.id,
-                                        label:formatConsultationDocumentLabel(
-                                            documentItem.document_type
-                                        ),
-                                        document_type:documentItem.document_type,
-                                        document_title:documentItem.document_title,
-                                        file_name:documentItem.file_name,
-                                        file_path:documentItem.file_path,
-                                        document_status:documentItem.document_status
-                                    }));
+                                        .map(documentItem => ({
+                                            id: documentItem.id,
+                                            label: formatConsultationDocumentLabel(
+                                                documentItem.document_type
+                                            ),
+                                            document_type: documentItem.document_type,
+                                            document_title: documentItem.document_title,
+                                            file_name: documentItem.file_name,
+                                            file_path: documentItem.file_path,
+                                            document_status: documentItem.document_status
+                                        }));
 
                                 const myEvalRow =
                                     (myEvaluations || []).find(row =>
@@ -15381,19 +16995,19 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
                                 const myEvaluation =
                                     myEvalRow
-                                    ? {
-                                        id:myEvalRow.id,
-                                        score:myEvalRow.score,
-                                        panel_result:myEvalRow.panel_result,
-                                        comments:myEvalRow.comments,
-                                        recommendations:myEvalRow.recommendations,
-                                        approved_title_id:myEvalRow.approved_title_id,
-                                        concept_evaluation_details:
-                                            myEvalRow.concept_evaluation_details,
-                                        outline_evaluation_details:
-                                            myEvalRow.outline_evaluation_details
-                                    }
-                                    : null;
+                                        ? {
+                                            id: myEvalRow.id,
+                                            score: myEvalRow.score,
+                                            panel_result: myEvalRow.panel_result,
+                                            comments: myEvalRow.comments,
+                                            recommendations: myEvalRow.recommendations,
+                                            approved_title_id: myEvalRow.approved_title_id,
+                                            concept_evaluation_details:
+                                                myEvalRow.concept_evaluation_details,
+                                            outline_evaluation_details:
+                                                myEvalRow.outline_evaluation_details
+                                        }
+                                        : null;
 
                                 const countRow =
                                     (evaluationCounts || []).find(row =>
@@ -15410,32 +17024,32 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                 return {
                                     ...schedule,
 
-                                    members:members.filter(member =>
+                                    members: members.filter(member =>
                                         Number(member.group_id)
                                         === Number(schedule.group_db_id)
                                     ),
 
-                                    panelists:schedulePanelists,
+                                    panelists: schedulePanelists,
 
-                                    title_proposals:titleProposals,
+                                    title_proposals: titleProposals,
 
-                                    documents:scheduleDocuments,
+                                    documents: scheduleDocuments,
 
-                                    my_evaluation:myEvaluation,
+                                    my_evaluation: myEvaluation,
 
-                                    evaluation:myEvaluation,
+                                    evaluation: myEvaluation,
 
-                                    evaluations_required:evaluationsRequired,
+                                    evaluations_required: evaluationsRequired,
 
-                                    evaluations_submitted:evaluationsSubmitted,
+                                    evaluations_submitted: evaluationsSubmitted,
 
                                     evaluations_complete:
                                         evaluationsRequired > 0
                                         && evaluationsSubmitted >= evaluationsRequired,
 
-                                    is_redefense:is_redefense,
-                                    prior_verdict:prior_verdict,
-                                    max_grade:max_grade
+                                    is_redefense: is_redefense,
+                                    prior_verdict: prior_verdict,
+                                    max_grade: max_grade
                                 };
 
                             });
@@ -15473,20 +17087,20 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                             ).length;
 
                         res.json({
-                            success:true,
+                            success: true,
                             panelist,
-                            stats:{
+                            stats: {
                                 assignedDefenses,
                                 upcomingDefenses,
                                 completedDefenses,
                                 cancelledDefenses
                             },
-                            schedules:schedulesWithDetails
+                            schedules: schedulesWithDetails
                         });
 
                     };
 
-                    if(groupDbIds.length === 0){
+                    if (groupDbIds.length === 0) {
 
                         return finishPanelistResponse([], [], [], []);
 
@@ -15509,12 +17123,12 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
                     db.query(proposalsSql, [groupDbIds], (proposalErr, proposals) => {
 
-                        if(proposalErr){
+                        if (proposalErr) {
                             console.log(proposalErr);
 
                             return res.json({
-                                success:false,
-                                message:"Failed to load title proposals."
+                                success: false,
+                                message: "Failed to load title proposals."
                             });
                         }
 
@@ -15536,16 +17150,16 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
 
                         db.query(documentsSql, [groupDbIds], (documentErr, documents) => {
 
-                            if(documentErr){
+                            if (documentErr) {
                                 console.log(documentErr);
 
                                 return res.json({
-                                    success:false,
-                                    message:"Failed to load defense documents."
+                                    success: false,
+                                    message: "Failed to load defense documents."
                                 });
                             }
 
-                            if(scheduleIds.length === 0){
+                            if (scheduleIds.length === 0) {
 
                                 return finishPanelistResponse(
                                     proposals,
@@ -15578,12 +17192,12 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                 [panelistDbId, scheduleIds],
                                 (myEvalErr, myEvaluations) => {
 
-                                    if(myEvalErr){
+                                    if (myEvalErr) {
                                         console.log(myEvalErr);
 
                                         return res.json({
-                                            success:false,
-                                            message:"Failed to load panel evaluations."
+                                            success: false,
+                                            message: "Failed to load panel evaluations."
                                         });
                                     }
 
@@ -15601,12 +17215,12 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                         [scheduleIds],
                                         (countErr, evaluationCounts) => {
 
-                                            if(countErr){
+                                            if (countErr) {
                                                 console.log(countErr);
 
                                                 return res.json({
-                                                    success:false,
-                                                    message:"Failed to count panel evaluations."
+                                                    success: false,
+                                                    message: "Failed to count panel evaluations."
                                                 });
                                             }
 
@@ -15790,7 +17404,7 @@ app.post("/archive-panelist-defense", (req, res) => {
                 db.query(
                     `DELETE FROM defense_panel_evaluations WHERE schedule_id = ? AND panelist_id = ?`,
                     [schedule_id, panelistDbId],
-                    () => {}
+                    () => { }
                 );
 
                 console.log(`[DEFENSE ASSIGNMENT DELETED] Schedule ${schedule_id} removed for panelist ${panelistDbId}`);
@@ -15857,17 +17471,17 @@ function insertUserNotificationsByDbIds(
     title,
     message,
     notificationType
-){
+) {
 
     const uniqueIds = [
         ...new Set(
             (userDbIds || [])
-            .map(id => Number(id))
-            .filter(id => id > 0)
+                .map(id => Number(id))
+                .filter(id => id > 0)
         )
     ];
 
-    if(uniqueIds.length === 0){
+    if (uniqueIds.length === 0) {
         return;
     }
 
@@ -15891,41 +17505,41 @@ function insertUserNotificationsByDbIds(
     `;
 
     db.query(insertSql, [values], (err) => {
-        if(err){
+        if (err) {
             console.log(err);
         }
     });
 
 }
 
-function aggregateCompiledPanelResult(evaluations){
+function aggregateCompiledPanelResult(evaluations) {
 
     const results =
         (evaluations || [])
-        .map(row => String(row.panel_result || "").trim())
-        .filter(r => r && !r.toLowerCase().includes("did not evaluate") && !r.toLowerCase().includes("archived"));
+            .map(row => String(row.panel_result || "").trim())
+            .filter(r => r && !r.toLowerCase().includes("did not evaluate") && !r.toLowerCase().includes("archived"));
 
-    if(results.length === 0){
+    if (results.length === 0) {
         return "Pending";
     }
 
-    if(results.some(result => result === "Failed")){
+    if (results.some(result => result === "Failed")) {
         return "Failed";
     }
 
-    if(results.some(result => result === "For Formal Defense" || result === "For Re-Defense")){
+    if (results.some(result => result === "For Formal Defense" || result === "For Re-Defense")) {
         return "For Formal Defense";
     }
 
-    if(results.some(result => result === "Conditional Passed" || result === "Conditional Pass")){
+    if (results.some(result => result === "Conditional Passed" || result === "Conditional Pass")) {
         return "Conditional Passed";
     }
 
-    if(results.some(result => result === "Passed with Revisions")){
+    if (results.some(result => result === "Passed with Revisions")) {
         return "Passed with Revisions";
     }
 
-    if(results.every(result => result === "Passed")){
+    if (results.every(result => result === "Passed")) {
         return "Passed";
     }
 
@@ -15933,14 +17547,14 @@ function aggregateCompiledPanelResult(evaluations){
 
 }
 
-function aggregateCompiledScore(evaluations){
+function aggregateCompiledScore(evaluations) {
 
     const scores =
         (evaluations || [])
-        .map(row => parseFloat(row.score))
-        .filter(score => !isNaN(score));
+            .map(row => parseFloat(row.score))
+            .filter(score => !isNaN(score));
 
-    if(scores.length === 0){
+    if (scores.length === 0) {
         return null;
     }
 
@@ -15952,10 +17566,10 @@ function aggregateCompiledScore(evaluations){
 
 }
 
-function getGroupStageAfterDefense(defenseType, panelResult){
+function getGroupStageAfterDefense(defenseType, panelResult) {
 
     const resultStr = String(panelResult || "").trim();
-    if(resultStr === "Failed" || resultStr === "For Formal Defense" || resultStr === "For Re-Defense" || resultStr === "Conditional Passed" || resultStr === "Conditional Pass"){
+    if (resultStr === "Failed" || resultStr === "For Formal Defense" || resultStr === "For Re-Defense" || resultStr === "Conditional Passed" || resultStr === "Conditional Pass") {
         return null;
     }
 
@@ -15963,37 +17577,37 @@ function getGroupStageAfterDefense(defenseType, panelResult){
         getConsultationPhaseCategoryForDefenseType(defenseType);
 
     const stageMap = {
-        "Concept Presentation":"Stage 2",
-        "Outline Defense":"Stage 3",
-        "Pre-Final Defense":"Stage 4",
-        "Final Defense":"Final"
+        "Concept Presentation": "Stage 2",
+        "Outline Defense": "Stage 3",
+        "Pre-Final Defense": "Stage 4",
+        "Final Defense": "Final"
     };
 
     return stageMap[phaseCategory] || null;
 
 }
 
-function getProgressPercentForStage(stage){
+function getProgressPercentForStage(stage) {
 
     const progressMap = {
-        "Stage 1":0,
-        "Stage 2":25,
-        "Stage 3":50,
-        "Stage 4":75,
-        "Stage 5":100,
-        "Final":100,
-        "Completed":100
+        "Stage 1": 0,
+        "Stage 2": 25,
+        "Stage 3": 50,
+        "Stage 4": 75,
+        "Stage 5": 100,
+        "Final": 100,
+        "Completed": 100
     };
 
     return progressMap[stage] ?? 0;
 
 }
 
-function getProgressForStage(stage){
+function getProgressForStage(stage) {
     return getProgressPercentForStage(stage);
 }
 
-function pickCompiledApprovedTitleId(evaluations){
+function pickCompiledApprovedTitleId(evaluations) {
 
     const counts = {};
 
@@ -16002,7 +17616,7 @@ function pickCompiledApprovedTitleId(evaluations){
         const titleId =
             row.approved_title_id;
 
-        if(titleId === null || titleId === undefined || titleId === ""){
+        if (titleId === null || titleId === undefined || titleId === "") {
             return;
         }
 
@@ -16016,9 +17630,9 @@ function pickCompiledApprovedTitleId(evaluations){
 
     const sorted =
         Object.entries(counts)
-        .sort((a, b) => b[1] - a[1]);
+            .sort((a, b) => b[1] - a[1]);
 
-    if(sorted.length === 0){
+    if (sorted.length === 0) {
         return null;
     }
 
@@ -16026,7 +17640,7 @@ function pickCompiledApprovedTitleId(evaluations){
 
 }
 
-function finalizeDefenseScheduleIfComplete(scheduleId, callback){
+function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
 
     const scheduleSql = `
         SELECT
@@ -16042,12 +17656,12 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
 
     db.query(scheduleSql, [scheduleId], (scheduleErr, scheduleRows) => {
 
-        if(scheduleErr){
+        if (scheduleErr) {
             return callback(scheduleErr);
         }
 
-        if(!scheduleRows || scheduleRows.length === 0){
-            return callback(null, { complete:false });
+        if (!scheduleRows || scheduleRows.length === 0) {
+            return callback(null, { complete: false });
         }
 
         const schedule =
@@ -16061,7 +17675,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
 
         db.query(panelistsSql, [scheduleId], (panelistErr, panelistRows) => {
 
-            if(panelistErr){
+            if (panelistErr) {
                 return callback(panelistErr);
             }
 
@@ -16086,22 +17700,22 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
 
             db.query(evaluationsSql, [scheduleId], (evalErr, evaluations) => {
 
-                if(evalErr){
+                if (evalErr) {
                     return callback(evalErr);
                 }
 
                 const evaluationsSubmitted =
                     (evaluations || []).length;
 
-                if(
+                if (
                     evaluationsRequired <= 0
                     || evaluationsSubmitted < evaluationsRequired
-                ){
+                ) {
 
                     return callback(null, {
-                        complete:false,
-                        evaluations_required:evaluationsRequired,
-                        evaluations_submitted:evaluationsSubmitted
+                        complete: false,
+                        evaluations_required: evaluationsRequired,
+                        evaluations_submitted: evaluationsSubmitted
                     });
 
                 }
@@ -16117,27 +17731,27 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
 
                 const compiledComments =
                     (evaluations || [])
-                    .map((row, index) =>
-                        `Panelist ${index + 1}: ${row.comments || "None"}`
-                    )
-                    .join("\n");
+                        .map((row, index) =>
+                            `Panelist ${index + 1}: ${row.comments || "None"}`
+                        )
+                        .join("\n");
 
                 const compiledRecommendations =
                     (evaluations || [])
-                    .map((row, index) =>
-                        `Panelist ${index + 1}: ${row.recommendations || "None"}`
-                    )
-                    .join("\n");
+                        .map((row, index) =>
+                            `Panelist ${index + 1}: ${row.recommendations || "None"}`
+                        )
+                        .join("\n");
 
                 const compiledConceptDetails =
                     (evaluations || [])
-                    .map(row => row.concept_evaluation_details)
-                    .find(value => value) || null;
+                        .map(row => row.concept_evaluation_details)
+                        .find(value => value) || null;
 
                 const compiledOutlineDetails =
                     (evaluations || [])
-                    .map(row => row.outline_evaluation_details)
-                    .find(value => value) || null;
+                        .map(row => row.outline_evaluation_details)
+                        .find(value => value) || null;
 
                 const updateScheduleSql = `
                     UPDATE defense_schedules
@@ -16167,7 +17781,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
                     ],
                     (updateErr) => {
 
-                        if(updateErr){
+                        if (updateErr) {
                             return callback(updateErr);
                         }
 
@@ -16190,7 +17804,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
                                 [schedule.group_id],
                                 (memberErr, memberRows) => {
 
-                                    if(!memberErr && memberRows){
+                                    if (!memberErr && memberRows) {
 
                                         let studentMsg = `Your ${schedule.defense_type} panel evaluations are complete. Final result: ${compiledResult}.`;
                                         if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense") {
@@ -16206,7 +17820,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
 
                                     }
 
-                                    if(schedule.created_by){
+                                    if (schedule.created_by) {
 
                                         let instructorMsg = `All panelists submitted evaluations for ${schedule.defense_type}. Final result: ${compiledResult}.`;
                                         if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense") {
@@ -16223,11 +17837,11 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
                                     }
 
                                     callback(null, {
-                                        complete:true,
-                                        evaluations_required:evaluationsRequired,
-                                        evaluations_submitted:evaluationsSubmitted,
-                                        panel_result:compiledResult,
-                                        score:compiledScore
+                                        complete: true,
+                                        evaluations_required: evaluationsRequired,
+                                        evaluations_submitted: evaluationsSubmitted,
+                                        panel_result: compiledResult,
+                                        score: compiledScore
                                     });
 
                                 }
@@ -16235,7 +17849,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
 
                         };
 
-                        if(!nextStage){
+                        if (!nextStage) {
                             return finishGroupUpdate();
                         }
 
@@ -16259,7 +17873,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback){
                             ],
                             (groupErr) => {
 
-                                if(groupErr){
+                                if (groupErr) {
                                     console.log(groupErr);
                                 }
 
@@ -16284,11 +17898,11 @@ app.get("/defense-panel-evaluations/:scheduleId", (req, res) => {
     const scheduleId =
         req.params.scheduleId;
 
-    if(!scheduleId){
+    if (!scheduleId) {
 
         return res.json({
-            success:false,
-            message:"Missing schedule ID."
+            success: false,
+            message: "Missing schedule ID."
         });
 
     }
@@ -16301,12 +17915,12 @@ app.get("/defense-panel-evaluations/:scheduleId", (req, res) => {
 
     db.query(panelistsSql, [scheduleId], (panelistErr, panelistRows) => {
 
-        if(panelistErr){
+        if (panelistErr) {
             console.log(panelistErr);
 
             return res.json({
-                success:false,
-                message:"Failed to count assigned panelists."
+                success: false,
+                message: "Failed to count assigned panelists."
             });
         }
 
@@ -16345,12 +17959,12 @@ app.get("/defense-panel-evaluations/:scheduleId", (req, res) => {
 
         db.query(evaluationsSql, [scheduleId], (evalErr, evaluations) => {
 
-            if(evalErr){
+            if (evalErr) {
                 console.log(evalErr);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load panel evaluations."
+                    success: false,
+                    message: "Failed to load panel evaluations."
                 });
             }
 
@@ -16370,12 +17984,12 @@ app.get("/defense-panel-evaluations/:scheduleId", (req, res) => {
 
             db.query(scheduleSql, [scheduleId], (scheduleErr, scheduleRows) => {
 
-                if(scheduleErr){
+                if (scheduleErr) {
                     console.log(scheduleErr);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load defense schedule."
+                        success: false,
+                        message: "Failed to load defense schedule."
                     });
                 }
 
@@ -16387,17 +18001,17 @@ app.get("/defense-panel-evaluations/:scheduleId", (req, res) => {
                     || (schedule.defense_status === 'Completed' && evaluationsSubmitted >= 2);
 
                 res.json({
-                    success:true,
-                    evaluations_required:evaluationsRequired,
-                    evaluations_submitted:evaluationsSubmitted,
-                    evaluations_complete:evaluationsComplete,
-                    panel_result:evaluationsComplete
+                    success: true,
+                    evaluations_required: evaluationsRequired,
+                    evaluations_submitted: evaluationsSubmitted,
+                    evaluations_complete: evaluationsComplete,
+                    panel_result: evaluationsComplete
                         ? schedule.panel_result
                         : "Pending",
-                    score:evaluationsComplete
+                    score: evaluationsComplete
                         ? schedule.score
                         : null,
-                    panel_evaluations:evaluations || []
+                    panel_evaluations: evaluations || []
                 });
 
             });
@@ -16424,48 +18038,48 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
         outline_evaluation_details
     } = req.body;
 
-    if(!scheduleId){
+    if (!scheduleId) {
 
         return res.json({
-            success:false,
-            message:"Missing schedule ID."
+            success: false,
+            message: "Missing schedule ID."
         });
 
     }
 
-    if(!panelistUserId){
+    if (!panelistUserId) {
 
         return res.json({
-            success:false,
-            message:"Missing panelist account. Please log in again."
+            success: false,
+            message: "Missing panelist account. Please log in again."
         });
 
     }
 
-    if(!panel_result){
+    if (!panel_result) {
 
         return res.json({
-            success:false,
-            message:"Please select a panel result."
+            success: false,
+            message: "Please select a panel result."
         });
 
     }
 
-    if((panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense") && (!comments || String(comments).trim() === "")){
+    if ((panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense") && (!comments || String(comments).trim() === "")) {
 
         return res.json({
-            success:false,
-            message:`Comments and feedback are required when the result is "${panel_result}".`
+            success: false,
+            message: `Comments and feedback are required when the result is "${panel_result}".`
         });
 
     }
 
     const isScoreOptional = panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense";
-    if(!isScoreOptional && (score === undefined || score === null || String(score).trim() === "")){
+    if (!isScoreOptional && (score === undefined || score === null || String(score).trim() === "")) {
 
         return res.json({
-            success:false,
-            message:"Please enter a score or complete the grading sheet."
+            success: false,
+            message: "Please enter a score or complete the grading sheet."
         });
 
     }
@@ -16481,20 +18095,20 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
 
     db.query(panelistSql, [panelistUserId], (panelistErr, panelistRows) => {
 
-        if(panelistErr){
+        if (panelistErr) {
             console.log(panelistErr);
 
             return res.json({
-                success:false,
-                message:"Failed to verify panelist account."
+                success: false,
+                message: "Failed to verify panelist account."
             });
         }
 
-        if(!panelistRows || panelistRows.length === 0){
+        if (!panelistRows || panelistRows.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Panelist account not found or panelist access is disabled."
+                success: false,
+                message: "Panelist account not found or panelist access is disabled."
             });
 
         }
@@ -16515,20 +18129,20 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
             [scheduleId, panelistDbId],
             (assignmentErr, assignmentRows) => {
 
-                if(assignmentErr){
+                if (assignmentErr) {
                     console.log(assignmentErr);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to verify panel assignment."
+                        success: false,
+                        message: "Failed to verify panel assignment."
                     });
                 }
 
-                if(!assignmentRows || assignmentRows.length === 0){
+                if (!assignmentRows || assignmentRows.length === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"You are not assigned as a panelist for this defense schedule."
+                        success: false,
+                        message: "You are not assigned as a panelist for this defense schedule."
                     });
 
                 }
@@ -16547,11 +18161,11 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
 
                 db.query(scheduleSql, [scheduleId], (scheduleErr, scheduleRows) => {
 
-                    if(scheduleErr || !scheduleRows || scheduleRows.length === 0){
+                    if (scheduleErr || !scheduleRows || scheduleRows.length === 0) {
 
                         return res.json({
-                            success:false,
-                            message:"Defense schedule not found."
+                            success: false,
+                            message: "Defense schedule not found."
                         });
 
                     }
@@ -16559,11 +18173,11 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
                     const schedule =
                         scheduleRows[0];
 
-                    if(schedule.defense_status === "Cancelled"){
+                    if (schedule.defense_status === "Cancelled") {
 
                         return res.json({
-                            success:false,
-                            message:"This defense schedule was cancelled."
+                            success: false,
+                            message: "This defense schedule was cancelled."
                         });
 
                     }
@@ -16600,58 +18214,58 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
                             }
                         }
 
-                    // Defense grading safeguard: block INACTIVE or DROPPED students from receiving points
-                    const groupMembersStatusSql = `
+                        // Defense grading safeguard: block INACTIVE or DROPPED students from receiving points
+                        const groupMembersStatusSql = `
                         SELECT u.id, u.user_id, COALESCE(u.student_status, 'ACTIVE') AS student_status
                         FROM group_members gm
                         JOIN users u ON gm.student_id = u.id
                         WHERE gm.group_id = ?
                     `;
-                    db.query(groupMembersStatusSql, [schedule.group_id], (gmErr, gmRows) => {
-                        const inactiveIds = new Set();
-                        (gmRows || []).forEach(r => {
-                            if (String(r.student_status || "").toUpperCase() !== "ACTIVE") {
-                                inactiveIds.add(String(r.id));
-                                inactiveIds.add(String(r.user_id));
+                        db.query(groupMembersStatusSql, [schedule.group_id], (gmErr, gmRows) => {
+                            const inactiveIds = new Set();
+                            (gmRows || []).forEach(r => {
+                                if (String(r.student_status || "").toUpperCase() !== "ACTIVE") {
+                                    inactiveIds.add(String(r.id));
+                                    inactiveIds.add(String(r.user_id));
+                                }
+                            });
+
+                            let finalConceptDetails = concept_evaluation_details;
+                            let finalOutlineDetails = outline_evaluation_details;
+
+                            if (finalConceptDetails && inactiveIds.size > 0) {
+                                try {
+                                    const parsed = typeof finalConceptDetails === 'string' ? JSON.parse(finalConceptDetails) : finalConceptDetails;
+                                    if (Array.isArray(parsed.presenters)) {
+                                        parsed.presenters.forEach(p => {
+                                            if (inactiveIds.has(String(p.student_id)) || inactiveIds.has(String(p.id))) {
+                                                p.disposition_score = null;
+                                                p.delivery_score = null;
+                                                p.status = "NOT_GRADED";
+                                            }
+                                        });
+                                        finalConceptDetails = JSON.stringify(parsed);
+                                    }
+                                } catch (e) { }
                             }
-                        });
 
-                        let finalConceptDetails = concept_evaluation_details;
-                        let finalOutlineDetails = outline_evaluation_details;
+                            if (finalOutlineDetails && inactiveIds.size > 0) {
+                                try {
+                                    const parsed = typeof finalOutlineDetails === 'string' ? JSON.parse(finalOutlineDetails) : finalOutlineDetails;
+                                    if (Array.isArray(parsed.presenters)) {
+                                        parsed.presenters.forEach(p => {
+                                            if (inactiveIds.has(String(p.student_id)) || inactiveIds.has(String(p.id))) {
+                                                p.disposition_score = null;
+                                                p.delivery_score = null;
+                                                p.status = "NOT_GRADED";
+                                            }
+                                        });
+                                        finalOutlineDetails = JSON.stringify(parsed);
+                                    }
+                                } catch (e) { }
+                            }
 
-                        if (finalConceptDetails && inactiveIds.size > 0) {
-                            try {
-                                const parsed = typeof finalConceptDetails === 'string' ? JSON.parse(finalConceptDetails) : finalConceptDetails;
-                                if (Array.isArray(parsed.presenters)) {
-                                    parsed.presenters.forEach(p => {
-                                        if (inactiveIds.has(String(p.student_id)) || inactiveIds.has(String(p.id))) {
-                                            p.disposition_score = null;
-                                            p.delivery_score = null;
-                                            p.status = "NOT_GRADED";
-                                        }
-                                    });
-                                    finalConceptDetails = JSON.stringify(parsed);
-                                }
-                            } catch (e) {}
-                        }
-
-                        if (finalOutlineDetails && inactiveIds.size > 0) {
-                            try {
-                                const parsed = typeof finalOutlineDetails === 'string' ? JSON.parse(finalOutlineDetails) : finalOutlineDetails;
-                                if (Array.isArray(parsed.presenters)) {
-                                    parsed.presenters.forEach(p => {
-                                        if (inactiveIds.has(String(p.student_id)) || inactiveIds.has(String(p.id))) {
-                                            p.disposition_score = null;
-                                            p.delivery_score = null;
-                                            p.status = "NOT_GRADED";
-                                        }
-                                    });
-                                    finalOutlineDetails = JSON.stringify(parsed);
-                                }
-                            } catch (e) {}
-                        }
-
-                        const upsertSql = `
+                            const upsertSql = `
                             INSERT INTO defense_panel_evaluations
                             (
                                 schedule_id,
@@ -16676,129 +18290,129 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
                                 updated_at = CURRENT_TIMESTAMP
                         `;
 
-                        db.query(
-                            upsertSql,
-                            [
-                                scheduleId,
-                                panelistDbId,
-                                String(score),
-                                panel_result,
-                                comments || "",
-                                recommendations || "",
-                                approved_title_id || null,
-                                finalConceptDetails || null,
-                                finalOutlineDetails || null
-                            ],
-                            (upsertErr) => {
+                            db.query(
+                                upsertSql,
+                                [
+                                    scheduleId,
+                                    panelistDbId,
+                                    String(score),
+                                    panel_result,
+                                    comments || "",
+                                    recommendations || "",
+                                    approved_title_id || null,
+                                    finalConceptDetails || null,
+                                    finalOutlineDetails || null
+                                ],
+                                (upsertErr) => {
 
-                            if(upsertErr){
-                                console.log(upsertErr);
+                                    if (upsertErr) {
+                                        console.log(upsertErr);
 
-                                return res.json({
-                                    success:false,
-                                    message:"Failed to save panel evaluation."
-                                });
-                            }
+                                        return res.json({
+                                            success: false,
+                                            message: "Failed to save panel evaluation."
+                                        });
+                                    }
 
-                            const countSql = `
+                                    const countSql = `
                                 SELECT COUNT(*) AS evaluation_count
                                 FROM defense_panel_evaluations
                                 WHERE schedule_id = ?
                             `;
 
-                            db.query(countSql, [scheduleId], (countErr, countRows) => {
+                                    db.query(countSql, [scheduleId], (countErr, countRows) => {
 
-                                if(countErr){
-                                    console.log(countErr);
+                                        if (countErr) {
+                                            console.log(countErr);
 
-                                    return res.json({
-                                        success:false,
-                                        message:"Evaluation saved, but progress could not be refreshed."
-                                    });
-                                }
+                                            return res.json({
+                                                success: false,
+                                                message: "Evaluation saved, but progress could not be refreshed."
+                                            });
+                                        }
 
-                                const panelistsCountSql = `
+                                        const panelistsCountSql = `
                                     SELECT COUNT(*) AS panelist_count
                                     FROM defense_schedule_panelists
                                     WHERE schedule_id = ?
                                 `;
 
-                                db.query(
-                                    panelistsCountSql,
-                                    [scheduleId],
-                                    (panelCountErr, panelCountRows) => {
+                                        db.query(
+                                            panelistsCountSql,
+                                            [scheduleId],
+                                            (panelCountErr, panelCountRows) => {
 
-                                        const evaluationsSubmitted =
-                                            Number(countRows[0]?.evaluation_count || 0);
+                                                const evaluationsSubmitted =
+                                                    Number(countRows[0]?.evaluation_count || 0);
 
-                                        const evaluationsRequired =
-                                            Number(panelCountRows[0]?.panelist_count || 0);
+                                                const evaluationsRequired =
+                                                    Number(panelCountRows[0]?.panelist_count || 0);
 
-                                        if(schedule.created_by){
+                                                if (schedule.created_by) {
 
-                                            insertUserNotificationsByDbIds(
-                                                [schedule.created_by],
-                                                "Panel Evaluation Submitted",
-                                                `${panelistRows[0].fullname} submitted a panel evaluation (${evaluationsSubmitted}/${evaluationsRequired}) for ${schedule.defense_type}.`,
-                                                "Defense Evaluation"
-                                            );
-
-                                        }
-
-                                        finalizeDefenseScheduleIfComplete(
-                                            scheduleId,
-                                            (finalizeErr, finalizeResult) => {
-
-                                                if(finalizeErr){
-                                                    console.log(finalizeErr);
-
-                                                    return res.json({
-                                                        success:true,
-                                                        message:"Your evaluation was saved, but the system could not finalize the defense schedule.",
-                                                        evaluations_submitted:evaluationsSubmitted,
-                                                        evaluations_required:evaluationsRequired,
-                                                        evaluations_complete:false
-                                                    });
-                                                }
-
-                                                if(finalizeResult && finalizeResult.complete){
-
-                                                    return res.json({
-                                                        success:true,
-                                                        message:"Evaluation saved. All panel evaluations are complete and the defense has been finalized.",
-                                                        evaluations_submitted:evaluationsSubmitted,
-                                                        evaluations_required:evaluationsRequired,
-                                                        evaluations_complete:true,
-                                                        panel_result:finalizeResult.panel_result,
-                                                        score:finalizeResult.score
-                                                    });
+                                                    insertUserNotificationsByDbIds(
+                                                        [schedule.created_by],
+                                                        "Panel Evaluation Submitted",
+                                                        `${panelistRows[0].fullname} submitted a panel evaluation (${evaluationsSubmitted}/${evaluationsRequired}) for ${schedule.defense_type}.`,
+                                                        "Defense Evaluation"
+                                                    );
 
                                                 }
 
-                                                res.json({
-                                                    success:true,
-                                                    message:`Evaluation saved successfully (${evaluationsSubmitted}/${evaluationsRequired} panel evaluations received).`,
-                                                    evaluations_submitted:evaluationsSubmitted,
-                                                    evaluations_required:evaluationsRequired,
-                                                    evaluations_complete:false
-                                                });
+                                                finalizeDefenseScheduleIfComplete(
+                                                    scheduleId,
+                                                    (finalizeErr, finalizeResult) => {
+
+                                                        if (finalizeErr) {
+                                                            console.log(finalizeErr);
+
+                                                            return res.json({
+                                                                success: true,
+                                                                message: "Your evaluation was saved, but the system could not finalize the defense schedule.",
+                                                                evaluations_submitted: evaluationsSubmitted,
+                                                                evaluations_required: evaluationsRequired,
+                                                                evaluations_complete: false
+                                                            });
+                                                        }
+
+                                                        if (finalizeResult && finalizeResult.complete) {
+
+                                                            return res.json({
+                                                                success: true,
+                                                                message: "Evaluation saved. All panel evaluations are complete and the defense has been finalized.",
+                                                                evaluations_submitted: evaluationsSubmitted,
+                                                                evaluations_required: evaluationsRequired,
+                                                                evaluations_complete: true,
+                                                                panel_result: finalizeResult.panel_result,
+                                                                score: finalizeResult.score
+                                                            });
+
+                                                        }
+
+                                                        res.json({
+                                                            success: true,
+                                                            message: `Evaluation saved successfully (${evaluationsSubmitted}/${evaluationsRequired} panel evaluations received).`,
+                                                            evaluations_submitted: evaluationsSubmitted,
+                                                            evaluations_required: evaluationsRequired,
+                                                            evaluations_complete: false
+                                                        });
+
+                                                    }
+                                                );
 
                                             }
                                         );
 
-                                    }
-                                );
+                                    });
 
-                            });
+                                }
+                            );
 
-                        }
-                    );
+                        });
+
+                    });
 
                 });
-
-            });
-
-            });
 
             }
         );
@@ -16835,20 +18449,20 @@ app.get("/instructor-document-review/:userId", (req, res) => {
 
     db.query(instructorSql, [userId], (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check instructor account."
+                success: false,
+                message: "Failed to check instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Instructor account not found or instructor access is disabled."
+                success: false,
+                message: "Instructor account not found or instructor access is disabled."
             });
 
         }
@@ -16912,11 +18526,21 @@ app.get("/instructor-document-review/:userId", (req, res) => {
 
             WHERE ds.receiver_id = ?
             AND (ds.target_role = 'instructor' OR ds.target_role IS NULL)
+            AND COALESCE(ds.submission_message, '') NOT IN (
+                'Instructor signed. Pending Chairperson signature.',
+                'Adviser signed. Pending Dean signature.',
+                'Chairperson signed. Pending Dean signature.'
+            )
             AND ds.id IN (
                 SELECT MAX(inner_ds.id)
                 FROM document_submissions inner_ds
                 WHERE inner_ds.receiver_id = ?
                 AND (inner_ds.target_role = 'instructor' OR inner_ds.target_role IS NULL)
+                AND COALESCE(inner_ds.submission_message, '') NOT IN (
+                    'Instructor signed. Pending Chairperson signature.',
+                    'Adviser signed. Pending Dean signature.',
+                    'Chairperson signed. Pending Dean signature.'
+                )
                 GROUP BY inner_ds.document_id
             )
 
@@ -16925,12 +18549,12 @@ app.get("/instructor-document-review/:userId", (req, res) => {
 
         db.query(receivedSql, [instructorDbId, instructorDbId], (err, receivedDocuments) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load received documents."
+                    success: false,
+                    message: "Failed to load received documents."
                 });
             }
 
@@ -16951,12 +18575,12 @@ app.get("/instructor-document-review/:userId", (req, res) => {
 
             db.query(recipientsSql, [userId], (err, recipients) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load recipients."
+                        success: false,
+                        message: "Failed to load recipients."
                     });
                 }
 
@@ -16996,12 +18620,12 @@ app.get("/instructor-document-review/:userId", (req, res) => {
 
                 db.query(sentSql, [instructorDbId], (err, sentDocuments) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to load sent documents."
+                            success: false,
+                            message: "Failed to load sent documents."
                         });
                     }
 
@@ -17034,19 +18658,48 @@ app.get("/instructor-document-review/:userId", (req, res) => {
                         reviewer_name: sanitizeStr(doc.reviewer_name),
                     }));
 
-                    res.json({
-                        success:true,
-                        instructor,
-                        stats:{
-                            receivedDocuments:cleanReceived.length,
-                            sentDocuments:sentDocuments.length,
-                            pendingCount,
-                            approvedCount,
-                            subjectToChangeCount
-                        },
-                        receivedDocuments: cleanReceived,
-                        sentDocuments,
-                        recipients
+                    const instructorGroupsSql = `
+                        SELECT
+                            cg.id,
+                            cg.group_id,
+                            cg.group_name,
+                            cg.project_title,
+                            cg.program,
+                            COUNT(DISTINCT gm.student_id) AS member_count
+                        FROM capstone_groups cg
+                        LEFT JOIN group_members gm ON cg.id = gm.group_id
+                        LEFT JOIN users pm ON cg.project_manager_id = pm.id
+                        WHERE EXISTS (
+                            SELECT 1
+                            FROM group_members gm2
+                            JOIN users u2 ON gm2.student_id = u2.id
+                            WHERE gm2.group_id = cg.id
+                            AND u2.enrolled_by_user_id = ?
+                        )
+                        OR pm.enrolled_by_user_id = ?
+                        GROUP BY cg.id, cg.group_id, cg.group_name, cg.project_title, cg.program
+                        ORDER BY cg.group_name ASC
+                    `;
+
+                    db.query(instructorGroupsSql, [userId, userId], (grpErr, instructorGroups) => {
+                        if (grpErr) {
+                            console.log(grpErr);
+                        }
+                        res.json({
+                            success: true,
+                            instructor,
+                            stats: {
+                                receivedDocuments: cleanReceived.length,
+                                sentDocuments: sentDocuments.length,
+                                pendingCount,
+                                approvedCount,
+                                subjectToChangeCount
+                            },
+                            receivedDocuments: cleanReceived,
+                            sentDocuments,
+                            recipients,
+                            groups: instructorGroups || []
+                        });
                     });
 
                 });
@@ -17069,45 +18722,51 @@ app.post("/instructor-send-document", studentDocumentUpload.single("documentFile
         documentTitle,
         documentType,
         recipientIds,
+        groupIds,
         message
     } = req.body;
 
-    if(
+    if (
         !instructorUserId ||
         !documentTitle ||
         !documentType ||
-        !recipientIds ||
+        (!recipientIds && !groupIds) ||
         !req.file
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required fields and attach a document."
+            success: false,
+            message: "Please complete all required fields and attach a document."
         });
     }
 
     let selectedRecipients = [];
+    let selectedGroupIds = [];
 
-    try{
-
-        selectedRecipients =
-            JSON.parse(recipientIds);
-
-    }catch(error){
-
+    try {
+        if (groupIds) {
+            selectedGroupIds = JSON.parse(groupIds).map(id => Number(id)).filter(Boolean);
+        } else if (recipientIds) {
+            selectedRecipients = JSON.parse(recipientIds);
+        }
+    } catch (error) {
         return res.json({
-            success:false,
-            message:"Invalid recipient list."
+            success: false,
+            message: "Invalid group or recipient list."
         });
-
     }
 
-    if(selectedRecipients.length === 0){
-
+    if (groupIds && selectedGroupIds.length === 0) {
         return res.json({
-            success:false,
-            message:"Please select at least one recipient."
+            success: false,
+            message: "Please select at least one capstone group."
         });
+    }
 
+    if (!groupIds && selectedRecipients.length === 0) {
+        return res.json({
+            success: false,
+            message: "Please select at least one recipient."
+        });
     }
 
     const instructorSql = `
@@ -17121,20 +18780,20 @@ app.post("/instructor-send-document", studentDocumentUpload.single("documentFile
 
     db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check instructor account."
+                success: false,
+                message: "Failed to check instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Instructor account not found or instructor access is disabled."
+                success: false,
+                message: "Instructor account not found or instructor access is disabled."
             });
 
         }
@@ -17145,16 +18804,25 @@ app.post("/instructor-send-document", studentDocumentUpload.single("documentFile
         const instructorName =
             instructorResult[0].fullname;
 
-        const documentCode =
-            "FDOC" + Date.now();
+        const proceedWithRecipients = (finalRecipientIds) => {
+            selectedRecipients = finalRecipientIds;
+            if (!selectedRecipients || selectedRecipients.length === 0) {
+                return res.json({
+                    success: false,
+                    message: "No student members found in the selected group(s)."
+                });
+            }
 
-        const filePath =
-            "/uploads/" + req.file.filename;
+            const documentCode =
+                "FDOC" + Date.now();
 
-        const fileFormat =
-            req.file.mimetype;
+            const filePath =
+                "/uploads/" + req.file.filename;
 
-        const insertDocumentSql = `
+            const fileFormat =
+                req.file.mimetype;
+
+            const insertDocumentSql = `
             INSERT INTO faculty_documents
             (
                 document_code,
@@ -17169,41 +18837,41 @@ app.post("/instructor-send-document", studentDocumentUpload.single("documentFile
             VALUES (?, ?, ?, ?, ?, ?, ?, 'Sent')
         `;
 
-        db.query(
-            insertDocumentSql,
-            [
-                documentCode,
-                instructorDbId,
-                documentTitle,
-                documentType,
-                req.file.originalname,
-                filePath,
-                fileFormat
-            ],
-            (err, documentResult) => {
+            db.query(
+                insertDocumentSql,
+                [
+                    documentCode,
+                    instructorDbId,
+                    documentTitle,
+                    documentType,
+                    req.file.originalname,
+                    filePath,
+                    fileFormat
+                ],
+                (err, documentResult) => {
 
-                if(err){
-                    console.log(err);
+                    if (err) {
+                        console.log(err);
 
-                    return res.json({
-                        success:false,
-                        message:"Failed to save uploaded document."
-                    });
-                }
+                        return res.json({
+                            success: false,
+                            message: "Failed to save uploaded document."
+                        });
+                    }
 
-                const documentDbId =
-                    documentResult.insertId;
+                    const documentDbId =
+                        documentResult.insertId;
 
-                const submissionValues =
-                    selectedRecipients.map(receiverId => [
-                        documentDbId,
-                        instructorDbId,
-                        receiverId,
-                        message || "",
-                        "Sent"
-                    ]);
+                    const submissionValues =
+                        selectedRecipients.map(receiverId => [
+                            documentDbId,
+                            instructorDbId,
+                            receiverId,
+                            message || "",
+                            "Sent"
+                        ]);
 
-                const insertSubmissionSql = `
+                    const insertSubmissionSql = `
                     INSERT INTO faculty_document_submissions
                     (
                         document_id,
@@ -17215,26 +18883,26 @@ app.post("/instructor-send-document", studentDocumentUpload.single("documentFile
                     VALUES ?
                 `;
 
-                db.query(insertSubmissionSql, [submissionValues], (err) => {
+                    db.query(insertSubmissionSql, [submissionValues], (err) => {
 
-                    if(err){
-                        console.log(err);
+                        if (err) {
+                            console.log(err);
 
-                        return res.json({
-                            success:false,
-                            message:"Document uploaded but failed to send to recipients."
-                        });
-                    }
+                            return res.json({
+                                success: false,
+                                message: "Document uploaded but failed to send to recipients."
+                            });
+                        }
 
-                    const notificationValues =
-                        selectedRecipients.map(receiverId => [
-                            receiverId,
-                            "Document Received",
-                            `${instructorName} sent you a document titled "${documentTitle}".`,
-                            "Document"
-                        ]);
+                        const notificationValues =
+                            selectedRecipients.map(receiverId => [
+                                receiverId,
+                                "Document Received",
+                                `${instructorName} sent you a document titled "${documentTitle}".`,
+                                "Document"
+                            ]);
 
-                    const notifySql = `
+                        const notifySql = `
                         INSERT INTO user_notifications
                         (
                             user_id,
@@ -17245,23 +18913,73 @@ app.post("/instructor-send-document", studentDocumentUpload.single("documentFile
                         VALUES ?
                     `;
 
-                    db.query(notifySql, [notificationValues], (err) => {
+                        db.query(notifySql, [notificationValues], (err) => {
 
-                        if(err){
-                            console.log(err);
-                        }
+                            if (err) {
+                                console.log(err);
+                            }
 
-                        res.json({
-                            success:true,
-                            message:"Document sent successfully."
+                            res.json({
+                                success: true,
+                                message: "Document sent successfully."
+                            });
+
                         });
 
                     });
 
-                });
+                }
+            );
+        };
 
-            }
-        );
+        if (selectedGroupIds.length > 0) {
+            const membersSql = `
+                SELECT DISTINCT member_id
+                FROM (
+                    SELECT gm.student_id AS member_id
+                    FROM capstone_groups cg
+                    JOIN group_members gm ON cg.id = gm.group_id
+                    LEFT JOIN users pm ON cg.project_manager_id = pm.id
+                    WHERE cg.id IN (?)
+                    AND (
+                        EXISTS (
+                            SELECT 1
+                            FROM group_members gm2
+                            JOIN users u2 ON gm2.student_id = u2.id
+                            WHERE gm2.group_id = cg.id
+                            AND u2.enrolled_by_user_id = ?
+                        )
+                        OR pm.enrolled_by_user_id = ?
+                    )
+                    UNION
+                    SELECT cg.project_manager_id AS member_id
+                    FROM capstone_groups cg
+                    LEFT JOIN users pm ON cg.project_manager_id = pm.id
+                    WHERE cg.id IN (?)
+                    AND cg.project_manager_id IS NOT NULL
+                    AND (
+                        EXISTS (
+                            SELECT 1
+                            FROM group_members gm2
+                            JOIN users u2 ON gm2.student_id = u2.id
+                            WHERE gm2.group_id = cg.id
+                            AND u2.enrolled_by_user_id = ?
+                        )
+                        OR pm.enrolled_by_user_id = ?
+                    )
+                ) t
+                WHERE member_id IS NOT NULL
+            `;
+            db.query(membersSql, [selectedGroupIds, instructorUserId, instructorUserId, selectedGroupIds, instructorUserId, instructorUserId], (mErr, mRows) => {
+                if (mErr) {
+                    console.log(mErr);
+                    return res.json({ success: false, message: "Failed to resolve group members." });
+                }
+                proceedWithRecipients((mRows || []).map(r => r.member_id));
+            });
+        } else {
+            proceedWithRecipients(selectedRecipients);
+        }
 
     });
 
@@ -17282,27 +19000,27 @@ app.put("/review-student-document/:submissionId", (req, res) => {
         otherStatus
     } = req.body;
 
-    if(
+    if (
         !submissionId ||
         !instructorUserId ||
         !reviewStatus
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Missing review information."
+            success: false,
+            message: "Missing review information."
         });
     }
 
     const finalStatus =
         reviewStatus === "Other"
-        ? otherStatus
-        : reviewStatus;
+            ? otherStatus
+            : reviewStatus;
 
-    if(!finalStatus){
+    if (!finalStatus) {
 
         return res.json({
-            success:false,
-            message:"Please provide the review status."
+            success: false,
+            message: "Please provide the review status."
         });
 
     }
@@ -17318,20 +19036,20 @@ app.put("/review-student-document/:submissionId", (req, res) => {
 
     db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check instructor account."
+                success: false,
+                message: "Failed to check instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Instructor account not found or instructor access is disabled."
+                success: false,
+                message: "Instructor account not found or instructor access is disabled."
             });
 
         }
@@ -17371,20 +19089,20 @@ app.put("/review-student-document/:submissionId", (req, res) => {
             ],
             (err, submissionResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to check document submission."
+                        success: false,
+                        message: "Failed to check document submission."
                     });
                 }
 
-                if(submissionResult.length === 0){
+                if (submissionResult.length === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"Document submission not found or you are not the assigned receiver."
+                        success: false,
+                        message: "Document submission not found or you are not the assigned receiver."
                     });
 
                 }
@@ -17415,12 +19133,12 @@ app.put("/review-student-document/:submissionId", (req, res) => {
                     ],
                     (err) => {
 
-                        if(err){
+                        if (err) {
                             console.log(err);
 
                             return res.json({
-                                success:false,
-                                message:"Failed to submit document review."
+                                success: false,
+                                message: "Failed to submit document review."
                             });
                         }
 
@@ -17446,13 +19164,13 @@ app.put("/review-student-document/:submissionId", (req, res) => {
                                 ],
                                 (err2) => {
 
-                                    if(err2){
+                                    if (err2) {
                                         console.log(err2);
                                     }
 
                                     res.json({
-                                        success:true,
-                                        message:"Document review submitted and student was notified."
+                                        success: true,
+                                        message: "Document review submitted and student was notified."
                                     });
 
                                 }
@@ -17460,11 +19178,11 @@ app.put("/review-student-document/:submissionId", (req, res) => {
 
                         };
 
-                        if(
+                        if (
                             finalStatus === "For Revision"
                             || finalStatus === "Rejected"
                             || finalStatus === "Subject to Change"
-                        ){
+                        ) {
 
                             const revisionSql = `
                                 UPDATE student_documents
@@ -17475,15 +19193,15 @@ app.put("/review-student-document/:submissionId", (req, res) => {
 
                             const revisionStatus =
                                 finalStatus === "Rejected"
-                                ? "Rejected"
-                                : "For Revision";
+                                    ? "Rejected"
+                                    : "For Revision";
 
                             return db.query(
                                 revisionSql,
                                 [revisionStatus, submission.document_id],
                                 (err2) => {
 
-                                    if(err2){
+                                    if (err2) {
                                         console.log(err2);
                                     }
 
@@ -17507,6 +19225,102 @@ app.put("/review-student-document/:submissionId", (req, res) => {
 });
 
 /* ================= ADVISER DOCUMENTS DATA ================= */
+
+/* ================= ADVISER DOCUMENT SIMILARITY CHECK ================= */
+
+app.get("/adviser-document-similarity/:submissionId", (req, res) => {
+    const submissionId = req.params.submissionId;
+    if (!submissionId) {
+        return res.json({ success: false, message: "Missing submission ID." });
+    }
+
+    const sql = `
+        SELECT
+            ds.id AS submission_id,
+            ds.sender_id,
+            sd.document_title,
+            sd.document_type,
+            sd.file_path,
+            sd.signed_file_path,
+            gm.group_id
+        FROM document_submissions ds
+        JOIN student_documents sd ON ds.document_id = sd.id
+        LEFT JOIN group_members gm ON ds.sender_id = gm.student_id
+        WHERE ds.id = ?
+        LIMIT 1
+    `;
+
+    db.query(sql, [submissionId], async (err, rows) => {
+        if (err) {
+            console.log(err);
+            return res.json({ success: false, message: "Database error while loading document." });
+        }
+        if (!rows || rows.length === 0) {
+            return res.json({ success: false, message: "Document submission not found." });
+        }
+
+        const sub = rows[0];
+        const docTypeStr = String(sub.document_type || "").trim();
+        if (!/Proposed concept paper\s*\([123]\)/i.test(docTypeStr)) {
+            return res.json({
+                success: false,
+                skipped: true,
+                message: "Similarity checking only applies to Proposed concept paper (1), (2), and (3)."
+            });
+        }
+
+        const relPath = String(sub.signed_file_path || sub.file_path || "").trim();
+        const localPath = relPath ? path.join(__dirname, relPath.replace(/^\//, "")) : "";
+
+        let pdfText = "";
+        if (localPath && fs.existsSync(localPath) && localPath.toLowerCase().endsWith(".pdf")) {
+            pdfText = await extractTextFromPdf(localPath);
+        }
+
+        getComparisonRecords(sub.group_id || null, async (records) => {
+            try {
+                const dual = await runDualSimilarityCheck(
+                    sub.document_title || "",
+                    pdfText || "",
+                    records.archivedRecords || [],
+                    records.ongoingRecords || []
+                );
+
+                res.json({
+                    success: true,
+                    documentTitle: sub.document_title || "",
+                    documentType: sub.document_type || "",
+                    hasPdfText: Boolean(pdfText && pdfText.trim().length > 0),
+                    submittedPdfText: pdfText ? pdfText.slice(0, 8000) : "",
+                    archivedMatch: {
+                        percentage: dual.archivedMatch ? dual.archivedMatch.percentage : 0,
+                        level: dual.archivedMatch ? dual.archivedMatch.level : "Low",
+                        matchedTitle: dual.archivedMatch && dual.archivedMatch.matchedRecord ? dual.archivedMatch.matchedRecord.title : null,
+                        matchedAbstract: dual.archivedMatch && dual.archivedMatch.matchedRecord ? dual.archivedMatch.matchedRecord.abstract : null,
+                        matchedObjectives: dual.archivedMatch && dual.archivedMatch.matchedRecord ? dual.archivedMatch.matchedRecord.objectives : null,
+                        matchedResearchProblem: dual.archivedMatch && dual.archivedMatch.matchedRecord ? dual.archivedMatch.matchedRecord.research_problem : null,
+                        matchedMethodology: dual.archivedMatch && dual.archivedMatch.matchedRecord ? dual.archivedMatch.matchedRecord.methodology : null,
+                        matchingSections: dual.archivedMatch ? (dual.archivedMatch.matchingSections || {}) : {}
+                    },
+                    ongoingMatch: {
+                        percentage: dual.ongoingMatch ? dual.ongoingMatch.percentage : 0,
+                        level: dual.ongoingMatch ? dual.ongoingMatch.level : "Low",
+                        matchedTitle: dual.ongoingMatch && dual.ongoingMatch.matchedRecord ? dual.ongoingMatch.matchedRecord.title : null,
+                        matchedGroup: dual.ongoingMatch && dual.ongoingMatch.matchedRecord ? dual.ongoingMatch.matchedRecord.group_name : null,
+                        matchedAbstract: dual.ongoingMatch && dual.ongoingMatch.matchedRecord ? dual.ongoingMatch.matchedRecord.abstract : null,
+                        matchedObjectives: dual.ongoingMatch && dual.ongoingMatch.matchedRecord ? dual.ongoingMatch.matchedRecord.objectives : null,
+                        matchedResearchProblem: dual.ongoingMatch && dual.ongoingMatch.matchedRecord ? dual.ongoingMatch.matchedRecord.research_problem : null,
+                        matchedMethodology: dual.ongoingMatch && dual.ongoingMatch.matchedRecord ? dual.ongoingMatch.matchedRecord.methodology : null,
+                        matchingSections: dual.ongoingMatch ? (dual.ongoingMatch.matchingSections || {}) : {}
+                    }
+                });
+            } catch (simErr) {
+                console.log(simErr);
+                res.json({ success: false, message: "Failed to run similarity check." });
+            }
+        });
+    });
+});
 
 app.get("/adviser-documents/:userId", (req, res) => {
 
@@ -17534,20 +19348,20 @@ app.get("/adviser-documents/:userId", (req, res) => {
 
     db.query(adviserSql, [userId], (err, adviserResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check adviser account."
+                success: false,
+                message: "Failed to check adviser account."
             });
         }
 
-        if(adviserResult.length === 0){
+        if (adviserResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Adviser account not found or adviser access is disabled."
+                success: false,
+                message: "Adviser account not found or adviser access is disabled."
             });
 
         }
@@ -17611,11 +19425,21 @@ app.get("/adviser-documents/:userId", (req, res) => {
 
             WHERE ds.receiver_id = ?
             AND (ds.target_role = 'adviser' OR ds.target_role IS NULL)
+            AND COALESCE(ds.submission_message, '') NOT IN (
+                'Instructor signed. Pending Chairperson signature.',
+                'Adviser signed. Pending Dean signature.',
+                'Chairperson signed. Pending Dean signature.'
+            )
             AND ds.id IN (
                 SELECT MAX(inner_ds.id)
                 FROM document_submissions inner_ds
                 WHERE inner_ds.receiver_id = ?
                 AND (inner_ds.target_role = 'adviser' OR inner_ds.target_role IS NULL)
+                AND COALESCE(inner_ds.submission_message, '') NOT IN (
+                    'Instructor signed. Pending Chairperson signature.',
+                    'Adviser signed. Pending Dean signature.',
+                    'Chairperson signed. Pending Dean signature.'
+                )
                 GROUP BY inner_ds.document_id
             )
 
@@ -17624,12 +19448,12 @@ app.get("/adviser-documents/:userId", (req, res) => {
 
         db.query(receivedSql, [adviserDbId, adviserDbId], (err, receivedDocuments) => {
 
-            if(err){
+            if (err) {
                 console.log(err);
 
                 return res.json({
-                    success:false,
-                    message:"Failed to load received documents."
+                    success: false,
+                    message: "Failed to load received documents."
                 });
             }
 
@@ -17650,12 +19474,12 @@ app.get("/adviser-documents/:userId", (req, res) => {
 
             db.query(recipientsSql, [userId], (err, recipients) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to load recipients."
+                        success: false,
+                        message: "Failed to load recipients."
                     });
                 }
 
@@ -17695,12 +19519,12 @@ app.get("/adviser-documents/:userId", (req, res) => {
 
                 db.query(sentSql, [adviserDbId], (err, sentDocuments) => {
 
-                    if(err){
+                    if (err) {
                         console.log(err);
 
                         return res.json({
-                            success:false,
-                            message:"Failed to load sent documents."
+                            success: false,
+                            message: "Failed to load sent documents."
                         });
                     }
 
@@ -17719,19 +19543,40 @@ app.get("/adviser-documents/:userId", (req, res) => {
                             item.review_status === "Subject to Change"
                         ).length;
 
-                    res.json({
-                        success:true,
-                        adviser,
-                        stats:{
-                            receivedDocuments:receivedDocuments.length,
-                            sentDocuments:sentDocuments.length,
-                            pendingCount,
-                            approvedCount,
-                            subjectToChangeCount
-                        },
-                        receivedDocuments,
-                        sentDocuments,
-                        recipients
+                    const adviserGroupsSql = `
+                        SELECT
+                            cg.id,
+                            cg.group_id,
+                            cg.group_name,
+                            cg.project_title,
+                            cg.program,
+                            COUNT(DISTINCT gm.student_id) AS member_count
+                        FROM capstone_groups cg
+                        LEFT JOIN group_members gm ON cg.id = gm.group_id
+                        WHERE cg.adviser_id = ?
+                        GROUP BY cg.id, cg.group_id, cg.group_name, cg.project_title, cg.program
+                        ORDER BY cg.group_name ASC
+                    `;
+
+                    db.query(adviserGroupsSql, [adviserDbId], (grpErr, adviserGroups) => {
+                        if (grpErr) {
+                            console.log(grpErr);
+                        }
+                        res.json({
+                            success: true,
+                            adviser,
+                            stats: {
+                                receivedDocuments: receivedDocuments.length,
+                                sentDocuments: sentDocuments.length,
+                                pendingCount,
+                                approvedCount,
+                                subjectToChangeCount
+                            },
+                            receivedDocuments,
+                            sentDocuments,
+                            recipients,
+                            groups: adviserGroups || []
+                        });
                     });
 
                 });
@@ -17753,45 +19598,51 @@ app.post("/adviser-send-document", studentDocumentUpload.single("documentFile"),
         documentTitle,
         documentType,
         recipientIds,
+        groupIds,
         message
     } = req.body;
 
-    if(
+    if (
         !adviserUserId ||
         !documentTitle ||
         !documentType ||
-        !recipientIds ||
+        (!recipientIds && !groupIds) ||
         !req.file
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required fields and attach a document."
+            success: false,
+            message: "Please complete all required fields and attach a document."
         });
     }
 
     let selectedRecipients = [];
+    let selectedGroupIds = [];
 
-    try{
-
-        selectedRecipients =
-            JSON.parse(recipientIds);
-
-    }catch(error){
-
+    try {
+        if (groupIds) {
+            selectedGroupIds = JSON.parse(groupIds).map(id => Number(id)).filter(Boolean);
+        } else if (recipientIds) {
+            selectedRecipients = JSON.parse(recipientIds);
+        }
+    } catch (error) {
         return res.json({
-            success:false,
-            message:"Invalid recipient list."
+            success: false,
+            message: "Invalid group or recipient list."
         });
-
     }
 
-    if(selectedRecipients.length === 0){
-
+    if (groupIds && selectedGroupIds.length === 0) {
         return res.json({
-            success:false,
-            message:"Please select at least one recipient."
+            success: false,
+            message: "Please select at least one capstone group."
         });
+    }
 
+    if (!groupIds && selectedRecipients.length === 0) {
+        return res.json({
+            success: false,
+            message: "Please select at least one recipient."
+        });
     }
 
     const adviserSql = `
@@ -17805,20 +19656,20 @@ app.post("/adviser-send-document", studentDocumentUpload.single("documentFile"),
 
     db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check adviser account."
+                success: false,
+                message: "Failed to check adviser account."
             });
         }
 
-        if(adviserResult.length === 0){
+        if (adviserResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Adviser account not found or adviser access is disabled."
+                success: false,
+                message: "Adviser account not found or adviser access is disabled."
             });
 
         }
@@ -17829,16 +19680,25 @@ app.post("/adviser-send-document", studentDocumentUpload.single("documentFile"),
         const adviserName =
             adviserResult[0].fullname;
 
-        const documentCode =
-            "ADOC" + Date.now();
+        const proceedWithRecipients = (finalRecipientIds) => {
+            selectedRecipients = finalRecipientIds;
+            if (!selectedRecipients || selectedRecipients.length === 0) {
+                return res.json({
+                    success: false,
+                    message: "No student members found in the selected group(s)."
+                });
+            }
 
-        const filePath =
-            "/uploads/student_documents/" + req.file.filename;
+            const documentCode =
+                "ADOC" + Date.now();
 
-        const fileFormat =
-            req.file.mimetype;
+            const filePath =
+                "/uploads/student_documents/" + req.file.filename;
 
-        const insertDocumentSql = `
+            const fileFormat =
+                req.file.mimetype;
+
+            const insertDocumentSql = `
             INSERT INTO faculty_documents
             (
                 document_code,
@@ -17853,41 +19713,41 @@ app.post("/adviser-send-document", studentDocumentUpload.single("documentFile"),
             VALUES (?, ?, ?, ?, ?, ?, ?, 'Sent')
         `;
 
-        db.query(
-            insertDocumentSql,
-            [
-                documentCode,
-                adviserDbId,
-                documentTitle,
-                documentType,
-                req.file.originalname,
-                filePath,
-                fileFormat
-            ],
-            (err, documentResult) => {
+            db.query(
+                insertDocumentSql,
+                [
+                    documentCode,
+                    adviserDbId,
+                    documentTitle,
+                    documentType,
+                    req.file.originalname,
+                    filePath,
+                    fileFormat
+                ],
+                (err, documentResult) => {
 
-                if(err){
-                    console.log(err);
+                    if (err) {
+                        console.log(err);
 
-                    return res.json({
-                        success:false,
-                        message:"Failed to save uploaded document."
-                    });
-                }
+                        return res.json({
+                            success: false,
+                            message: "Failed to save uploaded document."
+                        });
+                    }
 
-                const documentDbId =
-                    documentResult.insertId;
+                    const documentDbId =
+                        documentResult.insertId;
 
-                const submissionValues =
-                    selectedRecipients.map(receiverId => [
-                        documentDbId,
-                        adviserDbId,
-                        receiverId,
-                        message || "",
-                        "Sent"
-                    ]);
+                    const submissionValues =
+                        selectedRecipients.map(receiverId => [
+                            documentDbId,
+                            adviserDbId,
+                            receiverId,
+                            message || "",
+                            "Sent"
+                        ]);
 
-                const insertSubmissionSql = `
+                    const insertSubmissionSql = `
                     INSERT INTO faculty_document_submissions
                     (
                         document_id,
@@ -17899,26 +19759,26 @@ app.post("/adviser-send-document", studentDocumentUpload.single("documentFile"),
                     VALUES ?
                 `;
 
-                db.query(insertSubmissionSql, [submissionValues], (err) => {
+                    db.query(insertSubmissionSql, [submissionValues], (err) => {
 
-                    if(err){
-                        console.log(err);
+                        if (err) {
+                            console.log(err);
 
-                        return res.json({
-                            success:false,
-                            message:"Document uploaded but failed to send to recipients."
-                        });
-                    }
+                            return res.json({
+                                success: false,
+                                message: "Document uploaded but failed to send to recipients."
+                            });
+                        }
 
-                    const notificationValues =
-                        selectedRecipients.map(receiverId => [
-                            receiverId,
-                            "Document Received",
-                            `${adviserName} sent you a document titled "${documentTitle}".`,
-                            "Document"
-                        ]);
+                        const notificationValues =
+                            selectedRecipients.map(receiverId => [
+                                receiverId,
+                                "Document Received",
+                                `${adviserName} sent you a document titled "${documentTitle}".`,
+                                "Document"
+                            ]);
 
-                    const notifySql = `
+                        const notifySql = `
                         INSERT INTO user_notifications
                         (
                             user_id,
@@ -17929,23 +19789,53 @@ app.post("/adviser-send-document", studentDocumentUpload.single("documentFile"),
                         VALUES ?
                     `;
 
-                    db.query(notifySql, [notificationValues], (err) => {
+                        db.query(notifySql, [notificationValues], (err) => {
 
-                        if(err){
-                            console.log(err);
-                        }
+                            if (err) {
+                                console.log(err);
+                            }
 
-                        res.json({
-                            success:true,
-                            message:"Document sent successfully."
+                            res.json({
+                                success: true,
+                                message: "Document sent successfully."
+                            });
+
                         });
 
                     });
 
-                });
+                }
+            );
+        };
 
-            }
-        );
+        if (selectedGroupIds.length > 0) {
+            const membersSql = `
+                SELECT DISTINCT member_id
+                FROM (
+                    SELECT gm.student_id AS member_id
+                    FROM capstone_groups cg
+                    JOIN group_members gm ON cg.id = gm.group_id
+                    WHERE cg.id IN (?)
+                    AND cg.adviser_id = ?
+                    UNION
+                    SELECT cg.project_manager_id AS member_id
+                    FROM capstone_groups cg
+                    WHERE cg.id IN (?)
+                    AND cg.adviser_id = ?
+                    AND cg.project_manager_id IS NOT NULL
+                ) t
+                WHERE member_id IS NOT NULL
+            `;
+            db.query(membersSql, [selectedGroupIds, adviserDbId, selectedGroupIds, adviserDbId], (mErr, mRows) => {
+                if (mErr) {
+                    console.log(mErr);
+                    return res.json({ success: false, message: "Failed to resolve group members." });
+                }
+                proceedWithRecipients((mRows || []).map(r => r.member_id));
+            });
+        } else {
+            proceedWithRecipients(selectedRecipients);
+        }
 
     });
 
@@ -17957,7 +19847,7 @@ function isEnvironmentalScanningDoc(documentType, documentTitle) {
     return docType.includes("environmental scanning") || docTitle.includes("environmental scanning");
 }
 
-function isAdviserSigningDocumentType(documentType, documentTitle){
+function isAdviserSigningDocumentType(documentType, documentTitle) {
 
     const docType =
         String(documentType || "").toLowerCase();
@@ -17981,8 +19871,8 @@ function isAdviserSigningDocumentType(documentType, documentTitle){
 }
 
 /* Acceptance for advisory = adviser signs THEN routes to Dean */
-function isAdviserAcceptanceDoc(documentType, documentTitle){
-    const docType  = String(documentType  || "").toLowerCase();
+function isAdviserAcceptanceDoc(documentType, documentTitle) {
+    const docType = String(documentType || "").toLowerCase();
     const docTitle = String(documentTitle || "").toLowerCase();
     return docType.includes("adviser acceptance")
         || docTitle.includes("adviser acceptance")
@@ -17991,32 +19881,40 @@ function isAdviserAcceptanceDoc(documentType, documentTitle){
 }
 
 /* Recommendation for concept presentation = adviser is the FINAL signer */
-function isAdviserOnlyDoc(documentType, documentTitle){
-    const docType  = String(documentType  || "").toLowerCase();
+function isAdviserOnlyDoc(documentType, documentTitle) {
+    const docType = String(documentType || "").toLowerCase();
     const docTitle = String(documentTitle || "").toLowerCase();
     return docType.includes("recommendation for concept")
         || docTitle.includes("recommendation for concept");
 }
 
-function decodeSignatureImageData(signatureImage){
+function decodeSignatureImageData(signatureImage) {
 
     const raw =
         String(signatureImage || "").trim();
 
-    if(!raw){
+    if (!raw) {
         return null;
     }
 
     const base64 =
         raw.includes(",")
-        ? raw.split(",")[1]
-        : raw;
+            ? raw.split(",")[1]
+            : raw;
 
     return Buffer.from(base64, "base64");
 
 }
 
-async function embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement){
+function formatSignatureDateMMDDYYYY(date = new Date()) {
+    const d = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+}
+
+async function embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement, options = {}) {
 
     const existingPdfBytes =
         fs.readFileSync(sourcePath);
@@ -18085,11 +19983,30 @@ async function embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement){
         await pdfDoc.embedPng(signatureBuffer);
 
     page.drawImage(pngImage, {
-        x:drawX,
-        y:drawY,
-        width:drawW,
-        height:drawH
+        x: drawX,
+        y: drawY,
+        width: drawW,
+        height: drawH
     });
+
+    if (options.includeDate || (placement && placement.signedDate)) {
+        const rawDate = placement && typeof placement.signedDate === "string" ? placement.signedDate.trim() : "";
+        const dateText = /^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)
+            ? rawDate
+            : formatSignatureDateMMDDYYYY(new Date());
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontSize = Math.max(8, Math.min(11, drawH * 0.24));
+        const textWidth = font.widthOfTextAtSize(dateText, fontSize);
+        const textX = Math.max(4, Math.min(pageW - textWidth - 4, drawX + (drawW - textWidth) / 2));
+        const textY = Math.max(4, drawY - fontSize - 2);
+        page.drawText(dateText, {
+            x: textX,
+            y: textY,
+            size: fontSize,
+            font,
+            color: rgb(0.12, 0.16, 0.23)
+        });
+    }
 
     return pdfDoc.save();
 
@@ -18346,7 +20263,7 @@ app.post("/student-apply-env-scan-signature", async (req, res) => {
                                         const allSigned = activeList.length > 0 && activeList.every(m => signedSet.has(m.user_id));
 
                                         if (allSigned) {
-                                            db.query("UPDATE student_documents SET document_status = 'Students Signed' WHERE id = ?", [documentId], () => {});
+                                            db.query("UPDATE student_documents SET document_status = 'Students Signed' WHERE id = ?", [documentId], () => { });
                                         }
 
                                         return res.json({
@@ -18381,10 +20298,10 @@ app.get("/adviser-signing-document-file/:submissionId", (req, res) => {
     const adviserUserId =
         String(req.query.adviserUserId || "").trim();
 
-    if(!submissionId || !adviserUserId){
+    if (!submissionId || !adviserUserId) {
         return res.status(400).json({
-            success:false,
-            message:"Missing submission or adviser information."
+            success: false,
+            message: "Missing submission or adviser information."
         });
     }
 
@@ -18399,18 +20316,18 @@ app.get("/adviser-signing-document-file/:submissionId", (req, res) => {
 
     db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return res.status(500).json({
-                success:false,
-                message:"Failed to verify adviser account."
+                success: false,
+                message: "Failed to verify adviser account."
             });
         }
 
-        if(adviserResult.length === 0){
+        if (adviserResult.length === 0) {
             return res.status(403).json({
-                success:false,
-                message:"Adviser access denied."
+                success: false,
+                message: "Adviser access denied."
             });
         }
 
@@ -18439,67 +20356,67 @@ app.get("/adviser-signing-document-file/:submissionId", (req, res) => {
             [submissionId, adviserDbId],
             (err2, rows) => {
 
-                if(err2){
+                if (err2) {
                     console.log(err2);
                     return res.status(500).json({
-                        success:false,
-                        message:"Failed to load signing document."
+                        success: false,
+                        message: "Failed to load signing document."
                     });
                 }
 
-                if(rows.length === 0){
+                if (rows.length === 0) {
                     return res.status(404).json({
-                        success:false,
-                        message:"Signing document not found."
+                        success: false,
+                        message: "Signing document not found."
                     });
                 }
 
                 const documentRow =
                     rows[0];
 
-                if(!isAdviserSigningDocumentType(
+                if (!isAdviserSigningDocumentType(
                     documentRow.document_type,
                     documentRow.document_title
-                )){
+                )) {
                     return res.status(400).json({
-                        success:false,
-                        message:"This submission is not an adviser e-signature document."
+                        success: false,
+                        message: "This submission is not an adviser e-signature document."
                     });
                 }
 
                 const relativePath =
                     String(documentRow.file_path || "")
-                    .replace(/\\/g, "/")
-                    .replace(/^\/+/, "");
+                        .replace(/\\/g, "/")
+                        .replace(/^\/+/, "");
 
-                if(!relativePath){
+                if (!relativePath) {
                     return res.status(404).json({
-                        success:false,
-                        message:"Document file path is missing."
+                        success: false,
+                        message: "Document file path is missing."
                     });
                 }
 
                 const absolutePath =
                     path.join(__dirname, relativePath);
 
-                if(!fs.existsSync(absolutePath)){
+                if (!fs.existsSync(absolutePath)) {
                     console.log("Signing file missing:", absolutePath);
                     return res.status(404).json({
-                        success:false,
-                        message:"Document file was not found on the server."
+                        success: false,
+                        message: "Document file was not found on the server."
                     });
                 }
 
                 const lowerName =
                     String(documentRow.file_name || relativePath).toLowerCase();
 
-                if(
+                if (
                     !lowerName.endsWith(".pdf")
                     && String(documentRow.file_format || "").toUpperCase() !== "PDF"
-                ){
+                ) {
                     return res.status(400).json({
-                        success:false,
-                        message:"Only PDF files can be opened in the e-signature viewer."
+                        success: false,
+                        message: "Only PDF files can be opened in the e-signature viewer."
                     });
                 }
 
@@ -18528,10 +20445,10 @@ app.get("/instructor-signing-document-file/:submissionId", (req, res) => {
     const instructorUserId =
         String(req.query.instructorUserId || "").trim();
 
-    if(!submissionId || !instructorUserId){
+    if (!submissionId || !instructorUserId) {
         return res.status(400).json({
-            success:false,
-            message:"Missing submission or instructor information."
+            success: false,
+            message: "Missing submission or instructor information."
         });
     }
 
@@ -18546,18 +20463,18 @@ app.get("/instructor-signing-document-file/:submissionId", (req, res) => {
 
     db.query(instructorSql, [instructorUserId], (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return res.status(500).json({
-                success:false,
-                message:"Failed to verify instructor account."
+                success: false,
+                message: "Failed to verify instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
             return res.status(403).json({
-                success:false,
-                message:"Instructor access denied."
+                success: false,
+                message: "Instructor access denied."
             });
         }
 
@@ -18587,68 +20504,68 @@ app.get("/instructor-signing-document-file/:submissionId", (req, res) => {
             [submissionId, instructorDbId],
             (err2, rows) => {
 
-                if(err2){
+                if (err2) {
                     console.log(err2);
                     return res.status(500).json({
-                        success:false,
-                        message:"Failed to load signing document."
+                        success: false,
+                        message: "Failed to load signing document."
                     });
                 }
 
-                if(rows.length === 0){
+                if (rows.length === 0) {
                     return res.status(404).json({
-                        success:false,
-                        message:"Signing document not found."
+                        success: false,
+                        message: "Signing document not found."
                     });
                 }
 
                 const documentRow =
                     rows[0];
 
-                if(!isEnvironmentalScanningDoc(
+                if (!isEnvironmentalScanningDoc(
                     documentRow.document_type,
                     documentRow.document_title
-                )){
+                )) {
                     return res.status(400).json({
-                        success:false,
-                        message:"This submission is not an instructor e-signature document."
+                        success: false,
+                        message: "This submission is not an instructor e-signature document."
                     });
                 }
 
                 const chosenPath = documentRow.signed_file_path || documentRow.file_path;
                 const relativePath =
                     String(chosenPath || "")
-                    .replace(/\\/g, "/")
-                    .replace(/^\/+/, "");
+                        .replace(/\\/g, "/")
+                        .replace(/^\/+/, "");
 
-                if(!relativePath){
+                if (!relativePath) {
                     return res.status(404).json({
-                        success:false,
-                        message:"Document file path is missing."
+                        success: false,
+                        message: "Document file path is missing."
                     });
                 }
 
                 const absolutePath =
                     path.join(__dirname, relativePath);
 
-                if(!fs.existsSync(absolutePath)){
+                if (!fs.existsSync(absolutePath)) {
                     console.log("Signing file missing:", absolutePath);
                     return res.status(404).json({
-                        success:false,
-                        message:"Document file was not found on the server."
+                        success: false,
+                        message: "Document file was not found on the server."
                     });
                 }
 
                 const lowerName =
                     String(documentRow.file_name || relativePath).toLowerCase();
 
-                if(
+                if (
                     !lowerName.endsWith(".pdf")
                     && String(documentRow.file_format || "").toUpperCase() !== "PDF"
-                ){
+                ) {
                     return res.status(400).json({
-                        success:false,
-                        message:"Only PDF files can be opened in the e-signature viewer."
+                        success: false,
+                        message: "Only PDF files can be opened in the e-signature viewer."
                     });
                 }
 
@@ -18683,33 +20600,33 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
         placement
     } = req.body;
 
-    if(!submissionId || !instructorUserId || !reviewStatus){
+    if (!submissionId || !instructorUserId || !reviewStatus) {
         return res.json({
-            success:false,
-            message:"Missing signing information."
+            success: false,
+            message: "Missing signing information."
         });
     }
 
     const finalStatus =
         String(reviewStatus || "").trim();
 
-    if(
+    if (
         finalStatus === "Approved"
         && !placement
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please place your e-signature on the document before approving."
+            success: false,
+            message: "Please place your e-signature on the document before approving."
         });
     }
 
-    if(
+    if (
         (finalStatus === "Rejected" || finalStatus === "Subject to Change" || finalStatus === "For Revision")
         && !String(reviewComment || "").trim()
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please add notes explaining your decision."
+            success: false,
+            message: "Please add notes explaining your decision."
         });
     }
 
@@ -18724,18 +20641,18 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
 
     db.query(instructorSql, [instructorUserId], async (err, instructorResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({
-                success:false,
-                message:"Failed to check instructor account."
+                success: false,
+                message: "Failed to check instructor account."
             });
         }
 
-        if(instructorResult.length === 0){
+        if (instructorResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Instructor account not found or access is disabled."
+                success: false,
+                message: "Instructor account not found or access is disabled."
             });
         }
 
@@ -18750,6 +20667,7 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                 ds.id,
                 ds.sender_id,
                 ds.document_id,
+                ds.review_status,
 
                 sd.document_title,
                 sd.document_type,
@@ -18787,50 +20705,52 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
             [submissionId, instructorDbId],
             async (err2, submissionResult) => {
 
-                if(err2){
+                if (err2) {
                     console.log(err2);
                     return res.json({
-                        success:false,
-                        message:"Failed to check document submission."
+                        success: false,
+                        message: "Failed to check document submission."
                     });
                 }
 
-                if(submissionResult.length === 0){
+                if (submissionResult.length === 0) {
                     return res.json({
-                        success:false,
-                        message:"Document submission not found or you are not the assigned receiver."
+                        success: false,
+                        message: "Document submission not found or you are not the assigned receiver."
                     });
                 }
 
                 const submission =
                     submissionResult[0];
 
-                if(!isEnvironmentalScanningDoc(
+                if (!isEnvironmentalScanningDoc(
                     submission.document_type,
                     submission.document_title
-                )){
+                )) {
                     return res.json({
-                        success:false,
-                        message:"This document is not an environmental scanning e-signature request."
+                        success: false,
+                        message: "This document is not an environmental scanning e-signature request."
                     });
                 }
 
                 let signedFilePath =
                     submission.signed_file_path || null;
 
-                if(
-                    (submission.document_status === 'Approved' || submission.document_status === 'Instructor Signed' || submission.document_status === 'Chairperson Signed')
-                    && finalStatus !== 'Approved'
-                ){
+                if (
+                    submission.review_status === 'Approved'
+                    || submission.document_status === 'Approved'
+                    || submission.document_status === 'Instructor Signed'
+                    || submission.document_status === 'Chairperson Signed'
+                ) {
                     return res.json({
                         success: false,
-                        message: 'This document has already been signed/approved. The decision cannot be changed.'
+                        message: 'This document has already been signed and is locked in view-only mode.'
                     });
                 }
 
-                try{
+                try {
 
-                    if(finalStatus === "Approved"){
+                    if (finalStatus === "Approved") {
 
                         let signatureBuffer;
                         if (signatureType === "saved" && instructorResult[0].digital_signature) {
@@ -18846,10 +20766,10 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                             signatureBuffer = decodeSignatureImageData(signatureImage);
                         }
 
-                        if(!signatureBuffer || signatureBuffer.length === 0){
+                        if (!signatureBuffer || signatureBuffer.length === 0) {
                             return res.json({
-                                success:false,
-                                message:"Invalid signature image."
+                                success: false,
+                                message: "Invalid signature image."
                             });
                         }
 
@@ -18860,10 +20780,10 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                                 String(srcRelative || "").replace(/^\/uploads\//, "uploads/")
                             );
 
-                        if(!fs.existsSync(sourcePath)){
+                        if (!fs.existsSync(sourcePath)) {
                             return res.json({
-                                success:false,
-                                message:"Original document file was not found on the server."
+                                success: false,
+                                message: "Original document file was not found on the server."
                             });
                         }
 
@@ -18871,14 +20791,15 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                             await embedSignatureOnPdfFile(
                                 sourcePath,
                                 signatureBuffer,
-                                placement
+                                placement,
+                                { includeDate: true }
                             );
 
                         const signedDir =
                             path.join(__dirname, "uploads", "signed_documents");
 
-                        if(!fs.existsSync(signedDir)){
-                            fs.mkdirSync(signedDir, { recursive:true });
+                        if (!fs.existsSync(signedDir)) {
+                            fs.mkdirSync(signedDir, { recursive: true });
                         }
 
                         const signedFileName =
@@ -18894,23 +20815,23 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
 
                     }
 
-                }catch(signErr){
+                } catch (signErr) {
                     console.log(signErr);
                     return res.json({
-                        success:false,
-                        message:"Failed to apply e-signature to the PDF."
+                        success: false,
+                        message: "Failed to apply e-signature to the PDF."
                     });
                 }
 
                 const revisionStatus =
                     finalStatus === "Rejected"
-                    ? "Rejected"
-                    : (
-                        finalStatus === "Subject to Change"
-                        || finalStatus === "For Revision"
-                    )
-                    ? "For Revision"
-                    : finalStatus;
+                        ? "Rejected"
+                        : (
+                            finalStatus === "Subject to Change"
+                            || finalStatus === "For Revision"
+                        )
+                            ? "For Revision"
+                            : finalStatus;
 
                 const updateSubmissionSql = `
                     UPDATE document_submissions
@@ -18935,17 +20856,17 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                     ],
                     (err3) => {
 
-                        if(err3){
+                        if (err3) {
                             console.log(err3);
                             return res.json({
-                                success:false,
-                                message:"Failed to save review status."
+                                success: false,
+                                message: "Failed to save review status."
                             });
                         }
 
                         const updateDocumentSql =
                             (finalStatus === "Approved")
-                            ? `
+                                ? `
                                 UPDATE student_documents
                                 SET
                                     document_status = 'Instructor Signed',
@@ -18953,7 +20874,7 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                                     updated_at = CURRENT_TIMESTAMP
                                 WHERE id = ?
                             `
-                            : `
+                                : `
                                 UPDATE student_documents
                                 SET
                                     document_status = ?,
@@ -18963,28 +20884,28 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
 
                         const updateParams =
                             finalStatus === "Approved"
-                            ? [signedFilePath, submission.document_id]
-                            : [revisionStatus, submission.document_id];
+                                ? [signedFilePath, submission.document_id]
+                                : [revisionStatus, submission.document_id];
 
                         db.query(
                             updateDocumentSql,
                             updateParams,
                             (err4) => {
 
-                                if(err4){
+                                if (err4) {
                                     console.log(err4);
                                     return res.json({
-                                        success:false,
-                                        message:"Review saved, but failed to update student document."
+                                        success: false,
+                                        message: "Review saved, but failed to update student document."
                                     });
                                 }
 
                                 const proceedWithNotifications = () => {
                                     let notifyTitle, notifyMessage;
-                                    if(finalStatus === 'Approved'){
+                                    if (finalStatus === 'Approved') {
                                         notifyTitle = 'Instructor Signed Environmental Scanning';
                                         notifyMessage = `${instructorName} (Instructor) signed your "${submission.document_title}" document. It has been forwarded to the Program Chairperson for review.`;
-                                    } else if(finalStatus === 'Rejected'){
+                                    } else if (finalStatus === 'Rejected') {
                                         notifyTitle = 'Document Rejected by Instructor';
                                         notifyMessage = `Your "${submission.document_title}" was rejected by ${instructorName} (Instructor). Reason: ${reviewComment || 'No reason provided.'}`;
                                     } else {
@@ -19009,7 +20930,7 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                                             notifyMessage
                                         ],
                                         (err5) => {
-                                            if(err5){
+                                            if (err5) {
                                                 console.log(err5);
                                             }
 
@@ -19017,8 +20938,8 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                                                 success: true,
                                                 message:
                                                     finalStatus === 'Approved'
-                                                    ? 'Document signed and forwarded to the Program Chairperson. Student notified.'
-                                                    : 'Review submitted. Student notified.',
+                                                        ? 'Document signed and forwarded to the Program Chairperson. Student notified.'
+                                                        : 'Review submitted. Student notified.',
                                                 signed_file_path: signedFilePath
                                             });
                                         }
@@ -19050,7 +20971,7 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                                                     if (existResult && existResult.length > 0) {
                                                         db.query(
                                                             `UPDATE document_submissions
-                                                             SET submission_message = ?, review_status = NULL, review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', sent_at = NOW()
+                                                             SET submission_message = ?, review_status = NULL, review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', target_role = 'admin', sent_at = NOW()
                                                              WHERE id = ?`,
                                                             ["Instructor signed. Pending Chairperson signature.", existResult[0].id],
                                                             () => {
@@ -19058,22 +20979,22 @@ app.put("/instructor-apply-document-signature/:submissionId", async (req, res) =
                                                                     `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                      VALUES (?, ?, ?, 'Document Review')`,
                                                                     [chairDbId, "Environmental Scanning Pending Signature", `${instructorName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
-                                                                    () => {}
+                                                                    () => { }
                                                                 );
                                                                 proceedWithNotifications();
                                                             }
                                                         );
                                                     } else {
                                                         db.query(
-                                                            `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message)
-                                                             VALUES (?, ?, ?, ?)`,
-                                                             [submission.document_id, submission.sender_id, chairDbId, "Instructor signed. Pending Chairperson signature."],
+                                                            `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, target_role)
+                                                             VALUES (?, ?, ?, ?, 'admin')`,
+                                                            [submission.document_id, submission.sender_id, chairDbId, "Instructor signed. Pending Chairperson signature."],
                                                             () => {
                                                                 db.query(
                                                                     `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                      VALUES (?, ?, ?, 'Document Review')`,
                                                                     [chairDbId, "Environmental Scanning Pending Signature", `${instructorName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
-                                                                    () => {}
+                                                                    () => { }
                                                                 );
                                                                 proceedWithNotifications();
                                                             }
@@ -19107,10 +21028,10 @@ app.get("/admin-signing-document-file/:submissionId", (req, res) => {
     const submissionId = req.params.submissionId;
     const adminUserId = String(req.query.adminUserId || "").trim();
 
-    if(!submissionId || !adminUserId){
+    if (!submissionId || !adminUserId) {
         return res.status(400).json({
-            success:false,
-            message:"Missing submission or admin information."
+            success: false,
+            message: "Missing submission or admin information."
         });
     }
 
@@ -19123,18 +21044,18 @@ app.get("/admin-signing-document-file/:submissionId", (req, res) => {
     `;
 
     db.query(adminSql, [adminUserId], (err, adminResult) => {
-        if(err){
+        if (err) {
             console.log(err);
             return res.status(500).json({
-                success:false,
-                message:"Failed to verify admin account."
+                success: false,
+                message: "Failed to verify admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.status(403).json({
-                success:false,
-                message:"Admin access denied."
+                success: false,
+                message: "Admin access denied."
             });
         }
 
@@ -19144,8 +21065,8 @@ app.get("/admin-signing-document-file/:submissionId", (req, res) => {
 
         if (!isDean && !isChairperson) {
             return res.status(403).json({
-                success:false,
-                message:"Only Dean or Program Chairperson can sign this document."
+                success: false,
+                message: "Only Dean or Program Chairperson can sign this document."
             });
         }
 
@@ -19168,18 +21089,18 @@ app.get("/admin-signing-document-file/:submissionId", (req, res) => {
         `;
 
         db.query(submissionSql, [submissionId, adminDbId], (err2, rows) => {
-            if(err2){
+            if (err2) {
                 console.log(err2);
                 return res.status(500).json({
-                    success:false,
-                    message:"Failed to load signing document."
+                    success: false,
+                    message: "Failed to load signing document."
                 });
             }
 
-            if(rows.length === 0){
+            if (rows.length === 0) {
                 return res.status(404).json({
-                    success:false,
-                    message:"Signing document not found."
+                    success: false,
+                    message: "Signing document not found."
                 });
             }
 
@@ -19192,29 +21113,29 @@ app.get("/admin-signing-document-file/:submissionId", (req, res) => {
                 .replace(/^\/+/, "");
 
 
-            if(!relativePath){
+            if (!relativePath) {
                 return res.status(404).json({
-                    success:false,
-                    message:"Document file path is missing."
+                    success: false,
+                    message: "Document file path is missing."
                 });
             }
 
             const absolutePath = path.join(__dirname, relativePath);
 
-            if(!fs.existsSync(absolutePath)){
+            if (!fs.existsSync(absolutePath)) {
                 console.log("Signing file missing:", absolutePath);
                 return res.status(404).json({
-                    success:false,
-                    message:"Document file was not found on the server."
+                    success: false,
+                    message: "Document file was not found on the server."
                 });
             }
 
             const lowerName = String(documentRow.file_name || relativePath).toLowerCase();
 
-            if(!lowerName.endsWith(".pdf") && String(documentRow.file_format || "").toUpperCase() !== "PDF"){
+            if (!lowerName.endsWith(".pdf") && String(documentRow.file_format || "").toUpperCase() !== "PDF") {
                 return res.status(400).json({
-                    success:false,
-                    message:"Only PDF files can be opened in the e-signature viewer."
+                    success: false,
+                    message: "Only PDF files can be opened in the e-signature viewer."
                 });
             }
 
@@ -19242,33 +21163,33 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
         placement
     } = req.body;
 
-    if(!submissionId || !adviserUserId || !reviewStatus){
+    if (!submissionId || !adviserUserId || !reviewStatus) {
         return res.json({
-            success:false,
-            message:"Missing signing information."
+            success: false,
+            message: "Missing signing information."
         });
     }
 
     const finalStatus =
         String(reviewStatus || "").trim();
 
-    if(
+    if (
         finalStatus === "Approved"
         && !placement
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please place your e-signature on the document before approving."
+            success: false,
+            message: "Please place your e-signature on the document before approving."
         });
     }
 
-    if(
+    if (
         (finalStatus === "Rejected" || finalStatus === "Subject to Change" || finalStatus === "For Revision")
         && !String(reviewComment || "").trim()
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please add notes explaining your decision."
+            success: false,
+            message: "Please add notes explaining your decision."
         });
     }
 
@@ -19283,18 +21204,18 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
 
     db.query(adviserSql, [adviserUserId], async (err, adviserResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({
-                success:false,
-                message:"Failed to check adviser account."
+                success: false,
+                message: "Failed to check adviser account."
             });
         }
 
-        if(adviserResult.length === 0){
+        if (adviserResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Adviser account not found or adviser access is disabled."
+                success: false,
+                message: "Adviser account not found or adviser access is disabled."
             });
         }
 
@@ -19309,6 +21230,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                 ds.id,
                 ds.sender_id,
                 ds.document_id,
+                ds.review_status,
 
                 sd.document_title,
                 sd.document_type,
@@ -19338,31 +21260,31 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
             [submissionId, adviserDbId],
             async (err2, submissionResult) => {
 
-                if(err2){
+                if (err2) {
                     console.log(err2);
                     return res.json({
-                        success:false,
-                        message:"Failed to check document submission."
+                        success: false,
+                        message: "Failed to check document submission."
                     });
                 }
 
-                if(submissionResult.length === 0){
+                if (submissionResult.length === 0) {
                     return res.json({
-                        success:false,
-                        message:"Document submission not found or you are not the assigned receiver."
+                        success: false,
+                        message: "Document submission not found or you are not the assigned receiver."
                     });
                 }
 
                 const submission =
                     submissionResult[0];
 
-                if(!isAdviserSigningDocumentType(
+                if (!isAdviserSigningDocumentType(
                     submission.document_type,
                     submission.document_title
-                )){
+                )) {
                     return res.json({
-                        success:false,
-                        message:"This document is not an adviser e-signature request."
+                        success: false,
+                        message: "This document is not an adviser e-signature request."
                     });
                 }
 
@@ -19371,25 +21293,21 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
 
                 /* ── Lock: if the document is already Approved or Adviser Signed (waiting for Dean),
                    the adviser cannot retroactively change their verdict ── */
-                if(
-                    (submission.document_status === 'Approved' || submission.document_status === 'Adviser Signed')
-                    && finalStatus !== 'Approved'
-                ){
-                    const isRecoDoc = isAdviserOnlyDoc(submission.document_type, submission.document_title);
+                if (
+                    submission.review_status === 'Approved'
+                    || submission.document_status === 'Approved'
+                    || submission.document_status === 'Adviser Signed'
+                ) {
                     return res.json({
                         success: false,
-                        message: submission.document_status === 'Approved'
-                            ? (isRecoDoc
-                                ? 'This document has already been signed and fully approved by you. The verdict cannot be changed.'
-                                : 'This document has already been fully approved by the Dean. The verdict cannot be changed.')
-                            : 'You have already signed this document. It is now waiting for the Dean. You cannot change your decision.'
+                        message: 'This document has already been signed and is locked in view-only mode.'
                     });
                 }
 
-                try{
+                try {
 
 
-                    if(finalStatus === "Approved"){
+                    if (finalStatus === "Approved") {
 
                         let signatureBuffer;
                         if (signatureType === "saved" && adviserResult[0].digital_signature) {
@@ -19405,10 +21323,10 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                             signatureBuffer = decodeSignatureImageData(signatureImage);
                         }
 
-                        if(!signatureBuffer || signatureBuffer.length === 0){
+                        if (!signatureBuffer || signatureBuffer.length === 0) {
                             return res.json({
-                                success:false,
-                                message:"Invalid signature image."
+                                success: false,
+                                message: "Invalid signature image."
                             });
                         }
 
@@ -19418,10 +21336,10 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                 String(submission.file_path || "").replace(/^\/uploads\//, "uploads/")
                             );
 
-                        if(!fs.existsSync(sourcePath)){
+                        if (!fs.existsSync(sourcePath)) {
                             return res.json({
-                                success:false,
-                                message:"Original document file was not found on the server."
+                                success: false,
+                                message: "Original document file was not found on the server."
                             });
                         }
 
@@ -19429,14 +21347,15 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                             await embedSignatureOnPdfFile(
                                 sourcePath,
                                 signatureBuffer,
-                                placement
+                                placement,
+                                { includeDate: true }
                             );
 
                         const signedDir =
                             path.join(__dirname, "uploads", "signed_documents");
 
-                        if(!fs.existsSync(signedDir)){
-                            fs.mkdirSync(signedDir, { recursive:true });
+                        if (!fs.existsSync(signedDir)) {
+                            fs.mkdirSync(signedDir, { recursive: true });
                         }
 
                         const signedFileName =
@@ -19452,23 +21371,23 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
 
                     }
 
-                }catch(signErr){
+                } catch (signErr) {
                     console.log(signErr);
                     return res.json({
-                        success:false,
-                        message:"Failed to apply e-signature to the PDF."
+                        success: false,
+                        message: "Failed to apply e-signature to the PDF."
                     });
                 }
 
                 const revisionStatus =
                     finalStatus === "Rejected"
-                    ? "Rejected"
-                    : (
-                        finalStatus === "Subject to Change"
-                        || finalStatus === "For Revision"
-                    )
-                    ? "For Revision"
-                    : finalStatus;
+                        ? "Rejected"
+                        : (
+                            finalStatus === "Subject to Change"
+                            || finalStatus === "For Revision"
+                        )
+                            ? "For Revision"
+                            : finalStatus;
 
                 const updateSubmissionSql = `
                     UPDATE document_submissions
@@ -19493,11 +21412,11 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                     ],
                     (err3) => {
 
-                        if(err3){
+                        if (err3) {
                             console.log(err3);
                             return res.json({
-                                success:false,
-                                message:"Failed to save review status."
+                                success: false,
+                                message: "Failed to save review status."
                             });
                         }
 
@@ -19512,8 +21431,8 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
 
                         const updateDocumentSql =
                             (finalStatus === "Approved")
-                            ? (isAcceptanceDoc
-                                ? `
+                                ? (isAcceptanceDoc
+                                    ? `
                                     UPDATE student_documents
                                     SET
                                         document_status = 'Adviser Signed',
@@ -19521,7 +21440,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                         updated_at = CURRENT_TIMESTAMP
                                     WHERE id = ?
                                 `
-                                : `
+                                    : `
                                     UPDATE student_documents
                                     SET
                                         document_status = 'Approved',
@@ -19529,7 +21448,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                         updated_at = CURRENT_TIMESTAMP
                                     WHERE id = ?
                                 `)
-                            : `
+                                : `
                                 UPDATE student_documents
                                 SET
                                     document_status = ?,
@@ -19539,32 +21458,32 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
 
                         const updateParams =
                             finalStatus === "Approved"
-                            ? [signedFilePath, submission.document_id]
-                            : [revisionStatus, submission.document_id];
+                                ? [signedFilePath, submission.document_id]
+                                : [revisionStatus, submission.document_id];
 
                         db.query(
                             updateDocumentSql,
                             updateParams,
                             (err4) => {
 
-                                if(err4){
+                                if (err4) {
                                     console.log(err4);
                                     return res.json({
-                                        success:false,
-                                        message:"Review saved, but failed to update student document."
+                                        success: false,
+                                        message: "Review saved, but failed to update student document."
                                     });
                                 }
 
                                 const proceedWithNotifications = () => {
                                     let notifyTitle, notifyMessage;
-                                    if(finalStatus === 'Approved'){
+                                    if (finalStatus === 'Approved') {
                                         notifyTitle = isRecommendationDoc
                                             ? 'Adviser Signed Recommendation Document'
                                             : 'Adviser Signed Your Document';
                                         notifyMessage = isRecommendationDoc
                                             ? `${adviserName} (Adviser) signed and approved your "${submission.document_title}" document. It is now fully approved. ${reviewComment ? 'Notes: ' + reviewComment : ''}`
                                             : `${adviserName} (Adviser) signed your "${submission.document_title}" document. It has been forwarded to the Dean for final approval. ${reviewComment ? 'Notes: ' + reviewComment : ''}`;
-                                    } else if(finalStatus === 'Rejected'){
+                                    } else if (finalStatus === 'Rejected') {
                                         notifyTitle = 'Document Rejected by Adviser';
                                         notifyMessage = `Your "${submission.document_title}" was rejected by ${adviserName} (Adviser). Reason: ${reviewComment || 'No reason provided.'} Please review and resubmit if needed.`;
                                     } else {
@@ -19589,7 +21508,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                             notifyMessage
                                         ],
                                         (err5) => {
-                                            if(err5){
+                                            if (err5) {
                                                 console.log(err5);
                                             }
 
@@ -19597,10 +21516,10 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                                 success: true,
                                                 message:
                                                     finalStatus === 'Approved'
-                                                    ? (isRecommendationDoc ? 'Recommendation document signed and fully approved. Student notified.' : isAcceptanceDoc ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and returned to the student.')
-                                                    : finalStatus === 'Rejected'
-                                                    ? 'Document rejected. Student has been notified with your reason.'
-                                                    : 'Revision requested. Student has been notified.',
+                                                        ? (isRecommendationDoc ? 'Recommendation document signed and fully approved. Student notified.' : isAcceptanceDoc ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and returned to the student.')
+                                                        : finalStatus === 'Rejected'
+                                                            ? 'Document rejected. Student has been notified with your reason.'
+                                                            : 'Revision requested. Student has been notified.',
                                                 signed_file_path: signedFilePath
                                             });
                                         }
@@ -19631,7 +21550,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                                         if (existResult && existResult.length > 0) {
                                                             db.query(
                                                                 `UPDATE document_submissions
-                                                                 SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', sent_at = NOW()
+                                                                 SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', target_role = 'admin', sent_at = NOW()
                                                                  WHERE id = ?`,
                                                                 ["Adviser signed. Pending Dean signature.", existResult[0].id],
                                                                 (errUpd) => {
@@ -19639,22 +21558,22 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                                                         `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                          VALUES (?, ?, ?, 'Document Review')`,
                                                                         [deanDbId, "Adviser Acceptance Form Signed", `${adviserName} has signed the Adviser Acceptance Form. It is now pending your signature.`, "Document Review"],
-                                                                        () => {}
+                                                                        () => { }
                                                                     );
                                                                     routeToDean(idx + 1);
                                                                 }
                                                             );
                                                         } else {
                                                             db.query(
-                                                                `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status)
-                                                                 VALUES (?, ?, ?, ?, 'Pending Review')`,
+                                                                `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status, target_role)
+                                                                 VALUES (?, ?, ?, ?, 'Pending Review', 'admin')`,
                                                                 [submission.document_id, submission.sender_id, deanDbId, "Adviser signed. Pending Dean signature."],
                                                                 (errIns) => {
                                                                     db.query(
                                                                         `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                          VALUES (?, ?, ?, 'Document Review')`,
                                                                         [deanDbId, "Adviser Acceptance Form Pending Signature", `${adviserName} has signed the Adviser Acceptance Form. It is now pending your signature.`, "Document Review"],
-                                                                        () => {}
+                                                                        () => { }
                                                                     );
                                                                     routeToDean(idx + 1);
                                                                 }
@@ -19696,29 +21615,29 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
         placement
     } = req.body;
 
-    if(!submissionId || !adminUserId || !reviewStatus){
+    if (!submissionId || !adminUserId || !reviewStatus) {
         return res.json({
-            success:false,
-            message:"Missing signing information."
+            success: false,
+            message: "Missing signing information."
         });
     }
 
     const finalStatus = String(reviewStatus || "").trim();
 
-    if(finalStatus === "Approved" && !placement){
+    if (finalStatus === "Approved" && !placement) {
         return res.json({
-            success:false,
-            message:"Please place your e-signature on the document before approving."
+            success: false,
+            message: "Please place your e-signature on the document before approving."
         });
     }
 
-    if(
+    if (
         (finalStatus === "Rejected" || finalStatus === "Subject to Change" || finalStatus === "For Revision")
         && !String(reviewComment || "").trim()
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please add notes explaining your decision."
+            success: false,
+            message: "Please add notes explaining your decision."
         });
     }
 
@@ -19731,18 +21650,18 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
     `;
 
     db.query(adminSql, [adminUserId], async (err, adminResult) => {
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({
-                success:false,
-                message:"Failed to check admin account."
+                success: false,
+                message: "Failed to check admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Admin account not found."
+                success: false,
+                message: "Admin account not found."
             });
         }
 
@@ -19752,8 +21671,8 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
 
         if (!isDean && !isChair) {
             return res.json({
-                success:false,
-                message:"Only Dean or Program Chairpersons can e-sign documents here."
+                success: false,
+                message: "Only Dean or Program Chairpersons can e-sign documents here."
             });
         }
 
@@ -19765,6 +21684,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                 ds.id,
                 ds.sender_id,
                 ds.document_id,
+                ds.review_status,
                 sd.document_title,
                 sd.document_type,
                 sd.document_status,
@@ -19782,34 +21702,38 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
         `;
 
         db.query(submissionSql, [submissionId, adminDbId], async (err2, submissionResult) => {
-            if(err2){
+            if (err2) {
                 console.log(err2);
                 return res.json({
-                    success:false,
-                    message:"Failed to check document submission."
+                    success: false,
+                    message: "Failed to check document submission."
                 });
             }
 
-            if(submissionResult.length === 0){
+            if (submissionResult.length === 0) {
                 return res.json({
-                    success:false,
-                    message:"Document submission not found or you are not the assigned receiver."
+                    success: false,
+                    message: "Document submission not found or you are not the assigned receiver."
                 });
             }
 
             const submission = submissionResult[0];
             let signedFilePath = submission.signed_file_path || null;
 
-            /* ── Lock: if already Approved by Dean, no further changes allowed ── */
-            if(submission.document_status === 'Approved' && finalStatus !== 'Approved'){
+            /* ── Lock: once signed/approved by this Admin or fully Approved, block all changes ── */
+            if (
+                submission.review_status === 'Approved'
+                || submission.document_status === 'Approved'
+                || (isChair && submission.document_status === 'Chairperson Signed')
+            ) {
                 return res.json({
                     success: false,
-                    message: 'This document has already been fully approved by the Dean. The verdict cannot be changed.'
+                    message: 'This document has already been signed and is locked in view-only mode.'
                 });
             }
 
-            try{
-                if(finalStatus === "Approved"){
+            try {
+                if (finalStatus === "Approved") {
                     let signatureBuffer;
                     if (signatureType === "saved" && adminResult[0].digital_signature) {
                         const localSigPath = path.join(__dirname, adminResult[0].digital_signature.replace(/^\//, ""));
@@ -19824,10 +21748,10 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                         signatureBuffer = decodeSignatureImageData(signatureImage);
                     }
 
-                    if(!signatureBuffer || signatureBuffer.length === 0){
+                    if (!signatureBuffer || signatureBuffer.length === 0) {
                         return res.json({
-                            success:false,
-                            message:"Invalid signature image."
+                            success: false,
+                            message: "Invalid signature image."
                         });
                     }
 
@@ -19839,22 +21763,23 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                         String(srcRelative || "").replace(/^\/uploads\//, "uploads/")
                     );
 
-                    if(!fs.existsSync(sourcePath)){
+                    if (!fs.existsSync(sourcePath)) {
                         return res.json({
-                            success:false,
-                            message:"Source document file was not found on the server."
+                            success: false,
+                            message: "Source document file was not found on the server."
                         });
                     }
 
                     const signedBytes = await embedSignatureOnPdfFile(
                         sourcePath,
                         signatureBuffer,
-                        placement
+                        placement,
+                        { includeDate: true }
                     );
 
                     const signedDir = path.join(__dirname, "uploads", "signed_documents");
-                    if(!fs.existsSync(signedDir)){
-                        fs.mkdirSync(signedDir, { recursive:true });
+                    if (!fs.existsSync(signedDir)) {
+                        fs.mkdirSync(signedDir, { recursive: true });
                     }
 
                     const signedFileName = `signed-dean-${Date.now()}-${submission.document_id}.pdf`;
@@ -19863,20 +21788,20 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
 
                     signedFilePath = `/uploads/signed_documents/${signedFileName}`;
                 }
-            }catch(signErr){
+            } catch (signErr) {
                 console.log(signErr);
                 return res.json({
-                    success:false,
-                    message:"Failed to apply e-signature to the PDF."
+                    success: false,
+                    message: "Failed to apply e-signature to the PDF."
                 });
             }
 
             const revisionStatus =
                 finalStatus === "Rejected"
-                ? "Rejected"
-                : (finalStatus === "Subject to Change" || finalStatus === "For Revision")
-                ? "For Revision"
-                : finalStatus;
+                    ? "Rejected"
+                    : (finalStatus === "Subject to Change" || finalStatus === "For Revision")
+                        ? "For Revision"
+                        : finalStatus;
 
             const updateSubmissionSql = `
                 UPDATE document_submissions
@@ -19894,11 +21819,11 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                 updateSubmissionSql,
                 [finalStatus, reviewComment || "", adminDbId, submissionId, adminDbId],
                 (err3) => {
-                    if(err3){
+                    if (err3) {
                         console.log(err3);
                         return res.json({
-                            success:false,
-                            message:"Failed to save review status."
+                            success: false,
+                            message: "Failed to save review status."
                         });
                     }
 
@@ -19910,7 +21835,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
 
                     const updateDocumentSql =
                         finalStatus === "Approved"
-                        ? `
+                            ? `
                             UPDATE student_documents
                             SET
                                 document_status = ?,
@@ -19918,7 +21843,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = ?
                         `
-                        : `
+                            : `
                             UPDATE student_documents
                             SET
                                 document_status = ?,
@@ -19928,20 +21853,20 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
 
                     const updateParams =
                         finalStatus === "Approved"
-                        ? [targetDocStatus, signedFilePath, submission.document_id]
-                        : [revisionStatus, submission.document_id];
+                            ? [targetDocStatus, signedFilePath, submission.document_id]
+                            : [revisionStatus, submission.document_id];
 
                     db.query(updateDocumentSql, updateParams, (err4) => {
-                        if(err4){
+                        if (err4) {
                             console.log(err4);
                             return res.json({
-                                success:false,
-                                message:"Review saved, but failed to update student document."
+                                success: false,
+                                message: "Review saved, but failed to update student document."
                             });
                         }
 
                         let notifyTitle, notifyMessage;
-                        if(finalStatus === 'Approved'){
+                        if (finalStatus === 'Approved') {
                             notifyTitle = isEnvScan
                                 ? (isChair ? 'Chairperson Signed Environmental Scanning' : 'Dean Signed Environmental Scanning')
                                 : 'Dean Signed Your Document';
@@ -19950,7 +21875,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                     ? `${adminName} (Chairperson) signed your "${submission.document_title}" document. It has been forwarded to the Dean for final approval.`
                                     : `${adminName} (Dean) signed and fully approved your "${submission.document_title}" document.`)
                                 : `${adminName} (Dean) signed and fully approved your "${submission.document_title}" document. ${reviewComment ? 'Notes: ' + reviewComment : 'Your adviser acceptance form is now complete.'}`;
-                        } else if(finalStatus === 'Rejected'){
+                        } else if (finalStatus === 'Rejected') {
                             notifyTitle = isChair ? 'Document Rejected by Chairperson' : 'Document Rejected by Dean';
                             notifyMessage = `Your "${submission.document_title}" was rejected by ${adminName} (${isChair ? 'Chairperson' : 'Dean'}). Reason: ${reviewComment || 'No reason provided.'}`;
                         } else {
@@ -19972,16 +21897,16 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                 `,
                                 [submission.sender_id, notifyTitle, notifyMessage],
                                 (err5) => {
-                                    if(err5) console.log(err5);
+                                    if (err5) console.log(err5);
 
                                     res.json({
                                         success: true,
                                         message:
                                             finalStatus === 'Approved'
-                                            ? (isEnvScan && isChair ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and fully approved. Student has been notified.')
-                                            : finalStatus === 'Rejected'
-                                            ? 'Document rejected. Student has been notified with your reason.'
-                                            : 'Revision requested. Student has been notified.',
+                                                ? (isEnvScan && isChair ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and fully approved. Student has been notified.')
+                                                : finalStatus === 'Rejected'
+                                                    ? 'Document rejected. Student has been notified with your reason.'
+                                                    : 'Revision requested. Student has been notified.',
                                         signed_file_path: signedFilePath
                                     });
                                 }
@@ -20011,7 +21936,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                                 if (existResult && existResult.length > 0) {
                                                     db.query(
                                                         `UPDATE document_submissions
-                                                         SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', sent_at = NOW()
+                                                         SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', target_role = 'admin', sent_at = NOW()
                                                          WHERE id = ?`,
                                                         ["Chairperson signed. Pending Dean signature.", existResult[0].id],
                                                         () => {
@@ -20019,23 +21944,23 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                                                 `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                  VALUES (?, ?, ?, 'Document Review')`,
                                                                 [deanDbId, "Environmental Scanning Signed", `${adminName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
-                                                                () => {}
+                                                                () => { }
                                                             );
                                                             routeToDean(idx + 1);
                                                         }
                                                     );
                                                 } else {
                                                     db.query(
-                                                        `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status)
-                                                         VALUES (?, ?, ?, ?, 'Pending Review')`,
+                                                        `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status, target_role)
+                                                         VALUES (?, ?, ?, ?, 'Pending Review', 'admin')`,
                                                         [submission.document_id, submission.sender_id, deanDbId, "Chairperson signed. Pending Dean signature."],
                                                         () => {
                                                             db.query(
                                                                 `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                  VALUES (?, ?, ?, 'Document Review')`,
                                                                 [deanDbId, "Environmental Scanning Pending Signature", `${adminName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
-                                                                () => {}
-                                                                );
+                                                                () => { }
+                                                            );
                                                             routeToDean(idx + 1);
                                                         }
                                                     );
@@ -20074,18 +21999,18 @@ app.get("/student-signing-documents/:userId", (req, res) => {
 
     db.query(groupSql, [userId], (err, groupResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({
-                success:false,
-                message:"Failed to load group."
+                success: false,
+                message: "Failed to load group."
             });
         }
 
-        if(groupResult.length === 0){
+        if (groupResult.length === 0) {
             return res.json({
-                success:true,
-                documents:[]
+                success: true,
+                documents: []
             });
         }
 
@@ -20294,17 +22219,17 @@ app.get("/student-signing-documents/:userId", (req, res) => {
 
         db.query(sql, [groupDbId], (err2, rows) => {
 
-            if(err2){
+            if (err2) {
                 console.log(err2);
                 return res.json({
-                    success:false,
-                    message:"Failed to load signing documents."
+                    success: false,
+                    message: "Failed to load signing documents."
                 });
             }
 
             res.json({
-                success:true,
-                documents:rows || []
+                success: true,
+                documents: rows || []
             });
 
         });
@@ -20327,27 +22252,27 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
         otherStatus
     } = req.body;
 
-    if(
+    if (
         !submissionId ||
         !adviserUserId ||
         !reviewStatus
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Missing review information."
+            success: false,
+            message: "Missing review information."
         });
     }
 
     const finalStatus =
         reviewStatus === "Other"
-        ? otherStatus
-        : reviewStatus;
+            ? otherStatus
+            : reviewStatus;
 
-    if(!finalStatus){
+    if (!finalStatus) {
 
         return res.json({
-            success:false,
-            message:"Please provide the review status."
+            success: false,
+            message: "Please provide the review status."
         });
 
     }
@@ -20363,20 +22288,20 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
 
     db.query(adviserSql, [adviserUserId], (err, adviserResult) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Failed to check adviser account."
+                success: false,
+                message: "Failed to check adviser account."
             });
         }
 
-        if(adviserResult.length === 0){
+        if (adviserResult.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Adviser account not found or adviser access is disabled."
+                success: false,
+                message: "Adviser account not found or adviser access is disabled."
             });
 
         }
@@ -20416,20 +22341,20 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
             ],
             (err, submissionResult) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
 
                     return res.json({
-                        success:false,
-                        message:"Failed to check document submission."
+                        success: false,
+                        message: "Failed to check document submission."
                     });
                 }
 
-                if(submissionResult.length === 0){
+                if (submissionResult.length === 0) {
 
                     return res.json({
-                        success:false,
-                        message:"Document submission not found or you are not the assigned receiver."
+                        success: false,
+                        message: "Document submission not found or you are not the assigned receiver."
                     });
 
                 }
@@ -20460,12 +22385,12 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
                     ],
                     (err) => {
 
-                        if(err){
+                        if (err) {
                             console.log(err);
 
                             return res.json({
-                                success:false,
-                                message:"Failed to submit document review."
+                                success: false,
+                                message: "Failed to submit document review."
                             });
                         }
 
@@ -20491,13 +22416,13 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
                                 ],
                                 (err2) => {
 
-                                    if(err2){
+                                    if (err2) {
                                         console.log(err2);
                                     }
 
                                     res.json({
-                                        success:true,
-                                        message:"Document review submitted and student was notified."
+                                        success: true,
+                                        message: "Document review submitted and student was notified."
                                     });
 
                                 }
@@ -20505,7 +22430,7 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
 
                         };
 
-                        if(finalStatus === "Approved"){
+                        if (finalStatus === "Approved") {
 
                             return db.query(
                                 `
@@ -20516,7 +22441,7 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
                                 [submission.document_id],
                                 (err2) => {
 
-                                    if(err2){
+                                    if (err2) {
                                         console.log(err2);
                                     }
 
@@ -20527,16 +22452,16 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
 
                         }
 
-                        if(
+                        if (
                             finalStatus === "For Revision"
                             || finalStatus === "Rejected"
                             || finalStatus === "Subject to Change"
-                        ){
+                        ) {
 
                             const revisionStatus =
                                 finalStatus === "Rejected"
-                                ? "Rejected"
-                                : "For Revision";
+                                    ? "Rejected"
+                                    : "For Revision";
 
                             return db.query(
                                 `
@@ -20547,7 +22472,7 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
                                 [revisionStatus, submission.document_id],
                                 (err2) => {
 
-                                    if(err2){
+                                    if (err2) {
                                         console.log(err2);
                                     }
 
@@ -20583,10 +22508,10 @@ app.get("/admin-dashboard/:adminUserId", async (req, res) => {
 
             db.query(sql, params, (err, result) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
                     resolve(null);
-                }else{
+                } else {
                     resolve(result);
                 }
 
@@ -20617,11 +22542,11 @@ app.get("/admin-dashboard/:adminUserId", async (req, res) => {
             [adminUserId]
         );
 
-    if(!adminResult || adminResult.length === 0){
+    if (!adminResult || adminResult.length === 0) {
 
         return res.json({
-            success:false,
-            message:"Admin account not found."
+            success: false,
+            message: "Admin account not found."
         });
 
     }
@@ -20712,15 +22637,15 @@ app.get("/admin-dashboard/:adminUserId", async (req, res) => {
     ).slice(0, 6);
 
     res.json({
-        success:true,
+        success: true,
         admin,
-        stats:{
-            totalStudents:studentCount ? studentCount[0].total : 0,
-            totalFaculty:facultyCount ? facultyCount[0].total : 0,
-            repositoryRecords:repositoryCount ? repositoryCount[0].total : 0,
-            pendingReviews:pendingReviews ? pendingReviews[0].total : 0
+        stats: {
+            totalStudents: studentCount ? studentCount[0].total : 0,
+            totalFaculty: facultyCount ? facultyCount[0].total : 0,
+            repositoryRecords: repositoryCount ? repositoryCount[0].total : 0,
+            pendingReviews: pendingReviews ? pendingReviews[0].total : 0
         },
-        repositoryRecords:repositoryRecords || [],
+        repositoryRecords: repositoryRecords || [],
         recentActivity
     });
 
@@ -20739,10 +22664,10 @@ app.get("/faculty-dashboard/:facultyUserId", async (req, res) => {
 
             db.query(sql, params, (err, result) => {
 
-                if(err){
+                if (err) {
                     console.log(err);
                     resolve(null);
-                }else{
+                } else {
                     resolve(result);
                 }
 
@@ -20774,11 +22699,11 @@ app.get("/faculty-dashboard/:facultyUserId", async (req, res) => {
             [facultyUserId]
         );
 
-    if(!facultyResult || facultyResult.length === 0){
+    if (!facultyResult || facultyResult.length === 0) {
 
         return res.json({
-            success:false,
-            message:"Faculty account not found."
+            success: false,
+            message: "Faculty account not found."
         });
 
     }
@@ -20960,33 +22885,33 @@ app.get("/faculty-dashboard/:facultyUserId", async (req, res) => {
 
     const recentActivity = [
         ...(recentDocuments || []).map(item => ({
-            activity_type:"Document Received",
-            activity_title:item.document_title,
-            activity_subtitle:item.sender_name,
-            activity_date:item.sent_at
+            activity_type: "Document Received",
+            activity_title: item.document_title,
+            activity_subtitle: item.sender_name,
+            activity_date: item.sent_at
         })),
         ...(adminAnnouncements || []).map(item => ({
-            activity_type:"Admin Announcement",
-            activity_title:item.announcement_title,
-            activity_subtitle:item.created_by_name,
-            activity_date:item.created_at
+            activity_type: "Admin Announcement",
+            activity_title: item.announcement_title,
+            activity_subtitle: item.created_by_name,
+            activity_date: item.created_at
         }))
     ].sort((a, b) =>
         new Date(b.activity_date) - new Date(a.activity_date)
     ).slice(0, 5);
 
     res.json({
-        success:true,
+        success: true,
         faculty,
-        stats:{
-            totalStudents:studentCount ? studentCount[0].total : 0,
-            repositoryRecords:repositoryCount ? repositoryCount[0].total : 0,
-            pendingReviews:pendingReviews ? pendingReviews[0].total : 0,
-            scheduledDefenses:scheduledDefenses ? scheduledDefenses[0].total : 0
+        stats: {
+            totalStudents: studentCount ? studentCount[0].total : 0,
+            repositoryRecords: repositoryCount ? repositoryCount[0].total : 0,
+            pendingReviews: pendingReviews ? pendingReviews[0].total : 0,
+            scheduledDefenses: scheduledDefenses ? scheduledDefenses[0].total : 0
         },
-        recentDocuments:recentDocuments || [],
-        upcomingDefense:upcomingDefense && upcomingDefense.length > 0 ? upcomingDefense[0] : null,
-        adminAnnouncements:adminAnnouncements || [],
+        recentDocuments: recentDocuments || [],
+        upcomingDefense: upcomingDefense && upcomingDefense.length > 0 ? upcomingDefense[0] : null,
+        adminAnnouncements: adminAnnouncements || [],
         recentActivity
     });
 
@@ -21003,41 +22928,41 @@ app.post("/force-change-password", (req, res) => {
         confirmPassword
     } = req.body;
 
-    if(
+    if (
         !userId ||
         !currentPassword ||
         !newPassword ||
         !confirmPassword
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all password fields."
+            success: false,
+            message: "Please complete all password fields."
         });
     }
 
-    if(newPassword !== confirmPassword){
+    if (newPassword !== confirmPassword) {
 
         return res.json({
-            success:false,
-            message:"New password and confirm password do not match."
-        });
-
-    }
-
-    if(newPassword.length < 6){
-
-        return res.json({
-            success:false,
-            message:"Password must be at least 6 characters."
+            success: false,
+            message: "New password and confirm password do not match."
         });
 
     }
 
-    if(currentPassword === newPassword){
+    if (newPassword.length < 6) {
 
         return res.json({
-            success:false,
-            message:"New password must be different from your current password."
+            success: false,
+            message: "Password must be at least 6 characters."
+        });
+
+    }
+
+    if (currentPassword === newPassword) {
+
+        return res.json({
+            success: false,
+            message: "New password must be different from your current password."
         });
 
     }
@@ -21055,20 +22980,20 @@ app.post("/force-change-password", (req, res) => {
 
     db.query(checkSql, [userId], (err, result) => {
 
-        if(err){
+        if (err) {
             console.log(err);
 
             return res.json({
-                success:false,
-                message:"Database error while checking account."
+                success: false,
+                message: "Database error while checking account."
             });
         }
 
-        if(result.length === 0){
+        if (result.length === 0) {
 
             return res.json({
-                success:false,
-                message:"Account not found."
+                success: false,
+                message: "Account not found."
             });
 
         }
@@ -21083,18 +23008,18 @@ app.post("/force-change-password", (req, res) => {
             : Promise.resolve(storedPwd === String(currentPassword));
 
         verifyPromise.then(async (isMatch) => {
-        if(!isMatch){
+            if (!isMatch) {
 
-            return res.json({
-                success:false,
-                message:"Current password is incorrect."
-            });
+                return res.json({
+                    success: false,
+                    message: "Current password is incorrect."
+                });
 
-        }
+            }
 
-        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
+            const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
 
-        const updateSql = `
+            const updateSql = `
             UPDATE users
             SET
                 password = ?,
@@ -21102,38 +23027,38 @@ app.post("/force-change-password", (req, res) => {
             WHERE user_id = ?
         `;
 
-        db.query(updateSql, [hashedNewPassword, userId], (err) => {
+            db.query(updateSql, [hashedNewPassword, userId], (err) => {
 
-            if(err){
-                console.log(err);
+                if (err) {
+                    console.log(err);
 
-                return res.json({
-                    success:false,
-                    message:"Failed to update password."
-                });
-            }
+                    return res.json({
+                        success: false,
+                        message: "Failed to update password."
+                    });
+                }
 
-            const userDbId = user.id;
-            const notifSql = `
+                const userDbId = user.id;
+                const notifSql = `
                 INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                 VALUES (?, 'Security Update', 'Your password has been changed successfully.', 'System')
             `;
-            db.query(notifSql, [userDbId], (notifErr) => {
-                if (notifErr) console.error("Failed to insert password change notification:", notifErr);
-            });
+                db.query(notifSql, [userDbId], (notifErr) => {
+                    if (notifErr) console.error("Failed to insert password change notification:", notifErr);
+                });
 
-            res.json({
-                success:true,
-                message:"Password changed successfully.",
-                role:user.role
-            });
+                res.json({
+                    success: true,
+                    message: "Password changed successfully.",
+                    role: user.role
+                });
 
-        });
+            });
         }).catch((errHash) => {
             console.error(errHash);
             res.json({
-                success:false,
-                message:"Failed to update password."
+                success: false,
+                message: "Failed to update password."
             });
         });
 
@@ -21144,10 +23069,10 @@ app.post("/force-change-password", (req, res) => {
 /* ================= CHAT FILE UPLOAD SETUP ================= */
 
 const chatFileStorage = multer.diskStorage({
-    destination: function(req, file, cb){
+    destination: function (req, file, cb) {
         const uploadPath = path.join(__dirname, "uploads", "chat_files");
 
-        if(!fs.existsSync(uploadPath)){
+        if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, {
                 recursive: true
             });
@@ -21156,7 +23081,7 @@ const chatFileStorage = multer.diskStorage({
         cb(null, uploadPath);
     },
 
-    filename: function(req, file, cb){
+    filename: function (req, file, cb) {
         const uniqueName =
             Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
 
@@ -21173,14 +23098,14 @@ const chatFileUpload = multer({
 
 /* ── Consultation document upload ─────────────────────────────────────── */
 const consultationDocStorage = multer.diskStorage({
-    destination: function(req, file, cb) {
+    destination: function (req, file, cb) {
         const uploadPath = path.join(__dirname, "uploads", "consultation_documents");
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);
     },
-    filename: function(req, file, cb) {
+    filename: function (req, file, cb) {
         const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
         cb(null, unique + path.extname(file.originalname));
     }
@@ -21188,7 +23113,7 @@ const consultationDocStorage = multer.diskStorage({
 const consultationUpload = multer({
     storage: consultationDocStorage,
     limits: { fileSize: 20 * 1024 * 1024 },
-    fileFilter: function(req, file, cb) {
+    fileFilter: function (req, file, cb) {
         if (file.mimetype === "application/pdf") cb(null, true);
         else cb(new Error("Only PDF files are allowed for consultation documents."), false);
     }
@@ -21369,8 +23294,8 @@ app.post("/student-consultations", (req, res, next) => {
 }, (req, res) => {
     const { studentUserId, assignedFacultyId, consultationType, topic, concernMessage } = req.body;
     const uploadedFile = req.file || null;
-    const filePath  = uploadedFile ? `/uploads/consultation_documents/${uploadedFile.filename}` : null;
-    const fileName  = uploadedFile ? uploadedFile.originalname : null;
+    const filePath = uploadedFile ? `/uploads/consultation_documents/${uploadedFile.filename}` : null;
+    const fileName = uploadedFile ? uploadedFile.originalname : null;
 
     if (!studentUserId || !assignedFacultyId || !consultationType || !concernMessage) {
         return res.json({ success: false, message: "Missing required fields." });
@@ -21388,106 +23313,106 @@ app.post("/student-consultations", (req, res, next) => {
             });
         }
 
-    const studentSql = "SELECT id, fullname FROM users WHERE user_id = ? AND role = 'student'";
-    db.query(studentSql, [studentUserId], (err, studentResult) => {
-        if (err) {
-            console.error(err);
-            return res.json({ success: false, message: "Database error while fetching student." });
-        }
-        if (studentResult.length === 0) {
-            return res.json({ success: false, message: "Student not found." });
-        }
-
-        const studentDbId = studentResult[0].id;
-        const studentName = studentResult[0].fullname;
-
-        const groupSql = "SELECT group_id FROM group_members WHERE student_id = ?";
-        db.query(groupSql, [studentDbId], (err, groupResult) => {
+        const studentSql = "SELECT id, fullname FROM users WHERE user_id = ? AND role = 'student'";
+        db.query(studentSql, [studentUserId], (err, studentResult) => {
             if (err) {
                 console.error(err);
-                return res.json({ success: false, message: "Database error while checking student group." });
+                return res.json({ success: false, message: "Database error while fetching student." });
+            }
+            if (studentResult.length === 0) {
+                return res.json({ success: false, message: "Student not found." });
             }
 
-            const groupDbId = groupResult.length > 0 ? groupResult[0].group_id : null;
+            const studentDbId = studentResult[0].id;
+            const studentName = studentResult[0].fullname;
 
-            const determineRole = (callback) => {
-                if (!groupDbId) {
-                    return callback("Instructor");
+            const groupSql = "SELECT group_id FROM group_members WHERE student_id = ?";
+            db.query(groupSql, [studentDbId], (err, groupResult) => {
+                if (err) {
+                    console.error(err);
+                    return res.json({ success: false, message: "Database error while checking student group." });
                 }
-                const adviserSql = "SELECT adviser_id FROM capstone_groups WHERE id = ?";
-                db.query(adviserSql, [groupDbId], (err, adviserResult) => {
-                    if (err) {
-                        console.error(err);
+
+                const groupDbId = groupResult.length > 0 ? groupResult[0].group_id : null;
+
+                const determineRole = (callback) => {
+                    if (!groupDbId) {
                         return callback("Instructor");
                     }
-                    if (adviserResult.length > 0 && Number(adviserResult[0].adviser_id) === Number(assignedFacultyId)) {
-                        return callback("Adviser");
-                    }
-                    callback("Instructor");
-                });
-            };
-
-            determineRole((assignedRole) => {
-                const year = new Date().getFullYear();
-                const prefix = `CNS-${year}-`;
-                const codeSql = "SELECT consultation_code FROM consultations WHERE consultation_code LIKE ? ORDER BY id DESC LIMIT 1";
-                db.query(codeSql, [prefix + "%"], (err, codeResult) => {
-                    let nextNumber = 1;
-                    if (err) {
-                        console.error(err);
-                    } else if (codeResult.length > 0) {
-                        const lastCode = codeResult[0].consultation_code;
-                        const parts = lastCode.split("-");
-                        const lastNum = parseInt(parts[2]);
-                        if (!isNaN(lastNum)) {
-                            nextNumber = lastNum + 1;
+                    const adviserSql = "SELECT adviser_id FROM capstone_groups WHERE id = ?";
+                    db.query(adviserSql, [groupDbId], (err, adviserResult) => {
+                        if (err) {
+                            console.error(err);
+                            return callback("Instructor");
                         }
-                    }
+                        if (adviserResult.length > 0 && Number(adviserResult[0].adviser_id) === Number(assignedFacultyId)) {
+                            return callback("Adviser");
+                        }
+                        callback("Instructor");
+                    });
+                };
 
-                    const consultationCode = `${prefix}${String(nextNumber).padStart(4, "0")}`;
+                determineRole((assignedRole) => {
+                    const year = new Date().getFullYear();
+                    const prefix = `CNS-${year}-`;
+                    const codeSql = "SELECT consultation_code FROM consultations WHERE consultation_code LIKE ? ORDER BY id DESC LIMIT 1";
+                    db.query(codeSql, [prefix + "%"], (err, codeResult) => {
+                        let nextNumber = 1;
+                        if (err) {
+                            console.error(err);
+                        } else if (codeResult.length > 0) {
+                            const lastCode = codeResult[0].consultation_code;
+                            const parts = lastCode.split("-");
+                            const lastNum = parseInt(parts[2]);
+                            if (!isNaN(lastNum)) {
+                                nextNumber = lastNum + 1;
+                            }
+                        }
 
-                    const insertSql = `
+                        const consultationCode = `${prefix}${String(nextNumber).padStart(4, "0")}`;
+
+                        const insertSql = `
                         INSERT INTO consultations
                         (consultation_code, student_id, group_id, assigned_faculty_id, assigned_role, consultation_type, topic, concern_message, file_path, file_name, status)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
                     `;
-                    const insertParams = [
-                        consultationCode,
-                        studentDbId,
-                        groupDbId,
-                        assignedFacultyId,
-                        assignedRole,
-                        consultationType,
-                        topic || null,
-                        concernMessage,
-                        filePath,
-                        fileName
-                    ];
+                        const insertParams = [
+                            consultationCode,
+                            studentDbId,
+                            groupDbId,
+                            assignedFacultyId,
+                            assignedRole,
+                            consultationType,
+                            topic || null,
+                            concernMessage,
+                            filePath,
+                            fileName
+                        ];
 
-                    db.query(insertSql, insertParams, (err) => {
-                        if (err) {
-                            console.error(err);
-                            return res.json({ success: false, message: "Failed to submit consultation request." });
-                        }
+                        db.query(insertSql, insertParams, (err) => {
+                            if (err) {
+                                console.error(err);
+                                return res.json({ success: false, message: "Failed to submit consultation request." });
+                            }
 
-                        const notifSql = `
+                            const notifSql = `
                             INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                             VALUES (?, ?, ?, 'Consultation')
                         `;
-                        const notifTitle = "New Consultation Request";
-                        const notifMessage = `Student ${studentName} requested a ${consultationType} on "${topic || 'General Topic'}".`;
-                        db.query(notifSql, [assignedFacultyId, notifTitle, notifMessage], (notifErr) => {
-                            if (notifErr) {
-                                console.error("Notification insert error:", notifErr);
-                            }
-                        });
+                            const notifTitle = "New Consultation Request";
+                            const notifMessage = `Student ${studentName} requested a ${consultationType} on "${topic || 'General Topic'}".`;
+                            db.query(notifSql, [assignedFacultyId, notifTitle, notifMessage], (notifErr) => {
+                                if (notifErr) {
+                                    console.error("Notification insert error:", notifErr);
+                                }
+                            });
 
-                        res.json({ success: true, message: "Consultation request submitted successfully." });
+                            res.json({ success: true, message: "Consultation request submitted successfully." });
+                        });
                     });
                 });
             });
         });
-    });
     });
 });
 
@@ -21569,7 +23494,7 @@ app.put("/faculty-consultations/:id/schedule", (req, res) => {
     let computedStatus = "Pending";
     if (scheduledDate && scheduledEndTime) {
         const now = new Date();
-        const endDatetime   = new Date(`${scheduledDate}T${scheduledEndTime}`);
+        const endDatetime = new Date(`${scheduledDate}T${scheduledEndTime}`);
         const startDatetime = scheduledStartTime
             ? new Date(`${scheduledDate}T${scheduledStartTime}`)
             : endDatetime;
@@ -21602,14 +23527,14 @@ app.put("/faculty-consultations/:id/schedule", (req, res) => {
         }
 
         const prev = prevResult[0] || {};
-        const prevDate  = prev.scheduled_date  ? String(prev.scheduled_date).slice(0,10) : null;
-        const prevStart = prev.scheduled_start_time ? String(prev.scheduled_start_time).slice(0,5) : null;
-        const prevEnd   = prev.scheduled_end_time   ? String(prev.scheduled_end_time).slice(0,5)   : null;
+        const prevDate = prev.scheduled_date ? String(prev.scheduled_date).slice(0, 10) : null;
+        const prevStart = prev.scheduled_start_time ? String(prev.scheduled_start_time).slice(0, 5) : null;
+        const prevEnd = prev.scheduled_end_time ? String(prev.scheduled_end_time).slice(0, 5) : null;
         const isReschedule =
             prevDate && scheduledDate &&
-            (prevDate  !== String(scheduledDate).slice(0,10) ||
-             prevStart !== String(scheduledStartTime || "").slice(0,5) ||
-             prevEnd   !== String(scheduledEndTime   || "").slice(0,5));
+            (prevDate !== String(scheduledDate).slice(0, 10) ||
+                prevStart !== String(scheduledStartTime || "").slice(0, 5) ||
+                prevEnd !== String(scheduledEndTime || "").slice(0, 5));
 
         const updateSql = `
             UPDATE consultations
@@ -21639,9 +23564,9 @@ app.put("/faculty-consultations/:id/schedule", (req, res) => {
                 return res.json({ success: false, message: "Failed to update consultation schedule." });
             }
 
-            const studentDbId       = prev.student_id;
-            const facultyName       = prev.faculty_name;
-            const consultationCode  = prev.consultation_code;
+            const studentDbId = prev.student_id;
+            const facultyName = prev.faculty_name;
+            const consultationCode = prev.consultation_code;
 
             const notifSql = `
                 INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
@@ -21781,16 +23706,16 @@ function computeConsultationStatus(row) {
     if (!row.scheduled_date || !row.scheduled_end_time) {
         return row.scheduled_date ? "Scheduled" : "Pending";
     }
-    const dateStr   = String(row.scheduled_date).slice(0, 10);
-    const endTime   = String(row.scheduled_end_time).slice(0, 5);
+    const dateStr = String(row.scheduled_date).slice(0, 10);
+    const endTime = String(row.scheduled_end_time).slice(0, 5);
     const startTime = row.scheduled_start_time
         ? String(row.scheduled_start_time).slice(0, 5)
         : endTime;
-    const now     = new Date();
-    const endDt   = new Date(`${dateStr}T${endTime}`);
+    const now = new Date();
+    const endDt = new Date(`${dateStr}T${endTime}`);
     const startDt = new Date(`${dateStr}T${startTime}`);
     if (now >= startDt && now <= endDt) return "Ongoing";
-    if (now > endDt)                   return "Completed";
+    if (now > endDt) return "Completed";
     return "Scheduled";
 }
 
@@ -21820,7 +23745,7 @@ function runConsultationStatusSync() {
                     /* Notify student when status advances to Ongoing or Completed */
                     if ((correct === "Ongoing" || correct === "Completed") && row.student_id) {
                         const title = correct === "Ongoing" ? "Consultation Now Ongoing" : "Consultation Completed";
-                        const msg   = correct === "Ongoing"
+                        const msg = correct === "Ongoing"
                             ? `Your consultation (${row.consultation_code}) is now ongoing.`
                             : `Your consultation (${row.consultation_code}) has been marked as completed.`;
                         db.query(
@@ -21860,18 +23785,18 @@ app.get("/admin-document-review/:userId", (req, res) => {
     `;
 
     db.query(adminSql, [userId], (err, adminResult) => {
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({
-                success:false,
-                message:"Failed to check admin account."
+                success: false,
+                message: "Failed to check admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Admin account not found."
+                success: false,
+                message: "Admin account not found."
             });
         }
 
@@ -21980,15 +23905,16 @@ app.get("/admin-document-review/:userId", (req, res) => {
             LEFT JOIN users reviewer
                 ON ds.reviewed_by = reviewer.id
             WHERE ds.receiver_id = ?
+            AND (ds.target_role IS NULL OR LOWER(ds.target_role) NOT IN ('adviser', 'instructor'))
             ORDER BY ds.sent_at DESC
         `;
 
         db.query(receivedSql, [adminDbId], (err, receivedDocuments) => {
-            if(err){
+            if (err) {
                 console.log(err);
                 return res.json({
-                    success:false,
-                    message:"Failed to load received documents."
+                    success: false,
+                    message: "Failed to load received documents."
                 });
             }
 
@@ -22009,11 +23935,11 @@ app.get("/admin-document-review/:userId", (req, res) => {
             `;
 
             db.query(recipientsSql, [userId], (err, recipients) => {
-                if(err){
+                if (err) {
                     console.log(err);
                     return res.json({
-                        success:false,
-                        message:"Failed to load recipients."
+                        success: false,
+                        message: "Failed to load recipients."
                     });
                 }
 
@@ -22045,11 +23971,11 @@ app.get("/admin-document-review/:userId", (req, res) => {
                 `;
 
                 db.query(sentSql, [adminDbId], (err, sentDocuments) => {
-                    if(err){
+                    if (err) {
                         console.log(err);
                         return res.json({
-                            success:false,
-                            message:"Failed to load sent documents."
+                            success: false,
+                            message: "Failed to load sent documents."
                         });
                     }
 
@@ -22069,11 +23995,11 @@ app.get("/admin-document-review/:userId", (req, res) => {
                         ).length;
 
                     res.json({
-                        success:true,
+                        success: true,
                         admin,
-                        stats:{
-                            receivedDocuments:receivedDocuments.length,
-                            sentDocuments:sentDocuments.length,
+                        stats: {
+                            receivedDocuments: receivedDocuments.length,
+                            sentDocuments: sentDocuments.length,
                             pendingCount,
                             approvedCount,
                             subjectToChangeCount
@@ -22099,33 +24025,33 @@ app.post("/admin-send-document", studentDocumentUpload.single("documentFile"), (
         message
     } = req.body;
 
-    if(
+    if (
         !adminUserId ||
         !documentTitle ||
         !documentType ||
         !recipientIds ||
         !req.file
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Please complete all required fields and attach a document."
+            success: false,
+            message: "Please complete all required fields and attach a document."
         });
     }
 
     let selectedRecipients = [];
-    try{
+    try {
         selectedRecipients = JSON.parse(recipientIds);
-    }catch(error){
+    } catch (error) {
         return res.json({
-            success:false,
-            message:"Invalid recipient list."
+            success: false,
+            message: "Invalid recipient list."
         });
     }
 
-    if(selectedRecipients.length === 0){
+    if (selectedRecipients.length === 0) {
         return res.json({
-            success:false,
-            message:"Please select at least one recipient."
+            success: false,
+            message: "Please select at least one recipient."
         });
     }
 
@@ -22138,18 +24064,18 @@ app.post("/admin-send-document", studentDocumentUpload.single("documentFile"), (
     `;
 
     db.query(adminSql, [adminUserId], (err, adminResult) => {
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({
-                success:false,
-                message:"Failed to check admin account."
+                success: false,
+                message: "Failed to check admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Admin account not found."
+                success: false,
+                message: "Admin account not found."
             });
         }
 
@@ -22187,11 +24113,11 @@ app.post("/admin-send-document", studentDocumentUpload.single("documentFile"), (
                 fileFormat
             ],
             (err, documentResult) => {
-                if(err){
+                if (err) {
                     console.log(err);
                     return res.json({
-                        success:false,
-                        message:"Failed to save uploaded document."
+                        success: false,
+                        message: "Failed to save uploaded document."
                     });
                 }
 
@@ -22219,11 +24145,11 @@ app.post("/admin-send-document", studentDocumentUpload.single("documentFile"), (
                 `;
 
                 db.query(insertSubmissionSql, [submissionValues], (err) => {
-                    if(err){
+                    if (err) {
                         console.log(err);
                         return res.json({
-                            success:false,
-                            message:"Document uploaded but failed to send to recipients."
+                            success: false,
+                            message: "Document uploaded but failed to send to recipients."
                         });
                     }
 
@@ -22247,13 +24173,13 @@ app.post("/admin-send-document", studentDocumentUpload.single("documentFile"), (
                     `;
 
                     db.query(notifySql, [notificationValues], (err) => {
-                        if(err){
+                        if (err) {
                             console.log(err);
                         }
 
                         res.json({
-                            success:true,
-                            message:"Document sent successfully."
+                            success: true,
+                            message: "Document sent successfully."
                         });
                     });
                 });
@@ -22273,26 +24199,26 @@ app.put("/admin-review-student-document/:submissionId", (req, res) => {
         otherStatus
     } = req.body;
 
-    if(
+    if (
         !submissionId ||
         !adminUserId ||
         !reviewStatus
-    ){
+    ) {
         return res.json({
-            success:false,
-            message:"Missing review information."
+            success: false,
+            message: "Missing review information."
         });
     }
 
     const finalStatus =
         reviewStatus === "Other"
-        ? otherStatus
-        : reviewStatus;
+            ? otherStatus
+            : reviewStatus;
 
-    if(!finalStatus){
+    if (!finalStatus) {
         return res.json({
-            success:false,
-            message:"Please provide the review status."
+            success: false,
+            message: "Please provide the review status."
         });
     }
 
@@ -22305,18 +24231,18 @@ app.put("/admin-review-student-document/:submissionId", (req, res) => {
     `;
 
     db.query(adminSql, [adminUserId], (err, adminResult) => {
-        if(err){
+        if (err) {
             console.log(err);
             return res.json({
-                success:false,
-                message:"Failed to check admin account."
+                success: false,
+                message: "Failed to check admin account."
             });
         }
 
-        if(adminResult.length === 0){
+        if (adminResult.length === 0) {
             return res.json({
-                success:false,
-                message:"Admin account not found."
+                success: false,
+                message: "Admin account not found."
             });
         }
 
@@ -22341,18 +24267,18 @@ app.put("/admin-review-student-document/:submissionId", (req, res) => {
         `;
 
         db.query(submissionSql, [submissionId, adminDbId], (err, submissionResult) => {
-            if(err){
+            if (err) {
                 console.log(err);
                 return res.json({
-                    success:false,
-                    message:"Failed to check document submission."
+                    success: false,
+                    message: "Failed to check document submission."
                 });
             }
 
-            if(submissionResult.length === 0){
+            if (submissionResult.length === 0) {
                 return res.json({
-                    success:false,
-                    message:"Document submission not found or you are not the assigned receiver."
+                    success: false,
+                    message: "Document submission not found or you are not the assigned receiver."
                 });
             }
 
@@ -22380,11 +24306,11 @@ app.put("/admin-review-student-document/:submissionId", (req, res) => {
                     adminDbId
                 ],
                 (err) => {
-                    if(err){
+                    if (err) {
                         console.log(err);
                         return res.json({
-                            success:false,
-                            message:"Failed to submit document review."
+                            success: false,
+                            message: "Failed to submit document review."
                         });
                     }
 
@@ -22408,13 +24334,13 @@ app.put("/admin-review-student-document/:submissionId", (req, res) => {
                             "Document Review"
                         ],
                         (err) => {
-                            if(err){
+                            if (err) {
                                 console.log(err);
                             }
 
                             res.json({
-                                success:true,
-                                message:"Review submitted successfully."
+                                success: true,
+                                message: "Review submitted successfully."
                             });
                         }
                     );
@@ -22428,14 +24354,14 @@ app.put("/admin-review-student-document/:submissionId", (req, res) => {
 /* ================= DEFENSE MINUTES PICTURE UPLOAD & APPROVAL ================= */
 
 const defenseMinutesStorage = multer.diskStorage({
-    destination: function(req, file, cb) {
+    destination: function (req, file, cb) {
         const uploadPath = path.join(__dirname, "uploads", "defense_minutes");
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);
     },
-    filename: function(req, file, cb) {
+    filename: function (req, file, cb) {
         const uniqueName =
             Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
         cb(null, uniqueName);
@@ -22444,7 +24370,7 @@ const defenseMinutesStorage = multer.diskStorage({
 
 const defenseMinutesUpload = multer({
     storage: defenseMinutesStorage,
-    fileFilter: function(req, file, cb) {
+    fileFilter: function (req, file, cb) {
         const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
         const ext = path.extname(file.originalname || "").toLowerCase();
         const allowedExt = [".jpg", ".jpeg", ".png", ".webp"];
@@ -22482,9 +24408,9 @@ app.post(
                 return res.json({ success: false, message: "Student group not found." });
             }
 
-            const groupDbId  = groupResult[0].group_db_id;
+            const groupDbId = groupResult[0].group_db_id;
             const uploadedBy = groupResult[0].uploaded_by;
-            const filePath   = "/uploads/defense_minutes/" + req.file.filename;
+            const filePath = "/uploads/defense_minutes/" + req.file.filename;
             const fileFormat = path.extname(req.file.originalname).replace(".", "").toUpperCase();
 
             /* Check maximum 5 pictures for defense minutes */
@@ -22496,7 +24422,7 @@ app.post(
             db.query(checkLimitSql, [groupDbId, documentType], (errLim, limResult) => {
                 if (!errLim && limResult && limResult[0].total >= 5) {
                     if (req.file && req.file.path) {
-                        try { fs.unlinkSync(req.file.path); } catch (e) {}
+                        try { fs.unlinkSync(req.file.path); } catch (e) { }
                     }
                     return res.json({ success: false, message: "Maximum of 5 defense minutes photos already uploaded." });
                 }
@@ -22531,7 +24457,7 @@ app.post(
                     db.query(
                         insertSql,
                         [documentCode, groupDbId, uploadedBy, documentType, documentTitle,
-                         req.file.originalname, filePath, fileFormat],
+                            req.file.originalname, filePath, fileFormat],
                         (err3) => {
                             if (err3) {
                                 console.error(err3);
@@ -22616,7 +24542,7 @@ app.post("/send-defense-minutes-pictures", (req, res) => {
                             "Defense Minutes Photos Submitted",
                             `A student group has submitted ${picCount} defense minutes photo(s) (${docType}) for your review and approval.`,
                             "Document Review"
-                        ], () => {});
+                        ], () => { });
                     }
                 });
 

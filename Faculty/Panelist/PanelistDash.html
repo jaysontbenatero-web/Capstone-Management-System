@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -120,6 +120,16 @@
                     </span>
                 </div>
 
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Document_Review.html'"
+                >
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>
+                        Document Review
+                    </span>
+                </div>
+
             </div>
 
         </div>
@@ -199,12 +209,13 @@
 
                 <div
                     class="role-card"
+                    id="homeRoleCard"
                     onclick="goHomeRole()"
                 >
-                    <i class="fa-solid fa-house"></i>
+                    <i id="homeRoleIcon" class="fa-solid fa-graduation-cap"></i>
 
-                    <span>
-                        Home
+                    <span id="homeRoleLabel">
+                        Faculty
                     </span>
                 </div>
 
@@ -487,6 +498,8 @@
                 String(panelist.instructor_access || 0)
             );
 
+            applyRoleAccessStyles();
+
         }
 
         function renderStats(stats){
@@ -701,6 +714,32 @@
             }
 
         }
+
+        (function syncHomeRoleCard(){
+            const isAdmin = String(localStorage.getItem("role") || "").toLowerCase() === "admin";
+            const iconEl = document.getElementById("homeRoleIcon");
+            const labelEl = document.getElementById("homeRoleLabel");
+            if(iconEl) iconEl.className = isAdmin ? "fa-solid fa-user-shield" : "fa-solid fa-graduation-cap";
+            if(labelEl) labelEl.textContent = isAdmin ? "Admin" : "Faculty";
+        })();
+
+        function applyRoleAccessStyles(){
+            const roles = [
+                { id: "adviserRoleCard", key: "adviser_access" },
+                { id: "instructorRoleCard", key: "instructor_access" }
+            ];
+            roles.forEach(({ id, key }) => {
+                const el = document.getElementById(id);
+                if(!el) return;
+                const hasAccess = localStorage.getItem(key) === "1";
+                el.style.opacity = hasAccess ? "" : "0.5";
+                el.style.filter = hasAccess ? "" : "grayscale(85%)";
+                el.style.background = hasAccess ? "" : "#cbd5e1";
+                el.style.color = hasAccess ? "" : "#475569";
+            });
+        }
+
+        applyRoleAccessStyles();
 
         function openRole(role){
 

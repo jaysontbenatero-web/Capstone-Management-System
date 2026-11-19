@@ -97,7 +97,7 @@
                     onclick="window.location.href='STU_Enroll.html'"
                 >
                     <i class="fa-solid fa-user-plus"></i>
-                    <span>Enroll Student</span>
+                    <span>Register Students</span>
                 </div>
 
                 <div
@@ -346,7 +346,6 @@
                         <option value="Outline Defense">Outline Defense</option>
                         <option value="Pre-Final Defense">Pre-Final Defense</option>
                         <option value="Final Defense">Final Defense</option>
-                        <option value="Other">Other Defense Type</option>
                     </select>
                 </div>
 
@@ -390,134 +389,13 @@
                 </div>
             </div>
 
-            <!-- RETAINED OUTLINE PANEL NOTICE -->
-            <div id="retainOutlinePanelNotice" class="retained-panel-notice" style="display:none;"></div>
-
-            <!-- PANEL SELECTION SYSTEM (DROPDOWN REDESIGN) -->
-            <div class="panel-selection-dropdowns" style="margin-top: 15px;">
-                <div class="form-grid">
-                    <div class="input-group" style="grid-column: span 2;">
-                        <label><i class="fa-solid fa-user-tie"></i> Select Panel Chair <span class="required-star">*</span></label>
-                        <select id="panelChairSelect" onchange="onChairChange()">
-                            <option value="">Select Panel Chair</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label><i class="fa-solid fa-user"></i> Select Panel Member 1 <span class="required-star">*</span></label>
-                        <select id="panelMember1Select" onchange="onMember1Change()">
-                            <option value="">Select Panel Member 1</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label><i class="fa-solid fa-user"></i> Select Panel Member 2 <span class="required-star">*</span></label>
-                        <select id="panelMember2Select" onchange="onMember2Change()">
-                            <option value="">Select Panel Member 2</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PANEL SUMMARY RECEIPT CARD -->
-            <div id="panelSummaryCard" style="display:none;" class="panel-summary-receipt">
-                <div class="panel-summary-header">
-                    <i class="fa-solid fa-id-card-clip"></i>
-                    <span>Panel Composition</span>
-                    <span class="panel-summary-count" id="panelSummaryCount">0/3 Selected</span>
-                </div>
-                <div class="panel-summary-body" id="panelSummaryBody">
-                </div>
-            </div>
-
-            <div id="panelConflictNotice" style="display: none; margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
-                <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
-                <span id="panelConflictNoticeText">One or more selected panelists are already scheduled for another defense at this date and time.</span>
-            </div>
-
-            <div class="form-grid">
-
-                <div class="input-group">
-                    <label>Room Location <span class="required-star">*</span></label>
-
-                    <select
-                        id="roomSelect"
-                        onchange="toggleOtherRoom(); checkRoomAndTimelineConflicts();"
-                    >
-                        <option value="">Select room</option>
-                        <option value="AB3-1">AB3-1</option>
-                        <option value="AB3-2">AB3-2</option>
-                        <option value="AB3-3">AB3-3</option>
-                        <option value="AB3-4">AB3-4</option>
-                        <option value="AB3-5">AB3-5</option>
-                        <option value="AB3-6">AB3-6</option>
-                        <option value="AB3-7">AB3-7</option>
-                        <option value="ComLab 1">ComLab 1</option>
-                        <option value="ComLab 2">ComLab 2</option>
-                        <option value="Other">Other Room</option>
-                    </select>
-
-                    <div id="roomConflictNotice" style="display: none; margin-top: 8px; padding: 10px 12px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
-                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
-                        <span id="roomConflictNoticeText">This room is already booked for another defense during this date and time slot.</span>
-                    </div>
-                </div>
-
-                <div
-                    class="input-group"
-                    id="statusBox"
-                    style="display:none;"
-                >
-                    <label>Status</label>
-
-                    <select id="defenseStatus">
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
-                </div>
-
-            </div>
-
-            <div class="form-grid dynamic-boxes">
-                <div
-                    class="input-group"
-                    id="otherDefenseTypeBox"
-                    style="display:none;"
-                >
-                    <label>Other Defense Type</label>
-
-                    <input
-                        type="text"
-                        id="otherDefenseType"
-                        placeholder="Enter defense type"
-                        oninput="onDefenseTypeChange()"
-                    >
-                </div>
-
-                <div
-                    class="input-group"
-                    id="otherRoomBox"
-                    style="display:none;"
-                >
-                    <label>Other Room Name</label>
-
-                    <input
-                        type="text"
-                        id="otherRoom"
-                        placeholder="Enter room name"
-                        oninput="checkRoomAndTimelineConflicts()"
-                    >
-                </div>
-            </div>
-
-            <!-- PREMIUM SCHEDULE TIMELINE PICKER CARD -->
-            <div class="timeline-picker-card">
+            <!-- 1. DEFENSE SCHEDULE TIMELINE & ROOM -->
+            <div class="timeline-picker-card" style="margin-top: 15px;">
                 
                 <div class="timeline-header">
                     <div>
-                        <h3><i class="fa-solid fa-clock-rotate-left" style="color: #7c3aed;"></i> Defense Schedule Timeline</h3>
-                        <p>Configure presentation date, duration slot, and end target.</p>
+                        <h3><i class="fa-solid fa-clock-rotate-left" style="color: #7c3aed;"></i> Defense Schedule Timeline &amp; Room</h3>
+                        <p>Configure presentation date, time slot, and room venue.</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <button type="button" id="toggleAvailabilityBtn" onclick="toggleBookedAvailability()" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.2); padding: 6px 12px; border-radius: 6px; font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
@@ -526,7 +404,7 @@
                         <div id="durationBadge" class="duration-badge" style="display: none;">
                             Duration: --
                         </div>
-            </div>
+                    </div>
                 </div>
 
                 <!-- COLLAPSIBLE BOOKED AVAILABILITY -->
@@ -570,9 +448,122 @@
 
                 </div>
 
+                <div class="form-grid" style="margin-top: 14px;">
+
+                    <div class="input-group">
+                        <label>Room Location <span class="required-star">*</span></label>
+
+                        <select
+                            id="roomSelect"
+                            onchange="toggleOtherRoom(); checkRoomAndTimelineConflicts();"
+                        >
+                            <option value="">Select room</option>
+                            <option value="AB3-1">AB3-1</option>
+                            <option value="AB3-2">AB3-2</option>
+                            <option value="AB3-3">AB3-3</option>
+                            <option value="AB3-4">AB3-4</option>
+                            <option value="AB3-5">AB3-5</option>
+                            <option value="AB3-6">AB3-6</option>
+                            <option value="AB3-7">AB3-7</option>
+                            <option value="ComLab 1">ComLab 1</option>
+                            <option value="ComLab 2">ComLab 2</option>
+                            <option value="Other">Other Room</option>
+                        </select>
+
+                        <div id="roomConflictNotice" style="display: none; margin-top: 8px; padding: 10px 12px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
+                            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
+                            <span id="roomConflictNoticeText">This room is already booked for another defense during this date and time slot.</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="input-group"
+                        id="statusBox"
+                        style="display:none;"
+                    >
+                        <label>Status</label>
+
+                        <select id="defenseStatus">
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="form-grid dynamic-boxes" style="margin-top: 8px;">
+                    <div
+                        class="input-group"
+                        id="otherRoomBox"
+                        style="display:none;"
+                    >
+                        <label>Other Room Name</label>
+
+                        <input
+                            type="text"
+                            id="otherRoom"
+                            placeholder="Enter room name"
+                            oninput="checkRoomAndTimelineConflicts()"
+                        >
+                    </div>
+                </div>
+
             </div>
 
-            <div class="input-group">
+            <!-- RETAINED OUTLINE PANEL NOTICE -->
+            <div id="retainOutlinePanelNotice" class="retained-panel-notice" style="display:none; margin-top: 15px;"></div>
+
+            <!-- 2. PANEL SELECTION SYSTEM (DROPDOWN REDESIGN) -->
+            <div class="panel-selection-dropdowns" style="margin-top: 16px; padding: 16px; background: #faf8ff; border: 1px solid #ede9fe; border-radius: 14px;">
+                <div style="margin-bottom: 12px;">
+                    <h3 style="margin: 0; font-size: 14.5px; color: #2e1065; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-users-gear" style="color: #7c3aed;"></i> Assign Panelists
+                    </h3>
+                    <p style="margin: 2px 0 0; font-size: 12px; color: #6d5f85;">Select the panel chair and two panel members for this defense.</p>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label><i class="fa-solid fa-user-tie"></i> Select Panel Chair <span class="required-star">*</span></label>
+                        <select id="panelChairSelect" onchange="onChairChange()">
+                            <option value="">Select Panel Chair</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label><i class="fa-solid fa-user"></i> Select Panel Member 1 <span class="required-star">*</span></label>
+                        <select id="panelMember1Select" onchange="onMember1Change()">
+                            <option value="">Select Panel Member 1</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fa-solid fa-user"></i> Select Panel Member 2 <span class="required-star">*</span></label>
+                        <select id="panelMember2Select" onchange="onMember2Change()">
+                            <option value="">Select Panel Member 2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- PANEL SUMMARY RECEIPT CARD -->
+                <div id="panelSummaryCard" style="display:none; margin-top: 12px;" class="panel-summary-receipt">
+                    <div class="panel-summary-header">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                        <span>Panel Composition</span>
+                        <span class="panel-summary-count" id="panelSummaryCount">0/3 Selected</span>
+                    </div>
+                    <div class="panel-summary-body" id="panelSummaryBody">
+                    </div>
+                </div>
+
+                <div id="panelConflictNotice" style="display: none; margin-top: 10px; padding: 10px 14px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
+                    <span id="panelConflictNoticeText">One or more selected panelists are already scheduled for another defense at this date and time.</span>
+                </div>
+            </div>
+
+            <!-- 3. NOTES -->
+            <div class="input-group" style="margin-top: 16px;">
                 <label>Notes (Optional)</label>
 
                 <textarea
@@ -2038,14 +2029,9 @@
             document.getElementById("defenseType").value =
                 isDefaultDefenseType(item.defense_type)
                 ? item.defense_type
-                : "Other";
+                : "Concept Presentation";
 
             toggleOtherDefenseType();
-
-            document.getElementById("otherDefenseType").value =
-                isDefaultDefenseType(item.defense_type)
-                ? ""
-                : item.defense_type;
 
             document.getElementById("defenseStatus").value =
                 item.defense_status;
@@ -2607,13 +2593,10 @@
 
         function toggleOtherDefenseType(){
 
-            const defenseType =
-                document.getElementById("defenseType").value;
-
-            document.getElementById("otherDefenseTypeBox").style.display =
-                defenseType === "Other"
-                ? "block"
-                : "none";
+            const otherBox = document.getElementById("otherDefenseTypeBox");
+            if (otherBox) {
+                otherBox.style.display = "none";
+            }
 
             // Trigger dynamic loading of approved papers
             loadApprovedDocumentsForGroup();
@@ -2628,17 +2611,7 @@
             const el = document.getElementById("defenseType");
             if(!el) return "Concept Presentation";
 
-            const defenseType =
-                el.value || "Concept Presentation";
-
-            if(defenseType === "Other"){
-
-                const otherEl = document.getElementById("otherDefenseType");
-                return (otherEl?.value || "").trim() || "Other";
-
-            }
-
-            return defenseType;
+            return el.value || "Concept Presentation";
 
         }
 

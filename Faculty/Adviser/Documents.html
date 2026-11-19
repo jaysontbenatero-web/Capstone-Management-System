@@ -5,46 +5,42 @@
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>
         Document Review | CMS</title>
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <link
-        rel="stylesheet"
-        href="Documents.css"
-    >
+    <link rel="stylesheet" href="Documents.css">
 
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="../../shared/defense-minutes-sheet.css">
+    <script src="../../shared/defense-minutes-sheet.js"></script>
     <style>
         /* Prevent background components or overlays from hijacking mouse pointer clicks */
-        .admin-portal .bg1, .admin-portal .bg2 {
+        .admin-portal .bg1,
+        .admin-portal .bg2 {
             pointer-events: none !important;
         }
+
         /* Ensure main and sidebar can be clicked directly */
-        .admin-portal .sidebar, .admin-portal .main {
+        .admin-portal .sidebar,
+        .admin-portal .main {
             pointer-events: auto !important;
             position: relative;
             z-index: 10;
         }
+
         /* Ensure modal overlays don't block clicks when hidden */
         .modal-overlay {
             pointer-events: none;
             display: none;
         }
+
         .modal-overlay.active,
         .modal-overlay[style*="flex"],
         .modal-overlay[style*="block"] {
@@ -57,6 +53,41 @@
 
     <link rel="stylesheet" href="../../shared/custom-alerts.css">
     <script src="../../shared/custom-alerts.js"></script>
+    <style>
+        mark.sim-hl {
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-weight: 600;
+            display: inline;
+            line-height: inherit;
+        }
+
+        mark.sim-hl-title {
+            background: #fde68a;
+            color: #b45309;
+        }
+
+        mark.sim-hl-abstract {
+            background: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        mark.sim-hl-objectives {
+            background: #bbf7d0;
+            color: #15803d;
+        }
+
+        mark.sim-hl-semantic {
+            background: #fed7aa;
+            color: #9a3412;
+            border: 1px solid #f97316;
+        }
+
+        mark.sim-hl-synonym {
+            background: #e9d5ff;
+            color: #7c3aed;
+        }
+    </style>
 </head>
 
 <body class="admin-portal">
@@ -68,20 +99,20 @@
         const adviserAccess =
             localStorage.getItem("adviser_access");
 
-        if(userRole === "admin" && adviserAccess !== "1"){
+        if (userRole === "admin" && adviserAccess !== "1") {
 
             document.documentElement.classList.add("capx-auth-blocked");
             alert("Your Adviser access is disabled. Enable it in Admin Settings first.").then(() => {
                 window.location.href =
-                "../../Admin/AdminDash.html";
+                    "../../Admin/AdminDash.html";
             });
 
-        }else if(userRole !== "admin" && adviserAccess !== "1"){
+        } else if (userRole !== "admin" && adviserAccess !== "1") {
 
             document.documentElement.classList.add("capx-auth-blocked");
             alert("You do not have permission to access this role.").then(() => {
                 window.location.href =
-                "../FacultyDash.html";
+                    "../FacultyDash.html";
             });
 
         }
@@ -110,10 +141,7 @@
                     Main
                 </div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='AdviserDash.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='AdviserDash.html'">
                     <i class="fa-solid fa-house"></i>
                     <span>
                         Dashboard
@@ -124,40 +152,28 @@
                     Capstone
                 </div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='Capstone_Group.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='Capstone_Group.html'">
                     <i class="fa-solid fa-users-gear"></i>
                     <span>
                         Capstone Groups
                     </span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='Adviser_Request.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='Adviser_Request.html'">
                     <i class="fa-solid fa-user-check"></i>
                     <span>
                         Adviser Request
                     </span>
                 </div>
 
-                <div
-                    class="menu-item active"
-                    onclick="window.location.href='Documents.html'"
-                >
+                <div class="menu-item active" onclick="window.location.href='Documents.html'">
                     <i class="fa-solid fa-file-lines"></i>
                     <span>
                         Document Review
                     </span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='Consultation.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='Consultation.html'">
                     <i class="fa-solid fa-comments"></i>
                     <span>
                         Consultation
@@ -191,15 +207,11 @@
 
             <div class="top-actions">
 
-                <button
-                    class="primary-btn"
-                    onclick="openSendModal()"
-                    type="button"
-                >
+                <button class="primary-btn" onclick="openSendModal()" type="button">
                     <i class="fa-solid fa-paper-plane"></i>
                     Send Document
                 </button>
-</div>
+            </div>
 
         </div>
 
@@ -276,44 +288,19 @@
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
 
-                <input
-                    type="text"
-                    id="searchInput"
-                    placeholder="Search documents..."
-                    onkeyup="renderCurrentTab()"
-                >
+                <input type="text" id="searchInput" placeholder="Search documents..." onkeyup="renderCurrentTab()">
             </div>
 
             <div class="tab-buttons">
 
-                <button
-                    class="tab-btn active"
-                    id="tab-received"
-                    onclick="setTab('received')"
-                    type="button"
-                >
+                <button class="tab-btn active" id="tab-received" onclick="setTab('received')" type="button">
                     <i class="fa-solid fa-inbox" style="margin-right:6px;"></i>
                     Received Documents
                 </button>
 
-                <button
-                    class="tab-btn"
-                    id="tab-sent"
-                    onclick="setTab('sent')"
-                    type="button"
-                >
+                <button class="tab-btn" id="tab-sent" onclick="setTab('sent')" type="button">
                     <i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>
                     Sent Documents
-                </button>
-
-                <button
-                    class="tab-btn"
-                    id="tab-defmin"
-                    onclick="setTab('defmin')"
-                    type="button"
-                >
-                    <i class="fa-solid fa-camera" style="margin-right:6px;"></i>
-                    Defense Minutes
                 </button>
 
             </div>
@@ -334,10 +321,7 @@
                     </p>
                 </div>
 
-                <select
-                    id="statusFilter"
-                    onchange="renderCurrentTab()"
-                >
+                <select id="statusFilter" onchange="renderCurrentTab()">
                     <option value="All">All Status</option>
                     <option value="Pending Review">Pending Review</option>
                     <option value="Subject to Change">Subject to Change</option>
@@ -348,10 +332,7 @@
 
             </div>
 
-            <div
-                class="document-grid"
-                id="documentGrid"
-            >
+            <div class="document-grid" id="documentGrid">
                 <div class="empty-card">
                     Loading documents...
                 </div>
@@ -364,10 +345,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <!-- SEND DOCUMENT MODAL -->
-    <div
-        class="modal-overlay"
-        id="sendModal"
-    >
+    <div class="modal-overlay" id="sendModal">
 
         <div class="modal-box large-modal">
 
@@ -383,11 +361,7 @@
                     </p>
                 </div>
 
-                <button
-                    class="close-modal-btn"
-                    onclick="closeSendModal()"
-                    type="button"
-                >
+                <button class="close-modal-btn" onclick="closeSendModal()" type="button">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
 
@@ -400,11 +374,7 @@
                         Document Title
                     </label>
 
-                    <input
-                        type="text"
-                        id="sendDocumentTitle"
-                        placeholder="Enter document title"
-                    >
+                    <input type="text" id="sendDocumentTitle" placeholder="Enter document title">
                 </div>
 
                 <div class="input-group">
@@ -428,10 +398,7 @@
                     Attach File
                 </label>
 
-                <input
-                    type="file"
-                    id="sendDocumentFile"
-                >
+                <input type="file" id="sendDocumentFile">
             </div>
 
             <div class="input-group">
@@ -439,47 +406,35 @@
                     Message / Comment
                 </label>
 
-                <textarea
-                    id="sendMessage"
-                    placeholder="Write a message for the selected recipients..."
-                ></textarea>
+                <textarea id="sendMessage" placeholder="Write a message for the selected recipients..."></textarea>
             </div>
 
             <div class="input-group">
-                <label>
-                    Search Recipients
-                </label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="margin:0;">Select Capstone Groups</label>
+                    <label
+                        style="font-weight:600; font-size:12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; margin:0;">
+                        <input type="checkbox" id="selectAllGroupsToggle"
+                            onchange="toggleAllGroupCheckboxes(this.checked)">
+                        Select All
+                    </label>
+                </div>
 
-                <input
-                    type="text"
-                    id="recipientSearch"
-                    placeholder="Search name, ID, role, or program..."
-                    onkeyup="renderRecipients()"
-                >
+                <input type="text" id="recipientSearch" placeholder="Search group name, ID, title, or program..."
+                    onkeyup="renderRecipients()">
             </div>
 
-            <div
-                class="recipient-list"
-                id="recipientList"
-            >
-                Loading recipients...
+            <div class="recipient-list" id="recipientList">
+                Loading capstone groups...
             </div>
 
             <div class="modal-actions">
 
-                <button
-                    class="cancel-btn"
-                    onclick="closeSendModal()"
-                    type="button"
-                >
+                <button class="cancel-btn" onclick="closeSendModal()" type="button">
                     Cancel
                 </button>
 
-                <button
-                    class="save-btn"
-                    onclick="sendAdviserDocument()"
-                    type="button"
-                >
+                <button class="save-btn" onclick="sendAdviserDocument()" type="button">
                     <i class="fa-solid fa-paper-plane"></i>
                     Send Document
                 </button>
@@ -489,10 +444,7 @@
     </div>
 
     <!-- REVIEW MODAL -->
-    <div
-        class="modal-overlay"
-        id="reviewModal"
-    >
+    <div class="modal-overlay" id="reviewModal">
 
         <div class="modal-box large-modal">
 
@@ -508,11 +460,7 @@
                     </p>
                 </div>
 
-                <button
-                    class="close-modal-btn"
-                    onclick="closeReviewModal()"
-                    type="button"
-                >
+                <button class="close-modal-btn" onclick="closeReviewModal()" type="button">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
 
@@ -580,13 +528,22 @@
                         File name
                     </h3>
 
-                    <a
-                        id="reviewFileLink"
-                        href="#"
-                        target="_blank"
-                    >
+                    <a id="reviewFileLink" href="#" target="_blank">
                         Open Attached File
                     </a>
+                </div>
+            </div>
+
+            <div class="section-box" id="reviewSimilaritySection"
+                style="margin-top:14px; background:#faf8ff; border:1px solid #e9d5ff; border-radius:16px; padding:14px 16px;">
+                <h3
+                    style="display:flex; align-items:center; justify-content:space-between; margin:0 0 10px; font-size:14px; color:#2e1065;">
+                    <span><i class="fa-solid fa-magnifying-glass-chart"
+                            style="color:#7c3aed; margin-right:6px;"></i>Similarity Check (Archived &amp; Ongoing
+                        Approved Studies)</span>
+                </h3>
+                <div id="reviewSimilarityBody" style="font-size:13px; color:#6b7280;">
+                    Checking similarity...
                 </div>
             </div>
 
@@ -595,37 +552,23 @@
                     Review Comment
                 </label>
 
-                <textarea
-                    id="reviewComment"
-                    placeholder="Write your review comment or required changes..."
-                ></textarea>
+                <textarea id="reviewComment" placeholder="Write your review comment or required changes..."></textarea>
             </div>
 
             <div class="modal-actions review-action-buttons">
 
-                <button
-                    class="review-action-btn revise-btn"
-                    type="button"
-                    onclick="submitDocumentReview('Subject to Change')"
-                >
+                <button class="review-action-btn revise-btn" type="button"
+                    onclick="submitDocumentReview('Subject to Change')">
                     <i class="fa-solid fa-rotate-left"></i>
                     Request Revision
                 </button>
 
-                <button
-                    class="review-action-btn reject-btn"
-                    type="button"
-                    onclick="submitDocumentReview('Rejected')"
-                >
+                <button class="review-action-btn reject-btn" type="button" onclick="submitDocumentReview('Rejected')">
                     <i class="fa-solid fa-ban"></i>
                     Reject
                 </button>
 
-                <button
-                    class="review-action-btn approve-btn"
-                    type="button"
-                    onclick="submitDocumentReview('Approved')"
-                >
+                <button class="review-action-btn approve-btn" type="button" onclick="submitDocumentReview('Approved')">
                     <i class="fa-solid fa-check"></i>
                     Approve
                 </button>
@@ -655,8 +598,10 @@
                     <div class="esign-pdf-toolbar">
                         <span id="eSignPageInfo">Page 1 of 1</span>
                         <div class="esign-page-nav">
-                            <button type="button" class="esign-nav-btn" onclick="changePdfPage(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                            <button type="button" class="esign-nav-btn" onclick="changePdfPage(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                            <button type="button" class="esign-nav-btn" onclick="changePdfPage(-1)"><i
+                                    class="fa-solid fa-chevron-left"></i></button>
+                            <button type="button" class="esign-nav-btn" onclick="changePdfPage(1)"><i
+                                    class="fa-solid fa-chevron-right"></i></button>
                         </div>
                     </div>
                     <div class="esign-pdf-viewport" id="pdfViewport">
@@ -686,28 +631,40 @@
 
                     <div class="input-group">
                         <label>Adviser Notes</label>
-                        <textarea
-                            id="eSignNotes"
-                            placeholder="Add notes for approval, revision, or rejection..."
-                        ></textarea>
+                        <textarea id="eSignNotes"
+                            placeholder="Add notes for approval, revision, or rejection..."></textarea>
+                    </div>
+
+                    <div id="eSignViewOnlyBanner"
+                        style="display:none; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; border-radius:12px; padding:10px 12px; font-size:13px; font-weight:700; margin-bottom:14px; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Signed &amp; Locked — View Only Mode. Signatures and verdicts cannot be modified.</span>
                     </div>
 
                     <!-- Signature Mode Tabs -->
                     <div class="signature-mode-tabs" style="display:flex; gap:10px; margin-bottom:12px;">
-                        <button type="button" id="tabUseSavedSig" class="tab-btn active" style="flex:1; border:none; padding:10px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="setSignatureMode('saved')">Saved Signature</button>
-                        <button type="button" id="tabDrawSig" class="tab-btn" style="flex:1; border:none; padding:10px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="setSignatureMode('draw')">Draw Signature</button>
+                        <button type="button" id="tabUseSavedSig" class="tab-btn active"
+                            style="flex:1; border:none; padding:10px; border-radius:12px; font-weight:700; cursor:pointer;"
+                            onclick="setSignatureMode('saved')">Saved Signature</button>
+                        <button type="button" id="tabDrawSig" class="tab-btn"
+                            style="flex:1; border:none; padding:10px; border-radius:12px; font-weight:700; cursor:pointer;"
+                            onclick="setSignatureMode('draw')">Draw Signature</button>
                     </div>
 
                     <!-- Saved Signature Wrapper -->
-                    <div class="esign-canvas-wrapper" id="savedSignatureWrapper" style="background:#f8f5ff; border:2px dashed #c4b5fd; border-radius:22px; padding:18px; margin-bottom:18px; display:none; text-align:center;">
-                        <div class="esign-canvas-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div class="esign-canvas-wrapper" id="savedSignatureWrapper"
+                        style="background:#f8f5ff; border:2px dashed #c4b5fd; border-radius:22px; padding:18px; margin-bottom:18px; display:none; text-align:center;">
+                        <div class="esign-canvas-header"
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                             <div>
                                 <h3>Saved Signature</h3>
                                 <p>Using your uploaded signature from Settings.</p>
                             </div>
                         </div>
-                        <div style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:15px; display:inline-block; min-width:200px; margin-bottom:10px;">
-                            <img id="savedSignaturePreview" src="" alt="Saved Signature" style="max-height:80px; max-width:100%; display:block; margin:0 auto;">
+                        <div
+                            style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:15px; display:inline-block; min-width:200px; margin-bottom:10px;">
+                            <img id="savedSignaturePreview" src="" alt="Saved Signature"
+                                style="max-height:80px; max-width:100%; display:block; margin:0 auto;">
                         </div>
                         <button class="esign-place-btn" type="button" onclick="placeSavedSignatureOnDocument()">
                             <i class="fa-solid fa-file-signature"></i>
@@ -716,7 +673,8 @@
                     </div>
 
                     <!-- Draw Signature Wrapper -->
-                    <div class="esign-canvas-wrapper compact-esign-draw" id="drawSignatureWrapper" style="display:block;">
+                    <div class="esign-canvas-wrapper compact-esign-draw" id="drawSignatureWrapper"
+                        style="display:block;">
                         <div class="esign-canvas-header">
                             <div>
                                 <h3>Draw Signature</h3>
@@ -739,11 +697,13 @@
                             <i class="fa-solid fa-check"></i>
                             Approve & Save
                         </button>
-                        <button class="esign-revision-toggle-btn" onclick="submitESignature('Subject to Change')" type="button">
+                        <button class="esign-revision-toggle-btn" onclick="submitESignature('Subject to Change')"
+                            type="button">
                             <i class="fa-solid fa-rotate-left"></i>
                             Request Revision
                         </button>
-                        <button class="cancel-btn reject-outline-btn" onclick="submitESignature('Rejected')" type="button">
+                        <button class="cancel-btn reject-outline-btn" onclick="submitESignature('Rejected')"
+                            type="button">
                             <i class="fa-solid fa-ban"></i>
                             Reject
                         </button>
@@ -796,7 +756,9 @@
                         </div>
                         <p>3 of 3 submissions approved &bull; Completed May 10, 2026</p>
                         <div class="milestone-sub-progress">
-                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:100%;"></div></div>
+                            <div class="ms-sub-bar">
+                                <div class="ms-sub-fill" style="width:100%;"></div>
+                            </div>
                             <span>3/3</span>
                         </div>
                     </div>
@@ -812,7 +774,9 @@
                         </div>
                         <p>Submitted and approved &bull; May 18, 2026</p>
                         <div class="milestone-sub-progress">
-                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:100%;"></div></div>
+                            <div class="ms-sub-bar">
+                                <div class="ms-sub-fill" style="width:100%;"></div>
+                            </div>
                             <span>1/1</span>
                         </div>
                     </div>
@@ -828,7 +792,9 @@
                         </div>
                         <p>1 of 2 revisions approved &bull; Awaiting final submission</p>
                         <div class="milestone-sub-progress">
-                            <div class="ms-sub-bar"><div class="ms-sub-fill inprogress" style="width:50%;"></div></div>
+                            <div class="ms-sub-bar">
+                                <div class="ms-sub-fill inprogress" style="width:50%;"></div>
+                            </div>
                             <span>1/2</span>
                         </div>
                     </div>
@@ -844,7 +810,9 @@
                         </div>
                         <p>Not yet started</p>
                         <div class="milestone-sub-progress">
-                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:0%;"></div></div>
+                            <div class="ms-sub-bar">
+                                <div class="ms-sub-fill" style="width:0%;"></div>
+                            </div>
                             <span>0/1</span>
                         </div>
                     </div>
@@ -860,7 +828,9 @@
                         </div>
                         <p>Requires adviser e-signature before submission</p>
                         <div class="milestone-sub-progress">
-                            <div class="ms-sub-bar"><div class="ms-sub-fill" style="width:0%;"></div></div>
+                            <div class="ms-sub-bar">
+                                <div class="ms-sub-fill" style="width:0%;"></div>
+                            </div>
                             <span>0/1</span>
                         </div>
                     </div>
@@ -876,7 +846,9 @@
                         </div>
                         <p>Returned for corrections &bull; Awaiting resubmission</p>
                         <div class="milestone-sub-progress">
-                            <div class="ms-sub-bar"><div class="ms-sub-fill revision" style="width:30%;"></div></div>
+                            <div class="ms-sub-bar">
+                                <div class="ms-sub-fill revision" style="width:30%;"></div>
+                            </div>
                             <span>0/1</span>
                         </div>
                     </div>
@@ -891,10 +863,121 @@
         </div>
     </div>
 
+    <!-- ===================== ADVISER DEFENSE MINUTES E-SIGN MODAL ===================== -->
+    <div class="modal-overlay esign-workspace-overlay" id="adviserDmSignModal" style="display:none; z-index:10000;">
+        <div class="modal-box esign-workspace-modal">
+            <div class="modal-header">
+                <div>
+                    <h2 id="advDmTitle">Defense Minutes</h2>
+                    <p id="advDmSubtitle">Review the document, drag your signature into place, then save.</p>
+                </div>
+                <button class="close-modal-btn" onclick="closeAdviserDmModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="esign-workspace-grid">
+                <div class="esign-pdf-panel">
+                    <div class="esign-pdf-toolbar">
+                        <span id="advDmPageInfo">Page 1 of 1</span>
+                        <div class="esign-page-nav">
+                            <button type="button" class="esign-nav-btn" onclick="stepAdviserDmPage(-1)"
+                                title="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+                            <select id="advDmPageSelect" onchange="changeAdviserDmSignPage()"
+                                style="padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px;"></select>
+                            <button type="button" class="esign-nav-btn" onclick="stepAdviserDmPage(1)"
+                                title="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="esign-pdf-viewport" id="advDmSheetViewport" style="overflow-y:auto; padding:14px;">
+                    </div>
+                </div>
+
+                <div class="esign-side-panel">
+                    <div class="detail-card compact-detail">
+                        <span>Capstone Group</span>
+                        <h3 id="advDmGroupName">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Document Type</span>
+                        <h3 id="advDmDefenseType">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Status</span>
+                        <h3 id="advDmStatus">—</h3>
+                    </div>
+
+                    <div id="advDmSignControls">
+                        <div class="input-group">
+                            <label>Adviser Notes</label>
+                            <textarea id="advDmNotes" placeholder="Add optional notes for panelists..."></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label>Date Signed (Drags with Signature)</label>
+                            <input type="text" id="advDmDateSigned" oninput="updateAdviserDmDateText()"
+                                style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:12px; font-size:13px; box-sizing:border-box;">
+                        </div>
+
+                        <div class="esign-canvas-wrapper"
+                            style="background:#f8f5ff; border:2px dashed #c4b5fd; border-radius:22px; padding:16px; margin-bottom:16px; text-align:center;">
+                            <div class="esign-canvas-header"
+                                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <div>
+                                    <h3>Saved Signature</h3>
+                                    <p>Using your uploaded signature from Settings.</p>
+                                </div>
+                            </div>
+                            <div id="advDmSigPreview"
+                                style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:12px; display:inline-block; min-width:180px; margin-bottom:10px;">
+                                <span style="font-size:12px; color:#64748b;">Loading signature...</span>
+                            </div>
+                            <button class="esign-place-btn" type="button" onclick="placeAdviserDmSigOnSelectedPage()">
+                                <i class="fa-solid fa-file-signature"></i>
+                                Place Signature on Page
+                            </button>
+                        </div>
+
+                        <label class="dm-approval-attestation" for="advDmApproveCheck">
+                            <input type="checkbox" id="advDmApproveCheck" onchange="toggleAdvDmApprovalCheckbox()">
+                            <span>I have personally inspected the revisions and approve these defense documents.</span>
+                        </label>
+
+                        <div class="modal-actions esign-action-stack">
+                            <button class="save-btn" id="advDmSubmitBtn" onclick="submitAdviserDmSignature('Approved')"
+                                type="button" disabled>
+                                <i class="fa-solid fa-check"></i>
+                                Approve &amp; Save
+                            </button>
+                            <button class="esign-revision-toggle-btn" id="advDmRevisionBtn"
+                                onclick="submitAdviserDmSignature('Subject to Change')" type="button">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                Request Revision
+                            </button>
+                            <button class="cancel-btn reject-outline-btn" id="advDmRejectBtn"
+                                onclick="submitAdviserDmSignature('Rejected')" type="button">
+                                <i class="fa-solid fa-ban"></i>
+                                Reject
+                            </button>
+                            <button class="cancel-btn" onclick="closeAdviserDmModal()" type="button">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
 
         const loggedInAdviserId =
             localStorage.getItem("userId");
+
+        function escapeHtml(str) {
+            return String(str || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
 
         let adviserData = null;
         let receivedDocuments = [];
@@ -902,6 +985,9 @@
         let sentDocuments = [];
         let recipients = [];
         let defenseMinutesList = [];
+        let adviserTypedDefenseMinutes = [];
+        let activeAdvDmRecord = null;
+        let advDmDragState = null;
         let currentTab = "received";
         let selectedSubmissionId = null;
         let activeSigningRequest = null;
@@ -909,26 +995,26 @@
         let currentSignatureMode = 'saved';
 
         /* Identifies documents that require the adviser's signature */
-        function isSigningRequestDocument(item){
+        function isSigningRequestDocument(item) {
             const docType = String(item.document_type || "").toLowerCase();
             const docTitle = String(item.document_title || "").toLowerCase();
             return docType.includes("adviser acceptance") ||
-                   docTitle.includes("adviser acceptance") ||
-                   docType.includes("acceptance for advisory") ||
-                   docTitle.includes("acceptance for advisory") ||
-                   docType.includes("recommendation for concept") ||
-                   docTitle.includes("recommendation for concept") ||
-                   docType.includes("recommendation for outline") ||
-                   docTitle.includes("recommendation for outline") ||
-                   /* Pre-Final and Final Defense recommendation letters */
-                   (docType.includes("recommendation letter") ||
+                docTitle.includes("adviser acceptance") ||
+                docType.includes("acceptance for advisory") ||
+                docTitle.includes("acceptance for advisory") ||
+                docType.includes("recommendation for concept") ||
+                docTitle.includes("recommendation for concept") ||
+                docType.includes("recommendation for outline") ||
+                docTitle.includes("recommendation for outline") ||
+                /* Pre-Final and Final Defense recommendation letters */
+                (docType.includes("recommendation letter") ||
                     docTitle.includes("recommendation letter"));
         }
 
 
-        async function loadAdviserDocuments(){
+        async function loadAdviserDocuments() {
 
-            try{
+            try {
 
                 const response =
                     await fetch(
@@ -938,7 +1024,7 @@
                 const data =
                     await response.json();
 
-                if(!data.success){
+                if (!data.success) {
 
                     alert(data.message || "Failed to load adviser documents.");
 
@@ -953,14 +1039,22 @@
                 const allReceived = data.receivedDocuments || [];
 
                 /* All received docs stay in receivedDocuments */
-                signingRequests   = allReceived.filter(isSigningRequestDocument);
+                signingRequests = allReceived.filter(isSigningRequestDocument);
                 receivedDocuments = allReceived;
 
                 sentDocuments =
                     data.sentDocuments || [];
 
                 recipients =
-                    data.recipients || [];
+                    data.groups || [];
+
+                try {
+                    const tdmResp = await fetch(`/typed-defense-minutes/adviser/${encodeURIComponent(loggedInAdviserId)}`);
+                    const tdmData = await tdmResp.json();
+                    adviserTypedDefenseMinutes = (tdmData && tdmData.success && Array.isArray(tdmData.minutes)) ? tdmData.minutes : [];
+                } catch (_) {
+                    adviserTypedDefenseMinutes = [];
+                }
 
                 document.getElementById("adviserSubtitle").innerText =
                     `${adviserData.fullname} • ${adviserData.user_id} • ${adviserData.position || "Adviser"}`;
@@ -971,7 +1065,7 @@
 
                 renderCurrentTab();
 
-            }catch(error){
+            } catch (error) {
 
                 console.log(error);
 
@@ -981,7 +1075,7 @@
 
         }
 
-        function renderStats(stats){
+        function renderStats(stats) {
 
             document.getElementById("receivedCount").innerText =
                 stats.receivedDocuments || 0;
@@ -997,7 +1091,7 @@
 
         }
 
-        function setTab(tab){
+        function setTab(tab) {
 
             currentTab =
                 tab;
@@ -1009,15 +1103,15 @@
                 );
 
             const activeBtn = document.getElementById(`tab-${tab}`);
-            if(activeBtn) activeBtn.classList.add("active");
+            if (activeBtn) activeBtn.classList.add("active");
 
             renderCurrentTab();
 
         }
 
-        function renderCurrentTab(){
+        function renderCurrentTab() {
 
-            if(currentTab === "received"){
+            if (currentTab === "received") {
 
                 document.getElementById("sectionTitle").innerText =
                     "Received Documents";
@@ -1030,20 +1124,7 @@
 
                 renderReceivedDocuments();
 
-            }else if(currentTab === "defmin"){
-
-                document.getElementById("sectionTitle").innerText =
-                    "Defense Minutes Photos";
-
-                document.getElementById("sectionDescription").innerText =
-                    "Review and approve defense minutes photos submitted by your capstone groups.";
-
-                document.getElementById("statusFilter").style.display =
-                    "none";
-
-                renderDefenseMinutes();
-
-            }else{
+            } else {
 
                 document.getElementById("sectionTitle").innerText =
                     "Sent Documents";
@@ -1061,13 +1142,13 @@
         }
 
         /* ====== RENDER SIGNING REQUESTS — grouped by capstone group, compact rows ====== */
-        function renderSigningRequests(){
+        function renderSigningRequests() {
             const grid = document.getElementById("documentGrid");
             grid.classList.remove("defmin-grid");
             grid.classList.add("grouped-view");
             grid.innerHTML = "";
 
-            if(signingRequests.length === 0){
+            if (signingRequests.length === 0) {
                 grid.innerHTML = `<div class="empty-card"><i class="fa-solid fa-pen-nib" style="margin-right:8px;color:#7c3aed;"></i>No signing requests at the moment.</div>`;
                 return;
             }
@@ -1076,7 +1157,7 @@
             const grouped = {};
             signingRequests.forEach(item => {
                 const key = item.group_name || item.group_id || `no-group-${item.sender_name || "unknown"}`;
-                if(!grouped[key]){
+                if (!grouped[key]) {
                     grouped[key] = {
                         group_name: item.group_name || "No Group",
                         group_program: item.group_program || item.sender_program || "N/A",
@@ -1182,12 +1263,12 @@
             });
         }
 
-        function showESignModalShell(){
+        function showESignModalShell() {
 
             const modal =
                 document.getElementById("eSignModal");
 
-            if(!modal){
+            if (!modal) {
                 alert("E-signature modal is missing from the page.");
                 return false;
             }
@@ -1200,12 +1281,12 @@
 
         }
 
-        function hideESignModalShell(){
+        function hideESignModalShell() {
 
             const modal =
                 document.getElementById("eSignModal");
 
-            if(modal){
+            if (modal) {
                 modal.classList.remove("active");
                 modal.style.display = "none";
             }
@@ -1214,19 +1295,19 @@
 
         }
 
-        function handleSigningButtonClick(event, submissionId){
-            if(event){
+        function handleSigningButtonClick(event, submissionId) {
+            if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
 
-            if(!submissionId && event && event.currentTarget){
+            if (!submissionId && event && event.currentTarget) {
                 submissionId =
                     event.currentTarget.dataset.submissionId ||
                     event.currentTarget.getAttribute("data-submission-id");
             }
 
-            if(!submissionId){
+            if (!submissionId) {
                 alert("Invalid signing request. Please refresh the page.");
                 return;
             }
@@ -1237,10 +1318,10 @@
         window.handleSigningButtonClick = handleSigningButtonClick;
         window.toggleSigningGroup = toggleSigningGroup;
 
-        function toggleSigningGroup(domId){
+        function toggleSigningGroup(domId) {
             const body = document.getElementById(`signing-group-${domId}`);
             const chevron = document.getElementById(`signing-chevron-${domId}`);
-            if(!body || !chevron) return;
+            if (!body || !chevron) return;
             const isHidden = body.style.display === "none";
             body.style.display = isHidden ? "block" : "none";
             chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
@@ -1254,10 +1335,10 @@
         let signaturePlaced = false;
         let signatureDragState = null;
 
-        if(window.pdfjsLib){
+        if (window.pdfjsLib) {
             window.pdfjsLib.GlobalWorkerOptions.workerSrc =
                 "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-        }else{
+        } else {
             console.warn("PDF.js did not load. E-signature preview may be limited.");
         }
 
@@ -1274,20 +1355,24 @@
                     setSignatureMode('draw');
                     return;
                 }
-                if(tabSaved) tabSaved.classList.add("active");
-                if(tabDraw) tabDraw.classList.remove("active");
-                if(wrapperSaved) wrapperSaved.style.display = "block";
-                if(wrapperDraw) wrapperDraw.style.display = "none";
+                if (tabSaved) tabSaved.classList.add("active");
+                if (tabDraw) tabDraw.classList.remove("active");
+                if (wrapperSaved) wrapperSaved.style.display = "block";
+                if (wrapperDraw) wrapperDraw.style.display = "none";
             } else {
-                if(tabSaved) tabSaved.classList.remove("active");
-                if(tabDraw) tabDraw.classList.add("active");
-                if(wrapperSaved) wrapperSaved.style.display = "none";
-                if(wrapperDraw) wrapperDraw.style.display = "block";
+                if (tabSaved) tabSaved.classList.remove("active");
+                if (tabDraw) tabDraw.classList.add("active");
+                if (wrapperSaved) wrapperSaved.style.display = "none";
+                if (wrapperDraw) wrapperDraw.style.display = "block";
                 initSignatureCanvas();
             }
         }
 
         function placeSavedSignatureOnDocument() {
+            if (isESignReadOnly) {
+                showESignToast('This document is already signed and locked in view-only mode.', 'error');
+                return;
+            }
             if (!savedSignaturePath) {
                 alert("No saved signature image path found.");
                 return;
@@ -1300,7 +1385,28 @@
 
             const dataUrl = `${savedSignaturePath}`;
             const layer = document.getElementById("signaturePlacementLayer");
+            mountSignatureOnLayer(layer, dataUrl);
+            signaturePlaced = true;
+            currentSignatureMode = 'saved';
+            updatePlaceButtonState();
+        }
 
+        function formatSignatureDateMMDDYYYY(date = new Date()) {
+            const mm = String(date.getMonth() + 1).padStart(2, "0");
+            const dd = String(date.getDate()).padStart(2, "0");
+            const yyyy = date.getFullYear();
+            return `${mm}/${dd}/${yyyy}`;
+        }
+
+        function syncSignatureDateLabel(sigEl) {
+            const dateEl = document.getElementById("draggableSignatureDate");
+            if (!sigEl || !dateEl) return;
+            dateEl.style.left = `${sigEl.offsetLeft}px`;
+            dateEl.style.top = `${sigEl.offsetTop + sigEl.offsetHeight + 2}px`;
+            dateEl.style.width = `${Math.max(sigEl.offsetWidth, 80)}px`;
+        }
+
+        function mountSignatureOnLayer(layer, dataUrl) {
             layer.innerHTML = `
                 <img
                     id="draggableSignature"
@@ -1309,29 +1415,32 @@
                     alt="Signature"
                     draggable="false"
                 >
+                <div
+                    id="draggableSignatureDate"
+                    style="position:absolute; pointer-events:none; text-align:center; font-size:11px; font-weight:600; color:#1e293b; font-family:Helvetica, Arial, sans-serif; line-height:1.1; white-space:nowrap;"
+                >${formatSignatureDateMMDDYYYY()}</div>
             `;
 
             const sigEl = document.getElementById("draggableSignature");
             if (sigEl) {
                 sigEl.style.left = "40px";
                 sigEl.style.top = "40px";
+                sigEl.addEventListener("load", () => syncSignatureDateLabel(sigEl));
+                syncSignatureDateLabel(sigEl);
                 enableSignatureDrag(sigEl);
             }
-            signaturePlaced = true;
-            currentSignatureMode = 'saved';
-            updatePlaceButtonState();
         }
 
-        async function openESignModal(submissionId){
+        async function openESignModal(submissionId) {
 
-            try{
+            try {
 
                 const item =
                     signingRequests.find(r =>
                         Number(r.submission_id) === Number(submissionId)
                     );
 
-                if(!item){
+                if (!item) {
                     alert("Signing request not found. Please refresh the page.");
                     return;
                 }
@@ -1340,7 +1449,7 @@
                 signaturePlaced = false;
                 updatePlaceButtonState();
 
-                if(!showESignModalShell()){
+                if (!showESignModalShell()) {
                     return;
                 }
 
@@ -1359,8 +1468,8 @@
 
                 document.getElementById("eSignDocSubtitle").innerText =
                     item.review_status === "Approved"
-                    ? `Signed document preview — ${item.document_code || ""}`
-                    : `Drag your signature onto the document — ${item.document_code || ""}`;
+                        ? `Signed document preview — ${item.document_code || ""}`
+                        : `Drag your signature onto the document — ${item.document_code || ""}`;
 
                 document.getElementById("eSignRequester").innerText =
                     item.sender_name || "Unknown Student";
@@ -1387,30 +1496,36 @@
                 clearSignature();
                 initSignatureCanvas();
 
+                const isSignedReadOnly =
+                    item.review_status === 'Approved'
+                    || item.document_status === 'Approved'
+                    || item.document_status === 'Adviser Signed';
+                toggleESignViewOnlyMode(isSignedReadOnly, item);
+
                 const filePath =
                     String(
-                        item.review_status === "Approved"
-                        ? (item.signed_file_path || item.file_path)
-                        : item.file_path
+                        (isSignedReadOnly || item.review_status === "Approved")
+                            ? (item.signed_file_path || item.file_path)
+                            : item.file_path
                     ).trim();
 
-                if(!filePath){
+                if (!filePath) {
                     showPdfViewerMessage("No document file is attached to this request.");
                     return;
                 }
 
-                if(filePath.toLowerCase().endsWith(".pdf")){
+                if (filePath.toLowerCase().endsWith(".pdf")) {
                     await loadPdfForSigning(
                         filePath,
                         item.submission_id
                     );
-                }else{
+                } else {
                     showPdfViewerMessage(
                         "Preview is only available for PDF files. Use the eye icon to open the original file, or ask the student to resubmit as PDF."
                     );
                 }
 
-            }catch(error){
+            } catch (error) {
                 console.error(error);
                 alert("Could not open the e-signature workspace. Please refresh and try again.");
             }
@@ -1419,14 +1534,57 @@
 
         window.openESignModal = openESignModal;
 
-        function showPdfViewerMessage(message){
+        let isESignReadOnly = false;
+
+        function toggleESignViewOnlyMode(isReadOnly, item) {
+            isESignReadOnly = Boolean(isReadOnly);
+
+            const banner = document.getElementById("eSignViewOnlyBanner");
+            if (banner) banner.style.display = isESignReadOnly ? "flex" : "none";
+
+            const notesEl = document.getElementById("eSignNotes");
+            if (notesEl) {
+                notesEl.readOnly = isESignReadOnly;
+                notesEl.style.background = isESignReadOnly ? "#f8fafc" : "";
+                if (isESignReadOnly) {
+                    notesEl.value = (item && item.review_comment) || "";
+                }
+            }
+
+            const modeTabs = document.querySelector("#eSignModal .signature-mode-tabs");
+            const wrapSaved = document.getElementById("savedSignatureWrapper");
+            const wrapDraw = document.getElementById("drawSignatureWrapper");
+            if (isESignReadOnly) {
+                if (modeTabs) modeTabs.style.display = "none";
+                if (wrapSaved) wrapSaved.style.display = "none";
+                if (wrapDraw) wrapDraw.style.display = "none";
+            } else {
+                if (modeTabs) modeTabs.style.display = "flex";
+            }
+
+            const actionStack = document.querySelector("#eSignModal .esign-action-stack");
+            if (actionStack) {
+                actionStack.querySelectorAll(".save-btn, .esign-revision-toggle-btn, .reject-outline-btn").forEach(btn => {
+                    btn.style.display = isESignReadOnly ? "none" : "";
+                    btn.disabled = isESignReadOnly;
+                });
+                const closeBtn = actionStack.querySelector(".cancel-btn:not(.reject-outline-btn)");
+                if (closeBtn) {
+                    closeBtn.textContent = isESignReadOnly ? "Close" : "Cancel";
+                    closeBtn.disabled = false;
+                    closeBtn.style.opacity = "";
+                }
+            }
+        }
+
+        function showPdfViewerMessage(message) {
             const canvas =
                 document.getElementById("pdfPreviewCanvas");
 
             const viewportEl =
                 document.getElementById("pdfViewport");
 
-            if(!canvas || !viewportEl){
+            if (!canvas || !viewportEl) {
                 return;
             }
 
@@ -1459,7 +1617,7 @@
                 "Preview unavailable";
         }
 
-        function closeESignModal(){
+        function closeESignModal() {
             hideESignModalShell();
             activeSigningRequest = null;
             pdfDocInstance = null;
@@ -1468,9 +1626,9 @@
             updatePlaceButtonState();
         }
 
-        async function loadPdfForSigning(filePath, submissionId){
+        async function loadPdfForSigning(filePath, submissionId) {
 
-            if(!window.pdfjsLib){
+            if (!window.pdfjsLib) {
                 showPdfViewerMessage("PDF viewer failed to load. Refresh the page, or use the eye icon to open the file.");
                 return;
             }
@@ -1478,31 +1636,31 @@
             const viewerMessage =
                 document.getElementById("eSignPageInfo");
 
-            if(viewerMessage){
+            if (viewerMessage) {
                 viewerMessage.innerText = "Loading PDF...";
             }
 
-            try{
+            try {
                 const apiUrl =
                     submissionId
-                    ? `/adviser-signing-document-file/${submissionId}?adviserUserId=${encodeURIComponent(loggedInAdviserId)}`
-                    : `${normalizeDocumentFilePath(filePath)}`;
+                        ? `/adviser-signing-document-file/${submissionId}?adviserUserId=${encodeURIComponent(loggedInAdviserId)}`
+                        : `${normalizeDocumentFilePath(filePath)}`;
 
                 const response =
                     await fetch(apiUrl);
 
-                if(!response.ok){
+                if (!response.ok) {
                     let errorMessage =
                         `Could not load PDF (HTTP ${response.status}).`;
 
-                    try{
+                    try {
                         const errorData =
                             await response.json();
 
-                        if(errorData && errorData.message){
+                        if (errorData && errorData.message) {
                             errorMessage = errorData.message;
                         }
-                    }catch(parseError){
+                    } catch (parseError) {
                         console.log(parseError);
                     }
 
@@ -1513,13 +1671,13 @@
                 const contentType =
                     String(response.headers.get("content-type") || "").toLowerCase();
 
-                if(
+                if (
                     contentType.includes("application/json")
                     || (
                         !contentType.includes("pdf")
                         && !String(filePath || "").toLowerCase().endsWith(".pdf")
                     )
-                ){
+                ) {
                     showPdfViewerMessage("This file is not a PDF. Ask the student to upload a PDF for e-signature.");
                     return;
                 }
@@ -1527,7 +1685,7 @@
                 const buffer =
                     await response.arrayBuffer();
 
-                if(!buffer || buffer.byteLength === 0){
+                if (!buffer || buffer.byteLength === 0) {
                     showPdfViewerMessage("The PDF file is empty or unreadable.");
                     return;
                 }
@@ -1542,7 +1700,7 @@
                 pdfCurrentPage = 1;
                 await renderPdfPage(pdfCurrentPage);
 
-            }catch(error){
+            } catch (error) {
                 console.error(error);
                 showPdfViewerMessage(
                     "Could not render the PDF in the viewer. Use the eye icon to confirm the file opens, then try again."
@@ -1550,15 +1708,15 @@
             }
         }
 
-        function normalizeDocumentFilePath(filePath){
+        function normalizeDocumentFilePath(filePath) {
             const raw =
                 String(filePath || "").trim();
 
-            if(!raw){
+            if (!raw) {
                 return "";
             }
 
-            if(raw.startsWith("http://") || raw.startsWith("https://")){
+            if (raw.startsWith("http://") || raw.startsWith("https://")) {
                 return raw;
             }
 
@@ -1567,8 +1725,8 @@
                 : `/${raw}`;
         }
 
-        async function renderPdfPage(pageNumber){
-            if(!pdfDocInstance){
+        async function renderPdfPage(pageNumber) {
+            if (!pdfDocInstance) {
                 return;
             }
 
@@ -1614,13 +1772,13 @@
             });
         }
 
-        async function changePdfPage(delta){
-            if(!pdfDocInstance){
+        async function changePdfPage(delta) {
+            if (!pdfDocInstance) {
                 return;
             }
 
             const nextPage = pdfCurrentPage + delta;
-            if(nextPage < 1 || nextPage > pdfTotalPages){
+            if (nextPage < 1 || nextPage > pdfTotalPages) {
                 return;
             }
 
@@ -1631,7 +1789,11 @@
             await renderPdfPage(pdfCurrentPage);
         }
 
-        function placeSignatureOnDocument(){
+        function placeSignatureOnDocument() {
+            if (isESignReadOnly) {
+                showESignToast('This document is already signed and locked in view-only mode.', 'error');
+                return;
+            }
             if (signaturePlaced) {
                 alert('A signature is already placed on this page. Drag it to reposition, or change the page to place it elsewhere.');
                 return;
@@ -1643,34 +1805,20 @@
             const hasSignature =
                 Array.from(pixels).some((val, i) => i % 4 === 3 && val > 0);
 
-            if(!hasSignature){
+            if (!hasSignature) {
                 alert("Please draw your signature first.");
                 return;
             }
 
             const dataUrl = drawCanvas.toDataURL("image/png");
             const layer = document.getElementById("signaturePlacementLayer");
-
-            layer.innerHTML = `
-                <img
-                    id="draggableSignature"
-                    class="draggable-signature"
-                    src="${dataUrl}"
-                    alt="Signature"
-                    draggable="false"
-                >
-            `;
-
-            const sigEl = document.getElementById("draggableSignature");
-            sigEl.style.left = "40px";
-            sigEl.style.top = "40px";
-            enableSignatureDrag(sigEl);
+            mountSignatureOnLayer(layer, dataUrl);
             signaturePlaced = true;
             currentSignatureMode = 'draw';
             updatePlaceButtonState();
         }
 
-        function enableSignatureDrag(element){
+        function enableSignatureDrag(element) {
             const onPointerDown = (event) => {
                 event.preventDefault();
                 signatureDragState = {
@@ -1683,7 +1831,7 @@
             };
 
             const onPointerMove = (event) => {
-                if(!signatureDragState || signatureDragState.element !== element){
+                if (!signatureDragState || signatureDragState.element !== element) {
                     return;
                 }
 
@@ -1692,6 +1840,7 @@
 
                 element.style.left = `${signatureDragState.origLeft + deltaX}px`;
                 element.style.top = `${signatureDragState.origTop + deltaY}px`;
+                syncSignatureDateLabel(element);
             };
 
             const onPointerUp = () => {
@@ -1709,10 +1858,10 @@
                     clientX: touch.clientX,
                     clientY: touch.clientY
                 });
-            }, { passive:false });
+            }, { passive: false });
 
             document.addEventListener("touchmove", (event) => {
-                if(!signatureDragState){
+                if (!signatureDragState) {
                     return;
                 }
                 const touch = event.touches[0];
@@ -1720,16 +1869,16 @@
                     clientX: touch.clientX,
                     clientY: touch.clientY
                 });
-            }, { passive:false });
+            }, { passive: false });
 
             document.addEventListener("touchend", onPointerUp);
         }
 
-        function getSignaturePlacementPayload(){
+        function getSignaturePlacementPayload() {
             const viewport = document.getElementById("pdfViewport");
             const sigEl = document.getElementById("draggableSignature");
 
-            if(!viewport || !sigEl){
+            if (!viewport || !sigEl) {
                 return null;
             }
 
@@ -1740,13 +1889,14 @@
                 sigLeft: sigEl.offsetLeft,
                 sigTop: sigEl.offsetTop,
                 sigWidth: sigEl.offsetWidth,
-                sigHeight: sigEl.offsetHeight
+                sigHeight: sigEl.offsetHeight,
+                signedDate: formatSignatureDateMMDDYYYY()
             };
         }
 
-        function showESignToast(message, type){
+        function showESignToast(message, type) {
             const existing = document.getElementById('esignToastMsg');
-            if(existing) existing.remove();
+            if (existing) existing.remove();
             const toast = document.createElement('div');
             toast.id = 'esignToastMsg';
             const bg = type === 'success' ? '#dcfce7' : '#fee2e2';
@@ -1765,8 +1915,12 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        async function submitESignature(reviewStatus){
-            if(!activeSigningRequest){
+        async function submitESignature(reviewStatus) {
+            if (isESignReadOnly) {
+                showESignToast('This document is already signed and locked in view-only mode.', 'error');
+                return;
+            }
+            if (!activeSigningRequest) {
                 showESignToast('No active signing request.', 'error');
                 return;
             }
@@ -1777,10 +1931,10 @@
             const submissionId =
                 activeSigningRequest.submission_id;
 
-            if(
+            if (
                 reviewStatus !== "Approved"
                 && !notes
-            ){
+            ) {
                 showESignToast('Please add adviser notes before submitting your decision.', 'error');
                 return;
             }
@@ -1789,8 +1943,8 @@
             const actionBtns = document.querySelectorAll('.esign-action-stack button');
             actionBtns.forEach(btn => { btn.disabled = true; btn.style.opacity = '0.6'; });
 
-            if(reviewStatus === "Approved"){
-                if(!signaturePlaced){
+            if (reviewStatus === "Approved") {
+                if (!signaturePlaced) {
                     showESignToast('Please place your signature on the document first.', 'error');
                     actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
                     return;
@@ -1799,7 +1953,7 @@
                 const placement =
                     getSignaturePlacementPayload();
 
-                if(!placement){
+                if (!placement) {
                     showESignToast('Signature placement is missing.', 'error');
                     actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
                     return;
@@ -1807,13 +1961,13 @@
 
                 /* Determine signature image based on mode */
                 let signatureImage;
-                if(currentSignatureMode === 'saved' && savedSignaturePath){
+                if (currentSignatureMode === 'saved' && savedSignaturePath) {
                     signatureImage = `${savedSignaturePath}`;
                 } else {
                     signatureImage = document.getElementById("signatureCanvas").toDataURL("image/png");
                 }
 
-                try{
+                try {
                     const res = await fetch(
                         `/adviser-apply-document-signature/${submissionId}`,
                         {
@@ -1831,7 +1985,7 @@
                     );
 
                     const data = await res.json();
-                    if(data.success){
+                    if (data.success) {
                         /* Close modal immediately — no blocking alert */
                         closeESignModal();
                         showESignToast(data.message || 'Document signed & approved!', 'success');
@@ -1841,7 +1995,7 @@
                         showESignToast(data.message || 'Failed to sign document.', 'error');
                         actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
                     }
-                }catch(err){
+                } catch (err) {
                     console.log(err);
                     showESignToast('Failed to submit signed document. Check your connection.', 'error');
                     actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
@@ -1850,7 +2004,7 @@
                 return;
             }
 
-            try{
+            try {
                 const res = await fetch(
                     `/adviser-apply-document-signature/${submissionId}`,
                     {
@@ -1865,7 +2019,7 @@
                 );
 
                 const data = await res.json();
-                if(data.success){
+                if (data.success) {
                     closeESignModal();
                     showESignToast(data.message || 'Review submitted.', 'success');
                     /* Reload data in background — non-blocking */
@@ -1874,7 +2028,7 @@
                     showESignToast(data.message || 'Failed to submit review.', 'error');
                     actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
                 }
-            }catch(err){
+            } catch (err) {
                 console.log(err);
                 showESignToast('Failed to submit review. Check your connection.', 'error');
                 actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = ''; });
@@ -1885,11 +2039,11 @@
         let isDrawing = false;
         let canvasInitialized = false;
 
-        function initSignatureCanvas(){
+        function initSignatureCanvas() {
             const canvas =
                 document.getElementById("signatureCanvas");
 
-            if(!canvas){
+            if (!canvas) {
                 return;
             }
 
@@ -1901,8 +2055,8 @@
 
             const wrapperWidth =
                 wrapper && wrapper.clientWidth
-                ? wrapper.clientWidth
-                : 320;
+                    ? wrapper.clientWidth
+                    : 320;
 
             canvas.width =
                 Math.max(wrapperWidth - 4, 280);
@@ -1914,7 +2068,7 @@
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
 
-            if(canvasInitialized){
+            if (canvasInitialized) {
                 return;
             }
 
@@ -1928,7 +2082,7 @@
             });
 
             canvas.addEventListener("mousemove", e => {
-                if(!isDrawing){
+                if (!isDrawing) {
                     return;
                 }
 
@@ -1951,26 +2105,26 @@
                 ctx.beginPath();
                 const p = getPos(e.touches[0], canvas);
                 ctx.moveTo(p.x, p.y);
-            }, { passive:false });
+            }, { passive: false });
 
             canvas.addEventListener("touchmove", e => {
                 e.preventDefault();
 
-                if(!isDrawing){
+                if (!isDrawing) {
                     return;
                 }
 
                 const p = getPos(e.touches[0], canvas);
                 ctx.lineTo(p.x, p.y);
                 ctx.stroke();
-            }, { passive:false });
+            }, { passive: false });
 
             canvas.addEventListener("touchend", () => {
                 isDrawing = false;
             });
         }
 
-        function getPos(e, canvas){
+        function getPos(e, canvas) {
             const rect = canvas.getBoundingClientRect();
             return {
                 x: (e.clientX || e.pageX) - rect.left,
@@ -1978,33 +2132,33 @@
             };
         }
 
-        function clearSignature(){
+        function clearSignature() {
             const canvas = document.getElementById("signatureCanvas");
-            if(!canvas) return;
+            if (!canvas) return;
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         /* ====== PROGRESS MODAL ====== */
-        function openProgressModal(){
+        function openProgressModal() {
             document.getElementById("progressStudentName").innerText =
                 "Group Alpha — Juan dela Cruz, Maria Reyes, Carlo Santos";
             document.getElementById("progressModal").style.display = "flex";
         }
 
-        function closeProgressModal(){
+        function closeProgressModal() {
             document.getElementById("progressModal").style.display = "none";
         }
 
-        function isNewDocument(item){
+        function isNewDocument(item) {
             return item.review_status === "Pending Review";
         }
 
-        function groupKeyToDomId(key){
+        function groupKeyToDomId(key) {
             return String(key).replace(/[^a-zA-Z0-9_-]/g, "_");
         }
 
-        function groupReceivedByCapstoneGroup(list){
+        function groupReceivedByCapstoneGroup(list) {
             const grouped = {};
 
             list.forEach(item => {
@@ -2013,7 +2167,7 @@
                     || item.group_id
                     || `no-group-${item.sender_name || "unknown"}`;
 
-                if(!grouped[key]){
+                if (!grouped[key]) {
                     grouped[key] = {
                         group_name: item.group_name || "No Group",
                         group_program: item.group_program || item.sender_program || "N/A",
@@ -2035,7 +2189,7 @@
                     )
                 }))
                 .sort((a, b) => {
-                    if(a.hasNew !== b.hasNew){
+                    if (a.hasNew !== b.hasNew) {
                         return b.hasNew - a.hasNew;
                     }
 
@@ -2043,18 +2197,28 @@
                 });
         }
 
-        function buildGroupedDocRowHtml(item){
+        function getDisplayDocumentTitle(item) {
+            const docType = String(item && item.document_type ? item.document_type : "").trim();
+            const match = docType.match(/Proposed\s+concept\s+paper\s*\(([123])\)/i);
+            if (match) {
+                return `Proposed concept paper (${match[1]})`;
+            }
+            return (item && item.document_title) || "Untitled Document";
+        }
+
+        function buildGroupedDocRowHtml(item) {
             const isSigningDoc = isSigningRequestDocument(item);
             const isSigned = item.review_status === "Approved";
             const statusClass = getStatusClass(item.review_status);
             const isNew = isNewDocument(item);
             const viewUrl = `${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
+            const displayTitle = getDisplayDocumentTitle(item);
 
             return `
                 <div class="group-doc-row ${isNew ? "is-new" : ""} ${isSigningDoc ? "needs-sign-row" : ""}" data-submission-id="${item.submission_id}">
                     <div class="group-doc-main">
                         <h4>
-                            ${item.document_title || "Untitled Document"}
+                            ${escapeHtml(displayTitle)}
                             ${isNew ? `<span class="new-doc-pill">New</span>` : ""}
                             ${isSigningDoc && !isSigned ? `<span class="sign-needed-pill"><i class="fa-solid fa-file-signature"></i> Signature Required</span>` : ""}
                             ${isSigningDoc && isSigned ? `<span class="signed-badge-pill"><i class="fa-solid fa-circle-check"></i> Signed</span>` : ""}
@@ -2094,11 +2258,11 @@
             `;
         }
 
-        function toggleReceivedGroup(domId){
+        function toggleReceivedGroup(domId) {
             const body = document.getElementById(`received-group-${domId}`);
             const chevron = document.getElementById(`received-chevron-${domId}`);
 
-            if(!body || !chevron){
+            if (!body || !chevron) {
                 return;
             }
 
@@ -2108,7 +2272,7 @@
             chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
         }
 
-        function renderReceivedDocuments(){
+        function renderReceivedDocuments() {
 
             const keyword =
                 getKeyword();
@@ -2145,7 +2309,161 @@
 
         }
 
-        function renderReceivedCards(list){
+        function buildAdviserDmRowHtml(dm) {
+            const isPending = dm.status === "Pending Adviser Signature";
+            const isRevision = dm.status === "Subject to Change";
+            const isRejected = dm.status === "Rejected";
+            const isSigned = !isPending && !isRevision && !isRejected;
+            const statusClass = isPending
+                ? "status-pending"
+                : isRevision
+                ? "status-subject"
+                : isRejected
+                ? "status-rejected"
+                : "status-approved";
+            const statusLabel = isPending
+                ? "Pending Signature"
+                : isRevision
+                ? "Subject to Change"
+                : isRejected
+                ? "Rejected"
+                : "Signed";
+            const pillHtml = isPending
+                ? `<span class="new-doc-pill">New</span><span class="sign-needed-pill"><i class="fa-solid fa-file-signature"></i> Signature Required</span>`
+                : isSigned
+                ? `<span class="signed-badge-pill"><i class="fa-solid fa-circle-check"></i> Signed</span>`
+                : "";
+            return `
+                <div class="group-doc-row ${isPending ? "is-new" : ""} needs-sign-row">
+                    <div class="group-doc-main">
+                        <h4>
+                            ${escapeHtml(dm.defense_type)} — Defense minutes
+                            ${pillHtml}
+                        </h4>
+                        <div class="group-doc-meta">
+                            <span class="doc-code-pill">DEF-MIN</span>
+                            <span class="separator">&bull;</span>
+                            <span class="doc-type-pill">${escapeHtml(dm.defense_type)} &bull; Defense minutes</span>
+                            <span class="separator">&bull;</span>
+                            <span>From <strong>${escapeHtml(dm.sender_name || "Student")}</strong></span>
+                            <span class="separator">&bull;</span>
+                            <span>Sent ${formatDate(dm.updated_at)}</span>
+                        </div>
+                    </div>
+                    <div class="group-doc-actions">
+                        <div class="document-meta" style="margin:0;">
+                            <span class="${statusClass}">${statusLabel}</span>
+                        </div>
+                        <button class="review-btn sign-direct-btn ${isSigned ? "already-signed-btn" : ""}" type="button" onclick="openAdviserDmSignModal(${dm.id})" title="${isSigned ? "View E-Signature" : "Review / E-Sign Document"}">
+                            <i class="fa-solid fa-${isSigned ? "circle-check" : "pen-nib"}"></i>
+                            <span>${isSigned ? "Signed" : (isPending ? "E-Sign" : "Review")}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        const DEFENSE_PHASE_CONFIG = [
+            { name: "Concept Presentation", icon: "fa-lightbulb", colorClass: "phase-concept" },
+            { name: "Outline Defense", icon: "fa-clipboard-check", colorClass: "phase-outline" },
+            { name: "Pre-Final Defense", icon: "fa-person-chalkboard", colorClass: "phase-prefinal" },
+            { name: "Final Defense", icon: "fa-graduation-cap", colorClass: "phase-final" },
+            { name: "Other Documents", icon: "fa-folder-open", colorClass: "phase-other" }
+        ];
+
+        function getDocumentDefensePhase(item) {
+            const dt = String(item.document_type || item.defense_type || "").toLowerCase();
+            const title = String(item.document_title || "").toLowerCase();
+            const code = String(item.document_code || "").toLowerCase();
+            const combined = `${dt} ${title} ${code}`;
+
+            if (
+                combined.includes("concept presentation") ||
+                combined.includes("proposed concept") ||
+                combined.includes("concept paper") ||
+                combined.includes("adviser acceptance") ||
+                combined.includes("recommendation for concept") ||
+                combined.includes("environmental scanning")
+            ) {
+                return "Concept Presentation";
+            }
+
+            if (
+                combined.includes("pre-final") ||
+                combined.includes("prefinal") ||
+                combined.includes("chapter 3-4") ||
+                combined.includes("chapter 3 and 4") ||
+                combined.includes("chapter 3 & 4")
+            ) {
+                return "Pre-Final Defense";
+            }
+
+            if (
+                combined.includes("outline") ||
+                combined.includes("chapter 1 and 2") ||
+                combined.includes("chapter 1-2") ||
+                combined.includes("chapter 1 & 2") ||
+                combined.includes("recommendation for outline")
+            ) {
+                return "Outline Defense";
+            }
+
+            if (
+                combined.includes("final defense") ||
+                combined.includes("chapter 1-4") ||
+                combined.includes("chapter 1 to 4") ||
+                combined.includes("final")
+            ) {
+                return "Final Defense";
+            }
+
+            if (combined.includes("recommendation letter")) {
+                return "Pre-Final Defense";
+            }
+
+            return "Other Documents";
+        }
+
+        function togglePhaseSection(phaseDomId) {
+            const body = document.getElementById(`phase-body-${phaseDomId}`);
+            const chevron = document.getElementById(`phase-chevron-${phaseDomId}`);
+            if (!body || !chevron) return;
+            const isHidden = body.style.display === "none";
+            body.style.display = isHidden ? "block" : "none";
+            chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+        }
+
+        function buildPhaseSortedHtml(groupDomId, docs, dmItems) {
+            return DEFENSE_PHASE_CONFIG.map((phase, pIdx) => {
+                const phaseDocs = (docs || []).filter(d => getDocumentDefensePhase(d) === phase.name);
+                const phaseDms = (dmItems || []).filter(dm => getDocumentDefensePhase(dm) === phase.name);
+                const count = phaseDocs.length + phaseDms.length;
+                if (count === 0) return "";
+                const phaseDomId = `${groupDomId}-phase-${pIdx}`;
+                return `
+                    <div class="phase-subcontainer">
+                        <div class="phase-subcontainer-header" onclick="togglePhaseSection('${phaseDomId}')">
+                            <div class="phase-subcontainer-title">
+                                <span class="phase-icon-badge ${phase.colorClass}">
+                                    <i class="fa-solid ${phase.icon}"></i>
+                                </span>
+                                <span>${phase.name}</span>
+                            </div>
+                            <div class="phase-subcontainer-right">
+                                <span class="phase-count-pill">${count} File${count !== 1 ? "s" : ""}</span>
+                                <i class="fa-solid fa-chevron-down phase-chevron" id="phase-chevron-${phaseDomId}" style="transform:rotate(180deg);"></i>
+                            </div>
+                        </div>
+                        <div class="phase-subcontainer-body" id="phase-body-${phaseDomId}" style="display:block;">
+                            ${phaseDocs.map(buildGroupedDocRowHtml).join("")}
+                            ${phaseDms.map(buildAdviserDmRowHtml).join("")}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderReceivedCards(list) {
 
             const grid =
                 document.getElementById("documentGrid");
@@ -2154,21 +2472,52 @@
             grid.classList.add("grouped-view");
             grid.innerHTML = "";
 
-            if(list.length === 0){
+            const keyword = typeof getKeyword === "function" ? getKeyword() : "";
+            const matchingDm = (adviserTypedDefenseMinutes || []).filter(dm => {
+                if (!keyword) return true;
+                return String(dm.group_name || "").toLowerCase().includes(keyword)
+                    || String(dm.defense_type || "").toLowerCase().includes(keyword)
+                    || String(dm.sender_name || "").toLowerCase().includes(keyword)
+                    || "defense minutes".includes(keyword);
+            });
 
-                grid.innerHTML =
-                    `<div class="empty-card">No received documents found.</div>`;
+            const groups = groupReceivedByCapstoneGroup(list).map(g => ({
+                ...g,
+                dmItems: []
+            }));
 
+            matchingDm.forEach(dm => {
+                const dmGroupName = String(dm.group_name || "No Group").trim().toLowerCase();
+                let targetGroup = groups.find(g => String(g.group_name || "").trim().toLowerCase() === dmGroupName);
+                if (!targetGroup) {
+                    targetGroup = {
+                        key: dm.group_name || `dm-group-${dm.group_id}`,
+                        group_name: dm.group_name || "Group",
+                        group_program: dm.program || "BSIS",
+                        project_title: dm.project_title || "",
+                        docs: [],
+                        dmItems: [],
+                        hasNew: false
+                    };
+                    groups.unshift(targetGroup);
+                }
+                targetGroup.dmItems.push(dm);
+                if (dm.status === "Pending Adviser Signature") {
+                    targetGroup.hasNew = true;
+                }
+            });
+
+            if (groups.length === 0) {
+                grid.innerHTML = `<div class="empty-card">No received documents found.</div>`;
                 return;
-
             }
-
-            const groups = groupReceivedByCapstoneGroup(list);
 
             groups.forEach((group, index) => {
                 const domId = groupKeyToDomId(group.key);
                 const isOpen = index === 0;
-                const newCount = group.docs.filter(isNewDocument).length;
+                const dmPendingCount = (group.dmItems || []).filter(dm => dm.status === "Pending Adviser Signature").length;
+                const newCount = group.docs.filter(isNewDocument).length + dmPendingCount;
+                const totalCount = group.docs.length + (group.dmItems || []).length;
 
                 const bundle = document.createElement("div");
                 bundle.className =
@@ -2187,7 +2536,7 @@
                         </div>
                         <div class="group-bundle-badges">
                             ${group.hasNew ? `<span class="group-new-badge"><i class="fa-solid fa-sparkles"></i> ${newCount} New</span>` : ""}
-                            <span class="group-count-badge"><i class="fa-solid fa-folder-closed"></i> ${group.docs.length} File${group.docs.length !== 1 ? "s" : ""}</span>
+                            <span class="group-count-badge"><i class="fa-solid fa-folder-closed"></i> ${totalCount} File${totalCount !== 1 ? "s" : ""}</span>
                             <i class="fa-solid fa-chevron-down chevron-icon" id="received-chevron-${domId}" style="transform:${isOpen ? "rotate(180deg)" : "rotate(0deg)"};"></i>
                         </div>
                     </div>
@@ -2199,7 +2548,7 @@
                                 <span class="lbl-action">Action</span>
                             </div>
                         </div>
-                        ${group.docs.map(buildGroupedDocRowHtml).join("")}
+                        ${buildPhaseSortedHtml(domId, group.docs, group.dmItems || [])}
                     </div>
                 `;
 
@@ -2215,7 +2564,7 @@
 
         }
 
-        function renderSentDocuments(){
+        function renderSentDocuments() {
 
             const grid =
                 document.getElementById("documentGrid");
@@ -2241,7 +2590,7 @@
 
             grid.innerHTML = "";
 
-            if(filtered.length === 0){
+            if (filtered.length === 0) {
 
                 grid.innerHTML =
                     `<div class="empty-card">No sent documents found.</div>`;
@@ -2320,14 +2669,14 @@
 
         }
 
-        function openReviewModal(submissionId){
+        function openReviewModal(submissionId) {
 
             const item =
                 receivedDocuments.find(doc =>
                     Number(doc.submission_id) === Number(submissionId)
                 );
 
-            if(!item){
+            if (!item) {
 
                 alert("Document submission not found.");
 
@@ -2339,7 +2688,7 @@
                 submissionId;
 
             document.getElementById("reviewTitle").innerText =
-                item.document_title || "Document Review";
+                getDisplayDocumentTitle(item) || "Document Review";
 
             document.getElementById("reviewSubtitle").innerText =
                 item.document_code || "No Document Code";
@@ -2371,9 +2720,322 @@
             document.getElementById("reviewModal").style.display =
                 "flex";
 
+            const simSection = document.getElementById("reviewSimilaritySection");
+            const simBody = document.getElementById("reviewSimilarityBody");
+            if (isProposedConceptPaperDocument(item)) {
+                if (simSection) simSection.style.display = "";
+                loadReviewSimilarity(submissionId);
+            } else {
+                latestReviewSimData = null;
+                if (simSection) simSection.style.display = "none";
+                if (simBody) simBody.innerHTML = "";
+            }
+
         }
 
-        function closeReviewModal(){
+        function isProposedConceptPaperDocument(item) {
+            const docType = String(item && item.document_type ? item.document_type : "").trim();
+            return /Proposed concept paper\s*\([123]\)/i.test(docType);
+        }
+
+        let latestReviewSimData = null;
+
+        function getSimBadgeStyle(pct) {
+            const val = Number(pct || 0);
+            if (val >= 50) return "background:#fee2e2; color:#dc2626; border:1px solid #fecaca;";
+            if (val >= 30) return "background:#fef3c7; color:#b45309; border:1px solid #fde68a;";
+            return "background:#dcfce7; color:#15803d; border:1px solid #bbf7d0;";
+        }
+
+        function escapeSimHtml(str) {
+            return String(str || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function renderSimCard(label, match, isOngoing, key) {
+            const pct = Number((match && match.percentage) || 0);
+            const matchedTitle = match && match.matchedTitle ? escapeSimHtml(match.matchedTitle) : "No close match found";
+            const groupNote = isOngoing && match && match.matchedGroup ? ` • Group: ${escapeSimHtml(match.matchedGroup)}` : "";
+
+            return `
+                <div role="button" tabindex="0" onclick="openReviewSimDetailModal('${key}')" style="background:#fff; border:1.5px solid #ddd6fe; border-radius:12px; padding:12px; cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;" onmouseover="this.style.borderColor='#7c3aed'; this.style.boxShadow='0 6px 16px rgba(124,58,237,0.12)';" onmouseout="this.style.borderColor='#ddd6fe'; this.style.boxShadow='none';">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+                        <strong style="font-size:12.5px; color:#1f2937;">${label}</strong>
+                        <span style="font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; ${getSimBadgeStyle(pct)}">${pct}% (${escapeSimHtml((match && match.level) || "Low")})</span>
+                    </div>
+                    <div style="font-size:12.5px; color:#4b5563;">
+                        <strong>Closest Match:</strong> ${matchedTitle}${groupNote}
+                    </div>
+                    <div style="margin-top:8px; font-size:11.5px; font-weight:600; color:#7c3aed; display:flex; align-items:center; gap:5px;">
+                        <i class="fa-solid fa-up-right-from-square"></i> Click to view full color-coded comparison
+                    </div>
+                </div>
+            `;
+        }
+
+        function highlightTextMulti(text, layers) {
+            if (!text) return "";
+            const str = String(text);
+            const intervals = [];
+
+            (layers || []).forEach(layer => {
+                const words = layer && layer.words;
+                const type = (layer && layer.type) || "title";
+                const priority = (layer && layer.priority) || 5;
+                if (!Array.isArray(words) || words.length === 0) return;
+                const clean = [...new Set(words.map(w => String(w || "").trim()).filter(w => w.length >= 3))];
+                if (clean.length === 0) return;
+                const escaped = clean.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                const re = new RegExp(`\\b(${escaped.join("|")})\\b`, "gi");
+                let m;
+                while ((m = re.exec(str)) !== null) {
+                    intervals.push({ start: m.index, end: m.index + m[0].length, type, priority });
+                }
+            });
+
+            if (intervals.length === 0) return escapeSimHtml(str);
+            intervals.sort((a, b) => a.start - b.start || b.priority - a.priority);
+
+            const resolved = [];
+            let cur = null;
+            for (const iv of intervals) {
+                if (!cur) { cur = { ...iv }; continue; }
+                if (iv.start >= cur.end) {
+                    resolved.push(cur);
+                    cur = { ...iv };
+                } else if (iv.priority > cur.priority) {
+                    if (iv.start > cur.start) {
+                        resolved.push({ start: cur.start, end: iv.start, type: cur.type, priority: cur.priority });
+                    }
+                    cur = { ...iv };
+                } else if (iv.type === cur.type && iv.end > cur.end) {
+                    cur.end = iv.end;
+                }
+            }
+            if (cur) resolved.push(cur);
+
+            let out = "";
+            let pos = 0;
+            for (const iv of resolved) {
+                if (iv.start > pos) out += escapeSimHtml(str.slice(pos, iv.start));
+                out += `<mark class="sim-hl sim-hl-${iv.type}">${escapeSimHtml(str.slice(iv.start, iv.end))}</mark>`;
+                pos = iv.end;
+            }
+            if (pos < str.length) out += escapeSimHtml(str.slice(pos));
+            return out;
+        }
+
+        function highlightSimWords(text, exactWords, synonymWords, baseType) {
+            return highlightTextMulti(text, [
+                { words: exactWords || [], type: baseType || "title", priority: 10 },
+                { words: synonymWords || [], type: "synonym", priority: 5 }
+            ]);
+        }
+
+        function ensureReviewSimDetailModal() {
+            let modal = document.getElementById("reviewSimDetailModal");
+            if (modal) return modal;
+            modal = document.createElement("div");
+            modal.id = "reviewSimDetailModal";
+            modal.className = "modal-overlay";
+            modal.style.cssText = "display:none; position:fixed; inset:0; z-index:99999; background:rgba(15, 10, 30, 0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center;";
+            modal.innerHTML = `
+                <div class="modal-box large-modal" style="max-width:1180px; width:96%; background:#fff; border-radius:22px; padding:22px 24px; box-shadow:0 24px 60px rgba(0,0,0,0.35);">
+                    <div class="modal-header" style="margin-bottom:12px; align-items:center;">
+                        <div>
+                            <h2 id="simDetailHeading" style="margin:0 0 2px; font-size:20px; color:#2e1065;">Side-by-Side Similarity Comparison</h2>
+                            <p id="simDetailSubheading" style="color:#64748b; font-size:13px; margin:0;"></p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span id="simDetailHeaderBadge" style="font-size:13px; font-weight:700; padding:6px 14px; border-radius:14px;"></span>
+                            <button type="button" class="close-modal-btn" onclick="closeReviewSimDetailModal()">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; padding:10px 14px; background:#faf8ff; border:1px solid #ede9fe; border-radius:12px; font-size:11.5px;">
+                        <strong style="color:#4c1d95; margin-right:4px;">Highlight Key (Both Panels):</strong>
+                        <mark class="sim-hl sim-hl-title">Title Match</mark>
+                        <mark class="sim-hl sim-hl-abstract">Abstract Match</mark>
+                        <mark class="sim-hl sim-hl-objectives">Objectives Match</mark>
+                        <mark class="sim-hl sim-hl-semantic">Concept / Semantic</mark>
+                        <mark class="sim-hl sim-hl-synonym">Synonym / Related</mark>
+                    </div>
+                    <div id="simDetailBody" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; height:64vh;"></div>
+                    <div class="modal-actions" style="margin-top:14px;">
+                        <button type="button" class="cancel-btn" onclick="closeReviewSimDetailModal()">Close Comparison</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        function openReviewSimDetailModal(key) {
+            if (!latestReviewSimData) return;
+            const isOngoing = key === "ongoing";
+            const match = isOngoing ? latestReviewSimData.ongoingMatch : latestReviewSimData.archivedMatch;
+            if (!match) return;
+
+            const modal = ensureReviewSimDetailModal();
+            const pct = Number(match.percentage || 0);
+            const lvl = match.level || "Low Similarity";
+
+            document.getElementById("simDetailHeading").innerText = "Side-by-Side Similarity Comparison";
+            document.getElementById("simDetailSubheading").innerText =
+                `${latestReviewSimData.documentTitle || "Submitted Document"} — Matched Against ${isOngoing ? "Approved Ongoing Study" : "Archived Study"}`;
+
+            const headerBadge = document.getElementById("simDetailHeaderBadge");
+            if (headerBadge) {
+                headerBadge.innerText = `${pct}% Similarity — ${lvl}`;
+                headerBadge.style.cssText = `font-size:13px; font-weight:700; padding:6px 14px; border-radius:14px; ${getSimBadgeStyle(pct)}`;
+            }
+
+            const ms = (match.matchingSections && typeof match.matchingSections === "object" && !Array.isArray(match.matchingSections))
+                ? match.matchingSections
+                : {};
+
+            const activeItem = receivedDocuments.find(doc => Number(doc.submission_id) === Number(selectedSubmissionId));
+            const fileUrl = activeItem ? String(activeItem.signed_file_path || activeItem.file_path || "").trim() : "";
+            const fileName = activeItem ? (activeItem.file_name || "Submitted Proposal.pdf") : "Submitted Proposal.pdf";
+
+            // LEFT PANEL: Student Proposal Content (Title + Body with color-coded highlights)
+            const leftTitleHtml = highlightTextMulti(latestReviewSimData.documentTitle || "", [
+                { words: ms.matchedTitleWords || [], type: "title", priority: 10 },
+                { words: ms.synonymTitleWords || [], type: "synonym", priority: 5 }
+            ]);
+
+            const bodyText = latestReviewSimData.submittedPdfText || "";
+            const leftBodyHtml = bodyText
+                ? highlightTextMulti(bodyText, [
+                    { words: ms.matchedTitleWords || [], type: "title", priority: 10 },
+                    { words: ms.matchedObjAbstractWords || [], type: "abstract", priority: 9 },
+                    { words: ms.matchedObjObjectivesWords || [], type: "objectives", priority: 9 },
+                    { words: ms.matchedResearchProbWords || [], type: "abstract", priority: 8 },
+                    { words: ms.matchedMethodologyWords || [], type: "objectives", priority: 8 },
+                    {
+                        words: [
+                            ...(ms.synonymTitleWords || []),
+                            ...(ms.synonymAbstractWords || []),
+                            ...(ms.synonymObjectivesWords || []),
+                            ...(ms.synonymResearchProbWords || []),
+                            ...(ms.synonymMethodologyWords || [])
+                        ], type: "synonym", priority: 5
+                    }
+                ])
+                : `<span style="color:#9ca3af; font-style:italic;">No readable PDF body text extracted. Click "View Original PDF" above to inspect the file.</span>`;
+
+            const leftPanelHtml = `
+                <div style="display:flex; flex-direction:column; border:1px solid #ede9fe; border-radius:16px; padding:16px; background:#fff; overflow-y:auto;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #f1ebff;">
+                        <div>
+                            <div style="font-size:14px; font-weight:700; color:#4c1d95;">Submitted Proposal Content</div>
+                            <div style="font-size:12px; color:#64748b;">${escapeSimHtml(fileName)}</div>
+                        </div>
+                        ${fileUrl ? `<a href="${escapeSimHtml(fileUrl)}" target="_blank" style="font-size:12px; font-weight:600; color:#7c3aed; text-decoration:none; white-space:nowrap;"><i class="fa-solid fa-file-pdf"></i> View Original PDF</a>` : ""}
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <span style="display:inline-block; background:#7c3aed; color:#fff; font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:999px; letter-spacing:0.5px; margin-bottom:6px;">PROPOSED TITLE</span>
+                        <div style="padding:10px 12px; background:#faf8ff; border:1px solid #ede9fe; border-radius:10px; font-size:14px; font-weight:600; color:#2e1065; line-height:1.6;">${leftTitleHtml}</div>
+                    </div>
+                    <div>
+                        <span style="display:inline-block; background:#7c3aed; color:#fff; font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:999px; letter-spacing:0.5px; margin-bottom:6px;">PROPOSAL BODY / OBJECTIVES</span>
+                        <div style="padding:12px 14px; background:#faf8ff; border:1px solid #ede9fe; border-radius:10px; font-size:13.5px; color:#2e1065; line-height:1.8; white-space:pre-wrap; word-break:break-word;">${leftBodyHtml}</div>
+                    </div>
+                </div>
+            `;
+
+            // RIGHT PANEL: Archived Study Match or Approved Ongoing Study Match
+            const naMsg = (txt) => `<span style="color:#9ca3af; font-style:italic; font-size:12.5px;">${txt}</span>`;
+            const rightSection = (badge, bgColor, html) => `
+                <div style="margin-bottom:14px;">
+                    <span style="display:inline-block; background:${bgColor}; color:#fff; font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:999px; letter-spacing:0.5px; margin-bottom:6px;">${badge}</span>
+                    <div style="padding:10px 12px; background:#faf8ff; border:1px solid #ede9fe; border-radius:10px; font-size:13.5px; line-height:1.75; color:#2e1065; white-space:pre-wrap; word-break:break-word;">${html}</div>
+                </div>
+            `;
+
+            const titleHtml = match.matchedTitle
+                ? highlightSimWords(match.matchedTitle, ms.matchedTitleWords || [], ms.synonymTitleWords || [], "title")
+                : naMsg(isOngoing ? "No matching approved ongoing study found." : "No matching archived study found.");
+
+            const abstractHtml = match.matchedAbstract
+                ? highlightSimWords(match.matchedAbstract, ms.matchedObjAbstractWords || [], ms.synonymAbstractWords || [], "abstract")
+                : naMsg("No abstract recorded.");
+
+            const objectivesHtml = match.matchedObjectives
+                ? highlightSimWords(match.matchedObjectives, ms.matchedObjObjectivesWords || [], ms.synonymObjectivesWords || [], "objectives")
+                : naMsg("No objectives recorded.");
+
+            const problemHtml = match.matchedResearchProblem
+                ? highlightSimWords(match.matchedResearchProblem, ms.matchedResearchProbWords || [], ms.synonymResearchProbWords || [], "abstract")
+                : naMsg("No research problem recorded.");
+
+            const methHtml = match.matchedMethodology
+                ? highlightSimWords(match.matchedMethodology, ms.matchedMethodologyWords || [], ms.synonymMethodologyWords || [], "objectives")
+                : naMsg("No methodology recorded.");
+
+            const rightPanelHtml = `
+                <div style="display:flex; flex-direction:column; border:1px solid #ede9fe; border-radius:16px; padding:16px; background:#fff; overflow-y:auto;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #f1ebff;">
+                        <div style="font-size:14px; font-weight:700; color:#4c1d95;">
+                            ${isOngoing ? "Approved Ongoing Study Match" : "Archived Study Match"}
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" onclick="openReviewSimDetailModal('archived')" style="border:none; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12px; cursor:pointer; background:${!isOngoing ? '#7c3aed' : '#f5f3ff'}; color:${!isOngoing ? '#fff' : '#7c3aed'};">Archived Study</button>
+                            <button type="button" onclick="openReviewSimDetailModal('ongoing')" style="border:none; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12px; cursor:pointer; background:${isOngoing ? '#7c3aed' : '#f5f3ff'}; color:${isOngoing ? '#fff' : '#7c3aed'};">Approved Ongoing Study</button>
+                        </div>
+                    </div>
+                    ${isOngoing && match.matchedGroup ? `<div style="margin-bottom:10px; font-size:12.5px; color:#6d28d9; font-weight:600;">Matched Group: ${escapeSimHtml(match.matchedGroup)}</div>` : ""}
+                    ${rightSection("TITLE", "#6d28d9", titleHtml)}
+                    ${rightSection("ABSTRACT", "#2563eb", abstractHtml)}
+                    ${rightSection("OBJECTIVES", "#16a34a", objectivesHtml)}
+                    ${!isOngoing ? rightSection("RESEARCH PROBLEM", "#2563eb", problemHtml) : ""}
+                    ${!isOngoing ? rightSection("METHODOLOGY", "#16a34a", methHtml) : ""}
+                </div>
+            `;
+
+            document.getElementById("simDetailBody").innerHTML = leftPanelHtml + rightPanelHtml;
+
+            modal.style.display = "flex";
+        }
+
+        function closeReviewSimDetailModal() {
+            const modal = document.getElementById("reviewSimDetailModal");
+            if (modal) modal.style.display = "none";
+        }
+
+        async function loadReviewSimilarity(submissionId) {
+            latestReviewSimData = null;
+            const bodyEl = document.getElementById("reviewSimilarityBody");
+            if (!bodyEl) return;
+            bodyEl.innerHTML = `<span style="color:#6d28d9;"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Analyzing document against Archived Studies &amp; Ongoing Approved Studies...</span>`;
+
+            try {
+                const res = await fetch(`/adviser-document-similarity/${submissionId}`);
+                const data = await res.json();
+                if (Number(selectedSubmissionId) !== Number(submissionId)) return;
+                if (!data.success) {
+                    bodyEl.innerHTML = `<span style="color:#dc2626;">${escapeSimHtml(data.message || "Could not run similarity check.")}</span>`;
+                    return;
+                }
+                latestReviewSimData = data;
+                bodyEl.innerHTML = `
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px;">
+                        ${renderSimCard("Archived Study", data.archivedMatch, false, "archived")}
+                        ${renderSimCard("Ongoing Approved Studies", data.ongoingMatch, true, "ongoing")}
+                    </div>
+                    ${!data.hasPdfText ? `<div style="margin-top:8px; font-size:11.5px; color:#64748b;">Note: No readable PDF body text was extracted; similarity was computed from the document title.</div>` : ""}
+                `;
+            } catch (err) {
+                console.log(err);
+                bodyEl.innerHTML = `<span style="color:#dc2626;">Failed to check similarity.</span>`;
+            }
+        }
+
+        function closeReviewModal() {
 
             selectedSubmissionId =
                 null;
@@ -2383,7 +3045,7 @@
 
         }
 
-        function openSendModal(){
+        function openSendModal() {
 
             clearSendForm();
 
@@ -2394,14 +3056,14 @@
 
         }
 
-        function closeSendModal(){
+        function closeSendModal() {
 
             document.getElementById("sendModal").style.display =
                 "none";
 
         }
 
-        function clearSendForm(){
+        function clearSendForm() {
 
             document.getElementById("sendDocumentTitle").value =
                 "";
@@ -2420,51 +3082,56 @@
 
         }
 
-        function renderRecipients(){
+        function toggleAllGroupCheckboxes(checked) {
+            document.querySelectorAll("#recipientList .recipient-checkbox").forEach(cb => {
+                cb.checked = Boolean(checked);
+            });
+        }
+
+        function renderRecipients() {
 
             const container =
                 document.getElementById("recipientList");
 
-            if(!container){
+            if (!container) {
                 return;
             }
 
+            const selectAllEl = document.getElementById("selectAllGroupsToggle");
+            if (selectAllEl) selectAllEl.checked = false;
+
             const keyword =
                 document.getElementById("recipientSearch")
-                ? document.getElementById("recipientSearch").value.toLowerCase()
-                : "";
+                    ? document.getElementById("recipientSearch").value.toLowerCase()
+                    : "";
 
             const filtered =
-                recipients.filter(user =>
-                    String(user.fullname || "").toLowerCase().includes(keyword)
+                recipients.filter(grp =>
+                    String(grp.group_name || "").toLowerCase().includes(keyword)
                     ||
-                    String(user.user_id || "").toLowerCase().includes(keyword)
+                    String(grp.group_id || "").toLowerCase().includes(keyword)
                     ||
-                    String(user.role || "").toLowerCase().includes(keyword)
+                    String(grp.project_title || "").toLowerCase().includes(keyword)
                     ||
-                    String(user.program || "").toLowerCase().includes(keyword)
+                    String(grp.program || "").toLowerCase().includes(keyword)
                 );
 
             container.innerHTML =
                 "";
 
-            if(filtered.length === 0){
+            if (filtered.length === 0) {
 
                 container.innerHTML =
-                    `<div class="empty-card">No recipients found.</div>`;
+                    `<div class="empty-card">No assigned capstone groups found.</div>`;
 
                 return;
 
             }
 
-            filtered.forEach(user => {
+            filtered.forEach(grp => {
 
-                const roleText =
-                    user.role === "admin"
-                    ? "Admin"
-                    : user.role === "faculty"
-                    ? "Faculty"
-                    : "Student";
+                const memberCount = Number(grp.member_count || 0);
+                const titleSuffix = grp.project_title ? ` • ${grp.project_title}` : "";
 
                 container.innerHTML +=
                     `
@@ -2473,20 +3140,20 @@
                             <input
                                 type="checkbox"
                                 class="recipient-checkbox"
-                                value="${user.id}"
+                                value="${grp.id}"
                             >
 
                             <div class="recipient-avatar">
-                                ${user.fullname ? user.fullname.charAt(0).toUpperCase() : "U"}
+                                ${grp.group_name ? grp.group_name.charAt(0).toUpperCase() : "G"}
                             </div>
 
                             <div>
                                 <h4>
-                                    ${user.fullname || "User"}
+                                    ${grp.group_name || "Capstone Group"}
                                 </h4>
 
                                 <p>
-                                    ${user.user_id || "No ID"} • ${roleText} • ${user.program || user.position || "No Program"}
+                                    ${grp.group_id || "No ID"} • ${grp.program || "No Program"} • ${memberCount} member(s)${titleSuffix}
                                 </p>
                             </div>
 
@@ -2497,7 +3164,7 @@
 
         }
 
-        async function sendAdviserDocument(){
+        async function sendAdviserDocument() {
 
             const documentTitle =
                 document.getElementById("sendDocumentTitle").value.trim();
@@ -2518,14 +3185,14 @@
                     input.value
                 );
 
-            if(
+            if (
                 !documentTitle ||
                 !documentType ||
                 !documentFile ||
                 selectedRecipients.length === 0
-            ){
+            ) {
 
-                alert("Please complete the document details, attach a file, and select at least one recipient.");
+                alert("Please complete the document details, attach a file, and select at least one capstone group.");
 
                 return;
 
@@ -2538,17 +3205,17 @@
             formData.append("documentTitle", documentTitle);
             formData.append("documentType", documentType);
             formData.append("documentFile", documentFile);
-            formData.append("recipientIds", JSON.stringify(selectedRecipients));
+            formData.append("groupIds", JSON.stringify(selectedRecipients));
             formData.append("message", message);
 
-            try{
+            try {
 
                 const response =
                     await fetch(
                         "/adviser-send-document",
                         {
-                            method:"POST",
-                            body:formData
+                            method: "POST",
+                            body: formData
                         }
                     );
 
@@ -2557,7 +3224,7 @@
 
                 alert(data.message || "Document processed.");
 
-                if(data.success){
+                if (data.success) {
 
                     closeSendModal();
 
@@ -2565,7 +3232,7 @@
 
                 }
 
-            }catch(error){
+            } catch (error) {
 
                 console.log(error);
 
@@ -2575,9 +3242,9 @@
 
         }
 
-        async function submitDocumentReview(reviewStatus){
+        async function submitDocumentReview(reviewStatus) {
 
-            if(!selectedSubmissionId){
+            if (!selectedSubmissionId) {
 
                 alert("No selected document submission.");
 
@@ -2588,22 +3255,22 @@
             const reviewComment =
                 document.getElementById("reviewComment").value.trim();
 
-            try{
+            try {
 
                 const response =
                     await fetch(
                         `/adviser-review-student-document/${selectedSubmissionId}`,
                         {
-                            method:"PUT",
+                            method: "PUT",
 
-                            headers:{
-                                "Content-Type":"application/json"
+                            headers: {
+                                "Content-Type": "application/json"
                             },
 
-                            body:JSON.stringify({
-                                adviserUserId:loggedInAdviserId,
+                            body: JSON.stringify({
+                                adviserUserId: loggedInAdviserId,
                                 reviewStatus,
-                                otherStatus:"",
+                                otherStatus: "",
                                 reviewComment
                             })
                         }
@@ -2614,7 +3281,7 @@
 
                 alert(data.message || "Review submitted.");
 
-                if(data.success){
+                if (data.success) {
 
                     closeReviewModal();
 
@@ -2622,7 +3289,7 @@
 
                 }
 
-            }catch(error){
+            } catch (error) {
 
                 console.log(error);
 
@@ -2632,7 +3299,7 @@
 
         }
 
-        function isDefaultReviewStatus(status){
+        function isDefaultReviewStatus(status) {
 
             const statuses = [
                 "Pending Review",
@@ -2645,28 +3312,28 @@
 
         }
 
-        function getStatusClass(status){
+        function getStatusClass(status) {
 
-            if(status === "Approved"){
+            if (status === "Approved") {
                 return "approved";
             }
 
-            if(status === "Subject to Change"){
+            if (status === "Subject to Change") {
                 return "subject";
             }
 
-            if(status === "Rejected"){
+            if (status === "Rejected") {
                 return "rejected";
             }
 
-            if(status === "Pending Review"){
+            if (status === "Pending Review") {
                 return "pending";
             }
 
             return "other";
         }
 
-        function getKeyword(){
+        function getKeyword() {
 
             return document
                 .getElementById("searchInput")
@@ -2675,9 +3342,9 @@
 
         }
 
-        function formatDate(dateValue){
+        function formatDate(dateValue) {
 
-            if(!dateValue){
+            if (!dateValue) {
                 return "N/A";
             }
 
@@ -2687,15 +3354,15 @@
             return date.toLocaleDateString(
                 "en-US",
                 {
-                    year:"numeric",
-                    month:"short",
-                    day:"numeric"
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
                 }
             );
 
         }
 
-        function logout(){
+        function logout() {
 
             localStorage.clear();
             window.location.href =
@@ -2704,14 +3371,14 @@
         }
 
         /* ====== DEFENSE MINUTES PHOTO REVIEW ====== */
-        async function loadDefenseMinutesForAdviser(){
-            try{
+        async function loadDefenseMinutesForAdviser() {
+            try {
                 const res = await fetch(`/adviser-defense-minutes/${loggedInAdviserId}`);
                 const data = await res.json();
-                if(data.success){
+                if (data.success) {
                     defenseMinutesList = data.defenseMinutesList || [];
                 }
-            }catch(err){
+            } catch (err) {
                 console.error("Failed to load defense minutes:", err);
             }
         }
@@ -2820,13 +3487,13 @@
             `).join("");
         }
 
-        function renderDefenseMinutes(){
+        function renderDefenseMinutes() {
             const grid = document.getElementById("documentGrid");
             grid.classList.remove("grouped-view");
             grid.classList.add("defmin-grid");
             grid.innerHTML = "";
 
-            if(!defenseMinutesList || defenseMinutesList.length === 0){
+            if (!defenseMinutesList || defenseMinutesList.length === 0) {
                 grid.classList.remove("defmin-grid");
                 grid.innerHTML = `<div class="empty-card"><i class="fa-solid fa-camera" style="margin-right:8px;color:#7c3aed;"></i>No defense minutes photos submitted yet.</div>`;
                 return;
@@ -2839,14 +3506,14 @@
                 const statusBadge = entry.is_approved
                     ? `<span style="background:#dcfce7;color:#16a34a;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;">&#10003; Approved</span>`
                     : entry.is_sent
-                    ? `<span style="background:#fef9c3;color:#ca8a04;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;">&#9679; Pending Review</span>`
-                    : `<span style="background:#f1f5f9;color:#64748b;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;">Not Sent</span>`;
+                        ? `<span style="background:#fef9c3;color:#ca8a04;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;">&#9679; Pending Review</span>`
+                        : `<span style="background:#f1f5f9;color:#64748b;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;">Not Sent</span>`;
 
                 const photosHtml = (entry.pictures || []).map((pic, i) => `
-                    <button type="button" class="defmin-thumb-btn" onclick="openDefMinLightbox(${entryIdx}, ${i})" title="Click to preview Photo ${i+1}">
+                    <button type="button" class="defmin-thumb-btn" onclick="openDefMinLightbox(${entryIdx}, ${i})" title="Click to preview Photo ${i + 1}">
                         <img src="${pic.file_path}"
-                            alt="Photo ${i+1}"
-                            onerror="this.parentElement.innerHTML='<span style=font-size:10px;color:#94a3b8;>Photo ${i+1}</span>'">
+                            alt="Photo ${i + 1}"
+                            onerror="this.parentElement.innerHTML='<span style=font-size:10px;color:#94a3b8;>Photo ${i + 1}</span>'">
                         <span class="defmin-thumb-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
                     </button>
                 `).join("");
@@ -2886,11 +3553,11 @@
             });
         }
 
-        async function approveDefenseMinutes(groupId, docType){
+        async function approveDefenseMinutes(groupId, docType) {
             const confirmed = await confirm(`Approve all defense minutes photos for this group?\nPlease verify all panelist signatures are visible before approving.`);
-            if(!confirmed) return;
+            if (!confirmed) return;
 
-            try{
+            try {
                 const res = await fetch("/approve-defense-minutes-pictures", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -2902,21 +3569,21 @@
                 });
                 const data = await res.json();
                 alert(data.message || "Done.");
-                if(data.success){
+                if (data.success) {
                     await loadDefenseMinutesForAdviser();
                     renderDefenseMinutes();
                 }
-            }catch(err){
+            } catch (err) {
                 console.error(err);
                 alert("Server error approving defense minutes.");
             }
         }
 
-        async function rejectDefenseMinutes(groupId, docType){
+        async function rejectDefenseMinutes(groupId, docType) {
             const reason = prompt("Reason for requesting more/better photos:");
-            if(!reason) return;
+            if (!reason) return;
 
-            try{
+            try {
                 const res = await fetch("/approve-defense-minutes-pictures", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -2930,13 +3597,211 @@
                 });
                 const data = await res.json();
                 alert(data.message || "Done.");
-                if(data.success){
+                if (data.success) {
                     await loadDefenseMinutesForAdviser();
                     renderDefenseMinutes();
                 }
-            }catch(err){
+            } catch (err) {
                 console.error(err);
                 alert("Server error.");
+            }
+        }
+
+        /* ====== ADVISER TYPED DEFENSE MINUTES E-SIGN ====== */
+        function openAdviserDmSignModal(dmId) {
+            const rec = (adviserTypedDefenseMinutes || []).find(m => Number(m.id) === Number(dmId));
+            if (!rec) return;
+            activeAdvDmRecord = rec;
+
+            let minutesData = {};
+            try { minutesData = JSON.parse(rec.minutes_json || "{}"); } catch (_) { }
+
+            const placed = [];
+            try {
+                if (rec.adviser_signature_json) placed.push(JSON.parse(rec.adviser_signature_json));
+            } catch (_) { }
+            try {
+                if (rec.panelist_signatures_json) {
+                    const arr = JSON.parse(rec.panelist_signatures_json);
+                    if (Array.isArray(arr)) placed.push(...arr);
+                }
+            } catch (_) { }
+
+            document.getElementById("advDmGroupName").innerText = rec.group_name || "—";
+            document.getElementById("advDmDefenseType").innerText = rec.defense_type || "—";
+            document.getElementById("advDmStatus").innerText = rec.status || "Pending";
+            const advNotesInput = document.getElementById("advDmNotes");
+            if (advNotesInput) advNotesInput.value = "";
+
+            const viewport = document.getElementById("advDmSheetViewport");
+            const renderRes = DefenseMinutesSheet.renderPages(viewport, {
+                minutesData,
+                placedSignatures: placed,
+                imgBasePath: "../../Images/dnsc"
+            });
+
+            const isPending = rec.status === "Pending Adviser Signature";
+            const controls = document.getElementById("advDmSignControls");
+            controls.style.display = isPending ? "block" : "none";
+
+            const advApproveChk = document.getElementById("advDmApproveCheck");
+            if (advApproveChk) advApproveChk.checked = false;
+            toggleAdvDmApprovalCheckbox();
+
+            const pageSelect = document.getElementById("advDmPageSelect");
+            pageSelect.innerHTML = Array.from({ length: renderRes.pageCount }, (_, i) =>
+                `<option value="${i}" ${i === renderRes.pageCount - 1 ? "selected" : ""}>Page ${i + 1} of ${renderRes.pageCount}</option>`
+            ).join("");
+            const pageInfoEl = document.getElementById("advDmPageInfo");
+            if (pageInfoEl) pageInfoEl.innerText = `Page ${renderRes.pageCount} of ${renderRes.pageCount}`;
+
+            if (isPending) {
+
+                const todayStr = new Date().toLocaleDateString("en-US");
+                document.getElementById("advDmDateSigned").value = todayStr;
+
+                const sigPreview = document.getElementById("advDmSigPreview");
+                if (savedSignaturePath) {
+                    sigPreview.innerHTML = `<img src="${escapeHtml(savedSignaturePath)}" alt="Saved E-Signature" style="max-height:54px; max-width:180px; object-fit:contain;">`;
+                    advDmDragState = {
+                        pageIndex: renderRes.pageCount - 1,
+                        xPct: 6,
+                        yPct: 72,
+                        widthPct: 22,
+                        signatureImage: savedSignaturePath,
+                        dateSigned: todayStr,
+                        label: "Drag Adviser E-Sign + Date"
+                    };
+                    DefenseMinutesSheet.mountDraggableSignature(viewport, advDmDragState);
+                } else {
+                    sigPreview.innerHTML = `<span style="font-size:12px; color:#dc2626;">No saved e-signature found in Settings. Please upload your e-signature in Faculty Settings first.</span>`;
+                    advDmDragState = null;
+                }
+            } else {
+                advDmDragState = null;
+            }
+
+            document.getElementById("adviserDmSignModal").style.display = "flex";
+        }
+
+        function closeAdviserDmModal() {
+            document.getElementById("adviserDmSignModal").style.display = "none";
+            activeAdvDmRecord = null;
+            advDmDragState = null;
+        }
+
+        function stepAdviserDmPage(delta) {
+            const sel = document.getElementById("advDmPageSelect");
+            if (!sel || !sel.options.length) return;
+            const nextIdx = Math.max(0, Math.min(sel.options.length - 1, Number(sel.value || 0) + delta));
+            sel.value = String(nextIdx);
+            changeAdviserDmSignPage();
+        }
+
+        function changeAdviserDmSignPage() {
+            const sel = document.getElementById("advDmPageSelect");
+            const idx = Number(sel.value || 0);
+            const pageInfoEl = document.getElementById("advDmPageInfo");
+            if (pageInfoEl && sel.options.length) pageInfoEl.innerText = `Page ${idx + 1} of ${sel.options.length}`;
+            const viewport = document.getElementById("advDmSheetViewport");
+            const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
+            if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (!advDmDragState) return;
+            advDmDragState.pageIndex = idx;
+            DefenseMinutesSheet.mountDraggableSignature(viewport, advDmDragState);
+        }
+
+        function placeAdviserDmSigOnSelectedPage() {
+            const idx = Number(document.getElementById("advDmPageSelect").value || 0);
+            const viewport = document.getElementById("advDmSheetViewport");
+            if (!advDmDragState || !advDmDragState.signatureImage) {
+                alert("No saved e-signature found in Faculty Settings.");
+                return;
+            }
+            advDmDragState.pageIndex = idx;
+            advDmDragState.xPct = 6;
+            advDmDragState.yPct = 70;
+            DefenseMinutesSheet.mountDraggableSignature(viewport, advDmDragState);
+            const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
+            if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function updateAdviserDmDateText() {
+            if (!advDmDragState) return;
+            advDmDragState.dateSigned = document.getElementById("advDmDateSigned").value || "";
+            const dateEl = document.querySelector("#advDmSheetViewport .dm-draggable-sig-date");
+            if (dateEl) dateEl.innerText = advDmDragState.dateSigned;
+        }
+
+        function toggleAdvDmApprovalCheckbox() {
+            const chk = document.getElementById("advDmApproveCheck");
+            const btn = document.getElementById("advDmSubmitBtn");
+            if (btn) btn.disabled = !(chk && chk.checked);
+        }
+
+        async function submitAdviserDmSignature(reviewStatus = "Approved") {
+            if (!activeAdvDmRecord) return;
+            const isApproval = reviewStatus === "Approved";
+
+            if (isApproval) {
+                const chk = document.getElementById("advDmApproveCheck");
+                if (!chk || !chk.checked) {
+                    alert("Please check the confirmation box stating that you have personally inspected the revisions and approve these defense documents.");
+                    return;
+                }
+                if (!advDmDragState || !advDmDragState.signatureImage) {
+                    alert("Please set up your saved e-signature in Faculty Settings before signing.");
+                    return;
+                }
+            }
+
+            const notes = document.getElementById("advDmNotes") ? document.getElementById("advDmNotes").value.trim() : "";
+            if (!isApproval && !notes) {
+                alert("Please enter a note explaining the required revision or rejection.");
+                return;
+            }
+
+            const btn = document.getElementById("advDmSubmitBtn");
+            const revBtn = document.getElementById("advDmRevisionBtn");
+            const rejBtn = document.getElementById("advDmRejectBtn");
+            if (btn) btn.disabled = true;
+            if (revBtn) revBtn.disabled = true;
+            if (rejBtn) rejBtn.disabled = true;
+            if (btn && isApproval) {
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving & Forwarding...`;
+            }
+
+            try {
+                const resp = await fetch("/typed-defense-minutes/adviser-sign", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: activeAdvDmRecord.id,
+                        adviserUserId: loggedInAdviserId,
+                        reviewStatus,
+                        reviewComment: notes,
+                        signatureImage: isApproval ? advDmDragState.signatureImage : null,
+                        dateSigned: isApproval ? advDmDragState.dateSigned : "",
+                        pageIndex: isApproval ? advDmDragState.pageIndex : 0,
+                        xPct: isApproval ? advDmDragState.xPct : 0,
+                        yPct: isApproval ? advDmDragState.yPct : 0,
+                        widthPct: isApproval ? advDmDragState.widthPct : 22
+                    })
+                });
+                const data = await resp.json();
+                alert(data.message || (data.success ? "Saved!" : "Failed to save."));
+                if (data.success) {
+                    closeAdviserDmModal();
+                    await loadAdviserDocuments();
+                }
+            } catch (err) {
+                console.error("Adviser DM sign error:", err);
+                alert("Cannot connect to server.");
+            } finally {
+                if (revBtn) revBtn.disabled = false;
+                if (rejBtn) rejBtn.disabled = false;
+                toggleAdvDmApprovalCheckbox();
+                if (btn) btn.innerHTML = `<i class="fa-solid fa-check"></i> Approve &amp; Save`;
             }
         }
 

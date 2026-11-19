@@ -1,0 +1,389 @@
+/* Shared DNSC A4 Defense Minutes Sheet & Draggable E-Signature Overlay */
+
+.dm-a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 18px;
+    background: #ffffff;
+    color: #111827;
+    padding: 10mm 12mm;
+    box-sizing: border-box;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    font-family: Arial, 'Helvetica Neue', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.dm-a4-page:last-child {
+    margin-bottom: 0;
+}
+
+.dm-a4-page-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.dm-a4-page-body {
+    flex: 1;
+}
+
+.dm-dnsc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #166534;
+}
+
+.dm-dnsc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dm-dnsc-seal {
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.dm-dnsc-name {
+    font-family: 'Century Schoolbook', Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.15;
+}
+
+.dm-dnsc-motto {
+    font-family: 'Century Schoolbook', Georgia, serif;
+    font-size: 10px;
+    font-style: italic;
+    color: #1f2937;
+    margin-top: 2px;
+}
+
+.dm-dnsc-header-right {
+    text-align: right;
+    font-family: 'Century Gothic', Arial, sans-serif;
+    font-size: 9px;
+    color: #1f2937;
+    line-height: 1.45;
+}
+
+.dm-dnsc-header-right div {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.dm-dnsc-icon {
+    width: 10px;
+    height: 10px;
+    object-fit: contain;
+}
+
+.dm-institute-bar {
+    text-align: center;
+    font-family: 'Century Schoolbook', Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    font-style: italic;
+    color: #111827;
+    margin: 6px 0 8px;
+}
+
+.dm-doc-title {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #000000;
+    margin: 4px 0 12px;
+    letter-spacing: 0.3px;
+}
+
+.dm-meta-block {
+    font-size: 11px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    color: #000000;
+}
+
+.dm-meta-line {
+    margin-bottom: 6px;
+}
+
+.dm-meta-split {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 6px;
+    padding-right: 40px;
+}
+
+.dm-members-block {
+    margin-top: 4px;
+}
+
+.dm-member-row {
+    display: flex;
+    gap: 8px;
+    line-height: 1.45;
+}
+
+.dm-member-label {
+    width: 62px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.dm-member-name {
+    font-weight: 700;
+}
+
+.dm-minutes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    color: #000000;
+    margin-bottom: 14px;
+}
+
+.dm-minutes-table th,
+.dm-minutes-table td {
+    border: 1px solid #000000;
+    padding: 6px 7px;
+    vertical-align: top;
+    text-align: left;
+}
+
+.dm-minutes-table th {
+    background: #f3f4f6;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.dm-panelist-cell {
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 10px 6px !important;
+}
+
+.dm-panelist-name {
+    font-weight: 700;
+    font-size: 10.5px;
+    margin-bottom: 2px;
+}
+
+.dm-panelist-role {
+    font-size: 9.5px;
+    margin-bottom: 18px;
+}
+
+.dm-panelist-sig,
+.dm-panelist-date {
+    text-align: left;
+    font-size: 9.5px;
+    margin-top: 10px;
+}
+
+.dm-panelist-cont {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.dm-page-cell {
+    text-align: center !important;
+    font-weight: 600;
+}
+
+.dm-text-cell {
+    line-height: 1.38;
+}
+
+.dm-bullet-item {
+    margin-bottom: 3px;
+}
+
+.dm-bullet-item:last-child {
+    margin-bottom: 0;
+}
+
+.dm-adviser-signoff {
+    margin-top: 34px;
+    padding-top: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #000000;
+}
+
+.dm-adviser-sig-space {
+    height: 36px;
+}
+
+.dm-adviser-name {
+    font-weight: 700;
+}
+
+.dm-adviser-date {
+    margin-top: 8px;
+}
+
+.dm-dnsc-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    background: #14532d;
+    color: #ffffff;
+    padding: 7px 10px;
+    margin-top: 8px;
+    border-radius: 2px;
+    font-family: 'Century Gothic', Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.dm-footer-vmc {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 0.9fr 1.45fr 0.85fr;
+    gap: 8px;
+}
+
+.dm-vmc-title {
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    color: #fef08a;
+}
+
+.dm-vmc-text {
+    font-size: 6.5px;
+    line-height: 1.25;
+    color: #ffffff;
+}
+
+.dm-footer-logos {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.dm-footer-logos img {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* Signature Overlays (Placed & Draggable) */
+.dm-placed-sig-box {
+    position: absolute;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 5;
+}
+
+.dm-anchored-sig-wrap {
+    pointer-events: none;
+    user-select: none;
+    margin: 2px 0 -4px;
+}
+
+.dm-anchored-sig-center {
+    display: flex;
+    justify-content: center;
+}
+
+.dm-anchored-sig-img {
+    max-height: 46px;
+    max-width: 150px;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+}
+
+.dm-anchored-date {
+    font-weight: 700;
+    color: #111827;
+    margin-left: 4px;
+}
+
+.dm-placed-sig-box img {
+    width: 100%;
+    max-height: 58px;
+    object-fit: contain;
+    display: block;
+    background: transparent;
+}
+
+.dm-placed-sig-date {
+    font-size: 10px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 1px;
+    white-space: nowrap;
+}
+
+.dm-draggable-sig-box {
+    position: absolute;
+    z-index: 20;
+    cursor: move;
+    border: 2px dashed #7c3aed;
+    background: rgba(124, 58, 237, 0.08);
+    border-radius: 8px;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+    touch-action: none;
+}
+
+.dm-draggable-sig-box img {
+    width: 100%;
+    max-height: 58px;
+    object-fit: contain;
+    pointer-events: none;
+    display: block;
+}
+
+.dm-draggable-sig-date {
+    font-size: 10px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin-top: 2px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.dm-draggable-sig-tag {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    background: #7c3aed;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+}

@@ -119,6 +119,16 @@
                     </span>
                 </div>
 
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Document_Review.html'"
+                >
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>
+                        Document Review
+                    </span>
+                </div>
+
             </div>
 
         </div>
@@ -337,26 +347,45 @@
             </div>
 
             <!-- DEFENSE TABS -->
+            <style>
+                .tab-red-dot {
+                    display: none;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: #ef4444;
+                    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+                    margin-left: 4px;
+                    flex-shrink: 0;
+                }
+                .tab-red-dot.has-activity {
+                    display: inline-block;
+                }
+            </style>
             <div class="defense-tabs">
                 <button class="tab-btn active" data-tab="concept" type="button">
                     <i class="fa-solid fa-lightbulb"></i>
                     <span>Concept Presentation</span>
                     <span class="tab-count" id="count-concept">0</span>
+                    <span class="tab-red-dot" id="dot-concept"></span>
                 </button>
                 <button class="tab-btn" data-tab="outline" type="button">
                     <i class="fa-solid fa-file-shield"></i>
                     <span>Outline Defense</span>
                     <span class="tab-count" id="count-outline">0</span>
+                    <span class="tab-red-dot" id="dot-outline"></span>
                 </button>
                 <button class="tab-btn" data-tab="pre-final" type="button">
                     <i class="fa-solid fa-circle-half-stroke"></i>
                     <span>Pre-Final Defense</span>
                     <span class="tab-count" id="count-pre-final">0</span>
+                    <span class="tab-red-dot" id="dot-pre-final"></span>
                 </button>
                 <button class="tab-btn" data-tab="final" type="button">
                     <i class="fa-solid fa-graduation-cap"></i>
                     <span>Final Defense</span>
                     <span class="tab-count" id="count-final">0</span>
+                    <span class="tab-red-dot" id="dot-final"></span>
                 </button>
                 <button class="tab-btn history-tab" data-tab="history" type="button">
                     <i class="fa-solid fa-clock-rotate-left"></i>
@@ -1172,6 +1201,15 @@
                     btn.addEventListener("click", () => {
                         document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
                         btn.classList.add("active");
+                        const tabKey = btn.dataset.tab;
+                        if (tabKey && window._stageScheduleSignatures && window._stageScheduleSignatures[tabKey]) {
+                            localStorage.setItem(
+                                `panelist_seen_stage_${loggedInUserId}_${tabKey}`,
+                                window._stageScheduleSignatures[tabKey]
+                            );
+                        }
+                        const dotEl = document.getElementById(`dot-${tabKey}`);
+                        if (dotEl) dotEl.classList.remove("has-activity");
                         filterDefenses();
                     });
                 });
@@ -1500,6 +1538,13 @@
             let finalCount = 0;
             let historyCount = 0;
 
+            const stageIds = {
+                concept: [],
+                outline: [],
+                "pre-final": [],
+                final: []
+            };
+
             defenseSchedules.forEach(schedule => {
 
                 if(isHistoryForPanelist(schedule)){
@@ -1508,12 +1553,16 @@
                     const type = String(schedule.defense_type || "").toLowerCase();
                     if (type.includes("concept") || type.includes("proposed") || type.includes("title")) {
                         conceptCount++;
+                        stageIds.concept.push(schedule.id);
                     } else if (type.includes("outline")) {
                         outlineCount++;
+                        stageIds.outline.push(schedule.id);
                     } else if (type.includes("pre-final") || type.includes("prefinal")) {
                         preFinalCount++;
+                        stageIds["pre-final"].push(schedule.id);
                     } else if (type.includes("final")) {
                         finalCount++;
+                        stageIds.final.push(schedule.id);
                     }
                 }
             });
@@ -1529,6 +1578,21 @@
             if (preFinalEl) preFinalEl.textContent = preFinalCount;
             if (finalEl) finalEl.textContent = finalCount;
             if (historyEl) historyEl.textContent = historyCount;
+
+            window._stageScheduleSignatures = {};
+            ["concept", "outline", "pre-final", "final"].forEach(stage => {
+                const ids = stageIds[stage].slice().sort((a, b) => Number(a) - Number(b));
+                const sig = ids.join(",");
+                window._stageScheduleSignatures[stage] = sig;
+                const dotEl = document.getElementById(`dot-${stage}`);
+                if (!dotEl) return;
+                const seenSig = localStorage.getItem(`panelist_seen_stage_${loggedInUserId}_${stage}`) || "";
+                if (ids.length > 0 && seenSig !== sig) {
+                    dotEl.classList.add("has-activity");
+                } else {
+                    dotEl.classList.remove("has-activity");
+                }
+            });
         }
 
         function getDefenseTypeClass(defenseType){
@@ -2498,6 +2562,11 @@
                 return;
             }
 
+            if(isScheduleNextUp(schedule)){
+                alert("Grading is disabled while this defense is still marked as 'Next Up'.");
+                return;
+            }
+
             activeDefenseScheduleId = scheduleId;
 
             const programText =
@@ -3227,6 +3296,69 @@
             }
         }
 
+        function isScheduleNextUp(schedule){
+            if (!schedule || isHistoryForPanelist(schedule) || isScheduleOngoing(schedule) || isScheduleLate(schedule)) {
+                return false;
+            }
+            if (String(schedule.defense_status || "").toLowerCase() === "next up") {
+                return true;
+            }
+            const upcomingSchedules = defenseSchedules.filter(s =>
+                !isHistoryForPanelist(s) &&
+                String(s.defense_status || "").toLowerCase() !== "cancelled" &&
+                !isScheduleLate(s)
+            ).sort((a, b) => {
+                const da = new Date(normalizeScheduleDate(a.defense_date) + 'T' + normalizeScheduleTime(a.start_time));
+                const db = new Date(normalizeScheduleDate(b.defense_date) + 'T' + normalizeScheduleTime(b.start_time));
+                return da - db;
+            });
+            const hasOngoing = upcomingSchedules.some(s => isScheduleOngoing(s));
+            if (hasOngoing) {
+                const secondClosest = upcomingSchedules.find(s => !isScheduleOngoing(s));
+                return Boolean(secondClosest && Number(schedule.id) === Number(secondClosest.id));
+            }
+            return Boolean(
+                (upcomingSchedules[0] && Number(schedule.id) === Number(upcomingSchedules[0].id)) ||
+                (upcomingSchedules[1] && Number(schedule.id) === Number(upcomingSchedules[1].id))
+            );
+        }
+
+        function applyNextUpPreviewLock(isLocked){
+            const evalForm = document.getElementById("evaluationForm");
+            if (!evalForm) return;
+
+            let banner = document.getElementById("nextUpPreviewBanner");
+            if (!banner) {
+                banner = document.createElement("div");
+                banner.id = "nextUpPreviewBanner";
+                banner.style.cssText = "display:none; padding: 11px 14px; border-radius: 10px; font-size: 0.86rem; margin-bottom: 14px; font-weight: 500; align-items: center; gap: 10px; background: #fef3c7; color: #92400e; border-left: 4px solid #d97706;";
+                banner.innerHTML = `<i class="fa-solid fa-lock"></i><span><strong>Preview Mode (Next Up):</strong> Grading, comments, recommendations, and verdicts are locked until this defense starts. You may review the grading sheet and view group documents.</span>`;
+                evalForm.insertBefore(banner, evalForm.firstChild);
+            }
+            banner.style.display = isLocked ? "flex" : "none";
+
+            evalForm.querySelectorAll("input, select, textarea").forEach(el => {
+                el.disabled = Boolean(isLocked);
+            });
+
+            const attachBtn = document.getElementById("attachSigBtn");
+            if (attachBtn) {
+                attachBtn.disabled = Boolean(isLocked);
+                attachBtn.style.opacity = isLocked ? "0.5" : "";
+                attachBtn.style.cursor = isLocked ? "not-allowed" : "pointer";
+            }
+
+            const submitBtn = evalForm.querySelector("button[type='submit']");
+            if (submitBtn) {
+                submitBtn.disabled = Boolean(isLocked);
+                submitBtn.style.opacity = isLocked ? "0.5" : "";
+                submitBtn.style.cursor = isLocked ? "not-allowed" : "";
+                submitBtn.innerHTML = isLocked
+                    ? `<i class="fa-solid fa-lock"></i> Grading Locked (Next Up)`
+                    : `<i class="fa-solid fa-check"></i> Save Evaluation`;
+            }
+        }
+
         function openEvaluationModal(scheduleId){
 
             const schedule =
@@ -3235,6 +3367,11 @@
                 );
 
             if(!schedule){
+                return;
+            }
+
+            if(isScheduleNextUp(schedule)){
+                alert("Grading is disabled while this defense is still marked as 'Next Up'.");
                 return;
             }
 
@@ -3670,6 +3807,8 @@
                 ? schedule.evaluation.recommendations || ""
                 : "";
 
+            applyNextUpPreviewLock(isScheduleNextUp(schedule));
+
             document.getElementById("evaluationModal").style.display =
                 "flex";
 
@@ -3695,6 +3834,11 @@
                 );
 
             if(!schedule){
+                return;
+            }
+
+            if(isScheduleNextUp(schedule)){
+                alert("Grading is disabled while this defense is still marked as 'Next Up'.");
                 return;
             }
 

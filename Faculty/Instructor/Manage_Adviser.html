@@ -273,6 +273,60 @@
             </div>
         </div>
 
+        <!-- RECOMMENDATION ANALYSIS -->
+        <section class="card" id="recommendationAnalysisCard" style="margin-bottom:24px; padding:22px 24px; border-radius:20px; background:linear-gradient(135deg, #ffffff 0%, #f8f5ff 100%); border:1px solid #e9d5ff;">
+            <div class="card-header" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+                <div>
+                    <h2 style="margin:0 0 4px;">
+                        Adviser Load Recommendation Analysis
+                    </h2>
+                    <p id="analysisSubtitle" style="margin:0; color:#6b7280; font-size:13px;">
+                        Analyzing current-year groups and available advisers...
+                    </p>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span class="section-badge" id="analysisCohortBadge">
+                        Current Year Cohort
+                    </span>
+                    <button
+                        type="button"
+                        class="manage-btn"
+                        id="openRecommendationReviewBtn"
+                        onclick="openRecommendationReviewModal()"
+                        style="padding:8px 14px; font-weight:600;"
+                    >
+                        Review &amp; Apply Analysis
+                    </button>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+                <div style="background:#fff; border:1px solid #ede9fe; border-radius:14px; padding:14px 16px;">
+                    <div style="font-size:12px; font-weight:600; color:#6b7280; margin-bottom:4px;">Overall Distribution</div>
+                    <div id="recOverallValue" style="font-size:15px; font-weight:700; color:#1f2937;">—</div>
+                    <div id="recOverallMeta" style="font-size:12px; color:#6b7280; margin-top:4px;">—</div>
+                </div>
+
+                <div style="background:#fff; border:1px solid #dbeafe; border-radius:14px; padding:14px 16px;">
+                    <div style="font-size:12px; font-weight:600; color:#1d4ed8; margin-bottom:4px;">BSIT Smart Recommendation</div>
+                    <div id="recItValue" style="font-size:15px; font-weight:700; color:#1e3a8a;">—</div>
+                    <div id="recItMeta" style="font-size:12px; color:#6b7280; margin-top:4px;">—</div>
+                </div>
+
+                <div style="background:#fff; border:1px solid #dcfce7; border-radius:14px; padding:14px 16px;">
+                    <div style="font-size:12px; font-weight:600; color:#15803d; margin-bottom:4px;">BSIS Smart Recommendation</div>
+                    <div id="recIsValue" style="font-size:15px; font-weight:700; color:#14532d;">—</div>
+                    <div id="recIsMeta" style="font-size:12px; color:#6b7280; margin-top:4px;">—</div>
+                </div>
+
+                <div style="background:#fff; border:1px solid #fef3c7; border-radius:14px; padding:14px 16px;">
+                    <div style="font-size:12px; font-weight:600; color:#b45309; margin-bottom:4px;">Open Capacity vs Unassigned</div>
+                    <div id="recCapacityValue" style="font-size:15px; font-weight:700; color:#78350f;">—</div>
+                    <div id="recCapacityMeta" style="font-size:12px; color:#6b7280; margin-top:4px;">—</div>
+                </div>
+            </div>
+        </section>
+
         <!-- CONTENT GRID -->
         <div class="content-grid">
 
@@ -307,7 +361,6 @@
                                 <th>Full Name</th>
                                 <th>Position</th>
                                 <th>Program</th>
-                                <th>Year Level</th>
                                 <th>Capacity</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -344,7 +397,7 @@
                     </h2>
 
                     <p>
-                        Use this page to define how many capstone groups an adviser can handle and which students they can cater based on program and year level.
+                        Use this page to define how many capstone groups an adviser can handle and which students they can cater based on their assigned program.
                     </p>
 
                     <div class="guide-list">
@@ -361,12 +414,7 @@
 
                         <div class="guide-item">
                             <i class="fa-solid fa-check"></i>
-                            <span>Limit adviser coverage by year level</span>
-                        </div>
-
-                        <div class="guide-item">
-                            <i class="fa-solid fa-check"></i>
-                            <span>Monitor adviser availability</span>
+                            <span>Auto-track availability or set inactive</span>
                         </div>
 
                     </div>
@@ -380,7 +428,7 @@
                     </h3>
 
                     <p>
-                        An adviser should only accept groups within their assigned program, year level, and available group capacity.
+                        An adviser should only accept groups within their assigned program and available group capacity.
                     </p>
 
                 </div>
@@ -397,16 +445,16 @@
         id="manageModal"
     >
 
-        <div class="modal-box">
+        <div class="modal-box" style="max-width:560px; border-top:4px solid #7c3aed;">
 
-            <div class="modal-header">
+            <div class="modal-header" style="padding-bottom:14px; border-bottom:1px solid #f1f5f9;">
 
                 <div>
-                    <h2>
+                    <h2 style="margin:0 0 2px;">
                         Manage Adviser
                     </h2>
 
-                    <p id="modalFacultySubtext">
+                    <p id="modalFacultySubtext" style="margin:0; color:#64748b;">
                         Configure adviser assignment settings.
                     </p>
                 </div>
@@ -420,28 +468,34 @@
 
             </div>
 
-            <div class="selected-faculty">
+            <div class="selected-faculty" style="background:linear-gradient(135deg, #f8f5ff 0%, #f1f5f9 100%); border:1px solid #e9d5ff; border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
 
-                <div
-                    class="selected-avatar"
-                    id="modalAvatar"
-                >
-                    A
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div
+                        class="selected-avatar"
+                        id="modalAvatar"
+                    >
+                        A
+                    </div>
+
+                    <div>
+                        <h3 id="modalFacultyName" style="margin:0 0 2px;">
+                            Faculty Name
+                        </h3>
+
+                        <p id="modalFacultyId" style="margin:0;">
+                            FAC2026-0000
+                        </p>
+                    </div>
                 </div>
 
-                <div>
-                    <h3 id="modalFacultyName">
-                        Faculty Name
-                    </h3>
-
-                    <p id="modalFacultyId">
-                        FAC2026-0000
-                    </p>
-                </div>
+                <span id="modalCurrentLoadBadge" style="font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; background:#fff; color:#5b21b6; border:1px solid #ddd6fe; white-space:nowrap;">
+                    0 / 0 Groups
+                </span>
 
             </div>
 
-            <div class="form-grid">
+            <div class="form-grid" style="margin-bottom:14px;">
 
                 <div class="input-group">
                     <label>
@@ -481,50 +535,25 @@
                     </select>
                 </div>
 
-                <div class="input-group">
-                    <label>
-                        Year Level to Cater
-                    </label>
+            </div>
 
-                    <select id="yearLevelCater">
-                        <option value="">
-                            Select Year Level
-                        </option>
+            <div class="input-group" style="margin-bottom:14px;">
+                <label>
+                    Adviser Availability
+                </label>
 
-                        <option value="3rd Year">
-                            3rd Year
-                        </option>
+                <select id="adviserStatus" style="width:100%;">
+                    <option value="Auto">
+                        Auto (Available / Full based on capacity)
+                    </option>
 
-                        <option value="4th Year">
-                            4th Year
-                        </option>
-
-                        <option value="Both">
-                            Both
-                        </option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label>
-                        Adviser Status
-                    </label>
-
-                    <select id="adviserStatus">
-                        <option value="Available">
-                            Available
-                        </option>
-
-                        <option value="Full">
-                            Full
-                        </option>
-
-                        <option value="Inactive">
-                            Inactive
-                        </option>
-                    </select>
-                </div>
-
+                    <option value="Inactive">
+                        Inactive (Hidden from student requests &amp; analysis)
+                    </option>
+                </select>
+                <small style="display:block; margin-top:5px; font-size:11.5px; color:#64748b;">
+                    System sets status to <strong>Available</strong> or <strong>Full</strong> automatically unless marked <strong>Inactive</strong>.
+                </small>
             </div>
 
             <div class="input-group">
@@ -560,9 +589,82 @@
 
     </div>
 
+    <!-- RECOMMENDATION REVIEW MODAL -->
+    <div
+        class="modal-overlay"
+        id="recommendationReviewModal"
+    >
+        <div class="modal-box" style="max-width:760px; width:94%; border-top:4px solid #7c3aed;">
+            <div class="modal-header" style="padding-bottom:14px; border-bottom:1px solid #f1f5f9;">
+                <div>
+                    <h2 style="margin:0 0 2px;">
+                        Review Recommended Adviser Load
+                    </h2>
+                    <p style="margin:0; color:#64748b; font-size:13px;">
+                        Adjust any adviser's program or capacity before applying. Inactive advisers are excluded.
+                    </p>
+                </div>
+
+                <button
+                    class="close-modal-btn"
+                    type="button"
+                    onclick="closeRecommendationReviewModal()"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="recReviewSummaryBar" style="background:linear-gradient(135deg, #f8f5ff 0%, #f1f5f9 100%); border:1px solid #e9d5ff; border-radius:14px; padding:12px 16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:13px;">
+                <span id="recReviewSummaryText" style="font-weight:600; color:#1f2937;">Calculating plan...</span>
+                <label style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:#5b21b6; cursor:pointer; margin:0;">
+                    <input type="checkbox" id="recReviewSelectAll" checked onchange="toggleAllRecommendationRows(this.checked)">
+                    Select All
+                </label>
+            </div>
+
+            <div style="max-height:360px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:14px; margin-bottom:16px;">
+                <table class="adviser-table" style="margin:0;">
+                    <thead>
+                        <tr>
+                            <th style="width:42px; text-align:center;">Use</th>
+                            <th>Adviser</th>
+                            <th style="width:110px;">Assigned</th>
+                            <th style="width:140px;">Program</th>
+                            <th style="width:130px;">Capacity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recReviewTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:20px; color:#64748b;">No eligible advisers found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-actions">
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="closeRecommendationReviewModal()"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="button"
+                    class="save-btn"
+                    id="confirmApplyRecBtn"
+                    onclick="applyRecommendationPlan()"
+                >
+                    Confirm &amp; Apply
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
 
         let advisers = [];
+        let latestAnalysis = null;
         let selectedFacultyId = null;
 
         /* ================= LOAD ADVISERS ================= */
@@ -590,7 +692,7 @@
 
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="8">
+                            <td colspan="7">
                                 Failed to load adviser accounts.
                             </td>
                         </tr>
@@ -618,6 +720,8 @@
                 ).innerText =
                     data.stats.availableAdvisers;
 
+                latestAnalysis = data.analysis || null;
+                renderRecommendationAnalysis(latestAnalysis);
                 renderAdvisers(advisers);
 
             }catch(error){
@@ -626,6 +730,37 @@
 
             }
 
+        }
+
+        /* ================= RENDER RECOMMENDATION ANALYSIS ================= */
+
+        function renderRecommendationAnalysis(analysis){
+            if(!analysis) return;
+            const year = analysis.cohortYear || new Date().getFullYear();
+            document.getElementById("analysisCohortBadge").innerText = `${year} Cohort`;
+            document.getElementById("analysisSubtitle").innerText =
+                `Smart load recommendation for ${year} groups (existing advisories from previous years remain intact and are excluded from ${year} capacity).`;
+
+            document.getElementById("recOverallValue").innerText = analysis.overallRecommendation || "—";
+            document.getElementById("recOverallMeta").innerText =
+                `${analysis.totalGroups} group(s) • ${analysis.availableAdvisers} available adviser(s)` +
+                (analysis.inactiveAdvisers ? ` • ${analysis.inactiveAdvisers} inactive` : "");
+
+            document.getElementById("recItValue").innerText = analysis.itRecommendation || "—";
+            document.getElementById("recItMeta").innerText =
+                `${analysis.itGroups} BSIT group(s) • ${analysis.itOnlyAdvisers} BSIT-only + ${analysis.bothAdvisers} Both adviser(s)`;
+
+            document.getElementById("recIsValue").innerText = analysis.isRecommendation || "—";
+            document.getElementById("recIsMeta").innerText =
+                `${analysis.isGroups} BSIS group(s) • ${analysis.isOnlyAdvisers} BSIS-only + ${analysis.bothAdvisers} Both adviser(s)`;
+
+            const gap = Number(analysis.capacityGap || 0);
+            document.getElementById("recCapacityValue").innerText =
+                `${analysis.totalRemainingSlots} open slot(s) vs ${analysis.unassignedGroups} unassigned`;
+            document.getElementById("recCapacityMeta").innerText =
+                gap > 0
+                    ? `Short by ${gap} slot(s) — increase capacity or activate more advisers.`
+                    : `Capacity sufficient (${Math.abs(gap)} spare slot(s)).`;
         }
 
         /* ================= RENDER ADVISERS ================= */
@@ -643,7 +778,7 @@
 
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="8">
+                        <td colspan="7">
                             No faculty adviser accounts found.
                         </td>
                     </tr>
@@ -715,11 +850,10 @@
                         </td>
 
                         <td>
-                            ${adviser.year_level_cater}
-                        </td>
-
-                        <td>
-                            ${adviser.group_capacity} Groups
+                            ${adviser.assigned_groups || 0} / ${adviser.group_capacity} Groups
+                            ${Number(adviser.total_advisory_groups || 0) > Number(adviser.assigned_groups || 0)
+                                ? `<div style="font-size:11px; color:#6b7280;">+${Number(adviser.total_advisory_groups) - Number(adviser.assigned_groups)} prior yr</div>`
+                                : ""}
                         </td>
 
                         <td>
@@ -805,6 +939,11 @@
                 .charAt(0)
                 .toUpperCase();
 
+            const loadBadge = document.getElementById("modalCurrentLoadBadge");
+            if (loadBadge) {
+                loadBadge.innerText = `${adviser.assigned_groups || 0} / ${adviser.group_capacity || 0} Groups (${adviser.adviser_status || "Not Configured"})`;
+            }
+
             document.getElementById(
                 "groupCapacity"
             ).value =
@@ -818,18 +957,11 @@
                 : "";
 
             document.getElementById(
-                "yearLevelCater"
-            ).value =
-                adviser.year_level_cater !== "Not Set"
-                ? adviser.year_level_cater
-                : "";
-
-            document.getElementById(
                 "adviserStatus"
             ).value =
-                adviser.adviser_status !== "Not Configured"
-                ? adviser.adviser_status
-                : "Available";
+                adviser.adviser_status === "Inactive"
+                ? "Inactive"
+                : "Auto";
 
             document.getElementById(
                 "remarks"
@@ -868,11 +1000,6 @@
                     "programCater"
                 ).value;
 
-            const yearLevelCater =
-                document.getElementById(
-                    "yearLevelCater"
-                ).value;
-
             const adviserStatus =
                 document.getElementById(
                     "adviserStatus"
@@ -886,9 +1013,7 @@
             if(
                 !selectedFacultyId ||
                 !groupCapacity ||
-                !programCater ||
-                !yearLevelCater ||
-                !adviserStatus
+                !programCater
             ){
 
                 alert(
@@ -915,7 +1040,6 @@
                                 facultyId:selectedFacultyId,
                                 groupCapacity,
                                 programCater,
-                                yearLevelCater,
                                 adviserStatus,
                                 remarks
                             })
@@ -949,6 +1073,186 @@
 
             }
 
+        }
+
+        /* ================= RECOMMENDATION REVIEW & APPLY ================= */
+
+        function buildEditableRecommendationPlan(){
+            const eligible = advisers.filter(a => a.adviser_status !== "Inactive");
+            if(eligible.length === 0) return [];
+
+            const totalGroups = Number((latestAnalysis && latestAnalysis.totalGroups) || 0);
+            const itGroups = Number((latestAnalysis && latestAnalysis.itGroups) || 0);
+            const isGroups = Number((latestAnalysis && latestAnalysis.isGroups) || 0);
+
+            const items = eligible.map(a => ({
+                user_id: a.user_id,
+                fullname: a.fullname,
+                assigned: Number(a.assigned_groups || 0),
+                program: ["BSIT", "BSIS", "Both"].includes(a.program_cater) ? a.program_cater : "Both",
+                proposed: Math.max(1, Number(a.assigned_groups || 0))
+            }));
+
+            const itOnly = items.filter(x => x.program === "BSIT");
+            const isOnly = items.filter(x => x.program === "BSIS");
+            const both = items.filter(x => x.program === "Both");
+
+            if(itGroups + isGroups > 0){
+                let bothForIt = 0;
+                let bothForIs = 0;
+                if(both.length > 0){
+                    if(itGroups > 0 && isGroups === 0) bothForIt = both.length;
+                    else if(isGroups > 0 && itGroups === 0) bothForIs = both.length;
+                    else{
+                        for(let i = 0; i < both.length; i++){
+                            const itLoad = itGroups / Math.max(1, itOnly.length + bothForIt);
+                            const isLoad = isGroups / Math.max(1, isOnly.length + bothForIs);
+                            if(itLoad >= isLoad) bothForIt++;
+                            else bothForIs++;
+                        }
+                    }
+                }
+
+                const itPool = [...itOnly, ...both.slice(0, bothForIt)];
+                const isPool = [...isOnly, ...both.slice(bothForIt, bothForIt + bothForIs)];
+
+                if(itPool.length > 0){
+                    const base = Math.floor(itGroups / itPool.length);
+                    const rem = itGroups % itPool.length;
+                    itPool.forEach((x, idx) => {
+                        x.proposed = Math.max(1, x.assigned, base + (idx < rem ? 1 : 0));
+                    });
+                }
+                if(isPool.length > 0){
+                    const base = Math.floor(isGroups / isPool.length);
+                    const rem = isGroups % isPool.length;
+                    isPool.forEach((x, idx) => {
+                        x.proposed = Math.max(1, x.assigned, base + (idx < rem ? 1 : 0));
+                    });
+                }
+            }else{
+                const base = Math.floor(totalGroups / items.length);
+                const rem = totalGroups % items.length;
+                items.forEach((x, idx) => {
+                    x.proposed = Math.max(1, x.assigned, base + (idx < rem ? 1 : 0));
+                });
+            }
+
+            return items;
+        }
+
+        function openRecommendationReviewModal(){
+            const plan = buildEditableRecommendationPlan();
+            const tbody = document.getElementById("recReviewTableBody");
+            if(!tbody) return;
+
+            if(plan.length === 0){
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">No eligible (non-inactive) advisers available to configure.</td></tr>`;
+            }else{
+                tbody.innerHTML = plan.map((item, idx) => `
+                    <tr data-rec-row="${idx}" data-user-id="${item.user_id}">
+                        <td style="text-align:center;">
+                            <input type="checkbox" class="rec-include-cb" checked onchange="updateRecommendationSummary()">
+                        </td>
+                        <td>
+                            <div style="font-weight:600; color:#1f2937;">${item.fullname}</div>
+                            <div style="font-size:12px; color:#64748b;">${item.user_id}</div>
+                        </td>
+                        <td>
+                            <span style="font-weight:600; color:#475569;">${item.assigned} group(s)</span>
+                        </td>
+                        <td>
+                            <select class="rec-program-select" onchange="updateRecommendationSummary()" style="width:100%; padding:7px 10px; border:1px solid #cbd5e1; border-radius:10px; font-family:inherit;">
+                                <option value="BSIT" ${item.program === "BSIT" ? "selected" : ""}>BSIT</option>
+                                <option value="BSIS" ${item.program === "BSIS" ? "selected" : ""}>BSIS</option>
+                                <option value="Both" ${item.program === "Both" ? "selected" : ""}>Both</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" class="rec-capacity-input" min="${Math.max(1, item.assigned)}" max="50" value="${item.proposed}" oninput="updateRecommendationSummary()" style="width:100%; padding:7px 10px; border:1px solid #cbd5e1; border-radius:10px; font-family:inherit;">
+                        </td>
+                    </tr>
+                `).join("");
+            }
+
+            const selectAll = document.getElementById("recReviewSelectAll");
+            if(selectAll) selectAll.checked = true;
+            updateRecommendationSummary();
+            document.getElementById("recommendationReviewModal").style.display = "flex";
+        }
+
+        function closeRecommendationReviewModal(){
+            document.getElementById("recommendationReviewModal").style.display = "none";
+        }
+
+        function toggleAllRecommendationRows(checked){
+            document.querySelectorAll("#recReviewTableBody .rec-include-cb").forEach(cb => {
+                cb.checked = Boolean(checked);
+            });
+            updateRecommendationSummary();
+        }
+
+        function updateRecommendationSummary(){
+            const rows = document.querySelectorAll("#recReviewTableBody tr[data-user-id]");
+            let selectedCount = 0;
+            let totalCap = 0;
+            rows.forEach(row => {
+                const cb = row.querySelector(".rec-include-cb");
+                const capEl = row.querySelector(".rec-capacity-input");
+                if(cb && cb.checked && capEl){
+                    selectedCount++;
+                    totalCap += Math.max(0, Number(capEl.value || 0));
+                }
+            });
+            const totalGroups = Number((latestAnalysis && latestAnalysis.totalGroups) || 0);
+            const summaryEl = document.getElementById("recReviewSummaryText");
+            if(summaryEl){
+                summaryEl.innerText = `${selectedCount} adviser(s) selected • Total Proposed Capacity: ${totalCap} slot(s) for ${totalGroups} current-year group(s)`;
+            }
+        }
+
+        async function applyRecommendationPlan(){
+            const rows = document.querySelectorAll("#recReviewTableBody tr[data-user-id]");
+            const recommendations = [];
+            rows.forEach(row => {
+                const cb = row.querySelector(".rec-include-cb");
+                if(!cb || !cb.checked) return;
+                const facultyId = row.getAttribute("data-user-id");
+                const programCater = row.querySelector(".rec-program-select").value;
+                const groupCapacity = Number(row.querySelector(".rec-capacity-input").value || 0);
+                if(facultyId && groupCapacity > 0){
+                    recommendations.push({ facultyId, programCater, groupCapacity });
+                }
+            });
+
+            if(recommendations.length === 0){
+                alert("Please select at least one adviser with a valid capacity.");
+                return;
+            }
+
+            const btn = document.getElementById("confirmApplyRecBtn");
+            if(btn){ btn.disabled = true; btn.innerText = "Applying..."; }
+
+            try{
+                const res = await fetch("/apply-adviser-recommendations", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ recommendations })
+                });
+                const data = await res.json();
+                if(data.success){
+                    alert(data.message || "Recommended capacities applied.");
+                    closeRecommendationReviewModal();
+                    loadAdvisers();
+                }else{
+                    alert(data.message || "Failed to apply recommendations.");
+                }
+            }catch(err){
+                console.log(err);
+                alert("Cannot connect to server.");
+            }finally{
+                if(btn){ btn.disabled = false; btn.innerText = "Confirm & Apply"; }
+            }
         }
 
         /* ================= LOGOUT ================= */

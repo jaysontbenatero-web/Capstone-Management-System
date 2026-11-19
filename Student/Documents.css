@@ -1837,3 +1837,550 @@ body{
     margin-top: 1px;
     flex-shrink: 0;
 }
+
+/* ================= DEFENSE MINUTES A4 SHEET & PRINT ================= */
+
+.dm-a4-sheet {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: #ffffff;
+    color: #111827;
+    padding: 10mm 12mm;
+    box-sizing: border-box;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    font-family: Arial, 'Helvetica Neue', sans-serif;
+}
+
+.dm-print-shell {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dm-print-shell > thead {
+    display: table-header-group;
+}
+
+.dm-print-shell > tfoot {
+    display: table-footer-group;
+}
+
+.dm-dnsc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #166534;
+}
+
+.dm-dnsc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dm-dnsc-seal {
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.dm-dnsc-name {
+    font-family: 'Century Schoolbook', Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.15;
+}
+
+.dm-dnsc-motto {
+    font-family: 'Century Schoolbook', Georgia, serif;
+    font-size: 10px;
+    font-style: italic;
+    color: #1f2937;
+    margin-top: 2px;
+}
+
+.dm-dnsc-header-right {
+    text-align: right;
+    font-family: 'Century Gothic', Arial, sans-serif;
+    font-size: 9px;
+    color: #1f2937;
+    line-height: 1.45;
+}
+
+.dm-dnsc-header-right div {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.dm-dnsc-icon {
+    width: 10px;
+    height: 10px;
+    object-fit: contain;
+}
+
+.dm-institute-bar {
+    text-align: center;
+    font-family: 'Century Schoolbook', Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    font-style: italic;
+    color: #111827;
+    margin: 6px 0 8px;
+}
+
+.dm-print-body-cell {
+    padding: 4px 0 10px;
+    vertical-align: top;
+}
+
+.dm-doc-title {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #000000;
+    margin: 4px 0 12px;
+    letter-spacing: 0.3px;
+}
+
+.dm-meta-block {
+    font-size: 11px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    color: #000000;
+}
+
+.dm-meta-line {
+    margin-bottom: 6px;
+}
+
+.dm-meta-split {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 6px;
+    padding-right: 40px;
+}
+
+.dm-members-block {
+    margin-top: 4px;
+}
+
+.dm-member-row {
+    display: flex;
+    gap: 8px;
+    line-height: 1.45;
+}
+
+.dm-member-label {
+    width: 62px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.dm-member-name {
+    font-weight: 700;
+}
+
+.dm-minutes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    color: #000000;
+    margin-bottom: 14px;
+}
+
+.dm-minutes-table th,
+.dm-minutes-table td {
+    border: 1px solid #000000;
+    padding: 6px 7px;
+    vertical-align: top;
+    text-align: left;
+}
+
+.dm-minutes-table th {
+    background: #f3f4f6;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.dm-minutes-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.dm-panelist-cell {
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 10px 6px !important;
+}
+
+.dm-panelist-name {
+    font-weight: 700;
+    font-size: 10.5px;
+    margin-bottom: 2px;
+}
+
+.dm-panelist-role {
+    font-size: 9.5px;
+    margin-bottom: 18px;
+}
+
+.dm-panelist-sig,
+.dm-panelist-date {
+    text-align: left;
+    font-size: 9.5px;
+    margin-top: 10px;
+}
+
+.dm-page-cell {
+    text-align: center !important;
+    font-weight: 600;
+}
+
+.dm-text-cell {
+    line-height: 1.35;
+}
+
+.dm-bullet-item {
+    margin-bottom: 3px;
+}
+
+.dm-bullet-item:last-child {
+    margin-bottom: 0;
+}
+
+.dm-a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 18px;
+    background: #ffffff;
+    color: #111827;
+    padding: 10mm 12mm;
+    box-sizing: border-box;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    font-family: Arial, 'Helvetica Neue', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.dm-a4-page:last-child {
+    margin-bottom: 0;
+}
+
+.dm-a4-page-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.dm-a4-page-body {
+    flex: 1;
+}
+
+.dm-panelist-cont {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.dm-adviser-signoff {
+    margin-top: 34px;
+    padding-top: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #000000;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.dm-adviser-sig-space {
+    height: 36px;
+}
+
+.dm-adviser-name {
+    font-weight: 700;
+}
+
+.dm-adviser-date {
+    margin-top: 8px;
+}
+
+.dm-dnsc-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    background: #14532d;
+    color: #ffffff;
+    padding: 7px 10px;
+    margin-top: 8px;
+    border-radius: 2px;
+    font-family: 'Century Gothic', Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.dm-footer-vmc {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 0.9fr 1.45fr 0.85fr;
+    gap: 8px;
+}
+
+.dm-vmc-title {
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    color: #fef08a;
+}
+
+.dm-vmc-text {
+    font-size: 6.5px;
+    line-height: 1.25;
+    color: #ffffff;
+}
+
+.dm-footer-logos {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.dm-footer-logos img {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+}
+
+.dm-action-edit-cell {
+    position: relative;
+}
+
+.dm-edit-cell {
+    padding: 3px 4px !important;
+}
+
+.dm-inline-input {
+    width: 100%;
+    border: 1px dashed transparent;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    font-family: Arial, 'Helvetica Neue', sans-serif;
+    color: #000000;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+.dm-inline-input:focus {
+    outline: none;
+    border-color: #7c3aed;
+    background: #faf5ff;
+}
+
+.dm-inline-textarea {
+    width: 100%;
+    min-height: 44px;
+    border: 1px dashed transparent;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 10px;
+    line-height: 1.35;
+    font-family: Arial, 'Helvetica Neue', sans-serif;
+    color: #000000;
+    background: transparent;
+    resize: none;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.dm-inline-textarea:focus {
+    outline: none;
+    border-color: #7c3aed;
+    background: #faf5ff;
+}
+
+.dm-row-tools {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.dm-add-row-btn {
+    padding: 3px 8px;
+    border: 1px solid #c4b5fd;
+    background: #f5f3ff;
+    color: #6d28d9;
+    border-radius: 5px;
+    font-size: 9.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.dm-add-row-btn:hover {
+    background: #ede9fe;
+}
+
+.dm-del-row-btn {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+}
+
+.dm-del-row-btn:hover {
+    opacity: 1;
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 8mm 10mm;
+    }
+
+    body.dm-printing-active {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body.dm-printing-active > *:not(#defenseMinutesPrintModal) {
+        display: none !important;
+    }
+
+    body.dm-printing-active #defenseMinutesPrintModal {
+        position: static !important;
+        display: block !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        backdrop-filter: none !important;
+    }
+
+    body.dm-printing-active .dm-print-modal-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        display: block !important;
+    }
+
+    body.dm-printing-active .dm-no-print {
+        display: none !important;
+    }
+
+    body.dm-printing-active #dmPrintSheetViewport {
+        overflow: visible !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    body.dm-printing-active .dm-a4-sheet {
+        width: 100% !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+}
+
+.dm-help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid #ddd6fe;
+    background: #f5f3ff;
+    color: #6d28d9;
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: 6px;
+    vertical-align: middle;
+    transition: all 0.15s ease;
+}
+
+.dm-help-btn:hover {
+    background: #ede9fe;
+    border-color: #c4b5fd;
+    color: #5b21b6;
+    transform: translateY(-1px);
+}
+
+.dm-help-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dm-help-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #f8f5ff;
+    border: 1px solid #ece7f8;
+    border-radius: 12px;
+    padding: 11px 13px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #1e293b;
+}
+
+.dm-help-list li i {
+    color: #7c3aed;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.dm-help-list li.dm-help-important {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #7f1d1d;
+    font-weight: 700;
+}
+
+.dm-help-list li.dm-help-important i {
+    color: #dc2626;
+}
+

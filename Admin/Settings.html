@@ -39,6 +39,7 @@
 
     <link rel="stylesheet" href="../shared/custom-alerts.css">
     <script src="../shared/custom-alerts.js"></script>
+    <script src="../shared/signature-bg-remover.js"></script>
 </head>
 
 <body class="admin-portal">
@@ -1146,13 +1147,27 @@
             }
         }
 
-        function previewSignature(file){
+        async function previewSignature(file){
             const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
             const fileExtension = file.name.split(".").pop().toLowerCase();
 
             if(!allowedExtensions.includes(fileExtension)){
                 alert("Only JPG, PNG, and WEBP images are allowed.");
                 return;
+            }
+
+            try {
+                if (typeof window.removeSignatureBackground === "function") {
+                    const cleaned = await window.removeSignatureBackground(file);
+                    selectedSignatureFile = cleaned.file;
+                    document.getElementById('signatureImage').src = cleaned.dataUrl;
+                    document.getElementById('signatureImage').style.display = 'block';
+                    document.getElementById('signaturePlaceholder').style.display = 'none';
+                    document.getElementById('clearSigBtn').style.display = 'flex';
+                    return;
+                }
+            } catch (bgErr) {
+                console.warn("Signature background removal fallback:", bgErr);
             }
 
             selectedSignatureFile = file;

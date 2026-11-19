@@ -177,21 +177,21 @@
             <div class="role-dropdown show-roles" id="roleDropdown">
 
                 <button class="role-option active-role" type="button">
-                    <i class="fa-solid fa-house"></i>
-                    Home
+                    <i class="fa-solid fa-user-shield"></i>
+                    Admin
                 </button>
 
-                <button class="role-option" onclick="openRole('adviser')" type="button">
+                <button class="role-option" id="roleBtnAdviser" onclick="openRole('adviser')" type="button">
                     <i class="fa-solid fa-user-tie"></i>
                     Adviser
                 </button>
 
-                <button class="role-option" onclick="openRole('panelist')" type="button">
+                <button class="role-option" id="roleBtnPanelist" onclick="openRole('panelist')" type="button">
                     <i class="fa-solid fa-clipboard-check"></i>
                     Panelist
                 </button>
 
-                <button class="role-option" onclick="openRole('instructor')" type="button">
+                <button class="role-option" id="roleBtnInstructor" onclick="openRole('instructor')" type="button">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     Instructor
                 </button>
@@ -485,6 +485,8 @@
                     String(adminData.instructor_access || 0)
                 );
 
+                applyRoleAccessStyles();
+
                 document.getElementById("adminSubtitle").innerText =
                     `${adminData.fullname || "Admin"} • ${adminData.user_id || "No ID"} • ${adminData.position || "Administrator"}`;
 
@@ -731,6 +733,25 @@
                 .toggle("rotate-arrow");
 
         }
+
+        function applyRoleAccessStyles() {
+            const roles = [
+                { id: "roleBtnAdviser", key: "adviser_access" },
+                { id: "roleBtnPanelist", key: "panelist_access" },
+                { id: "roleBtnInstructor", key: "instructor_access" }
+            ];
+            roles.forEach(({ id, key }) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const hasAccess = localStorage.getItem(key) === "1";
+                el.style.opacity = hasAccess ? "" : "0.5";
+                el.style.filter = hasAccess ? "" : "grayscale(85%)";
+                el.style.background = hasAccess ? "" : "#cbd5e1";
+                el.style.color = hasAccess ? "" : "#475569";
+            });
+        }
+
+        applyRoleAccessStyles();
 
         function openRole(role) {
 

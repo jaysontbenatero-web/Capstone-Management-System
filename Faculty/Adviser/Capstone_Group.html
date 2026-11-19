@@ -32,6 +32,148 @@
 
     <link rel="stylesheet" href="../../shared/custom-alerts.css">
     <script src="../../shared/custom-alerts.js"></script>
+    <style>
+        .group-card.has-ongoing-defense {
+            border: 2px solid #10b981 !important;
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.16) !important;
+        }
+        .ongoing-defense-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .ongoing-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #10b981;
+            display: inline-block;
+            flex-shrink: 0;
+            animation: ongoingPulse 1.4s infinite;
+        }
+        @keyframes ongoingPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+            50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        }
+        .card-actions-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .card-actions-row .view-group-btn {
+            flex: 1;
+            margin-top: 0 !important;
+        }
+        .minutes-btn {
+            flex: 1;
+            border: none;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #fff;
+            padding: 11px 14px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .minutes-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+        .panel-minutes-card {
+            background: #faf8ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+        .panel-minutes-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .panel-role-badge {
+            background: #7c3aed;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            letter-spacing: 0.4px;
+        }
+        .bullet-list-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .bullet-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .bullet-marker {
+            color: #7c3aed;
+            font-weight: 800;
+            font-size: 16px;
+            line-height: 1;
+        }
+        .bullet-input {
+            flex: 1;
+            padding: 8px 11px;
+            border-radius: 10px;
+            border: 1px solid #ddd6fe;
+            background: #fff;
+            font-size: 13px;
+            color: #1f2937;
+            outline: none;
+        }
+        .bullet-input:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+        .remove-bullet-btn {
+            border: none;
+            background: #fee2e2;
+            color: #dc2626;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .add-bullet-row {
+            display: flex;
+            gap: 8px;
+        }
+        .add-bullet-btn {
+            border: none;
+            background: #ede9fe;
+            color: #5b21b6;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body class="admin-portal">
@@ -133,7 +275,7 @@
                 >
                     <i class="fa-solid fa-file-lines"></i>
                     <span>
-                        Documents
+                        Document Review
                     </span>
                 </div>
 
@@ -428,6 +570,36 @@
 
             </div>
 
+            <div class="section-box">
+
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+                    <div>
+                        <h3 style="margin:0;">
+                            Approved Documents
+                        </h3>
+                        <p class="section-note" style="margin:4px 0 0;">
+                            All approved consultation and defense documents submitted by this group.
+                        </p>
+                    </div>
+                    <select id="adviserDocPhaseFilter" onchange="renderAdviserModalApprovedDocs()"
+                        style="padding:7px 12px; border-radius:10px; border:1px solid #d8b4fe; background:white; color:#2e1065; font-size:12.5px; font-weight:600; outline:none; cursor:pointer;">
+                        <option value="all">All Phases</option>
+                        <option value="Concept Presentation">Concept Presentation</option>
+                        <option value="Outline Defense">Outline Defense</option>
+                        <option value="Pre-Final Defense">Pre-Final Defense</option>
+                        <option value="Final Defense">Final Defense</option>
+                    </select>
+                </div>
+
+                <div
+                    class="proposal-list"
+                    id="modalApprovedDocs"
+                >
+                    Loading approved documents...
+                </div>
+
+            </div>
+
             <div class="modal-actions">
 
                 <button
@@ -442,6 +614,41 @@
 
         </div>
 
+    </div>
+
+    <!-- DEFENSE MINUTES MODAL -->
+    <div class="modal-overlay" id="defenseMinutesModal" style="display:none; z-index:9999;">
+        <div class="modal-box large-modal" style="max-width:780px; width:95%;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="minutesModalTitle" style="margin:0 0 2px;">Add Defense Minutes</h2>
+                    <p id="minutesModalSubtitle" style="margin:0; color:#64748b; font-size:13px;">Record bulleted notes per panelist during the on-going defense.</p>
+                </div>
+                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="minutesPanelCardsContainer" style="max-height:60vh; overflow-y:auto; padding-right:4px;"></div>
+
+                    <div id="minutesReviewControls" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #e2e8f0;">
+                        <label style="display:block; font-size:12.5px; font-weight:700; color:#2e1065; margin-bottom:6px;">Adviser Feedback / Remarks (required if rejecting)</label>
+                        <textarea id="minutesReviewFeedback" rows="2" placeholder="Optional feedback on approval, or reason for rejection..." style="width:100%; padding:9px 12px; border-radius:10px; border:1px solid #ddd6fe; font-family:inherit; font-size:13px;"></textarea>
+                    </div>
+
+                    <div class="modal-actions" style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+                        <button type="button" class="close-action-btn" onclick="closeDefenseMinutesModal()">Cancel</button>
+                        <button type="button" id="rejectMinutesBtn" onclick="submitStudentMinutesReview('Rejected')" style="display:none; border:none; background:#fee2e2; color:#dc2626; padding:11px 18px; border-radius:12px; font-weight:600; cursor:pointer;">
+                            <i class="fa-solid fa-ban"></i> Reject
+                        </button>
+                        <button type="button" id="approveMinutesBtn" onclick="submitStudentMinutesReview('Approved')" style="display:none; border:none; background:linear-gradient(135deg,#059669,#10b981); color:#fff; padding:11px 20px; border-radius:12px; font-weight:600; cursor:pointer;">
+                            <i class="fa-solid fa-check"></i> Approve Minutes
+                        </button>
+                        <button type="button" id="saveMinutesBtn" onclick="saveDefenseMinutes()" style="border:none; background:linear-gradient(135deg,#059669,#10b981); color:#fff; padding:11px 20px; border-radius:12px; font-weight:600; cursor:pointer;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes
+                        </button>
+                    </div>
+        </div>
     </div>
 
     <script>
@@ -845,10 +1052,20 @@
                 const card =
                     document.createElement("div");
 
-                card.className =
-                    "group-card";
+                const ongoing = group.ongoing_defense || null;
+                card.className = ongoing ? "group-card has-ongoing-defense" : "group-card";
+                const ongoingBannerHtml = ongoing ? `
+                    <div class="ongoing-defense-banner">
+                        <span style="display:inline-flex; align-items:center; gap:7px;">
+                            <span class="ongoing-dot"></span>
+                            On-Going Defense: ${ongoing.defense_type || "Defense"}
+                        </span>
+                        <span>${ongoing.start_time || ""} • ${ongoing.room || "TBA"}</span>
+                    </div>
+                ` : "";
 
                 card.innerHTML = `
+                    ${ongoingBannerHtml}
                     <div class="group-top">
 
                         <div class="group-icon">
@@ -948,14 +1165,36 @@
 
                     </div>
 
-                    <button
-                        class="view-group-btn"
-                        onclick="openGroupModal('${group.group_id}')"
-                        type="button"
-                    >
-                        <i class="fa-solid fa-eye"></i>
-                        View Group
-                    </button>
+                    <div class="card-actions-row">
+                        <button
+                            class="view-group-btn"
+                            onclick="openGroupModal('${group.group_id}')"
+                            type="button"
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                            View Group
+                        </button>
+                        ${ongoing ? `
+                        <button
+                            class="minutes-btn"
+                            onclick="openDefenseMinutesModal('${group.group_id}')"
+                            type="button"
+                        >
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            Add Defense Minutes
+                        </button>
+                        ` : ""}
+                        ${group.latest_minutes && group.latest_minutes.submitted_by_role === "student" ? `
+                        <button
+                            type="button"
+                            onclick="openReviewStudentMinutesModal('${group.group_id}')"
+                            style="flex:1 1 100%; border:none; padding:10px 14px; border-radius:12px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px; ${group.latest_minutes.minutes_status === 'Approved' ? 'background:#dcfce7; color:#15803d;' : (group.latest_minutes.minutes_status === 'Rejected' ? 'background:#fee2e2; color:#dc2626;' : 'background:#fef3c7; color:#b45309; border:1px solid #fde68a;')}"
+                        >
+                            <i class="fa-solid fa-clipboard-check"></i>
+                            Review Student Created Defense Minutes (${group.latest_minutes.minutes_status})
+                        </button>
+                        ` : ""}
+                    </div>
                 `;
 
                 grid.appendChild(card);
@@ -1153,6 +1392,109 @@
             document.getElementById("groupModal").style.display =
                 "flex";
 
+            loadAdviserModalApprovedDocs(group.group_db_id || group.id);
+
+        }
+
+        let activeAdviserModalDocs = [];
+
+        function isApprovedGroupDoc(doc){
+            const st = String(doc.document_status || "").trim().toLowerCase();
+            const rev = String(doc.latest_review_status || "").trim().toLowerCase();
+            return (
+                doc.is_typed_defense_minutes ||
+                st === "approved" ||
+                st === "adviser signed" ||
+                st === "signed" ||
+                rev === "approved" ||
+                !!doc.signed_file_path
+            );
+        }
+
+        function matchesDocPhaseFilter(doc, filterValue){
+            if(filterValue === "all") return true;
+            const combined = `${doc.document_type || ""} ${doc.document_title || ""}`.toLowerCase();
+            if(filterValue === "Concept Presentation"){
+                return combined.includes("concept") || combined.includes("adviser acceptance") || combined.includes("environmental scanning");
+            }
+            if(filterValue === "Outline Defense"){
+                return combined.includes("outline") || combined.includes("chapter 1 and 2") || combined.includes("chapter 1-2");
+            }
+            if(filterValue === "Pre-Final Defense"){
+                return combined.includes("pre-final") || combined.includes("prefinal") || combined.includes("chapter 3-4");
+            }
+            if(filterValue === "Final Defense"){
+                return (combined.includes("final") && !combined.includes("pre-final") && !combined.includes("prefinal")) || combined.includes("chapter 1-4");
+            }
+            return true;
+        }
+
+        async function loadAdviserModalApprovedDocs(groupDbId){
+            const container = document.getElementById("modalApprovedDocs");
+            const filterEl = document.getElementById("adviserDocPhaseFilter");
+            if(filterEl) filterEl.value = "all";
+            activeAdviserModalDocs = [];
+            if(!container) return;
+
+            if(!groupDbId){
+                container.innerHTML = `<p class="empty-text">No approved documents found.</p>`;
+                return;
+            }
+
+            container.innerHTML = `<p class="empty-text">Loading approved documents...</p>`;
+            try{
+                const res = await fetch(`/group-documents/${encodeURIComponent(groupDbId)}`);
+                const data = await res.json();
+                const allDocs = (data && data.success && Array.isArray(data.documents)) ? data.documents : [];
+                activeAdviserModalDocs = allDocs.filter(isApprovedGroupDoc);
+                renderAdviserModalApprovedDocs();
+            }catch(err){
+                console.error("Failed to load approved group documents:", err);
+                container.innerHTML = `<p class="empty-text">Unable to load approved documents.</p>`;
+            }
+        }
+
+        function renderAdviserModalApprovedDocs(){
+            const container = document.getElementById("modalApprovedDocs");
+            const filterEl = document.getElementById("adviserDocPhaseFilter");
+            if(!container) return;
+            const filterValue = filterEl ? filterEl.value : "all";
+            const list = activeAdviserModalDocs.filter(doc => matchesDocPhaseFilter(doc, filterValue));
+
+            if(list.length === 0){
+                container.innerHTML = `<p class="empty-text">No approved documents found for this phase.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(doc => {
+                const dateStr = doc.created_at
+                    ? new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                    : "N/A";
+                const isSigned = !!doc.signed_file_path || !!doc.is_typed_defense_minutes || String(doc.document_status || "").toLowerCase().includes("signed");
+                const fileUrl = doc.signed_file_path || doc.file_path || "";
+                const signedBadge = isSigned
+                    ? `<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fa-solid fa-signature"></i> E-Signed</span>`
+                    : `<span style="background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:6px;">Approved</span>`;
+                const actionLink = fileUrl
+                    ? `<a href="${fileUrl}" target="_blank">View / Download PDF</a>`
+                    : `<span style="font-size:12px;color:#15803d;font-weight:600;">Completed in Document Review</span>`;
+
+                return `
+                    <div class="proposal-row">
+                        <div class="proposal-icon">
+                            <i class="fa-solid ${doc.is_typed_defense_minutes ? 'fa-file-signature' : 'fa-file-circle-check'}"></i>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <h4 style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
+                                <span>${doc.document_title || doc.file_name || "Approved Document"}</span>
+                                ${signedBadge}
+                            </h4>
+                            <p>${doc.document_type || "Document"} &bull; Approved ${dateStr}</p>
+                            ${actionLink}
+                        </div>
+                    </div>
+                `;
+            }).join("");
         }
 
         function closeGroupModal(){
@@ -1160,6 +1502,236 @@
             document.getElementById("groupModal").style.display =
                 "none";
 
+        }
+
+        let activeMinutesGroup = null;
+        let activeMinutesEntries = [];
+        let activeMinutesScheduleId = null;
+
+        function setMinutesModalMode(isReviewMode){
+            document.getElementById("minutesReviewControls").style.display = isReviewMode ? "block" : "none";
+            document.getElementById("rejectMinutesBtn").style.display = isReviewMode ? "inline-flex" : "none";
+            document.getElementById("approveMinutesBtn").style.display = isReviewMode ? "inline-flex" : "none";
+            document.getElementById("saveMinutesBtn").style.display = isReviewMode ? "none" : "inline-flex";
+        }
+
+        function openDefenseMinutesModal(groupId){
+            const group = assignedGroups.find(g => g.group_id === groupId);
+            if(!group || !group.ongoing_defense) return;
+            activeMinutesGroup = group;
+            activeMinutesScheduleId = group.ongoing_defense.schedule_id;
+            setMinutesModalMode(false);
+
+            const ongoing = group.ongoing_defense;
+            document.getElementById("minutesModalTitle").innerText = `Defense Minutes — ${group.group_name || "Group"}`;
+            document.getElementById("minutesModalSubtitle").innerText =
+                `${ongoing.defense_type || "Defense"} (${ongoing.schedule_code || ""}) • ${ongoing.start_time || ""} - ${ongoing.end_time || ""} • ${ongoing.room || "TBA"}`;
+
+            const basePanelists = Array.isArray(ongoing.panelists) && ongoing.panelists.length
+                ? ongoing.panelists
+                : [
+                    { roleLabel: "Panel Chair", panelistName: "Panel Chair" },
+                    { roleLabel: "Panel 1", panelistName: "Panel 1" },
+                    { roleLabel: "Panel 2", panelistName: "Panel 2" }
+                ];
+
+            const saved = Array.isArray(ongoing.saved_minutes) ? ongoing.saved_minutes : [];
+            activeMinutesEntries = basePanelists.map((p, idx) => {
+                const matchSaved = saved[idx] || {};
+                const bullets = Array.isArray(matchSaved.bullets) ? matchSaved.bullets.slice() : [];
+                return {
+                    roleLabel: p.roleLabel || `Panel ${idx + 1}`,
+                    panelistId: p.panelistId || null,
+                    panelistName: p.panelistName || p.roleLabel || `Panel ${idx + 1}`,
+                    bullets
+                };
+            });
+
+            renderMinutesPanelCards();
+            document.getElementById("defenseMinutesModal").style.display = "flex";
+        }
+
+        function openReviewStudentMinutesModal(groupId){
+            const group = assignedGroups.find(g => g.group_id === groupId);
+            if(!group || !group.latest_minutes) return;
+            activeMinutesGroup = group;
+            activeMinutesScheduleId = group.latest_minutes.schedule_id;
+            setMinutesModalMode(true);
+
+            const lm = group.latest_minutes;
+            document.getElementById("minutesModalTitle").innerText = `Review Student Defense Minutes — ${group.group_name || "Group"}`;
+            document.getElementById("minutesModalSubtitle").innerText =
+                `${lm.defense_type || "Defense"} (${lm.schedule_code || ""}) • Status: ${lm.minutes_status || "Draft"}`;
+            document.getElementById("minutesReviewFeedback").value = lm.adviser_feedback || "";
+
+            activeMinutesEntries = Array.isArray(lm.entries) && lm.entries.length
+                ? lm.entries.map(e => ({
+                    roleLabel: e.roleLabel || "Panel",
+                    panelistId: e.panelistId || null,
+                    panelistName: e.panelistName || e.roleLabel || "Panel",
+                    bullets: Array.isArray(e.bullets) ? e.bullets.slice() : []
+                }))
+                : [
+                    { roleLabel: "Panel Chair", panelistName: "Panel Chair", bullets: [] },
+                    { roleLabel: "Panel 1", panelistName: "Panel 1", bullets: [] },
+                    { roleLabel: "Panel 2", panelistName: "Panel 2", bullets: [] }
+                ];
+
+            renderMinutesPanelCards();
+            document.getElementById("defenseMinutesModal").style.display = "flex";
+        }
+
+        async function submitStudentMinutesReview(decision){
+            if(!activeMinutesGroup || !activeMinutesScheduleId) return;
+            const feedback = document.getElementById("minutesReviewFeedback").value.trim();
+            if(decision === "Rejected" && !feedback){
+                alert("Please enter feedback explaining why the student defense minutes are rejected.");
+                return;
+            }
+
+            activeMinutesEntries.forEach((entry, idx) => {
+                const input = document.getElementById(`newBulletInput_${idx}`);
+                if(input && input.value.trim()){
+                    const text = input.value.replace(/^[•\-\*]\s*/, "").trim();
+                    if(text) entry.bullets.push(text);
+                }
+                entry.bullets = entry.bullets.map(b => String(b || "").trim()).filter(Boolean);
+            });
+
+            try{
+                const res = await fetch("/review-student-defense-minutes", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        adviserUserId: loggedInUserId,
+                        scheduleId: activeMinutesScheduleId,
+                        groupId: activeMinutesGroup.group_db_id,
+                        decision,
+                        adviserFeedback: feedback,
+                        panelEntries: activeMinutesEntries
+                    })
+                });
+                const data = await res.json();
+                if(data.success){
+                    alert(data.message || `Defense minutes ${decision}.`);
+                    closeDefenseMinutesModal();
+                    loadAssignedGroups();
+                }else{
+                    alert(data.message || "Failed to submit review.");
+                }
+            }catch(err){
+                console.log(err);
+                alert("Cannot connect to server.");
+            }
+        }
+
+        function closeDefenseMinutesModal(){
+            document.getElementById("defenseMinutesModal").style.display = "none";
+            activeMinutesGroup = null;
+            activeMinutesEntries = [];
+        }
+
+        function renderMinutesPanelCards(){
+            const container = document.getElementById("minutesPanelCardsContainer");
+            if(!container) return;
+
+            container.innerHTML = activeMinutesEntries.map((entry, pIdx) => {
+                const bulletsHtml = entry.bullets.length
+                    ? entry.bullets.map((b, bIdx) => `
+                        <div class="bullet-row" style="align-items:flex-start;">
+                            <span class="bullet-marker" style="margin-top:8px;">&bull;</span>
+                            <textarea rows="2" class="bullet-input" oninput="updateMinutesBullet(${pIdx}, ${bIdx}, this.value)" placeholder="Bullet point..." style="resize:vertical; font-family:inherit;">${String(b || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                            <button type="button" class="remove-bullet-btn" onclick="removeMinutesBullet(${pIdx}, ${bIdx})" title="Remove bullet" style="margin-top:4px;">&times;</button>
+                        </div>
+                    `).join("")
+                    : `<div style="font-size:12px; color:#94a3b8; font-style:italic; margin-bottom:4px;">No bullet points added yet.</div>`;
+
+                return `
+                    <div class="panel-minutes-card">
+                        <div class="panel-minutes-head">
+                            <div>
+                                <span class="panel-role-badge">${entry.roleLabel}</span>
+                                <strong style="margin-left:8px; font-size:14px; color:#2e1065;">${entry.panelistName}</strong>
+                            </div>
+                            <span style="font-size:12px; color:#64748b;">${entry.bullets.length} bullet(s)</span>
+                        </div>
+                        <div class="bullet-list-wrap">${bulletsHtml}</div>
+                        <div class="add-bullet-row" style="align-items:flex-start;">
+                            <textarea rows="2" id="newBulletInput_${pIdx}" class="bullet-input" placeholder="Type a comment or recommendation, then click + Add Bullet..." style="resize:vertical; font-family:inherit;"></textarea>
+                            <button type="button" class="add-bullet-btn" onclick="addMinutesBullet(${pIdx})">
+                                <i class="fa-solid fa-plus"></i> Add Bullet
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function updateMinutesBullet(panelIdx, bulletIdx, val){
+            if(activeMinutesEntries[panelIdx]){
+                activeMinutesEntries[panelIdx].bullets[bulletIdx] = val;
+            }
+        }
+
+        function addMinutesBullet(panelIdx){
+            const input = document.getElementById(`newBulletInput_${panelIdx}`);
+            if(!input || !activeMinutesEntries[panelIdx]) return;
+            const text = String(input.value || "").replace(/^[•\-\*]\s*/, "").trim();
+            if(!text) return;
+            activeMinutesEntries[panelIdx].bullets.push(text);
+            input.value = "";
+            renderMinutesPanelCards();
+            const nextInput = document.getElementById(`newBulletInput_${panelIdx}`);
+            if(nextInput) nextInput.focus();
+        }
+
+        function removeMinutesBullet(panelIdx, bulletIdx){
+            if(!activeMinutesEntries[panelIdx]) return;
+            activeMinutesEntries[panelIdx].bullets.splice(bulletIdx, 1);
+            renderMinutesPanelCards();
+        }
+
+        async function saveDefenseMinutes(){
+            if(!activeMinutesGroup || !activeMinutesGroup.ongoing_defense) return;
+
+            // Include any un-submitted text typed in the "new bullet" inputs as a single bullet
+            activeMinutesEntries.forEach((entry, idx) => {
+                const input = document.getElementById(`newBulletInput_${idx}`);
+                if(input && input.value.trim()){
+                    const text = input.value.replace(/^[•\-\*]\s*/, "").trim();
+                    if(text) entry.bullets.push(text);
+                }
+                entry.bullets = entry.bullets.map(b => String(b || "").trim()).filter(Boolean);
+            });
+
+            const btn = document.getElementById("saveMinutesBtn");
+            if(btn){ btn.disabled = true; btn.innerText = "Saving..."; }
+
+            try{
+                const res = await fetch("/save-defense-minutes", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        adviserUserId: loggedInUserId,
+                        scheduleId: activeMinutesGroup.ongoing_defense.schedule_id,
+                        groupId: activeMinutesGroup.group_db_id,
+                        panelEntries: activeMinutesEntries
+                    })
+                });
+                const data = await res.json();
+                if(data.success){
+                    alert(data.message || "Defense minutes saved.");
+                    closeDefenseMinutesModal();
+                    loadAssignedGroups();
+                }else{
+                    alert(data.message || "Failed to save defense minutes.");
+                }
+            }catch(err){
+                console.log(err);
+                alert("Cannot connect to server.");
+            }finally{
+                if(btn){ btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes`; }
+            }
         }
 
         function logout(){

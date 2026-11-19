@@ -132,6 +132,10 @@
                     <i class="fa-solid fa-comments"></i>
                     <span>Consultation</span>
                 </div>
+<div class="menu-item" id="nav-defense" onclick="window.location.href='Defense_Schedule.html'">
+    <i class="fa-solid fa-calendar-check"></i>
+    <span>Defense Schedules</span>
+</div>
 
                 <div class="menu-title">
                     Communication
@@ -194,88 +198,6 @@
                 </p>
             </div>
 
-            <div class="top-actions">
-
-                <button
-                    class="read-btn"
-                    onclick="markAllAsRead()"
-                    type="button"
-                >
-                    <i class="fa-solid fa-check-double"></i>
-                    Mark System Read
-                </button>
-
-            </div>
-
-        </div>
-
-        <!-- STATS -->
-        <div class="stats-grid">
-
-            <div class="stat-card">
-                <div class="stat-icon purple">
-                    <i class="fa-solid fa-bullhorn"></i>
-                </div>
-
-                <div>
-                    <h2 id="announcementCount">
-                        0
-                    </h2>
-
-                    <p>
-                        Announcements
-                    </p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon blue">
-                    <i class="fa-solid fa-calendar-days"></i>
-                </div>
-
-                <div>
-                    <h2 id="defenseCount">
-                        0
-                    </h2>
-
-                    <p>
-                        Defense Schedules
-                    </p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon yellow">
-                    <i class="fa-solid fa-bell"></i>
-                </div>
-
-                <div>
-                    <h2 id="unreadCount">
-                        0
-                    </h2>
-
-                    <p>
-                        Unread System Notifications
-                    </p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
-                    <i class="fa-solid fa-user-tie"></i>
-                </div>
-
-                <div>
-                    <h2 id="adviserNotifCount">
-                        0
-                    </h2>
-
-                    <p>
-                        Adviser Request Updates
-                    </p>
-                </div>
-            </div>
-
         </div>
 
         <!-- FILTERS -->
@@ -287,59 +209,22 @@
                 <input
                     type="text"
                     id="searchInput"
-                    placeholder="Search announcements or schedules..."
-                    onkeyup="renderCurrentTab()"
+                    placeholder="Search announcements, defense schedules, or updates..."
+                    onkeyup="handleSearchInput()"
                 >
             </div>
 
-            <div class="tab-buttons">
-
-                <button
-                    class="tab-btn active"
-                    id="tab-all"
-                    onclick="setTab('all')"
-                    type="button"
+            <div>
+                <select
+                    id="categoryFilter"
+                    onchange="setTab(this.value)"
                 >
-                    All
-                </button>
-
-                <button
-                    class="tab-btn"
-                    id="tab-announcements"
-                    onclick="setTab('announcements')"
-                    type="button"
-                >
-                    Announcements
-                </button>
-
-                <button
-                    class="tab-btn"
-                    id="tab-defense"
-                    onclick="setTab('defense')"
-                    type="button"
-                >
-                    Defense Schedule
-                </button>
-
-                <button
-                    class="tab-btn"
-                    id="tab-system"
-                    onclick="setTab('system')"
-                    type="button"
-                >
-                    System
-                </button>
-
-                <button
-                    class="tab-btn"
-                    id="tab-adviser"
-                    onclick="setTab('adviser')"
-                    type="button"
-                >
-                    <i class="fa-solid fa-user-tie" style="margin-right:5px;"></i>
-                    Adviser
-                </button>
-
+                    <option value="all">All Updates</option>
+                    <option value="announcements">Announcements</option>
+                    <option value="defense">Defense Schedule</option>
+                    <option value="system">System</option>
+                    <option value="adviser">Adviser</option>
+                </select>
             </div>
 
         </section>
@@ -373,6 +258,8 @@
                     Loading updates...
                 </div>
             </div>
+
+            <div class="pagination-bar" id="paginationControls" style="display:none;"></div>
 
         </section>
 
@@ -500,24 +387,20 @@
         }
 
         function updateStats(){
+            const annEl = document.getElementById("announcementCount");
+            if(annEl) annEl.innerText = announcements.length;
 
-            document.getElementById("announcementCount").innerText =
-                announcements.length;
+            const defEl = document.getElementById("defenseCount");
+            if(defEl) defEl.innerText = defenseSchedules.length;
 
-            document.getElementById("defenseCount").innerText =
-                defenseSchedules.length;
+            const unreadEl = document.getElementById("unreadCount");
+            if(unreadEl){
+                unreadEl.innerText = systemNotifications.filter(item => Number(item.is_read) === 0).length;
+            }
 
-            const unread =
-                systemNotifications.filter(item =>
-                    Number(item.is_read) === 0
-                ).length;
-
-            document.getElementById("unreadCount").innerText =
-                unread;
-
-            // Count adviser-related notifications
-            const adviserCount =
-                systemNotifications.filter(item => {
+            const advEl = document.getElementById("adviserNotifCount");
+            if(advEl){
+                advEl.innerText = systemNotifications.filter(item => {
                     const combined = (
                         (item.notification_title || "") +
                         " " +
@@ -527,29 +410,20 @@
                     ).toLowerCase();
                     return combined.includes("adviser");
                 }).length;
+            }
+        }
 
-            document.getElementById("adviserNotifCount").innerText =
-                adviserCount;
-
+        function handleSearchInput(){
+            currentPage = 1;
+            renderCurrentTab();
         }
 
         function setTab(tab){
-
-            currentTab =
-                tab;
-
-            document
-                .querySelectorAll(".tab-btn")
-                .forEach(button =>
-                    button.classList.remove("active")
-                );
-
-            document
-                .getElementById(`tab-${tab}`)
-                .classList.add("active");
-
+            currentTab = tab || "all";
+            currentPage = 1;
+            const filterEl = document.getElementById("categoryFilter");
+            if(filterEl) filterEl.value = currentTab;
             renderCurrentTab();
-
         }
 
         function renderCurrentTab(){
@@ -893,6 +767,54 @@
 
         }
 
+        let currentPage = 1;
+        const itemsPerPage = 6;
+
+        function goToPage(page){
+            currentPage = page;
+            renderCurrentTab();
+        }
+
+        function renderPagination(totalItems, totalPages){
+            const paginationEl = document.getElementById("paginationControls");
+            if(!paginationEl) return;
+
+            if(totalItems === 0 || totalPages <= 1){
+                paginationEl.style.display = "none";
+                paginationEl.innerHTML = "";
+                return;
+            }
+
+            const startIdx = (currentPage - 1) * itemsPerPage + 1;
+            const endIdx = Math.min(totalItems, currentPage * itemsPerPage);
+
+            let buttonsHtml = `
+                <button type="button" class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? "disabled" : ""}>
+                    Prev
+                </button>
+            `;
+
+            for(let p = 1; p <= totalPages; p++){
+                buttonsHtml += `
+                    <button type="button" class="pagination-btn ${p === currentPage ? "active" : ""}" onclick="goToPage(${p})">
+                        ${p}
+                    </button>
+                `;
+            }
+
+            buttonsHtml += `
+                <button type="button" class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}>
+                    Next
+                </button>
+            `;
+
+            paginationEl.style.display = "flex";
+            paginationEl.innerHTML = `
+                <span class="pagination-info">Showing ${startIdx}–${endIdx} of ${totalItems}</span>
+                <div class="pagination-buttons">${buttonsHtml}</div>
+            `;
+        }
+
         function renderCombinedCards(list){
 
             const container =
@@ -902,14 +824,23 @@
                 "";
 
             if(list.length === 0){
-
+                renderPagination(0, 0);
                 renderEmpty("No updates found.");
 
                 return;
 
             }
 
-            list.forEach(item => {
+            const totalPages = Math.max(1, Math.ceil(list.length / itemsPerPage));
+            if(currentPage > totalPages) currentPage = totalPages;
+            if(currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const pageItems = list.slice(start, start + itemsPerPage);
+
+            renderPagination(list.length, totalPages);
+
+            pageItems.forEach(item => {
 
                 let icon = "fa-bell";
                 let iconColor = "yellow";
@@ -975,11 +906,16 @@
 
                 }
 
+                const isUnread = item.type === "system" && item.raw && Number(item.raw.is_read) === 0;
+                const isNonSystemUnread = item.type !== "system" && !isUpdateViewed(item);
+                const showNewBadge = isUnread || isNonSystemUnread;
+                const newBadgeHtml = showNewBadge ? `<span class="recent-new-badge">New</span>` : "";
+
                 const card =
                     document.createElement("div");
 
                 card.className =
-                    `update-card ${item.type}-card`;
+                    `update-card ${item.type}-card${showNewBadge ? " is-recent" : ""}`;
 
                 card.innerHTML = `
                     <div class="update-icon ${iconColor}">
@@ -991,7 +927,7 @@
                         <div class="update-top">
                             <div>
                                 <h3>
-                                    ${item.title}
+                                    ${item.title}${newBadgeHtml}
                                 </h3>
 
                                 <p>
@@ -1083,7 +1019,43 @@
 
         }
 
+        function getViewedUpdatesStorageKey(){
+            return `viewed_notif_updates_${loggedInUserId || "guest"}`;
+        }
+
+        function getViewedUpdatesSet(){
+            try{
+                const raw = localStorage.getItem(getViewedUpdatesStorageKey());
+                const arr = raw ? JSON.parse(raw) : [];
+                return new Set(Array.isArray(arr) ? arr : []);
+            }catch(e){
+                return new Set();
+            }
+        }
+
+        function getUpdateViewedKey(item){
+            return `${item.type}:${getUpdateId(item)}`;
+        }
+
+        function isUpdateViewed(item){
+            return getViewedUpdatesSet().has(getUpdateViewedKey(item));
+        }
+
+        function markUpdateViewed(type, id){
+            const key = `${type}:${id}`;
+            const set = getViewedUpdatesSet();
+            if(!set.has(key)){
+                set.add(key);
+                try{
+                    localStorage.setItem(getViewedUpdatesStorageKey(), JSON.stringify([...set]));
+                }catch(e){}
+            }
+        }
+
         function openAnnouncementModal(item){
+
+            markUpdateViewed("announcement", item.id);
+            renderUpdates();
 
             document.getElementById("modalTitle").innerText =
                 item.announcement_title;
@@ -1113,6 +1085,9 @@
         }
 
         function openDefenseModal(item){
+
+            markUpdateViewed("defense", item.schedule_id || item.id);
+            renderUpdates();
 
             const panelistText =
                 item.panelists && item.panelists.length > 0
@@ -1376,6 +1351,11 @@
 
                 if(data.success){
 
+                    (allUpdates || []).forEach(u => {
+                        if(u.type !== "system"){
+                            markUpdateViewed(u.type, getUpdateId(u));
+                        }
+                    });
                     loadStudentNotifications();
                     if(window.PortalNotifications){
                         window.PortalNotifications.refresh(false);
@@ -1457,6 +1437,11 @@
 
                 if(data.success){
 
+                    (allUpdates || []).forEach(u => {
+                        if(u.type !== "system"){
+                            markUpdateViewed(u.type, getUpdateId(u));
+                        }
+                    });
                     loadStudentNotifications();
                     if(window.PortalNotifications){
                         window.PortalNotifications.refresh(false);

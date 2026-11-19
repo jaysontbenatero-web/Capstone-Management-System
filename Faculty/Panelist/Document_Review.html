@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Review | Panelist Portal</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="../Adviser/Documents.css">
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
+    <link rel="stylesheet" href="../../shared/defense-minutes-sheet.css">
+    <script src="../../shared/defense-minutes-sheet.js"></script>
+
+    <style>
+        .admin-portal .bg1,
+        .admin-portal .bg2 {
+            pointer-events: none !important;
+        }
+
+        .admin-portal .sidebar,
+        .admin-portal .main {
+            position: relative;
+            z-index: 2;
+        }
+
+        .admin-portal .sidebar {
+            z-index: 100 !important;
+        }
+    </style>
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole = localStorage.getItem("role");
+        const panelistAccess = localStorage.getItem("panelist_access");
+        if (userRole === "admin" && panelistAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Panelist access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href = "../../Admin/AdminDash.html";
+            });
+        } else if (userRole !== "admin" && panelistAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href = "../FacultyDash.html";
+            });
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Panelist Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" onclick="window.location.href='PanelistDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Panel Duties</div>
+                <div class="menu-item" onclick="window.location.href='Assigned_Defenses.html'">
+                    <i class="fa-solid fa-gavel"></i>
+                    <span>Assigned Defenses</span>
+                </div>
+
+                <div class="menu-item" onclick="window.location.href='Defense_Document.html'">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>Defense Documents</span>
+                </div>
+
+                <div class="menu-item active" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Document Review</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+        <header class="topbar">
+            <div class="welcome">
+                <h1>Document Review</h1>
+                <p id="panelistDocSubtitle">Review adviser-signed defense minutes and affix your panelist e-signature.
+                </p>
+            </div>
+        </header>
+
+        <section class="toolbar-card">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="dmSearchInput" placeholder="Search documents..."
+                    onkeyup="renderPanelistDmList()">
+            </div>
+
+            <div class="tab-buttons">
+                <select id="dmStatusFilter" onchange="renderPanelistDmList()">
+                    <option value="All">All Statuses</option>
+                    <option value="Pending">Pending Your Signature</option>
+                    <option value="Signed">Signed by You</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="content-card">
+            <div class="section-header">
+                <div>
+                    <h2>Received Documents</h2>
+                    <p>Adviser-signed defense minutes requiring your panelist review and e-signature.</p>
+                </div>
+            </div>
+
+            <div class="document-grid grouped-view" id="panelistDmGrid">
+                <div class="empty-card">Loading documents...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===================== PANELIST DEFENSE MINUTES E-SIGN MODAL ===================== -->
+    <div class="modal-overlay esign-workspace-overlay" id="panelistDmSignModal" style="display:none; z-index:10000;">
+        <div class="modal-box esign-workspace-modal">
+            <div class="modal-header">
+                <div>
+                    <h2 id="panDmTitle">Defense Minutes</h2>
+                    <p>Review the document, drag your signature into place, then save.</p>
+                </div>
+                <button class="close-modal-btn" onclick="closePanelistDmModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="esign-workspace-grid">
+                <div class="esign-pdf-panel">
+                    <div class="esign-pdf-toolbar">
+                        <span id="panDmPageInfo">Page 1 of 1</span>
+                        <div class="esign-page-nav">
+                            <button type="button" class="esign-nav-btn" onclick="stepPanelistDmPage(-1)"
+                                title="Previous page"><i class="fa-solid fa-chevron-left"></i></button>
+                            <select id="panDmPageSelect" onchange="changePanelistDmPage()"
+                                style="padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px;"></select>
+                            <button type="button" class="esign-nav-btn" onclick="stepPanelistDmPage(1)"
+                                title="Next page"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="esign-pdf-viewport" id="panDmSheetViewport" style="overflow-y:auto; padding:14px;">
+                    </div>
+                </div>
+
+                <div class="esign-side-panel">
+                    <div class="detail-card compact-detail">
+                        <span>Capstone Group</span>
+                        <h3 id="panDmGroupName">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Document Type</span>
+                        <h3 id="panDmDefenseType">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Adviser</span>
+                        <h3 id="panDmAdviserName">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Status</span>
+                        <h3 id="panDmStatus">—</h3>
+                    </div>
+
+                    <div id="panDmSignControls">
+                        <div class="input-group">
+                            <label>Panelist Notes</label>
+                            <textarea id="panDmNotes"
+                                placeholder="Add notes for approval, revision, or rejection..."></textarea>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Date Signed (Drags with Signature)</label>
+                            <input type="text" id="panDmDateSigned" oninput="updatePanelistDmDateText()"
+                                style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:12px; font-size:13px; box-sizing:border-box;">
+                        </div>
+
+                        <div class="esign-canvas-wrapper"
+                            style="background:#f8f5ff; border:2px dashed #c4b5fd; border-radius:22px; padding:16px; margin-bottom:16px; text-align:center;">
+                            <div class="esign-canvas-header"
+                                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <div>
+                                    <h3>Saved Signature</h3>
+                                    <p>Using your uploaded signature from Settings.</p>
+                                </div>
+                            </div>
+                            <div id="panDmSigPreview"
+                                style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:12px; display:inline-block; min-width:180px; margin-bottom:10px;">
+                                <span style="font-size:12px; color:#64748b;">Loading signature...</span>
+                            </div>
+                            <button class="esign-place-btn" type="button" onclick="placePanelistDmSigOnSelectedPage()">
+                                <i class="fa-solid fa-file-signature"></i>
+                                Place Signature on Page
+                            </button>
+                        </div>
+
+                        <label class="dm-approval-attestation" for="panDmApproveCheck">
+                            <input type="checkbox" id="panDmApproveCheck" onchange="togglePanDmApprovalCheckbox()">
+                            <span>I have personally inspected the revisions and approve these defense documents.</span>
+                        </label>
+
+                        <div class="modal-actions esign-action-stack">
+                            <button class="save-btn" id="panDmSubmitBtn" onclick="submitPanelistDmReview('Approved')"
+                                type="button" disabled>
+                                <i class="fa-solid fa-check"></i>
+                                Approve &amp; Save
+                            </button>
+                            <button class="esign-revision-toggle-btn"
+                                onclick="submitPanelistDmReview('Subject to Change')" type="button">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                Request Revision
+                            </button>
+                            <button class="cancel-btn reject-outline-btn" onclick="submitPanelistDmReview('Rejected')"
+                                type="button">
+                                <i class="fa-solid fa-ban"></i>
+                                Reject
+                            </button>
+                            <button class="cancel-btn" onclick="closePanelistDmModal()" type="button">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loggedInUserId = localStorage.getItem("userId");
+        let panelistDbId = null;
+        let savedPanelistSignature = null;
+        let panelistDmRecords = [];
+        let activePanDmRecord = null;
+        let panDmDragState = null;
+
+        function escapeHtml(str) {
+            return String(str || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatDate(value) {
+            if (!value) return "Recently";
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return String(value);
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../../Log-in.html";
+        }
+
+        async function loadPanelistSignature() {
+            const role = localStorage.getItem("role");
+            const settingsUrl = role === "admin"
+                ? `/admin-settings/${encodeURIComponent(loggedInUserId)}`
+                : `/faculty-settings/${encodeURIComponent(loggedInUserId)}`;
+            try {
+                const resp = await fetch(settingsUrl);
+                const data = await resp.json();
+                if (data && data.success) {
+                    const account = data.admin || data.faculty;
+                    savedPanelistSignature = account ? account.digital_signature : null;
+                }
+            } catch (err) {
+                console.warn("Could not load panelist signature:", err);
+            }
+        }
+
+        async function loadPanelistDefenseMinutes() {
+            try {
+                const resp = await fetch(`/typed-defense-minutes/panelist/${encodeURIComponent(loggedInUserId)}`);
+                const data = await resp.json();
+                if (data && data.success) {
+                    panelistDbId = Number(data.panelistDbId || 0);
+                    panelistDmRecords = data.minutes || [];
+                } else {
+                    panelistDmRecords = [];
+                }
+                renderPanelistDmList();
+            } catch (err) {
+                console.error("Load panelist DM error:", err);
+                document.getElementById("panelistDmGrid").innerHTML = `<div class="empty-card">Cannot connect to server.</div>`;
+            }
+        }
+
+        function getMyPanelistReview(rec) {
+            try {
+                const sigs = JSON.parse(rec.panelist_signatures_json || "[]");
+                if (!Array.isArray(sigs)) return null;
+                return sigs.find(s => Number(s.panelistId) === Number(panelistDbId)) || null;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function hasPanelistSigned(rec) {
+            const mine = getMyPanelistReview(rec);
+            return Boolean(mine && mine.signatureImage && mine.reviewStatus !== "Subject to Change" && mine.reviewStatus !== "Rejected");
+        }
+
+        function toggleGroupBundle(domId) {
+            const body = document.getElementById(`pan-group-${domId}`);
+            const chevron = document.getElementById(`pan-chevron-${domId}`);
+            if (!body || !chevron) return;
+            const isOpen = body.style.display === "block";
+            body.style.display = isOpen ? "none" : "block";
+            chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+        }
+
+        function renderPanelistDmList() {
+            const grid = document.getElementById("panelistDmGrid");
+            const q = String(document.getElementById("dmSearchInput").value || "").toLowerCase().trim();
+            const filter = document.getElementById("dmStatusFilter").value;
+
+            const filtered = (panelistDmRecords || []).filter(rec => {
+                const signed = hasPanelistSigned(rec);
+                if (filter === "Pending" && signed) return false;
+                if (filter === "Signed" && !signed) return false;
+                if (!q) return true;
+                return String(rec.group_name || "").toLowerCase().includes(q)
+                    || String(rec.defense_type || "").toLowerCase().includes(q)
+                    || String(rec.adviser_name || "").toLowerCase().includes(q);
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="empty-card">No received documents found.</div>`;
+                return;
+            }
+
+            // Group by capstone group (same UI as Adviser Document Review)
+            const grouped = {};
+            filtered.forEach(rec => {
+                const key = rec.group_name || `group-${rec.group_id}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        key,
+                        group_name: rec.group_name || "Group",
+                        program: rec.program || "BSIS",
+                        project_title: rec.project_title || "",
+                        items: []
+                    };
+                }
+                grouped[key].items.push(rec);
+            });
+
+            grid.innerHTML = "";
+            Object.values(grouped).forEach((group, index) => {
+                const domId = String(group.key).replace(/[^a-zA-Z0-9_-]/g, "_");
+                const isOpen = index === 0;
+                const newCount = group.items.filter(r => !hasPanelistSigned(r)).length;
+                const hasNew = newCount > 0;
+
+                const rowsHtml = group.items.map(rec => {
+                    const mine = getMyPanelistReview(rec);
+                    const isSigned = hasPanelistSigned(rec);
+                    const myStatus = mine && mine.reviewStatus ? mine.reviewStatus : (isSigned ? "Signed" : "Pending Signature");
+                    const statusCls = isSigned
+                        ? "status-approved"
+                        : (myStatus === "Subject to Change" ? "status-revision" : (myStatus === "Rejected" ? "status-rejected" : "status-pending"));
+
+                    return `
+                        <div class="group-doc-row ${!isSigned ? "is-new" : ""} needs-sign-row">
+                            <div class="group-doc-main">
+                                <h4>
+                                    ${escapeHtml(rec.defense_type)} — Defense minutes
+                                    ${!isSigned ? `<span class="new-doc-pill">New</span><span class="sign-needed-pill"><i class="fa-solid fa-file-signature"></i> Signature Required</span>` : `<span class="signed-badge-pill"><i class="fa-solid fa-circle-check"></i> Signed</span>`}
+                                </h4>
+                                <div class="group-doc-meta">
+                                    <span class="doc-code-pill">DEF-MIN</span>
+                                    <span class="separator">&bull;</span>
+                                    <span class="doc-type-pill">${escapeHtml(rec.defense_type)} &bull; Defense minutes</span>
+                                    <span class="separator">&bull;</span>
+                                    <span>Adviser <strong>${escapeHtml(rec.adviser_name || "Adviser")}</strong></span>
+                                    <span class="separator">&bull;</span>
+                                    <span>Updated ${formatDate(rec.updated_at)}</span>
+                                </div>
+                            </div>
+                            <div class="group-doc-actions">
+                                <div class="document-meta" style="margin:0;">
+                                    <span class="${statusCls}">${escapeHtml(myStatus)}</span>
+                                </div>
+                                <button class="review-btn sign-direct-btn ${isSigned ? "already-signed-btn" : ""}" type="button" onclick="openPanelistDmSignModal(${rec.id})" title="${isSigned ? "View E-Signature" : "E-Sign Document"}">
+                                    <i class="fa-solid fa-${isSigned ? "circle-check" : "pen-nib"}"></i>
+                                    <span>${isSigned ? "Signed" : "E-Sign"}</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+
+                const bundle = document.createElement("div");
+                bundle.className = "group-bundle-card" + (hasNew ? " has-new-submissions" : "");
+                bundle.innerHTML = `
+                    <div class="group-bundle-header" onclick="toggleGroupBundle('${domId}')">
+                        <div class="group-bundle-title">
+                            <div class="group-avatar-icon"><i class="fa-solid fa-users"></i></div>
+                            <div>
+                                <h3>${escapeHtml(group.group_name)}</h3>
+                                <p>${escapeHtml(group.program)}${group.project_title ? ` &bull; ${escapeHtml(group.project_title)}` : ""}</p>
+                            </div>
+                        </div>
+                        <div class="group-bundle-badges">
+                            ${hasNew ? `<span class="group-new-badge"><i class="fa-solid fa-sparkles"></i> ${newCount} New</span>` : ""}
+                            <span class="group-count-badge"><i class="fa-solid fa-folder-closed"></i> ${group.items.length} File${group.items.length !== 1 ? "s" : ""}</span>
+                            <i class="fa-solid fa-chevron-down chevron-icon" id="pan-chevron-${domId}" style="transform:${isOpen ? "rotate(180deg)" : "rotate(0deg)"};"></i>
+                        </div>
+                    </div>
+                    <div class="group-bundle-body" id="pan-group-${domId}" style="display:${isOpen ? "block" : "none"};">
+                        <div class="group-col-header">
+                            <span class="col-doc-label">Document</span>
+                            <div class="col-right-labels">
+                                <span class="lbl-status">Status</span>
+                                <span class="lbl-action">Action</span>
+                            </div>
+                        </div>
+                        ${rowsHtml}
+                    </div>
+                `;
+                grid.appendChild(bundle);
+            });
+        }
+
+        function openPanelistDmSignModal(dmId) {
+            const rec = (panelistDmRecords || []).find(m => Number(m.id) === Number(dmId));
+            if (!rec) return;
+            activePanDmRecord = rec;
+
+            let minutesData = {};
+            try { minutesData = JSON.parse(rec.minutes_json || "{}"); } catch (_) { }
+
+            const placed = [];
+            try {
+                if (rec.adviser_signature_json) placed.push(JSON.parse(rec.adviser_signature_json));
+            } catch (_) { }
+            try {
+                if (rec.panelist_signatures_json) {
+                    const arr = JSON.parse(rec.panelist_signatures_json);
+                    if (Array.isArray(arr)) placed.push(...arr);
+                }
+            } catch (_) { }
+
+            document.getElementById("panDmTitle").innerText = `${rec.defense_type} — Defense Minutes`;
+            document.getElementById("panDmGroupName").innerText = rec.group_name || "—";
+            document.getElementById("panDmDefenseType").innerText = `${rec.defense_type || "Defense"} • Defense minutes`;
+            document.getElementById("panDmAdviserName").innerText = rec.adviser_name || "—";
+            document.getElementById("panDmStatus").innerText = rec.status || "Pending";
+
+            const viewport = document.getElementById("panDmSheetViewport");
+            const renderRes = DefenseMinutesSheet.renderPages(viewport, {
+                minutesData,
+                placedSignatures: placed,
+                imgBasePath: "../../Images/dnsc"
+            });
+
+            const alreadySigned = hasPanelistSigned(rec);
+            const controls = document.getElementById("panDmSignControls");
+            controls.style.display = alreadySigned ? "none" : "block";
+
+            const panApproveChk = document.getElementById("panDmApproveCheck");
+            if (panApproveChk) panApproveChk.checked = false;
+            togglePanDmApprovalCheckbox();
+
+            const pageSelect = document.getElementById("panDmPageSelect");
+            pageSelect.innerHTML = Array.from({ length: renderRes.pageCount }, (_, i) =>
+                `<option value="${i}">Page ${i + 1} of ${renderRes.pageCount}</option>`
+            ).join("");
+            document.getElementById("panDmPageInfo").innerText = `Page 1 of ${renderRes.pageCount}`;
+
+            if (!alreadySigned) {
+                document.getElementById("panDmNotes").value = "";
+                const todayStr = new Date().toLocaleDateString("en-US");
+                document.getElementById("panDmDateSigned").value = todayStr;
+
+                const sigPreview = document.getElementById("panDmSigPreview");
+                if (savedPanelistSignature) {
+                    sigPreview.innerHTML = `<img src="${escapeHtml(savedPanelistSignature)}" alt="Saved E-Signature" style="max-height:70px; max-width:100%; display:block; margin:0 auto;">`;
+                    panDmDragState = {
+                        pageIndex: 0,
+                        xPct: 6,
+                        yPct: 48,
+                        widthPct: 18,
+                        signatureImage: savedPanelistSignature,
+                        dateSigned: todayStr,
+                        label: "Drag Panelist E-Sign + Date"
+                    };
+                    DefenseMinutesSheet.mountDraggableSignature(viewport, panDmDragState);
+                } else {
+                    sigPreview.innerHTML = `<span style="font-size:12px; color:#dc2626;">No saved e-signature found in Settings. Please upload your e-signature in Faculty Settings first.</span>`;
+                    panDmDragState = null;
+                }
+            } else {
+                panDmDragState = null;
+            }
+
+            document.getElementById("panelistDmSignModal").style.display = "flex";
+        }
+
+        function closePanelistDmModal() {
+            document.getElementById("panelistDmSignModal").style.display = "none";
+            activePanDmRecord = null;
+            panDmDragState = null;
+        }
+
+        function stepPanelistDmPage(delta) {
+            const sel = document.getElementById("panDmPageSelect");
+            if (!sel || !sel.options.length) return;
+            const nextIdx = Math.max(0, Math.min(sel.options.length - 1, Number(sel.value || 0) + delta));
+            sel.value = String(nextIdx);
+            changePanelistDmPage();
+        }
+
+        function changePanelistDmPage() {
+            const sel = document.getElementById("panDmPageSelect");
+            const idx = Number(sel.value || 0);
+            const infoEl = document.getElementById("panDmPageInfo");
+            if (infoEl && sel.options.length) infoEl.innerText = `Page ${idx + 1} of ${sel.options.length}`;
+            const viewport = document.getElementById("panDmSheetViewport");
+            const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
+            if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (!panDmDragState) return;
+            panDmDragState.pageIndex = idx;
+            DefenseMinutesSheet.mountDraggableSignature(viewport, panDmDragState);
+        }
+
+        function placePanelistDmSigOnSelectedPage() {
+            const idx = Number(document.getElementById("panDmPageSelect").value || 0);
+            const viewport = document.getElementById("panDmSheetViewport");
+            if (!panDmDragState || !panDmDragState.signatureImage) {
+                alert("No saved e-signature found in Faculty Settings.");
+                return;
+            }
+            panDmDragState.pageIndex = idx;
+            panDmDragState.xPct = 6;
+            panDmDragState.yPct = 48;
+            DefenseMinutesSheet.mountDraggableSignature(viewport, panDmDragState);
+            const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
+            if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function updatePanelistDmDateText() {
+            if (!panDmDragState) return;
+            panDmDragState.dateSigned = document.getElementById("panDmDateSigned").value || "";
+            const dateEl = document.querySelector("#panDmSheetViewport .dm-draggable-sig-date");
+            if (dateEl) dateEl.innerText = panDmDragState.dateSigned;
+        }
+
+        function togglePanDmApprovalCheckbox() {
+            const chk = document.getElementById("panDmApproveCheck");
+            const btn = document.getElementById("panDmSubmitBtn");
+            if (btn) btn.disabled = !(chk && chk.checked);
+        }
+
+        async function submitPanelistDmReview(reviewStatus) {
+            if (!activePanDmRecord) return;
+            const isApproval = reviewStatus === "Approved";
+            if (isApproval) {
+                const chk = document.getElementById("panDmApproveCheck");
+                if (!chk || !chk.checked) {
+                    alert("Please check the confirmation box stating that you have personally inspected the revisions and approve these defense documents.");
+                    return;
+                }
+            }
+            if (isApproval && (!panDmDragState || !panDmDragState.signatureImage)) {
+                alert("Please set up your saved e-signature in Faculty Settings before approving.");
+                return;
+            }
+
+            const notes = (document.getElementById("panDmNotes").value || "").trim();
+            if (!isApproval && !notes) {
+                alert("Please enter a note explaining the required revision or rejection.");
+                return;
+            }
+
+            const btn = document.getElementById("panDmSubmitBtn");
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch("/typed-defense-minutes/panelist-sign", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: activePanDmRecord.id,
+                        panelistUserId: loggedInUserId,
+                        reviewStatus,
+                        reviewComment: notes,
+                        signatureImage: isApproval ? panDmDragState.signatureImage : null,
+                        dateSigned: isApproval ? panDmDragState.dateSigned : "",
+                        pageIndex: isApproval ? panDmDragState.pageIndex : 0,
+                        xPct: isApproval ? panDmDragState.xPct : 0,
+                        yPct: isApproval ? panDmDragState.yPct : 0,
+                        widthPct: isApproval ? panDmDragState.widthPct : 18
+                    })
+                });
+                const data = await resp.json();
+                alert(data.message || (data.success ? "Saved!" : "Failed to save."));
+                if (data.success) {
+                    closePanelistDmModal();
+                    await loadPanelistDefenseMinutes();
+                }
+            } catch (err) {
+                console.error("Panelist DM review error:", err);
+                alert("Cannot connect to server.");
+            } finally {
+                togglePanDmApprovalCheckbox();
+            }
+        }
+
+        loadPanelistSignature();
+        loadPanelistDefenseMinutes();
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

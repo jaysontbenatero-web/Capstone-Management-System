@@ -46,6 +46,7 @@
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css?v=20261114_01">
     <link rel="stylesheet" href="student-portal.css?v=20261114_01">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <style>
         /* Clean Semantic Highlighter Classes */
         mark.sim-hl {
@@ -207,6 +208,10 @@
                     <i class="fa-solid fa-comments"></i>
                     <span>Consultation</span>
                 </div>
+<div class="menu-item" id="nav-defense" onclick="window.location.href='Defense_Schedule.html'">
+    <i class="fa-solid fa-calendar-check"></i>
+    <span>Defense Schedules</span>
+</div>
 
                 <div class="menu-title">
                     Communication
@@ -313,7 +318,7 @@
                     </h2>
 
                     <p>
-                        Enter your 3 proposed capstone titles and attach the PDF for each. Saved proposals also appear in Records Management → Concept Presentation → Proposed concept paper (1–3).
+                        Attach your 3 proposed concept paper PDFs. The system automatically extracts each study title from the PDF and checks similarity. Saved proposals also appear in Records Management → Concept Presentation → Proposed concept paper (1–3).
                     </p>
                 </div>
 
@@ -337,11 +342,13 @@
                         Title Proposal 1
                     </h3>
 
-                    <input
-                        type="text"
+                    <textarea
                         id="proposalTitle1"
-                        placeholder="Enter proposed title 1"
-                    >
+                        rows="3"
+                        placeholder="Auto-extracted from attached PDF"
+                        disabled
+                        style="background:#f8fafc; color:#334155; cursor:not-allowed;"
+                    ></textarea>
 
                     <!-- PDF picker -->
                     <input
@@ -385,11 +392,13 @@
                         Title Proposal 2
                     </h3>
 
-                    <input
-                        type="text"
+                    <textarea
                         id="proposalTitle2"
-                        placeholder="Enter proposed title 2"
-                    >
+                        rows="3"
+                        placeholder="Auto-extracted from attached PDF"
+                        disabled
+                        style="background:#f8fafc; color:#334155; cursor:not-allowed;"
+                    ></textarea>
 
                     <!-- PDF picker -->
                     <input
@@ -433,11 +442,13 @@
                         Title Proposal 3
                     </h3>
 
-                    <input
-                        type="text"
+                    <textarea
                         id="proposalTitle3"
-                        placeholder="Enter proposed title 3"
-                    >
+                        rows="3"
+                        placeholder="Auto-extracted from attached PDF"
+                        disabled
+                        style="background:#f8fafc; color:#334155; cursor:not-allowed;"
+                    ></textarea>
 
                     <!-- PDF picker -->
                     <input
@@ -498,17 +509,11 @@
                     <option value="Both">Both Programs</option>
                 </select>
 
-                <select id="filterYearLevel" onchange="filterAdvisers()">
-                    <option value="All">All Year Levels</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                    <option value="Both">Both Year Levels</option>
-                </select>
-
                 <select id="filterStatus" onchange="filterAdvisers()">
                     <option value="All">All Statuses</option>
                     <option value="Available">Available</option>
-                    <option value="Unavailable">Unavailable</option>
+                    <option value="Full">Full</option>
+                    <option value="Inactive">Inactive</option>
                     <option value="Not Configured">Not Configured</option>
                 </select>
             </div>
@@ -583,11 +588,6 @@
                 <div class="detail-card">
                     <span>Program Catered</span>
                     <h3 id="modalProgram">Not Set</h3>
-                </div>
-
-                <div class="detail-card">
-                    <span>Year Level Catered</span>
-                    <h3 id="modalYearLevel">Not Set</h3>
                 </div>
 
                 <div class="detail-card">
@@ -1114,7 +1114,7 @@
                                             <div style="font-size:13px; color: rgba(0,0,0,0.72);">Your proposed title is <strong>${simPercent}%</strong> similar to an archived study${matchedTitle ? ' – <em>' + escapeHtml(matchedTitle) + '</em>' : ''}. Please revise the title to avoid duplication. Titles with 90%+ similarity are not accepted.</div>
                                         </div>
                                         <div class="sr-actions">
-                                            <button class="sr-edit-btn" onclick="document.getElementById('proposalTitle${number}').focus();">Edit Title</button>
+                                            <button class="sr-edit-btn" onclick="triggerPdfUpload(${number})">Upload Revised PDF</button>
                                             <button class="sr-compare-btn" onclick="openCompareModal(${number})"><i class="fa-solid fa-eye" style="margin-right:8px"></i>Compare</button>
                                         </div>
                                     </div>
@@ -1152,7 +1152,7 @@
                         <div class="proposal-file-ready">
                             <i class="fa-solid fa-circle-check"></i>
 
-                            <div style="flex: 1;">
+                            <div style="flex: 1; min-width: 0;">
                                 <strong>
                                     ${escapeHtml(foundProposal.proposed_title)}
                                 </strong>
@@ -1204,16 +1204,281 @@
 
         }
 
-        function onProposalPdfSelected(number){
+        let autoUploadProposalSlot = null;
+
+        function extractTitleFromRawTextClient(rawText, fallbackName = "") {
+            const lines = String(rawText || "")
+                .split(/\r?\n/)
+                .map(l => l.replace(/\s+/g, " ").trim());
+
+            // Unmistakable footer / letterhead lines that can NEVER be part of a study title
+            const STRICT_FOOTER_OR_LETTERHEAD = [
+                /dnsc\.edu\.ph/i,
+                /\.edu\.ph/i,
+                /tel\.?\s*no\.?/i,
+                /telefax/i,
+                /\+63/i,
+                /president@/i,
+                /@officialdnsc/i,
+                /inspiring\s+change/i,
+                /creating\s+futures/i,
+                /bacong\s+pilipinas/i,
+                /^(vision|mission|core\s+values?|stewardship)\s*:?$/i,
+                /^(vision|mission|core\s+values?)\s*:/i,
+                /institution\s+leading\s+in/i,
+                /agri[\-\s]?fisheries/i,
+                /cultural\s+development\s+in\s+the/i,
+                /^asean\s+region\.?$/i,
+                /future[\-\s]?ready\s+workforce/i,
+                /create\s+innovative\s+solutions/i,
+                /empower\s+communities/i,
+                /governance\s+towards\s+sustainable/i,
+                /^adaptability\s+and\s+excellence\.?$/i,
+                /^integrity\s+and\s+innovativeness\.?$/i,
+                /^love\s+of\s+god\s+and\s+country\.?$/i,
+                /iso\s*9001/i,
+                /(?:document|doc\.?)\s*(?:code|control|no\.?)\s*:/i,
+                /effectivity\s*date/i,
+                /revision\s*(?:no\.?|number)/i,
+                /(?:www\.|https?:\/\/)/i,
+                /^[-\u2013]?\s*\d{1,4}\s*[-\u2013]?$/,
+                /^\d+\s+of\s+\d+$/i,
+                /^page\s+\d+(\s+of\s+\d+)?$/i
+            ];
+
+            // Header-only lines (exact/standalone institutional header lines skipped BEFORE a title starts)
+            const HEADER_ONLY_LINES = [
+                ...STRICT_FOOTER_OR_LETTERHEAD,
+                /^(?:republic\s+of\s+the\s+philippines)(?:\s+davao\s+del\s+norte\s+state\s+college)?$/i,
+                /^davao\s+del\s+norte(\s+state\s+college)?$/i,
+                /^state\s+college$/i,
+                /^institute\s+of\s+computing$/i,
+                /^college\s+of\s+[a-z\s&]+$/i,
+                /^department\s+of\s+[a-z\s&]+$/i,
+                /^university\s+of\s+[a-z\s&]+$/i,
+                /^bachelor\s+of\s+science\s+in\s+/i,
+                /^new\s+visayas[,\s]*(?:panabo\s+city)?[,\s\d]*$/i,
+                /^panabo\s+city[,\s]*(?:davao\s+del\s+norte)?[,\s\d]*$/i,
+                /^(?:a\s+)?(concept\s+paper|title\s+proposal|capstone\s+project(\s+proposal)?|thesis\s+proposal)\s*$/i,
+                /^in\s+partial\s+fulfillment/i,
+                /^presented\s+to\s+the\s+faculty/i
+            ];
+
+            // Explicit section/field markers that signal the title has ENDED
+            const STOP_SECTION = [
+                /^(?:project\s+teams?|proponents?|researchers?|authors?|group\s+members?|members?|team\s+members?)\s*:?$/i,
+                /^(?:project\s+manager|project\s+analyst|project\s+developer|lead|leader|programmer|developer|designer|analyst|documentarian|tester|researchers?|proponents?|authors?|members?|group\s+members?|team\s+members?)\s*:/i,
+                /^(?:year\s*(?:&|and)\s*program|program|year\s+level|section|group\s+name|group|course|subject|school\s+year|academic\s+year)\s*:/i,
+                /^(?:submitted\s+by|prepared\s+by|presented\s+by|submitted\s+to|presented\s+to|adviser|advisor|instructor|professor|date\s+submitted|submission\s+date|date)\s*:/i,
+                /^(?:abstract|background\s+of\s+the\s+study|introduction|rationale|overview|executive\s+summary|objectives?|general\s+objectives?|specific\s+objectives?|statement\s+of\s+the\s+problem|research\s+problem|problem\s+statement|methodology|scope\s+and\s+delimitation|significance\s+of\s+the\s+study|table\s+of\s+contents|chapter\s+1|chapter\s+i)\b/i,
+                /^(?:a\s+capstone\s+project|a\s+thesis|presented\s+to\s+the\s+faculty|in\s+partial\s+fulfillment)/i,
+                /^(?:by\s*:?\s*)$/i,
+                /^[\u2022\-\*]\s+/
+            ];
+
+            const topLines = lines.slice(0, 100);
+
+            // 1. Explicit "Title: [Title Name Here]" (or standalone "PROPOSED TITLE" line) anywhere in top lines
+            for (let i = 0; i < topLines.length; i++) {
+                const line = topLines[i];
+                if (!line) continue;
+                const labelMatch = line.match(/(?:^|\b)(?:proposed\s+title|project\s+title|capstone\s+title|study\s+title|research\s+title|t\s*i\s*t\s*l\s*e|t\s*t\s*i\s*l\s*e)(?:\s*#?\s*\d+)?(?:\s*:\s*(.*)|\s*)$/i);
+                if (labelMatch) {
+                    const isExplicitColon = line.includes(":");
+                    const firstPart = (labelMatch[1] || "").trim();
+                    if (!isExplicitColon && firstPart) continue;
+                    const parts = [];
+                    if (firstPart) parts.push(firstPart);
+                    for (let j = i + 1; j < Math.min(i + 12, topLines.length); j++) {
+                        const next = topLines[j];
+                        if (!next) {
+                            if (parts.length > 0) break;
+                            continue;
+                        }
+                        if (STOP_SECTION.some(re => re.test(next)) || STRICT_FOOTER_OR_LETTERHEAD.some(re => re.test(next))) break;
+                        if (parts.join(" ").length >= 460) break;
+                        parts.push(next);
+                    }
+                    const candidate = parts.join(" ").replace(/\s+/g, " ").trim();
+                    if (candidate.length >= 4) return candidate.slice(0, 480);
+                }
+            }
+
+            // 2. First substantial title block near top of page 1 (after DNSC header/boilerplate)
+            const collected = [];
+            for (let i = 0; i < topLines.length; i++) {
+                const line = topLines[i];
+                if (!line) {
+                    if (collected.length > 0 && collected.join(" ").length >= 12) break;
+                    continue;
+                }
+                if (STOP_SECTION.some(re => re.test(line))) {
+                    if (collected.length > 0) break;
+                    continue;
+                }
+                if (collected.length === 0 && HEADER_ONLY_LINES.some(re => re.test(line))) {
+                    continue;
+                }
+                if (collected.length > 0 && STRICT_FOOTER_OR_LETTERHEAD.some(re => re.test(line))) {
+                    break;
+                }
+                if (line.length < 2) continue;
+
+                collected.push(line);
+                if (collected.length >= 8 || collected.join(" ").length >= 460) break;
+            }
+
+            const blockTitle = collected.join(" ").replace(/\s+/g, " ").trim();
+            if (blockTitle.length >= 6) return blockTitle.slice(0, 480);
+
+            const cleanFallback = String(fallbackName || "").replace(/\.pdf$/i, "").replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim();
+            return cleanFallback.slice(0, 480);
+        }
+
+        async function extractTitleWithPdfJs(file) {
+            if (!window.pdfjsLib) return "";
+            try {
+                if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+                }
+                const buf = await file.arrayBuffer();
+                const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+                const pageHeight = viewport.height || 792;
+                const textContent = await page.getTextContent();
+
+                // Filter out empty items and bottom running footers (bottom 8% of page)
+                const rawItems = (textContent.items || []).filter(item => {
+                    const str = String(item.str || "");
+                    if (!str.trim()) return false;
+                    const y = item.transform ? item.transform[5] : null;
+                    if (y !== null && y < pageHeight * 0.08) return false;
+                    return true;
+                });
+
+                // Sort visually top-to-bottom (y desc), then left-to-right (x asc)
+                rawItems.sort((a, b) => {
+                    const ay = a.transform ? a.transform[5] : 0;
+                    const by = b.transform ? b.transform[5] : 0;
+                    if (Math.abs(by - ay) > 4) return by - ay;
+                    const ax = a.transform ? a.transform[4] : 0;
+                    const bx = b.transform ? b.transform[4] : 0;
+                    return ax - bx;
+                });
+
+                // Group items into visual lines with accurate horizontal spacing (avoid splitting kerned words)
+                const visualLines = [];
+                for (const item of rawItems) {
+                    const str = String(item.str || "");
+                    const x = item.transform ? item.transform[4] : 0;
+                    const y = item.transform ? item.transform[5] : 0;
+                    const w = Number(item.width || 0);
+                    const h = item.height || (item.transform ? Math.abs(item.transform[3] || item.transform[0] || 12) : 12);
+
+                    const prevLine = visualLines.length ? visualLines[visualLines.length - 1] : null;
+                    if (prevLine && Math.abs(y - prevLine.y) <= Math.max(4, prevLine.h * 0.4)) {
+                        const gap = x - prevLine.endX;
+                        if (
+                            gap > Math.max(1.5, prevLine.h * 0.14) &&
+                            !prevLine.text.endsWith(" ") &&
+                            !str.startsWith(" ")
+                        ) {
+                            prevLine.text += " " + str;
+                        } else {
+                            prevLine.text += str;
+                        }
+                        prevLine.endX = Math.max(prevLine.endX, x + w);
+                        prevLine.h = Math.max(prevLine.h, h);
+                    } else {
+                        visualLines.push({ y, endX: x + w, h: Math.max(8, h), text: str });
+                    }
+                }
+
+                // Reconstruct text with blank lines at paragraph gaps so extractor knows where title ends
+                const outLines = [];
+                for (let idx = 0; idx < visualLines.length; idx++) {
+                    const cur = visualLines[idx];
+                    if (idx > 0) {
+                        const prev = visualLines[idx - 1];
+                        const verticalGap = prev.y - cur.y;
+                        const normalLineHeight = Math.max(prev.h, cur.h, 11);
+                        if (verticalGap > normalLineHeight * 1.9) {
+                            outLines.push("");
+                        }
+                    }
+                    const cleaned = cur.text.replace(/\s+/g, " ").trim();
+                    if (cleaned) outLines.push(cleaned);
+                }
+
+                return extractTitleFromRawTextClient(outLines.join("\n"), "");
+            } catch (err) {
+                console.warn("pdf.js client title extract warning:", err);
+                return "";
+            }
+        }
+
+        async function extractTitleFromSelectedPdf(number){
+            const fileInput = document.getElementById(`pdfInput${number}`);
+            const titleInput = document.getElementById(`proposalTitle${number}`);
+            const file = fileInput && fileInput.files && fileInput.files[0];
+            if(!file || !titleInput) return false;
+
+            titleInput.value = "Extracting title from PDF...";
+
+            // 1. Try client-side pdf.js extraction first (works immediately even without server restart)
+            let extractedTitle = await extractTitleWithPdfJs(file);
+
+            // 2. Fallback to backend /extract-pdf-title endpoint
+            if (!extractedTitle) {
+                try {
+                    const formData = new FormData();
+                    formData.append("proposalFile", file);
+                    const res = await fetch(`${API_BASE}/extract-pdf-title`, {
+                        method: "POST",
+                        body: formData
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.success && data.title) {
+                            extractedTitle = String(data.title).trim();
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Server /extract-pdf-title fallback warning:", err);
+                }
+            }
+
+            // 3. Final fallback to cleaned PDF filename so upload never fails
+            if (!extractedTitle) {
+                extractedTitle = String(file.name || `Title Proposal ${number}`)
+                    .replace(/\.pdf$/i, "")
+                    .replace(/[_\-]+/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            }
+
+            titleInput.value = extractedTitle;
+            return true;
+        }
+
+        async function onProposalPdfSelected(number){
+            const shouldAutoSave = (autoUploadProposalSlot === number);
+            autoUploadProposalSlot = null;
+
             updatePdfLabel(number);
+
+            const extracted = await extractTitleFromSelectedPdf(number);
+            if(!extracted) return;
 
             const foundProposal =
                 titleProposals.find(item =>
                     Number(item.title_number) === number
                 );
 
-            if(foundProposal && String(foundProposal.proposed_title || "").trim()){
-                handlePdfUpload(number);
+            if((foundProposal && String(foundProposal.proposed_title || "").trim()) || shouldAutoSave){
+                saveTitleProposal(number);
             }
         }
 
@@ -1233,8 +1498,9 @@
             }
         }
 
-        /* Triggered from the "Upload PDF" / "Replace PDF" button on an ALREADY saved card */
+        /* Triggered from the "Upload PDF" / "Replace PDF" button on a card */
         function triggerPdfUpload(number){
+            autoUploadProposalSlot = number;
             document.getElementById(`pdfInput${number}`).click();
         }
 
@@ -1247,11 +1513,7 @@
             const reviseBtn = document.getElementById("rejectReviseBtn");
             reviseBtn.onclick = function() {
                 closeSimilarityRejectionModal();
-                const titleInput = document.getElementById(`proposalTitle${details.number}`);
-                if (titleInput) {
-                    titleInput.focus();
-                    titleInput.select();
-                }
+                triggerPdfUpload(details.number);
             };
             
             const modal = document.getElementById("similarityRejectionModal");
@@ -1320,22 +1582,22 @@
         /* Save a new proposal – requires BOTH a title AND a PDF */
         async function saveTitleProposal(number){
 
+            const fileInput = document.getElementById(`pdfInput${number}`);
+            const file = fileInput.files && fileInput.files[0];
+
+            if(!file){
+                alert(`Please attach a PDF for Title Proposal ${number} first so the system can extract the title.`);
+                document.getElementById(`pdfInput${number}`).click();
+                return;
+            }
+
             const proposedTitle =
                 document.getElementById(`proposalTitle${number}`)
                 .value
                 .trim();
 
-            if(!proposedTitle){
-                alert(`Please enter the proposed title ${number}.`);
-                return;
-            }
-
-            const fileInput = document.getElementById(`pdfInput${number}`);
-            const file = fileInput.files && fileInput.files[0];
-
-            if(!file){
-                alert(`Please attach a PDF for Title Proposal ${number} before saving.`);
-                document.getElementById(`pdfInput${number}`).click(); // open picker for convenience
+            if(!proposedTitle || proposedTitle === "Extracting title from PDF..."){
+                alert(`Please wait for the title to be extracted from the PDF, or attach a valid text-based PDF.`);
                 return;
             }
 
@@ -1995,6 +2257,8 @@
             list.forEach(adviser => {
 
                 const isNotConfigured = adviser.adviser_status === 'Not Configured';
+                const isInactive = adviser.adviser_status === 'Inactive';
+                const isBlocked = isNotConfigured || isInactive;
 
                 const initial =
                     adviser.fullname
@@ -2008,7 +2272,7 @@
                     document.createElement("div");
 
                 adviserRow.className =
-                    isNotConfigured ? "adviser-row not-configured" : "adviser-row";
+                    isBlocked ? "adviser-row not-configured" : "adviser-row";
 
                 let slotsHtml = "";
                 if (isNotConfigured) {
@@ -2016,6 +2280,13 @@
                         <div class="not-configured-alert">
                             <i class="fa-solid fa-circle-info"></i>
                             <span>Settings not configured</span>
+                        </div>
+                    `;
+                } else if (isInactive) {
+                    slotsHtml = `
+                        <div class="not-configured-alert">
+                            <i class="fa-solid fa-ban"></i>
+                            <span>Currently inactive</span>
                         </div>
                     `;
                 } else {
@@ -2028,7 +2299,7 @@
                 }
 
                 let buttonHtml = "";
-                if (isNotConfigured) {
+                if (isBlocked) {
                     buttonHtml = `
                         <button
                             class="disabled-view-btn"
@@ -2063,13 +2334,10 @@
 
                     <div class="adviser-row-meta">
                         <span class="badge program-badge">
-                            <i class="fa-solid fa-graduation-cap"></i> Program: ${adviser.program_cater || "All"}
+                            <i class="fa-solid fa-graduation-cap"></i> Program: ${adviser.program_cater || "Not Set"}
                         </span>
-                        <span class="badge year-badge">
-                            <i class="fa-solid fa-layer-group"></i> Year: ${adviser.year_level_cater || "All"}
-                        </span>
-                        <span class="badge status-badge ${String(adviser.adviser_status || 'Unavailable').toLowerCase().replace(/\s+/g, '-')}">
-                            ${adviser.adviser_status || 'Unavailable'}
+                        <span class="badge status-badge ${String(adviser.adviser_status || 'Not Configured').toLowerCase().replace(/\s+/g, '-')}">
+                            ${adviser.adviser_status || 'Not Configured'}
                         </span>
                     </div>
 
@@ -2096,7 +2364,6 @@
                 .toLowerCase();
 
             const programFilter = document.getElementById("filterProgram").value;
-            const yearFilter = document.getElementById("filterYearLevel").value;
             const statusFilter = document.getElementById("filterStatus").value;
 
             const filtered = advisers.filter(adviser => {
@@ -2106,18 +2373,13 @@
 
                 const matchesProgram = programFilter === "All"
                     || adviser.program_cater === programFilter
-                    || (programFilter === "IT" && adviser.program_cater === "Both")
-                    || (programFilter === "IS" && adviser.program_cater === "Both");
-
-                const matchesYear = yearFilter === "All"
-                    || adviser.year_level_cater === yearFilter
-                    || (yearFilter === "3rd Year" && adviser.year_level_cater === "Both")
-                    || (yearFilter === "4th Year" && adviser.year_level_cater === "Both");
+                    || (programFilter === "IT" && (adviser.program_cater === "Both" || adviser.program_cater === "BSIT"))
+                    || (programFilter === "IS" && (adviser.program_cater === "Both" || adviser.program_cater === "BSIS"));
 
                 const matchesStatus = statusFilter === "All"
                     || adviser.adviser_status === statusFilter;
 
-                return matchesKeyword && matchesProgram && matchesYear && matchesStatus;
+                return matchesKeyword && matchesProgram && matchesStatus;
             });
 
             renderAdvisers(filtered);
@@ -2158,9 +2420,6 @@
             document.getElementById("modalProgram").innerText =
                 selectedAdviser.program_cater;
 
-            document.getElementById("modalYearLevel").innerText =
-                selectedAdviser.year_level_cater;
-
             document.getElementById("modalCapacity").innerText =
                 selectedAdviser.group_capacity;
 
@@ -2172,6 +2431,19 @@
 
             document.getElementById("requestMessage").value =
                 "";
+
+            const sendBtn = document.getElementById("sendRequestBtn");
+            if (sendBtn) {
+                const canRequest =
+                    selectedAdviser.adviser_status === "Available"
+                    && Number(selectedAdviser.group_capacity || 0) > Number(selectedAdviser.assigned_groups || 0);
+                sendBtn.disabled = !canRequest;
+                sendBtn.style.opacity = canRequest ? "" : "0.55";
+                sendBtn.style.cursor = canRequest ? "" : "not-allowed";
+                sendBtn.innerHTML = canRequest
+                    ? `<i class="fa-solid fa-paper-plane"></i> Send Request`
+                    : `<i class="fa-solid fa-ban"></i> Unavailable (${selectedAdviser.adviser_status})`;
+            }
 
             document.getElementById("viewModal").style.display =
                 "flex";
@@ -2188,6 +2460,11 @@
         async function sendAdviserRequest(){
 
             if(!selectedAdviser){
+                return;
+            }
+
+            if(selectedAdviser.adviser_status !== "Available"){
+                alert(`Cannot request this adviser because their status is ${selectedAdviser.adviser_status}.`);
                 return;
             }
 
