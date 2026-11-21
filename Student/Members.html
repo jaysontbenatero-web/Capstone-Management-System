@@ -1331,10 +1331,16 @@
                 pendingRemark: "Pending Pre-Final Defense approval"
             },
             {
+                key: "Deployment",
+                label: "Deployment",
+                icon: "fa-rocket",
+                pendingRemark: "Pending Final Defense approval"
+            },
+            {
                 key: "Completed",
                 label: "Completed",
                 icon: "fa-circle-check",
-                pendingRemark: "Final compilation pending"
+                pendingRemark: "Pending Deployment completion"
             }
         ];
 
@@ -1345,8 +1351,9 @@
                 "Stage 3": 2,
                 "Stage 4": 3,
                 "Stage 5": 4,
-                "Final":   5,
-                "Completed": 5
+                "Deployment": 4,
+                "Final":   4,
+                "Completed": 6
             };
             return map[stage] ?? 0;
         }
@@ -1354,24 +1361,28 @@
         function isAllDefenseCompleted(group, defenses) {
             if (!group) return false;
             const stageStr = String(group.stage || "").trim().toLowerCase();
-            if (stageStr === "final" || stageStr === "completed" || Number(group.progress || 0) >= 100) {
-                return true;
-            }
+            return stageStr === "completed";
+        }
+
+        function getCompletedStageCount(group, defenses) {
+            if (!group) return 0;
+            if (isAllDefenseCompleted(group, defenses)) return 6;
+            let count = stageToCompletedIndex(group.stage || "Stage 1");
             const finalDef = (defenses || []).find(d => d.defense_type === "Final Defense");
-            if (finalDef) {
+            if (finalDef && count < 4) {
                 const res = String(finalDef.panel_result || "").trim().toLowerCase();
                 const stat = String(finalDef.defense_status || "").trim().toLowerCase();
-                if (
-                    res === "passed" ||
-                    res === "passed with revisions" ||
-                    res === "conditional pass" ||
-                    res === "conditional passed" ||
-                    stat === "completed"
-                ) {
-                    return true;
+                if (res === "passed" || res === "passed with revisions" || stat === "completed") {
+                    count = 4;
                 }
             }
-            return false;
+            return count;
+        }
+
+        function getStageProgressPercent(group, defenses) {
+            if (!group) return 0;
+            if (isAllDefenseCompleted(group, defenses)) return 100;
+            return Math.min(getCompletedStageCount(group, defenses) * 20, 80);
         }
 
         function formatDefenseDate(dateStr) {
@@ -1402,8 +1413,12 @@
                 } else {
                     badgeClass = "not-started";
                     badgeLabel = "Pending";
-                    remark = "Pending Final Defense completion";
+                    remark = "Pending Deployment completion";
                 }
+            } else if (stageObj.key === "Deployment" && state === "active") {
+                badgeClass = "for-adviser";
+                badgeLabel = "In Progress";
+                remark = "Upload deployment requirements in Records Management";
             } else if (state === "completed") {
                 const result = defenseRecord?.panel_result || "";
 
@@ -1516,15 +1531,14 @@
             });
 
             const isAllFinished = isAllDefenseCompleted(group, defenses);
-            const completedCount = isAllFinished
-                ? 5
-                : stageToCompletedIndex(group.stage || "Stage 1");
+            const completedCount = getCompletedStageCount(group, defenses);
 
             const stageNames = [
                 "Concept Presentation",
                 "Outline Defense",
                 "Pre-Final Defense",
                 "Final Defense",
+                "Deployment",
                 "Completed"
             ];
 
@@ -1538,7 +1552,7 @@
                 && (activeDefense.panel_result === "For Formal Defense" || activeDefense.panel_result === "For Re-Defense");
 
             if (badgeEl) {
-                if (completedCount >= 5) {
+                if (completedCount >= 6) {
                     badgeEl.textContent = "All Stages Completed";
                     badgeEl.className = "status-badge-tracker current-stage-badge approved";
                 } else if (isForFormalDefense) {
@@ -1569,7 +1583,7 @@
 
             stepsEl.innerHTML = stepsHtml;
 
-            const pct = isAllFinished ? 100 : Math.min(Number(group.progress || 0), 100);
+            const pct = getStageProgressPercent(group, defenses);
 
             if (fill) {
                 fill.style.width = `${pct}%`;
@@ -1733,16 +1747,17 @@ async function loadStudentGroup(){
             group.members.length;
 
         const isFinished = isAllDefenseCompleted(group, defenses);
+        const stageCount = getCompletedStageCount(group, defenses);
 
         document.getElementById(
             "groupStage"
         ).innerText =
-            isFinished ? "Completed" : (group.stage || "Stage 1");
+            isFinished ? "Completed" : (stageCount === 4 ? "Deployment" : (group.stage || "Stage 1"));
 
         document.getElementById(
             "groupProgress"
         ).innerText =
-            isFinished ? "100%" : `${group.progress || 0}%`;
+            `${getStageProgressPercent(group, defenses)}%`;
 
         renderStageTracker(group, defenses);
 

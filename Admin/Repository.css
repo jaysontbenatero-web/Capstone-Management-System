@@ -750,6 +750,19 @@ body{
 
 }
 
+.view-repo-modal-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:20px;
+}
+
+.view-repo-modal-header h1{
+    margin-bottom:0 !important;
+    flex:1;
+}
+
 .modal-content h1{
     color:#2e1065;
     margin-bottom:24px;
@@ -757,16 +770,23 @@ body{
 }
 
 .modal-abstract{
-    background:#faf8ff;
-    padding:22px;
-    border-radius:20px;
+    background:transparent;
+    padding:0;
+    border-radius:0;
     line-height:1.8;
     margin-bottom:25px;
     color:#4b3b67;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
 }
 
 .modal-abstract .repository-field{
-    margin-bottom:20px;
+    background:#faf8ff;
+    border:1px solid #ede9fe;
+    padding:20px 22px;
+    border-radius:20px;
+    margin-bottom:0;
 }
 
 .modal-abstract .repository-field:last-child{
@@ -776,7 +796,7 @@ body{
 .modal-abstract .repository-field strong{
     display:block;
     color:#2e1065;
-    margin-bottom:8px;
+    margin-bottom:10px;
     font-size:15px;
 }
 
@@ -812,7 +832,8 @@ body{
 
 /* ================= CLOSE BUTTON ================= */
 
-.close-btn{
+.close-btn,
+.modal-btn{
     width:100%;
     border:none;
     padding:16px;
@@ -829,7 +850,8 @@ body{
     transition:0.3s;
 }
 
-.close-btn:hover{
+.close-btn:hover,
+.modal-btn:hover{
     transform:translateY(-2px);
 }
 

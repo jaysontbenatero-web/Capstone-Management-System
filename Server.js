@@ -343,7 +343,7 @@ const titleProposalUpload = multer({
     },
 
     limits: {
-        fileSize: 20 * 1024 * 1024
+        fileSize: 100 * 1024 * 1024
     }
 });
 
@@ -411,7 +411,7 @@ const studentDocumentUpload = multer({
     },
 
     limits: {
-        fileSize: 20 * 1024 * 1024
+        fileSize: 100 * 1024 * 1024
     }
 });
 
@@ -906,6 +906,59 @@ db.getConnection((err, connection) => {
         `, (tdmErr) => {
             if (tdmErr) console.error("Error creating typed_defense_minutes table:", tdmErr);
             else console.log("typed_defense_minutes table verified/created");
+        });
+
+        // Predefined Defense Time Slots table + defense_schedules.time_slot_label column
+        db.query(`
+            CREATE TABLE IF NOT EXISTS defense_time_slots (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                slot_label VARCHAR(100) NOT NULL UNIQUE,
+                start_time TIME NOT NULL,
+                end_time TIME NOT NULL,
+                period VARCHAR(30) DEFAULT 'Morning',
+                sort_order INT DEFAULT 0,
+                is_active TINYINT(1) DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (dtsErr) => {
+            if (dtsErr) {
+                console.error("Error creating defense_time_slots table:", dtsErr);
+            } else {
+                console.log("defense_time_slots table verified/created");
+                db.query(`
+                    INSERT IGNORE INTO defense_time_slots (slot_label, start_time, end_time, period, sort_order, is_active)
+                    VALUES
+                        ('08:00 AM - 10:00 AM', '08:00:00', '10:00:00', 'Morning', 1, 1),
+                        ('10:00 AM - 12:00 PM', '10:00:00', '12:00:00', 'Morning', 2, 1),
+                        ('01:00 PM - 03:00 PM', '13:00:00', '15:00:00', 'Afternoon', 3, 1),
+                        ('03:00 PM - 05:00 PM', '15:00:00', '17:00:00', 'Afternoon', 4, 1)
+                `, (seedErr) => {
+                    if (seedErr) console.error("Error seeding defense_time_slots:", seedErr);
+                });
+                // Deactivate legacy 1.5-hour default seeds so 2-hour recommended slots are the active default
+                db.query(`
+                    UPDATE defense_time_slots
+                    SET is_active = 0
+                    WHERE slot_label IN (
+                        '08:00 AM - 09:30 AM',
+                        '09:30 AM - 11:00 AM',
+                        '01:00 PM - 02:30 PM',
+                        '02:30 PM - 04:00 PM'
+                    )
+                `, () => { });
+            }
+        });
+
+        db.query(`SHOW COLUMNS FROM defense_schedules LIKE 'time_slot_label'`, (colErr, colRows) => {
+            if (!colErr && (!colRows || colRows.length === 0)) {
+                db.query(
+                    `ALTER TABLE defense_schedules ADD COLUMN time_slot_label VARCHAR(100) NULL AFTER end_time`,
+                    (altErr) => {
+                        if (altErr) console.error("Error adding time_slot_label column:", altErr);
+                        else console.log("Added time_slot_label column to defense_schedules");
+                    }
+                );
+            }
         });
     }
 });
@@ -6132,6 +6185,732 @@ async function extractTitleFromPdfFile(filePath, fallbackName = "") {
     }
 }
 
+/* ================= 80-PAGE MANUSCRIPT PARSER FOR REPOSITORY ARCHIVING ================= */
+
+function isDeploymentChapter14Document(documentType, documentTitle) {
+    const dt = String(documentType || "").toLowerCase();
+    const tl = String(documentTitle || "").toLowerCase();
+    const hasDeployment = dt.includes("deployment") || tl.includes("deployment");
+    const hasCh14 =
+        dt.includes("chapter 1-4") || dt.includes("chapter 1 to 4") || dt.includes("chapters 1-4") ||
+        tl.includes("chapter 1-4") || tl.includes("chapter 1 to 4") || tl.includes("chapters 1-4");
+    return hasDeployment && hasCh14;
+}
+
+function inferRepositoryCategoryFromText(title, abstractText, methodologyText) {
+    const combined = `${title || ""} ${abstractText || ""} ${methodologyText || ""}`.toLowerCase();
+    if (/\b(iot|internet of things|arduino|esp32|esp8266|raspberry pi|ultrasonic sensor|microcontroller|rfid|gsm module|sensor node)\b/.test(combined)) {
+        return "IoT";
+    }
+    if (/\b(machine learning|deep learning|neural network|computer vision|natural language processing|\bnlp\b|random forest|convolutional|yolo|image recognition|artificial intelligence|predictive model|classification algorithm|ocr|optical character recognition)\b/.test(combined)) {
+        return "Artificial Intelligence";
+    }
+    if (/\b(android|flutter|react native|mobile app|mobile application|smartphone|ios app|kotlin|madlc)\b/.test(combined) && !/\bweb-based\b/.test(String(title || "").toLowerCase())) {
+        return "Mobile Development";
+    }
+    if (/\b(data analytics|business intelligence|data mining|data visualization|forecasting|descriptive analytics|predictive analytics|power bi|tableau)\b/.test(combined) && /\banalytics\b/.test(String(title || "").toLowerCase())) {
+        return "Data Analytics";
+    }
+    if (/\b(web-based|web application|online portal|management system|information system|laravel|react|node\.?js|php)\b/.test(combined)) {
+        return "Web Application";
+    }
+    return "Web Development";
+}
+
+function cleanManuscriptPagesText(rawPagesText) {
+    const NOISE_LINE_PATTERNS = [
+        /^institute\s+of\s+computing$/i,
+        /^davao\s+del\s+norte$/i,
+        /^state\s+college$/i,
+        /^davao\s+del\s+norte\s+state\s+college$/i,
+        /^republic\s+of\s+the\s+philippines$/i,
+        /^[“"']?inspiring\s+change[,\s]*creating\s+futures[”"']?$/i,
+        /^president@dnsc\.edu\.ph$/i,
+        /^dnsc\.edu\.ph$/i,
+        /^@officialdnsc$/i,
+        /^new\s+visayas[,\s]*panabo\s+city[,\s\d]*$/i,
+        /^VISION$/i,
+        /^An\s+institution\s+leading\s+in$/i,
+        /^agri[\-\s]*fisheries\s+and\s+socio[\-\s]*$/i,
+        /^cultural\s+development\s+in\s+the$/i,
+        /^ASEAN\s+region\.?$/i,
+        /^MISSION$/i,
+        /^DNSC\s+shall\s+produce\s+future[\-\s]*ready\s+workforce,?$/i,
+        /^create\s+innovative\s+solutions\s+and\s+technologies,?$/i,
+        /^empower\s+communities,?\s+and\s+uphold\s+good$/i,
+        /^governance\s+towards\s+sustainable\s+development\.?$/i,
+        /^CORE\s+VALUES$/i,
+        /^Stewardship$/i,
+        /^Adaptability\s+and\s+Excellence$/i,
+        /^Integrity\s+and\s+Innovativeness$/i,
+        /^Love\s+of\s+God\s+and\s+Country$/i,
+        /^page\s+\d+(\s+of\s+\d+)?$/i,
+        /^[-\u2013]?\s*\d{1,3}\s*[-\u2013]?$/,
+        /^[ivxlcdm]{1,6}$/i
+    ];
+
+    const pages = String(rawPagesText || "").split("<<<PAGE_BREAK>>>");
+    const keptPages = [];
+
+    for (const rawPage of pages) {
+        const rawLines = rawPage
+            .split(/\r?\n/)
+            .map(l => l.replace(/\s+/g, " ").trim())
+            .filter(Boolean);
+
+        if (!rawLines.length) continue;
+
+        const cleanedLines = rawLines.filter(line => !NOISE_LINE_PATTERNS.some(re => re.test(line)));
+        if (!cleanedLines.length) continue;
+
+        // Detect Table of Contents / List of Tables / List of Figures / Approval Sheet pages and skip them
+        const firstFew = cleanedLines.slice(0, 6).join(" ");
+        const isTocOrListHeader = /\b(table\s+of\s+contents|list\s+of\s+tables|list\s+of\s+figures|list\s+of\s+appendices|approval\s+sheet|panel\s+of\s+examiners|curriculum\s+vitae)\b/i.test(firstFew);
+        const dotLeaderCount = cleanedLines.filter(l => /(?:\.{3,}|(?:\.\s){3,})\s*(?:[ivxlcdm]+|\d+)\s*$/i.test(l) || /^.+\s+\d{1,3}$/.test(l) && /\b(chapter|introduction|methodology|objectives|problem|scope|significance|abstract|references|appendix)\b/i.test(l)).length;
+        if (isTocOrListHeader || dotLeaderCount >= 4) {
+            continue;
+        }
+
+        // Remove individual TOC-like dotted lines that might appear on boundary pages
+        const nonTocLines = cleanedLines.filter(l => !/(?:\.{4,}|(?:\.\s){4,})\s*(?:[ivxlcdm]+|\d+)?\s*$/i.test(l));
+        if (nonTocLines.length) {
+            keptPages.push(nonTocLines);
+        }
+    }
+
+    return keptPages;
+}
+
+function formatSectionLines(lines, preserveBullets = true) {
+    if (!Array.isArray(lines) || !lines.length) return "";
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+        const rawLine = String(lines[i] || "");
+        const hadLeadingIndent = /^\s{2,}|\t/.test(rawLine);
+        const line = rawLine.replace(/\s+/g, " ").trim();
+        if (!line) {
+            if (out.length > 0 && !out[out.length - 1].endsWith("\n")) {
+                out.push("\n");
+            }
+            continue;
+        }
+        // Skip figure/table captions inside extracted prose
+        if (/^(?:figure|fig\.?|table)\s+\d+(?:[\.\-]\d+)?\s*[:\.\-]/i.test(line) && line.length < 110) {
+            continue;
+        }
+
+        // Sub-numbered items like 1.1, 1.2, 2.1, 2.2
+        const isSubNumbered = /^\d+\.\d+(?:\.\d+)*[\.\)]?\s+/.test(line);
+        // Top-level numbered items like 1., 2., 3. or (1), a., b. or bullets •, -, *
+        const isTopBulletOrNum = !isSubNumbered && /^(?:[\u2022\-\*\u25cf\u25cb]|\d+[\.\)]|[a-zA-Z][\.\)]|\([a-zA-Z0-9]+\))\s+/.test(line);
+        // Module/group headers like "1. Coffee Shop Catalogue Module"
+        const isModuleHeader = /^\d+\.\s+[A-Z][A-Za-z0-9\s,&\/\-]{2,75}$/.test(line) && !/[.!?]$/.test(line);
+        // Sub-headings or lead-in lines like "General Objective", "Specific Objectives", "Specifically, it aims to:"
+        const isSubHeadingOrBridge =
+            /^(?:general\s+objectives?|specific\s+objectives?|general\s+problem|specific\s+problems?)\s*:?$/i.test(line) ||
+            /^(?:specifically,?\s+(?:it|the\s+study|the\s+project|this\s+study|this\s+project)\s+(?:aims|sought|seeks)\s+to|in\s+particular,?\s+the\s+following)\b.*:\s*$/i.test(line);
+
+        if (out.length === 0) {
+            out.push(isSubNumbered ? "   " + line : line);
+        } else if (isSubHeadingOrBridge) {
+            out.push("\n\n" + line);
+        } else if (isModuleHeader) {
+            out.push("\n\n" + line);
+        } else if (preserveBullets && isSubNumbered) {
+            out.push("\n   " + line);
+        } else if (preserveBullets && isTopBulletOrNum) {
+            out.push("\n" + line);
+        } else if (/-\s*$/.test(out[out.length - 1]) && /^[a-z]/.test(line)) {
+            out[out.length - 1] = out[out.length - 1].replace(/-\s*$/, "") + line;
+        } else if (out[out.length - 1] === "\n") {
+            out[out.length - 1] = "\n\n" + (hadLeadingIndent ? "   " : "") + line;
+        } else {
+            const prev = out[out.length - 1];
+            const prevEndsSentence = /[.!?:]\s*$/.test(prev);
+            if (prevEndsSentence && (hadLeadingIndent || (prev.length > 220 && /^[A-Z]/.test(line)))) {
+                out.push("\n\n" + line);
+            } else {
+                out[out.length - 1] = prev + " " + line;
+            }
+        }
+    }
+    return out.join("").replace(/[ \t]{2,}/g, (m) => (m.length >= 3 ? "   " : " ")).replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function truncateAtSentenceBoundary(text, maxChars = 1800) {
+    const clean = String(text || "").trim();
+    if (clean.length <= maxChars) return clean;
+    const slice = clean.slice(0, maxChars);
+    const lastPeriod = Math.max(slice.lastIndexOf(". "), slice.lastIndexOf(".\n"), slice.lastIndexOf("."));
+    if (lastPeriod > maxChars * 0.5) {
+        return slice.slice(0, lastPeriod + 1).trim();
+    }
+    return slice.trim();
+}
+
+function extractSectionsDeterministically(keptPages) {
+    const allLines = keptPages.flat();
+
+    // ── Heading Matchers ──
+    const isChapterHeading = (l) => /^(?:chapter\s+(?:[1-5]|[i]{1,3}|iv|v))\b/i.test(l) && l.length <= 85;
+    const isChapter2Heading = (l) => /^(?:chapter\s+(?:2|ii)\b|(?:2(?:\.0)?|ii[\.\)])\s*(?:review\s+of\s+related\s+(?:literature|studies)|methodology)|review\s+of\s+related\s+(?:literature|studies)(?:\s+and\s+(?:studies|systems))?)$/i.test(l) && l.length <= 90;
+    const isChapter3Heading = (l) => /^(?:chapter\s+(?:[23]|ii|iii)\b(?:\s*[\-\u2013:]\s*methodology)?|(?:[23](?:\.0)?|(?:ii|iii)[\.\)])\s*(?:methodology|research\s+methodology|technical\s+background)|methodology|research\s+methodology)$/i.test(l) && l.length <= 85;
+    const isChapter4Heading = (l) => /^(?:chapter\s+(?:[34]|iii|iv)\b(?:\s*[\-\u2013:]\s*results)?|(?:[34](?:\.0)?|(?:iii|iv)[\.\)])\s*(?:results?\s+and\s+discussions?|presentation[,\s]+analysis|system\s+implementation)|results?\s+and\s+discussions?)$/i.test(l) && l.length <= 90;
+
+    const isAbstractHeading = (l) => /^(?:abstract|executive\s+summary)\s*:?$/i.test(l);
+    const isOverviewHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:project\s+overview|system\s+overview|overview\s+of\s+the\s+(?:study|project|system))\s*:?$/i.test(l) && l.length <= 70;
+    const isContextOrBgHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:project\s+context|background\s+of\s+the\s+(?:study|project)|introduction|rationale)\s*:?$/i.test(l) && l.length <= 75;
+
+    const isProblemHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:statement\s+of\s+the\s+problems?|problems?\s+statement|research\s+problems?|general\s+and\s+specific\s+problems?|research\s+questions?)\s*:?$/i.test(l) && l.length <= 80;
+
+    const isObjectivesHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:objectives+\s+of\s+the\s+(?:study|project)|(?:project|research|study|general\s+and\s+specific)\s+objectives+|objectives+|general\s+objectives?|specific\s+objectives?)\s*:?$/i.test(l) && l.length <= 80;
+    const isSubObjectiveHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[a-z][\.\)])\s*)?(?:general\s+objectives?|specific\s+objectives?)\s*:?$/i.test(l) && l.length <= 65;
+
+    const isScopeHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:scope\s+and\s+(?:limitations?|delimitations?)|scope\s+of\s+the\s+(?:study|project)|limitations?\s+of\s+the\s+(?:study|project))\s*:?$/i.test(l) && l.length <= 80;
+    const isSignificanceHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:significance\s+of\s+the\s+(?:study|project)|importance\s+of\s+the\s+(?:study|project))\s*:?$/i.test(l) && l.length <= 80;
+    const isOtherCh1StopHeading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:definition\s+of\s+terms|operational\s+definition\s+of\s+terms|conceptual\s+framework|theoretical\s+framework|hypothesis|hypotheses|purpose\s+and\s+description|technical\s+background|time\s+and\s+place\s+of\s+the\s+study)\s*:?$/i.test(l) && l.length <= 85;
+
+    const isMethodologyModelSubheading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:software\s+development\s+(?:methodology|method|model|life\s*cycle)|system\s+development\s+(?:methodology|method|model|life\s*cycle)|project\s+development\s+(?:methodology|method|model)|development\s+(?:methodology|method|model)|sdlc\s+model|methodology\s+model|research\s+design(?:\s+and\s+methodology)?|research\s+method(?:ology)?|conceptual\s+model|operational\s+model)\s*:?$/i.test(l) && l.length <= 90;
+
+    const isNonModelCh3Heading = (l) => /^(?:(?:\d+(?:\.\d+)*|[ivx]+[\.\)])\s*)?(?:system\s+planning|project\s+planning|planning\s+phase|requirements?\s+(?:analysis|specification|definition|documentation|gathering)|system\s+analysis|system\s+design|hardware\s+(?:and\s+software\s+)?(?:requirements?|specifications?)|software\s+(?:requirements?|specifications?)|data\s+dictionary|database\s+(?:design|schema)|entity\s+relationship\s+diagram|data\s+flow\s+diagram|context\s+(?:flow\s+)?diagram|use\s+case\s+diagram|system\s+architecture|architectural\s+diagram|network\s+(?:topology|design)|cost\s+and\s+benefit\s+analysis|testing\s+and\s+evaluation|respondents\s+of\s+the\s+study|research\s+locale|research\s+instrument|data\s+gathering\s+procedure|statistical\s+treatment|references|bibliography)\s*:?$/i.test(l) && l.length <= 95;
+
+    const collectSection = (startIdx, stopPredicates, maxLines = 130) => {
+        const collected = [];
+        for (let i = startIdx; i < Math.min(allLines.length, startIdx + maxLines); i++) {
+            const line = allLines[i];
+            if (stopPredicates.some(fn => fn(line))) {
+                break;
+            }
+            collected.push(line);
+        }
+        return collected;
+    };
+
+    // 1. Extract ABSTRACT
+    let abstractText = "";
+    for (let i = 0; i < allLines.length; i++) {
+        if (isAbstractHeading(allLines[i])) {
+            const lines = collectSection(i + 1, [
+                (l) => /^(?:keywords?|key\s+words?|index\s+terms?)\s*:/i.test(l),
+                (l) => /^(?:acknowledg(?:e)?ments?|dedication|table\s+of\s+contents|approval\s+sheet)\s*:?$/i.test(l),
+                isChapterHeading,
+                isContextOrBgHeading,
+                isProblemHeading,
+                isObjectivesHeading
+            ], 75);
+            const candidate = formatSectionLines(lines, false);
+            if (candidate.length >= 80) {
+                abstractText = candidate;
+                break;
+            }
+        }
+    }
+
+    // Fallback for Abstract: Project Overview / System Overview
+    if (!abstractText) {
+        for (let i = 0; i < allLines.length; i++) {
+            if (isOverviewHeading(allLines[i])) {
+                const lines = collectSection(i + 1, [
+                    isProblemHeading,
+                    isObjectivesHeading,
+                    isScopeHeading,
+                    isSignificanceHeading,
+                    isOtherCh1StopHeading,
+                    isChapterHeading,
+                    isChapter2Heading,
+                    isChapter3Heading
+                ], 65);
+                const candidate = formatSectionLines(lines, false);
+                if (candidate.length >= 60) {
+                    abstractText = candidate;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Fallback 2 for Abstract: Opening/summary paragraphs of Project Context or Background of the Study
+    if (!abstractText) {
+        for (let i = 0; i < allLines.length; i++) {
+            if (isContextOrBgHeading(allLines[i])) {
+                const lines = collectSection(i + 1, [
+                    isProblemHeading,
+                    isOverviewHeading,
+                    isObjectivesHeading,
+                    isScopeHeading,
+                    isSignificanceHeading,
+                    isOtherCh1StopHeading,
+                    isChapter2Heading
+                ], 45);
+                const candidate = formatSectionLines(lines, false);
+                if (candidate.length >= 80) {
+                    abstractText = truncateAtSentenceBoundary(candidate, 1400);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 2. Extract OBJECTIVES (General + Specific Objectives including 1.1, 1.2, 2.1, 2.2, etc.)
+    let objectivesText = "";
+    for (let i = 0; i < allLines.length; i++) {
+        if (isObjectivesHeading(allLines[i])) {
+            const lines = [];
+            for (let j = i + 1; j < Math.min(allLines.length, i + 160); j++) {
+                const line = allLines[j];
+                if (isSubObjectiveHeading(line)) {
+                    lines.push(line);
+                    continue;
+                }
+                if (
+                    isScopeHeading(line) ||
+                    isSignificanceHeading(line) ||
+                    isProblemHeading(line) ||
+                    isOverviewHeading(line) ||
+                    isOtherCh1StopHeading(line) ||
+                    isChapter2Heading(line) ||
+                    isChapter3Heading(line) ||
+                    isChapterHeading(line)
+                ) {
+                    break;
+                }
+                lines.push(line);
+            }
+            const candidate = formatSectionLines(lines, true);
+            if (candidate.length >= 50) {
+                objectivesText = candidate;
+                break;
+            }
+        }
+    }
+
+    // 3. Extract RESEARCH PROBLEM (if there is any — strictly separated from Objectives & Abstract)
+    let researchProblemText = "";
+    for (let i = 0; i < allLines.length; i++) {
+        if (isProblemHeading(allLines[i])) {
+            const lines = collectSection(i + 1, [
+                isObjectivesHeading,
+                isOverviewHeading,
+                isScopeHeading,
+                isSignificanceHeading,
+                isOtherCh1StopHeading,
+                isChapter2Heading,
+                isChapter3Heading,
+                isChapterHeading
+            ], 110);
+            const candidate = formatSectionLines(lines, true);
+            if (candidate.length >= 40) {
+                researchProblemText = candidate;
+                break;
+            }
+        }
+    }
+
+    // 4. Extract METHODOLOGY (specifically the part that talks about the development model / SDLC!)
+    const MODEL_REGEX = /\b(agile(?:\s+methodology|\s+model|\s+sdlc|\s+scrum|\s+kanban)?|scrum(?:\s+framework|\s+methodology|\s+model)?|kanban|modified\s+waterfall(?:\s+model)?|waterfall\s+model|rapid\s+application\s+development|\brad\s+model\b|iterative(?:\s+enhancement)?(?:\s+and\s+incremental)?\s+model|incremental\s+model|spiral\s+model|v-model|verification\s+and\s+validation\s+model|prototyping\s+model|evolutionary\s+prototyping|throwaway\s+prototyping|extreme\s+programming|devops|mobile\s+application\s+development\s+lifecycle|\bmadlc\b|feature[\-\s]driven\s+development|design\s+science\s+research|systems?\s+development\s+life\s*cycle|software\s+development\s+life\s*cycle|\bsdlc\b|input[\-\s]process[\-\s]output|\bipo\s+model\b|descriptive[\-\s]developmental)\b/i;
+
+    let methodologyText = "";
+
+    // Strategy 4A: Look for an explicit Software/System Development Method/Methodology/SDLC/Model subheading
+    for (let i = 0; i < allLines.length; i++) {
+        if (isMethodologyModelSubheading(allLines[i])) {
+            const lines = collectSection(i + 1, [
+                isNonModelCh3Heading,
+                isChapter4Heading,
+                isChapterHeading
+            ], 60);
+            const candidate = formatSectionLines(lines, false);
+            if (candidate.length >= 50) {
+                methodologyText = truncateAtSentenceBoundary(candidate, 1800);
+                break;
+            }
+        }
+    }
+
+    // Strategy 4B: Look inside Methodology chapter for paragraphs discussing the SDLC / development model
+    if (!methodologyText) {
+        let ch3Start = -1;
+        for (let i = 0; i < allLines.length; i++) {
+            if (isChapter3Heading(allLines[i])) {
+                ch3Start = i + 1;
+                break;
+            }
+        }
+        const searchStart = ch3Start >= 0 ? ch3Start : 0;
+        const searchEnd = ch3Start >= 0 ? Math.min(allLines.length, ch3Start + 350) : allLines.length;
+
+        for (let i = searchStart; i < searchEnd; i++) {
+            if (isChapter4Heading(allLines[i])) break;
+            if (MODEL_REGEX.test(allLines[i])) {
+                const winStart = (i > searchStart && !isMethodologyModelSubheading(allLines[i - 1]) && !isChapter3Heading(allLines[i - 1])) ? i - 1 : i;
+                const modelLines = [];
+                for (let j = winStart; j < Math.min(searchEnd, i + 40); j++) {
+                    if (
+                        isNonModelCh3Heading(allLines[j]) ||
+                        isChapter4Heading(allLines[j]) ||
+                        isScopeHeading(allLines[j]) ||
+                        isObjectivesHeading(allLines[j]) ||
+                        isProblemHeading(allLines[j])
+                    ) {
+                        break;
+                    }
+                    modelLines.push(allLines[j]);
+                }
+                const candidate = formatSectionLines(modelLines, false);
+                if (candidate.length >= 50) {
+                    methodologyText = truncateAtSentenceBoundary(candidate, 1800);
+                    break;
+                }
+            }
+        }
+
+        if (!methodologyText && ch3Start >= 0) {
+            const lines = collectSection(ch3Start, [
+                isNonModelCh3Heading,
+                isChapter4Heading,
+                isChapterHeading
+            ], 40);
+            const candidate = formatSectionLines(lines, false);
+            if (candidate.length >= 50) {
+                methodologyText = truncateAtSentenceBoundary(candidate, 1600);
+            }
+        }
+    }
+
+    // Strategy 4C: Fallback for concept/architecture papers that describe Software / Framework stack
+    if (!methodologyText) {
+        for (let i = 0; i < allLines.length; i++) {
+            if (/^(?:software|technical\s+architecture|system\s+architecture|development\s+tools(?:\s+and\s+technologies)?)\s*:?$/i.test(allLines[i])) {
+                const lines = collectSection(i + 1, [
+                    (l) => /^(?:data|references|bibliography|appendix)\b/i.test(l) && l.length < 40,
+                    isChapterHeading
+                ], 35);
+                const candidate = formatSectionLines(lines, true);
+                if (candidate.length >= 40) {
+                    methodologyText = truncateAtSentenceBoundary(candidate, 1400);
+                    break;
+                }
+            }
+        }
+    }
+
+    return {
+        abstract: abstractText,
+        objectives: objectivesText,
+        research_problem: researchProblemText,
+        methodology: methodologyText
+    };
+}
+
+function refineManuscriptFieldsWithGemini(snippetText, fallbackTitle) {
+    return new Promise((resolve) => {
+        const apiKey = (process.env.GEMINI_API_KEY || "").trim();
+        if (!apiKey || !snippetText || snippetText.length < 100) {
+            return resolve(null);
+        }
+
+        const prompt = [
+            "You are an academic capstone repository extractor.",
+            "From the provided capstone manuscript text (extracted from the first 80 pages), extract these 5 SEPARATE fields as JSON:",
+            "1. \"title\": The full official capstone/research study title (do not return generic labels like 'Chapter 1-4' or college names).",
+            "2. \"abstract\": The Abstract (or Executive Summary / Project Overview if no formal Abstract page is present). Keep it strictly separate from Objectives and Research Problem.",
+            "3. \"objectives\": The Objectives of the Study (General and Specific Objectives, formatted cleanly with bullets or numbering). Do NOT include Scope & Limitations or Research Problem here.",
+            "4. \"research_problem\": The Statement of the Problem / Research Problem (if present in the manuscript). If there is no Statement of the Problem / Research Problem section, return an empty string \"\".",
+            "5. \"methodology\": Specifically the part of the Methodology that talks about the software/system development model or SDLC (e.g., Agile, Scrum, Waterfall, Modified Waterfall, RAD, Iterative, Spiral, V-Model, Prototyping, MADLC, etc.) and how that model is used in the study.",
+            "6. \"category\": One of [\"Artificial Intelligence\", \"Web Development\", \"Web Application\", \"Mobile Development\", \"Data Analytics\", \"IoT\"].",
+            fallbackTitle ? `Known group approved title (use if cover page title is absent): ${fallbackTitle}` : "",
+            "Return ONLY valid JSON with keys: title, abstract, objectives, research_problem, methodology, category.",
+            "",
+            "MANUSCRIPT TEXT:",
+            snippetText.slice(0, 42000)
+        ].filter(Boolean).join("\n");
+
+        const payload = JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.1,
+                responseMimeType: "application/json"
+            }
+        });
+
+        const req = https.request(
+            {
+                hostname: "generativelanguage.googleapis.com",
+                path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Content-Length": Buffer.byteLength(payload)
+                },
+                timeout: 18000
+            },
+            (res) => {
+                let raw = "";
+                res.on("data", (chunk) => { raw += chunk; });
+                res.on("end", () => {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        const textOut = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                        if (!textOut) return resolve(null);
+                        const jsonClean = textOut.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+                        const obj = JSON.parse(jsonClean);
+                        resolve(obj && typeof obj === "object" ? obj : null);
+                    } catch (_) {
+                        resolve(null);
+                    }
+                });
+            }
+        );
+
+        req.on("error", () => resolve(null));
+        req.on("timeout", () => { req.destroy(); resolve(null); });
+        req.write(payload);
+        req.end();
+    });
+}
+
+async function extractRepositoryFieldsFromManuscriptPdf(filePath, options = {}) {
+    const fallbackTitle = String(options.fallbackTitle || "").trim();
+    try {
+        const dataBuffer = fs.readFileSync(filePath);
+
+        // Read ONLY the first 80 pages using pdf-parse's native item concatenation (preserving exact PDF word spaces)
+        const pdfData = await pdfParse(dataBuffer, {
+            max: 80,
+            pagerender: function (pageData) {
+                return pageData
+                    .getTextContent({ normalizeWhitespace: false, disableCombineTextItems: false })
+                    .then(function (textContent) {
+                        let lastY = null;
+                        let text = "";
+                        for (const item of textContent.items) {
+                            if (lastY === item.transform[5] || !lastY) {
+                                text += item.str;
+                            } else {
+                                text += "\n" + item.str;
+                            }
+                            lastY = item.transform[5];
+                        }
+                        return "\n<<<PAGE_BREAK>>>\n" + text;
+                    });
+            }
+        });
+
+        const rawPagesText = String(pdfData?.text || "");
+        const keptPages = cleanManuscriptPagesText(rawPagesText);
+
+        // 1. Extract Title from first pages (or fallback to group's approved title)
+        let extractedTitle = await extractTitleFromPdfBuffer(dataBuffer, fallbackTitle);
+        if (
+            !extractedTitle ||
+            extractedTitle.length < 8 ||
+            /^(?:chapter\s*1[\-\s]*4|deployment|table\s+of\s+contents|abstract|capstone\s+project|manuscript)\b/i.test(extractedTitle)
+        ) {
+            if (fallbackTitle) extractedTitle = fallbackTitle;
+        }
+
+        // 2. Deterministic section-by-section extraction (Title, Abstract, Objectives, Research Problem, Methodology Model)
+        const det = extractSectionsDeterministically(keptPages);
+
+        // 3. Optional Gemini AI pass over the cleaned first-80-pages text for maximum accuracy on complex layouts
+        const cleanedFlatText = keptPages.map(p => p.join("\n")).join("\n\n");
+        const ai = await refineManuscriptFieldsWithGemini(cleanedFlatText, fallbackTitle || extractedTitle);
+
+        const pickBest = (detVal, aiVal, minLen = 35) => {
+            const d = String(detVal || "").trim();
+            const a = String(aiVal || "").trim();
+            if (d.length >= minLen) return d;
+            if (a.length >= minLen) return a;
+            return d || a;
+        };
+
+        const finalTitle = (
+            fallbackTitle &&
+            (!extractedTitle || /^(?:chapter|deployment|document|manuscript)/i.test(extractedTitle))
+        )
+            ? fallbackTitle
+            : (extractedTitle || (ai && ai.title) || fallbackTitle || "Untitled Capstone Project");
+
+        const finalAbstract = pickBest(det.abstract, ai && ai.abstract, 60) || "Abstract extracted from approved Deployment Chapter 1-4 manuscript.";
+        const finalObjectives = pickBest(det.objectives, ai && ai.objectives, 45) || String(options.fallbackObjectives || "").trim() || "Objectives extracted from approved Deployment Chapter 1-4 manuscript.";
+        const finalProblem = pickBest(det.research_problem, ai && ai.research_problem, 30) || "";
+        const finalMethodology = pickBest(det.methodology, ai && ai.methodology, 35) || "Software Development Life Cycle (SDLC) methodology applied in system design, development, and deployment.";
+        const finalCategory = (ai && ai.category) || inferRepositoryCategoryFromText(finalTitle, finalAbstract, finalMethodology);
+
+        return {
+            title: String(finalTitle).trim(),
+            abstract: String(finalAbstract).trim(),
+            objectives: String(finalObjectives).trim(),
+            research_problem: String(finalProblem).trim(),
+            methodology: String(finalMethodology).trim(),
+            category: String(finalCategory).trim()
+        };
+    } catch (err) {
+        console.error("[Repository 80-Page Extractor] Error parsing manuscript PDF:", err);
+        return {
+            title: fallbackTitle || "Approved Capstone Project",
+            abstract: "Abstract from approved Deployment Chapter 1-4 manuscript.",
+            objectives: String(options.fallbackObjectives || "").trim() || "Objectives from approved Deployment Chapter 1-4 manuscript.",
+            research_problem: "",
+            methodology: "Software Development Life Cycle (SDLC) model.",
+            category: inferRepositoryCategoryFromText(fallbackTitle, "", "")
+        };
+    }
+}
+
+function archiveDeploymentChapter14ToRepository(submission, adviserName, callback) {
+    const done = typeof callback === "function" ? callback : () => {};
+    if (!submission || !submission.document_id) return done(null);
+
+    const metaSql = `
+        SELECT
+            sd.id AS document_id,
+            sd.group_id,
+            sd.document_title,
+            sd.document_type,
+            sd.file_path,
+            sd.signed_file_path,
+            cg.group_name,
+            cg.program AS group_program,
+            cg.project_title AS group_project_title,
+            (
+                SELECT tp.proposed_title
+                FROM title_proposals tp
+                WHERE tp.group_id = sd.group_id AND tp.status = 'Approved'
+                ORDER BY tp.id DESC
+                LIMIT 1
+            ) AS approved_proposal_title,
+            (
+                SELECT tp.proposed_objectives
+                FROM title_proposals tp
+                WHERE tp.group_id = sd.group_id AND tp.status = 'Approved'
+                ORDER BY tp.id DESC
+                LIMIT 1
+            ) AS approved_proposal_objectives
+        FROM student_documents sd
+        LEFT JOIN capstone_groups cg ON sd.group_id = cg.id
+        WHERE sd.id = ?
+        LIMIT 1
+    `;
+
+    db.query(metaSql, [submission.document_id], (metaErr, metaRows) => {
+        if (metaErr || !metaRows || metaRows.length === 0) {
+            console.error("[Repository Auto-Archive] Could not load document metadata:", metaErr);
+            return done(metaErr);
+        }
+
+        const docMeta = metaRows[0];
+        const relPath = String(docMeta.signed_file_path || docMeta.file_path || "").replace(/^\/+/, "");
+        const diskPath = relPath ? path.join(__dirname, relPath) : "";
+
+        if (!diskPath || !fs.existsSync(diskPath)) {
+            console.warn("[Repository Auto-Archive] Manuscript file not found on disk:", diskPath);
+            return done(null);
+        }
+
+        const membersSql = `
+            SELECT u.fullname
+            FROM group_members gm
+            JOIN users u ON gm.student_id = u.id
+            WHERE gm.group_id = ?
+            ORDER BY u.fullname ASC
+        `;
+
+        db.query(membersSql, [docMeta.group_id], async (memErr, memRows) => {
+            const researchers = (!memErr && Array.isArray(memRows) && memRows.length > 0)
+                ? memRows.map(r => r.fullname).filter(Boolean).join(", ")
+                : "";
+
+            const rawProg = String(docMeta.group_program || "").trim().toUpperCase();
+            const repoProgram = (rawProg === "IS" || rawProg === "BSIS") ? "IS" : "IT";
+            const fallbackTitle = String(docMeta.approved_proposal_title || docMeta.group_project_title || "").trim();
+            const fallbackObjectives = String(docMeta.approved_proposal_objectives || "").trim();
+            const currentYear = String(new Date().getFullYear());
+
+            const extracted = await extractRepositoryFieldsFromManuscriptPdf(diskPath, {
+                fallbackTitle,
+                fallbackObjectives
+            });
+
+            console.log(`[Repository Auto-Archive] Extracted from "${docMeta.document_title}" (first 80 pages):`, {
+                title: extracted.title,
+                program: repoProgram,
+                category: extracted.category,
+                abstractLen: extracted.abstract.length,
+                objectivesLen: extracted.objectives.length,
+                problemLen: extracted.research_problem.length,
+                methodologyLen: extracted.methodology.length
+            });
+
+            // Upsert into repository table so re-approving an updated Chapter 1-4 updates rather than duplicates
+            db.query(
+                `SELECT id FROM repository WHERE LOWER(TRIM(title)) = LOWER(TRIM(?)) LIMIT 1`,
+                [extracted.title],
+                (findErr, existingRows) => {
+                    if (!findErr && existingRows && existingRows.length > 0) {
+                        const existingId = existingRows[0].id;
+                        db.query(
+                            `UPDATE repository
+                             SET program = ?,
+                                 title = ?,
+                                 abstract = ?,
+                                 objectives = ?,
+                                 research_problem = ?,
+                                 methodology = ?,
+                                 researchers = ?,
+                                 adviser = ?,
+                                 category = ?,
+                                 year = ?
+                             WHERE id = ?`,
+                            [
+                                repoProgram,
+                                extracted.title,
+                                extracted.abstract,
+                                extracted.objectives,
+                                extracted.research_problem || null,
+                                extracted.methodology,
+                                researchers,
+                                adviserName || "",
+                                extracted.category,
+                                currentYear,
+                                existingId
+                            ],
+                            (upErr) => {
+                                if (upErr) console.error("[Repository Auto-Archive] Update error:", upErr);
+                                try { hfStudyEmbeddingsCache.clear(); } catch (_) {}
+                                return done(upErr, existingId);
+                            }
+                        );
+                    } else {
+                        db.query(
+                            `INSERT INTO repository
+                             (program, title, abstract, objectives, research_problem, methodology, researchers, adviser, category, year)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            [
+                                repoProgram,
+                                extracted.title,
+                                extracted.abstract,
+                                extracted.objectives,
+                                extracted.research_problem || null,
+                                extracted.methodology,
+                                researchers,
+                                adviserName || "",
+                                extracted.category,
+                                currentYear
+                            ],
+                            (insErr, insRes) => {
+                                if (insErr) console.error("[Repository Auto-Archive] Insert error:", insErr);
+                                try { hfStudyEmbeddingsCache.clear(); } catch (_) {}
+                                return done(insErr, insRes ? insRes.insertId : null);
+                            }
+                        );
+                    }
+                }
+            );
+        });
+    });
+}
+
 /* ================= ONGOING STUDY BODY LIVE FETCH ================= */
 /* Returns the latest extracted text (PDF body text) for a matched ongoing group.
    Called by the frontend compare modal when displaying an ongoing study. */
@@ -7599,39 +8378,46 @@ app.get("/adviser-capstone-groups/:adviserUserId", (req, res) => {
                             }
 
                             const groupMinutesList = (minutesRows || []).filter(m => Number(m.group_id) === Number(group.group_db_id));
-                            let latest_minutes = null;
-                            if (groupMinutesList.length > 0) {
-                                const sortedMin = groupMinutesList.slice().sort((a, b) => {
+                            const defense_minutes = groupMinutesList
+                                .slice()
+                                .sort((a, b) => {
                                     const aDraft = (a.minutes_status === "Draft" || a.minutes_status === "Pending Review") ? 1 : 0;
                                     const bDraft = (b.minutes_status === "Draft" || b.minutes_status === "Pending Review") ? 1 : 0;
                                     if (aDraft !== bDraft) return bDraft - aDraft;
-                                    return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+                                    return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+                                })
+                                .map(minRec => {
+                                    const minSched = groupSchedules.find(s => Number(s.schedule_id) === Number(minRec.schedule_id)) || null;
+                                    let parsedEntries = null;
+                                    if (minRec.extra_notes_json) {
+                                        try { parsedEntries = JSON.parse(minRec.extra_notes_json); } catch (e) { parsedEntries = null; }
+                                    }
+                                    return {
+                                        id: minRec.id,
+                                        schedule_id: minRec.schedule_id,
+                                        schedule_code: minSched ? minSched.schedule_code : "",
+                                        defense_type: minSched ? minSched.defense_type : "Capstone Defense",
+                                        defense_date: minSched ? minSched.defense_date : null,
+                                        start_time: minSched ? minSched.start_time : null,
+                                        end_time: minSched ? minSched.end_time : null,
+                                        room: minSched ? minSched.room : "TBA",
+                                        minutes_status: minRec.minutes_status || "Approved",
+                                        submitted_by_role: minRec.submitted_by_role || "adviser",
+                                        adviser_feedback: minRec.adviser_feedback || "",
+                                        panel_chair_notes: minRec.panel_chair_notes || "",
+                                        panel_1_notes: minRec.panel_1_notes || "",
+                                        panel_2_notes: minRec.panel_2_notes || "",
+                                        entries: parsedEntries,
+                                        updated_at: minRec.updated_at || minRec.created_at || null
+                                    };
                                 });
-                                const minRec = sortedMin[0];
-                                const minSched = groupSchedules.find(s => Number(s.schedule_id) === Number(minRec.schedule_id)) || null;
-                                let parsedEntries = null;
-                                if (minRec.extra_notes_json) {
-                                    try { parsedEntries = JSON.parse(minRec.extra_notes_json); } catch (e) { parsedEntries = null; }
-                                }
-                                latest_minutes = {
-                                    schedule_id: minRec.schedule_id,
-                                    schedule_code: minSched ? minSched.schedule_code : "",
-                                    defense_type: minSched ? minSched.defense_type : "Capstone Defense",
-                                    defense_date: minSched ? minSched.defense_date : null,
-                                    start_time: minSched ? minSched.start_time : null,
-                                    end_time: minSched ? minSched.end_time : null,
-                                    room: minSched ? minSched.room : "TBA",
-                                    minutes_status: minRec.minutes_status || "Approved",
-                                    submitted_by_role: minRec.submitted_by_role || "adviser",
-                                    adviser_feedback: minRec.adviser_feedback || "",
-                                    entries: parsedEntries
-                                };
-                            }
+                            const latest_minutes = defense_minutes.length > 0 ? defense_minutes[0] : null;
 
                             return {
                                 ...group,
                                 ongoing_defense,
                                 latest_minutes,
+                                defense_minutes,
                                 members: membersResult.filter(member =>
                                     member.group_id === group.group_db_id
                                 ),
@@ -8085,7 +8871,9 @@ app.post("/typed-defense-minutes/send", (req, res) => {
             (exErr, exRows) => {
                 const existing = (!exErr && exRows && exRows[0]) ? exRows[0] : null;
                 if (existing) {
-                    const hasAdvSig = Boolean(existing.adviser_signature_json);
+                    let existingAdv = null;
+                    try { existingAdv = existing.adviser_signature_json ? JSON.parse(existing.adviser_signature_json) : null; } catch (_) { }
+                    const hasAdvSig = Boolean(existingAdv && existingAdv.signatureImage && existingAdv.reviewStatus !== "Subject to Change" && existingAdv.reviewStatus !== "Rejected");
                     let eligible = [];
                     let sigs = [];
                     try { eligible = JSON.parse(existing.eligible_panelist_ids_json || "[]"); } catch (_) { }
@@ -8095,6 +8883,7 @@ app.post("/typed-defense-minutes/send", (req, res) => {
                     // Keep only approved/signed panelist entries; drop rejections/revision requests so those panelists can re-review
                     const keptSigs = sigs.filter(s => s && s.signatureImage && s.reviewStatus !== "Subject to Change" && s.reviewStatus !== "Rejected");
                     const nextStatus = hasAdvSig ? "Pending Panelist Signatures" : "Pending Adviser Signature";
+                    const nextAdvSigJson = hasAdvSig ? existing.adviser_signature_json : null;
 
                     db.query(
                         `UPDATE typed_defense_minutes
@@ -8103,10 +8892,11 @@ app.post("/typed-defense-minutes/send", (req, res) => {
                              adviser_id = ?,
                              minutes_json = ?,
                              status = ?,
+                             adviser_signature_json = ?,
                              panelist_signatures_json = ?,
                              updated_at = NOW()
                          WHERE id = ?`,
-                        [scheduleId || null, studentUserId, info.adviser_id, JSON.stringify(minutesData), nextStatus, JSON.stringify(keptSigs), existing.id],
+                        [scheduleId || null, studentUserId, info.adviser_id, JSON.stringify(minutesData), nextStatus, nextAdvSigJson, JSON.stringify(keptSigs), existing.id],
                         (uErr) => {
                             if (uErr) {
                                 console.error("Update typed defense minutes error:", uErr);
@@ -8247,9 +9037,18 @@ app.post("/typed-defense-minutes/adviser-sign", (req, res) => {
                 // Handle Adviser Request Revision ("Subject to Change") or Reject ("Rejected")
                 if (!isApproval) {
                     const cleanNote = String(reviewComment || "").trim();
+                    const adviserVerdictObj = {
+                        adviserId: adviser.id,
+                        signedBy: adviser.fullname,
+                        reviewStatus: effectiveStatus,
+                        reviewComment: cleanNote,
+                        signatureImage: null,
+                        dateSigned: "",
+                        reviewedAt: new Date().toISOString()
+                    };
                     db.query(
-                        `UPDATE typed_defense_minutes SET adviser_signature_json = NULL, status = ?, updated_at = NOW() WHERE id = ?`,
-                        [effectiveStatus, id],
+                        `UPDATE typed_defense_minutes SET adviser_signature_json = ?, status = ?, updated_at = NOW() WHERE id = ?`,
+                        [JSON.stringify(adviserVerdictObj), effectiveStatus, id],
                         (upErr) => {
                             if (upErr) {
                                 console.error("Adviser reject/revision defense minutes error:", upErr);
@@ -8402,13 +9201,13 @@ app.get("/typed-defense-minutes/panelist/:userId", (req, res) => {
                     return false;
                 }
             });
-            res.json({ success: true, panelistDbId, minutes: filtered });
+            res.json({ success: true, panelistDbId, panelistFullName: uRows[0].fullname || "", minutes: filtered });
         });
     });
 });
 
 app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
-    const { id, panelistUserId, reviewStatus, reviewComment, signatureImage, dateSigned, pageIndex, xPct, yPct, widthPct } = req.body || {};
+    const { id, panelistUserId, reviewStatus, reviewComment, signatureImage, dateSigned, pageIndex, xPct, yPct, widthPct, targetPanelIndex, targetPanelName } = req.body || {};
     const effectiveStatus = String(reviewStatus || "Approved").trim();
     const isApproval = effectiveStatus === "Approved";
 
@@ -8441,6 +9240,24 @@ app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
                 try { sigs = JSON.parse(record.panelist_signatures_json || "[]"); } catch (_) { sigs = []; }
                 if (!Array.isArray(sigs)) sigs = [];
 
+                // Resolve the logged-in panelist's own slot on the minutes sheet so one panelist can never sign another panelist's slot
+                let resolvedTargetIdx = (targetPanelIndex !== undefined && targetPanelIndex !== null && targetPanelIndex !== "") ? Number(targetPanelIndex) : null;
+                let resolvedTargetName = targetPanelName ? String(targetPanelName).trim() : panelist.fullname;
+                try {
+                    const parsedMinutes = JSON.parse(record.minutes_json || "{}");
+                    const sheetPanelists = Array.isArray(parsedMinutes.panelists) ? parsedMinutes.panelists : [];
+                    const normName = (s) => String(s || "").toLowerCase().replace(/\b(dr|engr|prof|mr|ms|mrs|sir|maam|phd|mit|msit|mscs|dit)\b\.?/g, " ").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+                    const myNorm = normName(panelist.fullname);
+                    const ownIdx = sheetPanelists.findIndex(p =>
+                        (p && p.panelistId && Number(p.panelistId) === Number(panelist.id)) ||
+                        (p && p.name && myNorm && (normName(p.name) === myNorm || normName(p.name).includes(myNorm) || myNorm.includes(normName(p.name))))
+                    );
+                    if (ownIdx >= 0) {
+                        resolvedTargetIdx = ownIdx;
+                        resolvedTargetName = sheetPanelists[ownIdx].name || panelist.fullname;
+                    }
+                } catch (_) { }
+
                 const newEntry = {
                     panelistId: Number(panelist.id),
                     signedBy: panelist.fullname,
@@ -8452,6 +9269,8 @@ app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
                     xPct: Number(xPct ?? 8),
                     yPct: Number(yPct ?? 40),
                     widthPct: Number(widthPct ?? 18),
+                    targetPanelIndex: resolvedTargetIdx,
+                    targetPanelName: resolvedTargetName,
                     signedAt: new Date().toISOString()
                 };
 
@@ -8861,13 +9680,13 @@ app.get("/student-documents/:userId", (req, res) => {
                         const stageStr = String(group.stage || '').toLowerCase().trim();
                         const progressVal = Number(group.progress || 0);
 
-                        if (progressVal >= 25 || stageStr.includes('stage 2') || stageStr.includes('outline') || stageStr.includes('stage 3') || stageStr.includes('pre-final') || stageStr.includes('stage 4') || stageStr.includes('final')) {
+                        if (progressVal >= 20 || stageStr.includes('stage 2') || stageStr.includes('outline') || stageStr.includes('stage 3') || stageStr.includes('pre-final') || stageStr.includes('stage 4') || stageStr.includes('final') || stageStr.includes('deployment') || stageStr.includes('completed')) {
                             gradedSet.add("Concept Presentation");
                         }
-                        if (progressVal >= 50 || stageStr.includes('stage 3') || stageStr.includes('pre-final') || stageStr.includes('stage 4') || stageStr.includes('final')) {
+                        if (progressVal >= 40 || stageStr.includes('stage 3') || stageStr.includes('pre-final') || stageStr.includes('stage 4') || stageStr.includes('final') || stageStr.includes('deployment') || stageStr.includes('completed')) {
                             gradedSet.add("Outline Defense");
                         }
-                        if (progressVal >= 75 || stageStr.includes('stage 4') || stageStr.includes('final')) {
+                        if (progressVal >= 60 || stageStr.includes('stage 4') || stageStr.includes('final') || stageStr.includes('deployment') || stageStr.includes('completed')) {
                             gradedSet.add("Pre-Final Defense");
                         }
 
@@ -12201,6 +13020,76 @@ app.delete("/faculty-delete-announcement/:announcementId", (req, res) => {
 
 /* ================= LOAD DEFENSE SCHEDULE DATA ================= */
 
+/* ================= PREDEFINED DEFENSE TIME SLOTS & OCCUPIED CHECK (/api/...) ================= */
+
+app.get("/api/defense-time-slots", (req, res) => {
+    const defaultSlots = [
+        { id: 1, slot_label: "08:00 AM - 10:00 AM", start_time: "08:00:00", end_time: "10:00:00", period: "Morning", sort_order: 1 },
+        { id: 2, slot_label: "10:00 AM - 12:00 PM", start_time: "10:00:00", end_time: "12:00:00", period: "Morning", sort_order: 2 },
+        { id: 3, slot_label: "01:00 PM - 03:00 PM", start_time: "13:00:00", end_time: "15:00:00", period: "Afternoon", sort_order: 3 },
+        { id: 4, slot_label: "03:00 PM - 05:00 PM", start_time: "15:00:00", end_time: "17:00:00", period: "Afternoon", sort_order: 4 }
+    ];
+
+    db.query(
+        "SELECT id, slot_label, start_time, end_time, period, sort_order FROM defense_time_slots WHERE is_active = 1 ORDER BY sort_order ASC, start_time ASC",
+        (err, rows) => {
+            if (err || !rows || rows.length === 0) {
+                return res.json({ success: true, slots: defaultSlots });
+            }
+            res.json({ success: true, slots: rows });
+        }
+    );
+});
+
+app.get("/api/defense-schedules/occupied-slots", (req, res) => {
+    const date = String(req.query.date || "").trim();
+    const room = String(req.query.room || "").trim();
+    const excludeScheduleId = req.query.excludeScheduleId ? Number(req.query.excludeScheduleId) : null;
+
+    if (!date) {
+        return res.json({ success: true, occupied: [] });
+    }
+
+    let sql = `
+        SELECT
+            ds.id,
+            ds.room_name,
+            ds.defense_date,
+            ds.start_time,
+            ds.end_time,
+            ds.time_slot_label,
+            ds.defense_type,
+            ds.defense_status,
+            cg.group_name,
+            cg.group_id AS group_code
+        FROM defense_schedules ds
+        LEFT JOIN capstone_groups cg ON ds.group_id = cg.id
+        WHERE ds.defense_date = ?
+          AND ds.defense_status NOT IN ('Cancelled', 'Completed')
+    `;
+    const params = [date];
+
+    if (room) {
+        sql += ` AND LOWER(TRIM(ds.room_name)) = LOWER(TRIM(?))`;
+        params.push(room);
+    }
+
+    if (excludeScheduleId) {
+        sql += ` AND ds.id != ?`;
+        params.push(excludeScheduleId);
+    }
+
+    sql += ` ORDER BY ds.start_time ASC`;
+
+    db.query(sql, params, (err, rows) => {
+        if (err) {
+            console.error("Error fetching occupied defense slots:", err);
+            return res.json({ success: false, message: "Failed to check occupied slots.", occupied: [] });
+        }
+        res.json({ success: true, occupied: rows || [] });
+    });
+});
+
 app.get("/defense-schedule-data", (req, res) => {
 
     const groupsSql = `
@@ -12433,7 +13322,7 @@ app.get("/defense-schedules", (req, res) => {
                 JOIN users u
                     ON dsp.panelist_id = u.id
 
-                ORDER BY u.fullname ASC
+                ORDER BY dsp.id ASC
             `;
 
             db.query(panelistsSql, (err, panelists) => {
@@ -12578,6 +13467,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
         defenseDate,
         startTime,
         endTime,
+        timeSlotLabel,
         defenseType,
         defenseStatus,
         notes
@@ -12736,6 +13626,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                         WHERE defense_date = ?
                         AND room_name = ?
                         AND id != ?
+                        AND defense_status NOT IN ('Cancelled', 'Completed')
                         AND (
                             (? < end_time AND ? > start_time)
                         )
@@ -12808,7 +13699,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                                     WHERE dsp.panelist_id IN (?)
                                     AND ds.id != ?
                                     AND ds.defense_date = ?
-                                    AND ds.defense_status != 'Cancelled'
+                                    AND ds.defense_status NOT IN ('Cancelled', 'Completed')
                                     AND (? < ds.end_time AND ? > ds.start_time)
                                     LIMIT 1
                                 `;
@@ -12844,6 +13735,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                                                 defense_date = ?,
                                                 start_time = ?,
                                                 end_time = ?,
+                                                time_slot_label = ?,
                                                 defense_type = ?,
                                                 defense_status = ?,
                                                 notes = ?
@@ -12860,6 +13752,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                                                 defenseDate,
                                                 startTime,
                                                 endTime,
+                                                timeSlotLabel || null,
                                                 defenseType || "Capstone Defense",
                                                 defenseStatus,
                                                 notes || "",
@@ -13535,7 +14428,7 @@ const CONSULTATION_CATALOG = [
     {
         category: "Pre-Final Defense",
         items: [
-            { label: "Chapter 3-4", slots: 1 },
+            { label: "Chapter 1-2", slots: 1 },
             { label: "Recommendation letter", slots: 1 },
             { label: "Defense minutes", slots: 1 }
         ]
@@ -14373,6 +15266,7 @@ app.post("/create-defense-schedule", (req, res) => {
         defenseDate,
         startTime,
         endTime,
+        timeSlotLabel,
         defenseType,
         notes
     } = req.body;
@@ -14391,6 +15285,23 @@ app.post("/create-defense-schedule", (req, res) => {
             success: false,
             message: "Please complete all required schedule fields and select at least one panelist."
         });
+    }
+
+    if (/^Online:/i.test(String(roomName)) && !/^https?:\/\/\S+$/i.test(String(roomName).replace(/^Online:\s*/i, "").trim())) {
+        return res.json({ success: false, message: "Please enter a valid meeting link (starting with http:// or https://) for an online defense." });
+    }
+
+    {
+        const MIN_DEFENSE_MINUTES = 60;
+        const toMin = (v) => { const p = String(v).split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); };
+        const dur = toMin(endTime) - toMin(startTime);
+        if (!(dur >= MIN_DEFENSE_MINUTES)) {
+            return res.json({ success: false, message: "Defense duration must be at least 1 hour. Please choose a longer time slot." });
+        }
+        const startAt = new Date(String(defenseDate).slice(0, 10) + "T" + String(startTime).slice(0, 5) + ":00");
+        if (!isNaN(startAt.getTime()) && startAt.getTime() < Date.now()) {
+            return res.json({ success: false, message: "Cannot create a defense schedule in the past. Please choose a future date and time." });
+        }
     }
 
     validateGroupReadyForScheduleCreate(
@@ -14545,7 +15456,7 @@ app.post("/create-defense-schedule", (req, res) => {
                         FROM defense_schedules
                         WHERE defense_date = ?
                         AND room_name = ?
-                        AND defense_status != 'Cancelled'
+                        AND defense_status NOT IN ('Cancelled', 'Completed')
                         AND (
                             (? < end_time AND ? > start_time)
                         )
@@ -14586,7 +15497,7 @@ app.post("/create-defense-schedule", (req, res) => {
                                 JOIN users u ON dsp.panelist_id = u.id
                                 WHERE dsp.panelist_id IN (?)
                                 AND ds.defense_date = ?
-                                AND ds.defense_status != 'Cancelled'
+                                AND ds.defense_status NOT IN ('Cancelled', 'Completed')
                                 AND (? < ds.end_time AND ? > ds.start_time)
                                 LIMIT 1
                             `;
@@ -14845,6 +15756,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                 WHERE defense_date = ?
                 AND room_name = ?
                 AND id != ?
+                AND defense_status NOT IN ('Cancelled', 'Completed')
                 AND (
                     (? < end_time AND ? > start_time)
                 )
@@ -15243,22 +16155,25 @@ function buildDefenseNotificationMessage(action, defenseDate, startTime, endTime
     const panelLine =
         `Panel: ${panelistNamesText || "No panelists listed"}.`;
     const reasonLine = cancelReason ? ` Reason: ${cancelReason}.` : "";
+    const roomText = /^Online:/i.test(String(roomName || ""))
+        ? `ONLINE. Meeting link: ${String(roomName).replace(/^Online:\s*/i, "")}`
+        : `at ${roomName}`;
 
     if (action === "created") {
 
-        return `A defense schedule has been created on ${defenseDate} from ${startTime} to ${endTime} at ${roomName}. ${panelLine}`;
+        return `A defense schedule has been created on ${defenseDate} from ${startTime} to ${endTime} ${roomText}. ${panelLine}`;
 
     }
 
     if (action === "updated") {
 
-        return `A defense schedule was updated. New schedule: ${defenseDate} from ${startTime} to ${endTime} at ${roomName}. ${panelLine}`;
+        return `A defense schedule was updated. New schedule: ${defenseDate} from ${startTime} to ${endTime} ${roomText}. ${panelLine}`;
 
     }
 
     if (action === "deleted" || action === "cancelled") {
 
-        return `A defense schedule on ${defenseDate} from ${startTime} to ${endTime} at ${roomName} has been cancelled.${reasonLine} ${panelLine}`;
+        return `A defense schedule on ${defenseDate} from ${startTime} to ${endTime} ${roomText} has been cancelled.${reasonLine} ${panelLine}`;
 
     }
 
@@ -17580,7 +18495,7 @@ function getGroupStageAfterDefense(defenseType, panelResult) {
         "Concept Presentation": "Stage 2",
         "Outline Defense": "Stage 3",
         "Pre-Final Defense": "Stage 4",
-        "Final Defense": "Final"
+        "Final Defense": "Deployment"
     };
 
     return stageMap[phaseCategory] || null;
@@ -17591,11 +18506,12 @@ function getProgressPercentForStage(stage) {
 
     const progressMap = {
         "Stage 1": 0,
-        "Stage 2": 25,
-        "Stage 3": 50,
-        "Stage 4": 75,
-        "Stage 5": 100,
-        "Final": 100,
+        "Stage 2": 20,
+        "Stage 3": 40,
+        "Stage 4": 60,
+        "Stage 5": 80,
+        "Deployment": 80,
+        "Final": 80,
         "Completed": 100
     };
 
@@ -19847,6 +20763,12 @@ function isEnvironmentalScanningDoc(documentType, documentTitle) {
     return docType.includes("environmental scanning") || docTitle.includes("environmental scanning");
 }
 
+function isDeploymentRecommendationDoc(documentType, documentTitle) {
+    const docType = String(documentType || "").toLowerCase();
+    const docTitle = String(documentTitle || "").toLowerCase();
+    return docType.includes("recommendation for deployment") || docTitle.includes("recommendation for deployment");
+}
+
 function isAdviserSigningDocumentType(documentType, documentTitle) {
 
     const docType =
@@ -19863,6 +20785,8 @@ function isAdviserSigningDocumentType(documentType, documentTitle) {
         || docTitle.includes("recommendation for concept")
         || docType.includes("recommendation for outline")
         || docTitle.includes("recommendation for outline")
+        || docType.includes("recommendation for deployment")
+        || docTitle.includes("recommendation for deployment")
         || docType.includes("recommendation letter")
         || docTitle.includes("recommendation letter")
         || docType.includes("environmental scanning")
@@ -19937,6 +20861,12 @@ async function embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement, o
     const pageH =
         page.getHeight();
 
+    const hasDirectRatios =
+        placement &&
+        placement.xRatio !== undefined &&
+        placement.yRatio !== undefined &&
+        !placement.containerWidth;
+
     const containerWidth =
         Number(placement.containerWidth || 1);
 
@@ -19955,17 +20885,21 @@ async function embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement, o
     const sigHeight =
         Number(placement.sigHeight || 50);
 
-    const xRatio =
-        sigLeft / containerWidth;
+    const xRatio = hasDirectRatios
+        ? Number(placement.xRatio || 0)
+        : (sigLeft / containerWidth);
 
-    const yRatio =
-        sigTop / containerHeight;
+    const yRatio = hasDirectRatios
+        ? Number(placement.yRatio || 0)
+        : (sigTop / containerHeight);
 
-    const wRatio =
-        sigWidth / containerWidth;
+    const wRatio = hasDirectRatios
+        ? Number(placement.widthRatio || 0.22)
+        : (sigWidth / containerWidth);
 
-    const hRatio =
-        sigHeight / containerHeight;
+    const hRatio = hasDirectRatios
+        ? Number(placement.heightRatio || 0.08)
+        : (sigHeight / containerHeight);
 
     const drawW =
         pageW * wRatio;
@@ -21424,6 +22358,10 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                             submission.document_type,
                             submission.document_title
                         );
+                        const isDeploymentRec = isDeploymentRecommendationDoc(
+                            submission.document_type,
+                            submission.document_title
+                        );
                         const isRecommendationDoc = isAdviserOnlyDoc(
                             submission.document_type,
                             submission.document_title
@@ -21431,7 +22369,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
 
                         const updateDocumentSql =
                             (finalStatus === "Approved")
-                                ? (isAcceptanceDoc
+                                ? ((isAcceptanceDoc || isDeploymentRec)
                                     ? `
                                     UPDATE student_documents
                                     SET
@@ -21482,7 +22420,9 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                             : 'Adviser Signed Your Document';
                                         notifyMessage = isRecommendationDoc
                                             ? `${adviserName} (Adviser) signed and approved your "${submission.document_title}" document. It is now fully approved. ${reviewComment ? 'Notes: ' + reviewComment : ''}`
-                                            : `${adviserName} (Adviser) signed your "${submission.document_title}" document. It has been forwarded to the Dean for final approval. ${reviewComment ? 'Notes: ' + reviewComment : ''}`;
+                                            : isDeploymentRec
+                                                ? `${adviserName} (Adviser) signed your "${submission.document_title}" document. It has been sent to your 3 defense panelists for e-signature.`
+                                                : `${adviserName} (Adviser) signed your "${submission.document_title}" document. It has been forwarded to the Dean for final approval. ${reviewComment ? 'Notes: ' + reviewComment : ''}`;
                                     } else if (finalStatus === 'Rejected') {
                                         notifyTitle = 'Document Rejected by Adviser';
                                         notifyMessage = `Your "${submission.document_title}" was rejected by ${adviserName} (Adviser). Reason: ${reviewComment || 'No reason provided.'} Please review and resubmit if needed.`;
@@ -21516,7 +22456,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                                 success: true,
                                                 message:
                                                     finalStatus === 'Approved'
-                                                        ? (isRecommendationDoc ? 'Recommendation document signed and fully approved. Student notified.' : isAcceptanceDoc ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and returned to the student.')
+                                                        ? (isRecommendationDoc ? 'Recommendation document signed and fully approved. Student notified.' : isDeploymentRec ? 'Document signed and forwarded to all 3 defense panelists.' : isAcceptanceDoc ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and returned to the student.')
                                                         : finalStatus === 'Rejected'
                                                             ? 'Document rejected. Student has been notified with your reason.'
                                                             : 'Revision requested. Student has been notified.',
@@ -21526,8 +22466,82 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                     );
                                 };
 
-                                /* Route to Dean only for acceptance docs, NOT for recommendation docs */
-                                if (finalStatus === "Approved" && isAcceptanceDoc && !isRecommendationDoc) {
+                                /* Route Recommendation for Deployment to all 3 panelists */
+                                if (finalStatus === "Approved" && isDeploymentRec) {
+                                    const getPanelistsSql = `
+                                        SELECT DISTINCT dsp.panelist_id
+                                        FROM student_documents sd
+                                        JOIN defense_schedules ds ON ds.group_id = sd.group_id
+                                        JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+                                        WHERE sd.id = ?
+                                          AND ds.defense_status != 'Cancelled'
+                                          AND ds.id = (
+                                              SELECT ds2.id
+                                              FROM defense_schedules ds2
+                                              JOIN defense_schedule_panelists dsp2 ON dsp2.schedule_id = ds2.id
+                                              WHERE ds2.group_id = sd.group_id
+                                                AND ds2.defense_status != 'Cancelled'
+                                              ORDER BY
+                                                CASE WHEN LOWER(ds2.defense_type) LIKE '%final%' THEN 0 ELSE 1 END,
+                                                ds2.id DESC
+                                              LIMIT 1
+                                          )
+                                    `;
+                                    db.query(getPanelistsSql, [submission.document_id], (errPan, panRows) => {
+                                        if (errPan || !panRows || panRows.length === 0) {
+                                            console.log("No panelists found for Recommendation for Deployment", errPan);
+                                            proceedWithNotifications();
+                                            return;
+                                        }
+                                        const routeToPanelists = (idx) => {
+                                            if (idx >= panRows.length) {
+                                                proceedWithNotifications();
+                                                return;
+                                            }
+                                            const panelistDbId = panRows[idx].panelist_id;
+                                            db.query(
+                                                `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? AND target_role = 'panelist' LIMIT 1`,
+                                                [submission.document_id, panelistDbId],
+                                                (errExist, existResult) => {
+                                                    const msg = "Adviser signed. Pending panelist e-signature (any 1 of 3 panelists).";
+                                                    if (existResult && existResult.length > 0) {
+                                                        db.query(
+                                                            `UPDATE document_submissions
+                                                             SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', target_role = 'panelist', sent_at = NOW()
+                                                             WHERE id = ?`,
+                                                            [msg, existResult[0].id],
+                                                            () => {
+                                                                db.query(
+                                                                    `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                     VALUES (?, ?, ?, 'Document Review')`,
+                                                                    [panelistDbId, "Recommendation for Deployment Pending E-Signature", `${adviserName} signed Recommendation for Deployment. It is now pending a panelist e-signature.`, "Document Review"],
+                                                                    () => { }
+                                                                );
+                                                                routeToPanelists(idx + 1);
+                                                            }
+                                                        );
+                                                    } else {
+                                                        db.query(
+                                                            `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status, target_role)
+                                                             VALUES (?, ?, ?, ?, 'Pending Review', 'panelist')`,
+                                                            [submission.document_id, submission.sender_id, panelistDbId, msg],
+                                                            () => {
+                                                                db.query(
+                                                                    `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                     VALUES (?, ?, ?, 'Document Review')`,
+                                                                    [panelistDbId, "Recommendation for Deployment Pending E-Signature", `${adviserName} signed Recommendation for Deployment. It is now pending a panelist e-signature.`, "Document Review"],
+                                                                    () => { }
+                                                                );
+                                                                routeToPanelists(idx + 1);
+                                                            }
+                                                        );
+                                                    }
+                                                }
+                                            );
+                                        };
+                                        routeToPanelists(0);
+                                    });
+                                } else if (finalStatus === "Approved" && isAcceptanceDoc && !isRecommendationDoc) {
                                     const getDeansSql = `
                                         SELECT id FROM users
                                         WHERE role = 'admin' AND LOWER(position) = 'dean'
@@ -21666,8 +22680,8 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
         }
 
         const adminPosition = String(adminResult[0].position || "").toLowerCase();
-        const isDean = adminPosition === "dean";
-        const isChair = adminPosition === "program chairperson is" || adminPosition === "program chairperson it";
+        const isDean = adminPosition.includes("dean");
+        const isChair = adminPosition.includes("chairperson");
 
         if (!isDean && !isChair) {
             return res.json({
@@ -21828,8 +22842,10 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                     }
 
                     const isEnvScan = isEnvironmentalScanningDoc(submission.document_type, submission.document_title);
+                    const isDeploymentRec = isDeploymentRecommendationDoc(submission.document_type, submission.document_title);
+                    const isChairToDean = isEnvScan || isDeploymentRec;
                     let targetDocStatus = 'Approved';
-                    if (isEnvScan && isChair && finalStatus === "Approved") {
+                    if (isChairToDean && isChair && finalStatus === "Approved") {
                         targetDocStatus = 'Chairperson Signed';
                     }
 
@@ -21867,10 +22883,12 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
 
                         let notifyTitle, notifyMessage;
                         if (finalStatus === 'Approved') {
-                            notifyTitle = isEnvScan
-                                ? (isChair ? 'Chairperson Signed Environmental Scanning' : 'Dean Signed Environmental Scanning')
+                            notifyTitle = isChairToDean
+                                ? (isChair
+                                    ? `Chairperson Signed ${isDeploymentRec ? 'Recommendation for Deployment' : 'Environmental Scanning'}`
+                                    : `Dean Signed ${isDeploymentRec ? 'Recommendation for Deployment' : 'Environmental Scanning'}`)
                                 : 'Dean Signed Your Document';
-                            notifyMessage = isEnvScan
+                            notifyMessage = isChairToDean
                                 ? (isChair
                                     ? `${adminName} (Chairperson) signed your "${submission.document_title}" document. It has been forwarded to the Dean for final approval.`
                                     : `${adminName} (Dean) signed and fully approved your "${submission.document_title}" document.`)
@@ -21903,7 +22921,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                         success: true,
                                         message:
                                             finalStatus === 'Approved'
-                                                ? (isEnvScan && isChair ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and fully approved. Student has been notified.')
+                                                ? (isChairToDean && isChair ? 'Document signed and forwarded to the Dean. Student has been notified.' : 'Document signed and fully approved. Student has been notified.')
                                                 : finalStatus === 'Rejected'
                                                     ? 'Document rejected. Student has been notified with your reason.'
                                                     : 'Revision requested. Student has been notified.',
@@ -21913,7 +22931,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                             );
                         };
 
-                        if (finalStatus === "Approved" && isEnvScan && isChair) {
+                        if (finalStatus === "Approved" && isChairToDean && isChair) {
                             const getDeansSql = `
                                 SELECT id FROM users
                                 WHERE role = 'admin' AND LOWER(position) = 'dean'
@@ -21929,8 +22947,9 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                             return;
                                         }
                                         const deanDbId = deanRows[idx].id;
+                                        const docLabel = isDeploymentRec ? "Recommendation for Deployment" : "Environmental Scanning Form";
                                         db.query(
-                                            `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? LIMIT 1`,
+                                            `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? AND target_role = 'admin' LIMIT 1`,
                                             [submission.document_id, deanDbId],
                                             (errExist, existResult) => {
                                                 if (existResult && existResult.length > 0) {
@@ -21943,7 +22962,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                                             db.query(
                                                                 `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                  VALUES (?, ?, ?, 'Document Review')`,
-                                                                [deanDbId, "Environmental Scanning Signed", `${adminName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
+                                                                [deanDbId, `${docLabel} Signed`, `${adminName} has signed the ${docLabel}. It is now pending your signature.`, "Document Review"],
                                                                 () => { }
                                                             );
                                                             routeToDean(idx + 1);
@@ -21958,7 +22977,7 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                                             db.query(
                                                                 `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
                                                                  VALUES (?, ?, ?, 'Document Review')`,
-                                                                [deanDbId, "Environmental Scanning Pending Signature", `${adminName} has signed the Environmental Scanning Form. It is now pending your signature.`, "Document Review"],
+                                                                [deanDbId, `${docLabel} Pending Signature`, `${adminName} has signed the ${docLabel}. It is now pending your signature.`, "Document Review"],
                                                                 () => { }
                                                             );
                                                             routeToDean(idx + 1);
@@ -21979,6 +22998,387 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
             );
         });
     });
+});
+
+/* ================= PANELIST DOCUMENT E-SIGNING (RECOMMENDATION FOR DEPLOYMENT) ================= */
+
+app.get("/panelist-signing-documents/:userId", (req, res) => {
+    const userId = req.params.userId;
+    if (!userId) {
+        return res.json({ success: false, message: "Missing user ID." });
+    }
+
+    db.query(
+        `SELECT id, fullname FROM users WHERE user_id = ? AND role IN ('faculty', 'admin') LIMIT 1`,
+        [userId],
+        (errUser, userRows) => {
+            if (errUser || !userRows || userRows.length === 0) {
+                return res.json({ success: false, message: "Panelist account not found." });
+            }
+            const panelistDbId = userRows[0].id;
+            const sql = `
+                SELECT
+                    ds.id AS submission_id,
+                    ds.document_id,
+                    ds.sender_id,
+                    ds.review_status,
+                    ds.review_comment,
+                    ds.submission_message,
+                    ds.sent_at,
+                    ds.reviewed_at,
+                    sd.document_code,
+                    sd.document_title,
+                    sd.document_type,
+                    sd.document_status,
+                    sd.file_path,
+                    sd.signed_file_path,
+                    sd.file_format,
+                    cg.id AS group_db_id,
+                    cg.group_id AS group_code,
+                    cg.group_name,
+                    cg.program,
+                    sender.user_id AS sender_user_id,
+                    sender.fullname AS sender_name,
+                    (SELECT COUNT(*) FROM document_submissions ds2 WHERE ds2.document_id = sd.id AND ds2.target_role = 'panelist') AS panelist_total_count,
+                    (SELECT COUNT(*) FROM document_submissions ds2 WHERE ds2.document_id = sd.id AND ds2.target_role = 'panelist' AND ds2.review_status = 'Approved') AS panelist_signed_count
+                FROM document_submissions ds
+                JOIN student_documents sd ON ds.document_id = sd.id
+                JOIN capstone_groups cg ON sd.group_id = cg.id
+                JOIN users sender ON ds.sender_id = sender.id
+                WHERE ds.receiver_id = ?
+                  AND ds.target_role = 'panelist'
+                ORDER BY ds.sent_at DESC, ds.id DESC
+            `;
+            db.query(sql, [panelistDbId], (errDocs, rows) => {
+                if (errDocs) {
+                    console.error("panelist-signing-documents error:", errDocs);
+                    return res.json({ success: false, message: "Failed to load panelist signing documents." });
+                }
+                return res.json({ success: true, documents: rows || [] });
+            });
+        }
+    );
+});
+
+app.get("/panelist-signing-document-file/:submissionId", (req, res) => {
+    const submissionId = req.params.submissionId;
+    const panelistUserId = req.query.panelistUserId || "";
+    if (!submissionId || !panelistUserId) {
+        return res.status(400).json({ success: false, message: "Missing submission or panelist ID." });
+    }
+
+    const sql = `
+        SELECT sd.file_path, sd.signed_file_path
+        FROM document_submissions ds
+        JOIN student_documents sd ON ds.document_id = sd.id
+        JOIN users u ON ds.receiver_id = u.id
+        WHERE ds.id = ?
+          AND u.user_id = ?
+          AND ds.target_role = 'panelist'
+        LIMIT 1
+    `;
+    db.query(sql, [submissionId, panelistUserId], (err, rows) => {
+        if (err || !rows || rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Document not found." });
+        }
+        const rel = rows[0].signed_file_path || rows[0].file_path;
+        const diskPath = path.join(__dirname, String(rel || "").replace(/^\/uploads\//, "uploads/"));
+        if (!fs.existsSync(diskPath)) {
+            return res.status(404).json({ success: false, message: "PDF file not found on server." });
+        }
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        return fs.createReadStream(diskPath).pipe(res);
+    });
+});
+
+app.put("/panelist-apply-document-signature/:submissionId", async (req, res) => {
+    const submissionId = req.params.submissionId;
+    const {
+        panelistUserId,
+        reviewStatus,
+        reviewComment,
+        signatureImage,
+        signatureType,
+        placement
+    } = req.body;
+
+    if (!submissionId || !panelistUserId || !reviewStatus) {
+        return res.json({ success: false, message: "Missing signing information." });
+    }
+
+    const finalStatus = String(reviewStatus || "").trim();
+    if (finalStatus === "Approved" && !placement) {
+        return res.json({ success: false, message: "Please place your e-signature on the document before approving." });
+    }
+    if (
+        (finalStatus === "Rejected" || finalStatus === "Subject to Change" || finalStatus === "For Revision")
+        && !String(reviewComment || "").trim()
+    ) {
+        return res.json({ success: false, message: "Please add notes explaining your decision." });
+    }
+
+    db.query(
+        `SELECT id, fullname, digital_signature FROM users WHERE user_id = ? AND role IN ('faculty', 'admin') LIMIT 1`,
+        [panelistUserId],
+        async (errUser, userRows) => {
+            if (errUser || !userRows || userRows.length === 0) {
+                return res.json({ success: false, message: "Panelist account not found." });
+            }
+            const panelistDbId = userRows[0].id;
+            const panelistName = userRows[0].fullname;
+
+            const subSql = `
+                SELECT
+                    ds.id,
+                    ds.sender_id,
+                    ds.document_id,
+                    ds.review_status,
+                    sd.document_title,
+                    sd.document_type,
+                    sd.document_status,
+                    sd.file_path,
+                    sd.signed_file_path,
+                    cg.program
+                FROM document_submissions ds
+                JOIN student_documents sd ON ds.document_id = sd.id
+                JOIN capstone_groups cg ON sd.group_id = cg.id
+                WHERE ds.id = ?
+                  AND ds.receiver_id = ?
+                  AND ds.target_role = 'panelist'
+                LIMIT 1
+            `;
+            db.query(subSql, [submissionId, panelistDbId], async (errSub, subRows) => {
+                if (errSub || !subRows || subRows.length === 0) {
+                    return res.json({ success: false, message: "Document submission not found or you are not an assigned panelist." });
+                }
+                const submission = subRows[0];
+
+                if (submission.review_status === "Approved") {
+                    return res.json({
+                        success: false,
+                        message: "You have already signed this document."
+                    });
+                }
+
+                let signedFilePath = submission.signed_file_path || null;
+
+                try {
+                    if (finalStatus === "Approved") {
+                        let signatureBuffer;
+                        if (signatureType === "saved" && userRows[0].digital_signature) {
+                            const localSigPath = path.join(__dirname, userRows[0].digital_signature.replace(/^\//, ""));
+                            if (!fs.existsSync(localSigPath)) {
+                                return res.json({ success: false, message: "Saved signature file not found on the server. Please re-upload it in settings." });
+                            }
+                            signatureBuffer = fs.readFileSync(localSigPath);
+                        } else {
+                            signatureBuffer = decodeSignatureImageData(signatureImage);
+                        }
+
+                        if (!signatureBuffer || signatureBuffer.length === 0) {
+                            return res.json({ success: false, message: "Invalid signature image." });
+                        }
+
+                        const srcRelative = submission.signed_file_path || submission.file_path;
+                        const sourcePath = path.join(__dirname, String(srcRelative || "").replace(/^\/uploads\//, "uploads/"));
+                        if (!fs.existsSync(sourcePath)) {
+                            return res.json({ success: false, message: "Source document file was not found on the server." });
+                        }
+
+                        const signedBytes = await embedSignatureOnPdfFile(sourcePath, signatureBuffer, placement, { includeDate: true });
+                        const signedDir = path.join(__dirname, "uploads", "signed_documents");
+                        if (!fs.existsSync(signedDir)) fs.mkdirSync(signedDir, { recursive: true });
+                        const signedFileName = `signed-panelist-${Date.now()}-${submission.document_id}.pdf`;
+                        fs.writeFileSync(path.join(signedDir, signedFileName), signedBytes);
+                        signedFilePath = `/uploads/signed_documents/${signedFileName}`;
+                    }
+                } catch (signErr) {
+                    console.log(signErr);
+                    return res.json({ success: false, message: "Failed to apply e-signature to the PDF." });
+                }
+
+                const revisionStatus =
+                    finalStatus === "Rejected"
+                        ? "Rejected"
+                        : (finalStatus === "Subject to Change" || finalStatus === "For Revision")
+                            ? "For Revision"
+                            : finalStatus;
+
+                db.query(
+                    `UPDATE document_submissions
+                     SET review_status = ?, review_comment = ?, reviewed_by = ?, reviewed_at = NOW(), submission_status = 'Reviewed'
+                     WHERE id = ? AND receiver_id = ?`,
+                    [finalStatus, reviewComment || "", panelistDbId, submissionId, panelistDbId],
+                    (err3) => {
+                        if (err3) {
+                            console.log(err3);
+                            return res.json({ success: false, message: "Failed to save review status." });
+                        }
+
+                        const handleNonApproval = () => {
+                            db.query(
+                                `UPDATE student_documents SET document_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                                [revisionStatus, submission.document_id],
+                                (err4) => {
+                                    if (err4) {
+                                        console.log(err4);
+                                        return res.json({ success: false, message: "Review saved, but failed to update student document." });
+                                    }
+                                    const notifyTitle = finalStatus === "Rejected"
+                                        ? "Document Rejected by Panelist"
+                                        : "Panelist Requested Revision";
+                                    const notifyMsg = finalStatus === "Rejected"
+                                        ? `Your "${submission.document_title}" was rejected by ${panelistName} (Panelist). Reason: ${reviewComment || "No reason provided."}`
+                                        : `${panelistName} (Panelist) requested a revision on your "${submission.document_title}". Notes: ${reviewComment || "Please check the document and resubmit."}`;
+
+                                    db.query(
+                                        `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                         VALUES (?, ?, ?, 'Document Review')`,
+                                        [submission.sender_id, notifyTitle, notifyMsg],
+                                        () => {
+                                            return res.json({
+                                                success: true,
+                                                message: finalStatus === "Rejected"
+                                                    ? "Document rejected. Student has been notified."
+                                                    : "Revision requested. Student has been notified.",
+                                                signed_file_path: signedFilePath
+                                            });
+                                        }
+                                    );
+                                }
+                            );
+                        };
+
+                        if (finalStatus !== "Approved") {
+                            return handleNonApproval();
+                        }
+
+                        // Check how many assigned panelists have signed this Recommendation for Deployment (all must sign in any order)
+                        db.query(
+                            `SELECT COUNT(*) AS total_panelists,
+                                    SUM(CASE WHEN review_status = 'Approved' THEN 1 ELSE 0 END) AS signed_panelists
+                             FROM document_submissions
+                             WHERE document_id = ? AND target_role = 'panelist'`,
+                            [submission.document_id],
+                            (cntErr, cntRows) => {
+                                const totalPanelists = Number((cntRows && cntRows[0] && cntRows[0].total_panelists) || 1);
+                                const signedPanelists = Number((cntRows && cntRows[0] && cntRows[0].signed_panelists) || 1);
+                                const allPanelistsSigned = totalPanelists > 0 && signedPanelists >= totalPanelists;
+
+                                const nextDocStatus = allPanelistsSigned ? "Panelist Signed" : (submission.document_status || "Adviser Signed");
+
+                                db.query(
+                                    `UPDATE student_documents SET document_status = ?, signed_file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                                    [nextDocStatus, signedFilePath, submission.document_id],
+                                    (err4) => {
+                                        if (err4) {
+                                            console.log(err4);
+                                            return res.json({ success: false, message: "Review saved, but failed to update student document." });
+                                        }
+
+                                        const finishResponse = () => {
+                                            const notifyTitle = allPanelistsSigned
+                                                ? "All Panelists Signed Recommendation for Deployment"
+                                                : "Panelist Signed Recommendation for Deployment";
+                                            const notifyMsg = allPanelistsSigned
+                                                ? `${panelistName} (Panelist) completed panelist signing (${signedPanelists}/${totalPanelists}) on "${submission.document_title}". It has been forwarded to your Program Chairperson.`
+                                                : `${panelistName} (Panelist) signed your "${submission.document_title}" (${signedPanelists}/${totalPanelists} panelists signed). Waiting for the remaining panelist(s) to sign.`;
+
+                                            db.query(
+                                                `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                 VALUES (?, ?, ?, 'Document Review')`,
+                                                [submission.sender_id, notifyTitle, notifyMsg],
+                                                () => {
+                                                    return res.json({
+                                                        success: true,
+                                                        allPanelistsSigned,
+                                                        signedPanelists,
+                                                        totalPanelists,
+                                                        message: allPanelistsSigned
+                                                            ? `All ${totalPanelists} panelists have signed! Document forwarded to the Program Chairperson.`
+                                                            : `Signature saved (${signedPanelists}/${totalPanelists} panelists signed). Waiting for remaining panelist(s).`,
+                                                        signed_file_path: signedFilePath
+                                                    });
+                                                }
+                                            );
+                                        };
+
+                                        if (!allPanelistsSigned) {
+                                            return finishResponse();
+                                        }
+
+                                        // All panelists signed -> route to Program Chairperson (IS or IT) based on group program
+                                        const progUpper = String(submission.program || "").trim().toUpperCase();
+                                        const isIS = progUpper === "IS" || progUpper === "BSIS";
+                                        const chairSql = isIS
+                                            ? `SELECT id FROM users WHERE role = 'admin' AND LOWER(position) LIKE '%chairperson%' AND (LOWER(position) LIKE '%bsis%' OR LOWER(position) LIKE '% is%' OR LOWER(position) LIKE '%-is%')`
+                                            : `SELECT id FROM users WHERE role = 'admin' AND LOWER(position) LIKE '%chairperson%' AND (LOWER(position) LIKE '%bsit%' OR LOWER(position) LIKE '% it%' OR LOWER(position) LIKE '%-it%')`;
+
+                                        db.query(
+                                            chairSql,
+                                            (errChair, chairRows) => {
+                                                if (errChair || !chairRows || chairRows.length === 0) {
+                                                    console.log("No Program Chairperson found for program", progUpper, errChair);
+                                                    return finishResponse();
+                                                }
+                                                const routeToChair = (idx) => {
+                                                    if (idx >= chairRows.length) {
+                                                        return finishResponse();
+                                                    }
+                                                    const chairDbId = chairRows[idx].id;
+                                                    const msg = `Adviser and all ${totalPanelists} panelists signed. Pending Chairperson signature.`;
+                                                    db.query(
+                                                        `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? AND target_role = 'admin' LIMIT 1`,
+                                                        [submission.document_id, chairDbId],
+                                                        (errEx, exRows) => {
+                                                            if (exRows && exRows.length > 0) {
+                                                                db.query(
+                                                                    `UPDATE document_submissions
+                                                                     SET submission_message = ?, review_status = 'Pending Review', review_comment = NULL, reviewed_by = NULL, reviewed_at = NULL, submission_status = 'Sent', target_role = 'admin', sent_at = NOW()
+                                                                     WHERE id = ?`,
+                                                                    [msg, exRows[0].id],
+                                                                    () => {
+                                                                        db.query(
+                                                                            `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                             VALUES (?, ?, ?, 'Document Review')`,
+                                                                            [chairDbId, "Recommendation for Deployment Pending Signature", `All ${totalPanelists} panelists have signed Recommendation for Deployment. It is now pending your Chairperson signature.`, "Document Review"],
+                                                                            () => { }
+                                                                        );
+                                                                        routeToChair(idx + 1);
+                                                                    }
+                                                                );
+                                                            } else {
+                                                                db.query(
+                                                                    `INSERT INTO document_submissions (document_id, sender_id, receiver_id, submission_message, review_status, target_role)
+                                                                     VALUES (?, ?, ?, ?, 'Pending Review', 'admin')`,
+                                                                    [submission.document_id, submission.sender_id, chairDbId, msg],
+                                                                    () => {
+                                                                        db.query(
+                                                                            `INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                                                             VALUES (?, ?, ?, 'Document Review')`,
+                                                                            [chairDbId, "Recommendation for Deployment Pending Signature", `All ${totalPanelists} panelists have signed Recommendation for Deployment. It is now pending your Chairperson signature.`, "Document Review"],
+                                                                            () => { }
+                                                                        );
+                                                                        routeToChair(idx + 1);
+                                                                    }
+                                                                );
+                                                            }
+                                                        }
+                                                    );
+                                                };
+                                                routeToChair(0);
+                                            }
+                                        );
+                                    }
+                                );
+                            }
+                        );
+                    }
+                );
+            });
+        }
+    );
 });
 
 /* ================= STUDENT SIGNING DOCUMENTS ================= */
@@ -22443,6 +23843,13 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
 
                                     if (err2) {
                                         console.log(err2);
+                                    }
+
+                                    if (isDeploymentChapter14Document(submission.document_type, submission.document_title)) {
+                                        archiveDeploymentChapter14ToRepository(submission, adviserName, () => {
+                                            finishAdviserReview();
+                                        });
+                                        return;
                                     }
 
                                     finishAdviserReview();
@@ -23836,8 +25243,7 @@ app.get("/admin-document-review/:userId", (req, res) => {
                     FROM document_submissions adv_ds
                     JOIN users adv ON adv_ds.receiver_id = adv.id
                     WHERE adv_ds.document_id = sd.id
-                    AND adv.adviser_access = 1
-                    AND adv.role IN ('faculty', 'admin')
+                    AND adv_ds.target_role = 'adviser'
                     AND adv_ds.review_status = 'Approved'
                     ORDER BY adv_ds.reviewed_at DESC
                     LIMIT 1
@@ -23847,8 +25253,7 @@ app.get("/admin-document-review/:userId", (req, res) => {
                     FROM document_submissions adv_ds
                     JOIN users adv ON adv_ds.receiver_id = adv.id
                     WHERE adv_ds.document_id = sd.id
-                    AND adv.adviser_access = 1
-                    AND adv.role IN ('faculty', 'admin')
+                    AND adv_ds.target_role = 'adviser'
                     AND adv_ds.review_status = 'Approved'
                     ORDER BY adv_ds.reviewed_at DESC
                     LIMIT 1
@@ -23858,7 +25263,7 @@ app.get("/admin-document-review/:userId", (req, res) => {
                     FROM document_submissions instr_ds
                     JOIN users instr ON instr_ds.receiver_id = instr.id
                     WHERE instr_ds.document_id = sd.id
-                    AND instr.instructor_access = 1
+                    AND instr_ds.target_role = 'instructor'
                     AND instr_ds.review_status = 'Approved'
                     ORDER BY instr_ds.reviewed_at DESC
                     LIMIT 1
@@ -23868,7 +25273,7 @@ app.get("/admin-document-review/:userId", (req, res) => {
                     FROM document_submissions instr_ds
                     JOIN users instr ON instr_ds.receiver_id = instr.id
                     WHERE instr_ds.document_id = sd.id
-                    AND instr.instructor_access = 1
+                    AND instr_ds.target_role = 'instructor'
                     AND instr_ds.review_status = 'Approved'
                     ORDER BY instr_ds.reviewed_at DESC
                     LIMIT 1
@@ -23878,7 +25283,8 @@ app.get("/admin-document-review/:userId", (req, res) => {
                     FROM document_submissions chair_ds
                     JOIN users chair ON chair_ds.receiver_id = chair.id
                     WHERE chair_ds.document_id = sd.id
-                    AND (LOWER(chair.position) LIKE '%program chairperson%')
+                    AND chair_ds.target_role = 'admin'
+                    AND (LOWER(chair.position) LIKE '%chairperson%')
                     AND chair_ds.review_status = 'Approved'
                     ORDER BY chair_ds.reviewed_at DESC
                     LIMIT 1
@@ -23888,7 +25294,8 @@ app.get("/admin-document-review/:userId", (req, res) => {
                     FROM document_submissions chair_ds
                     JOIN users chair ON chair_ds.receiver_id = chair.id
                     WHERE chair_ds.document_id = sd.id
-                    AND (LOWER(chair.position) LIKE '%program chairperson%')
+                    AND chair_ds.target_role = 'admin'
+                    AND (LOWER(chair.position) LIKE '%chairperson%')
                     AND chair_ds.review_status = 'Approved'
                     ORDER BY chair_ds.reviewed_at DESC
                     LIMIT 1
@@ -23905,7 +25312,7 @@ app.get("/admin-document-review/:userId", (req, res) => {
             LEFT JOIN users reviewer
                 ON ds.reviewed_by = reviewer.id
             WHERE ds.receiver_id = ?
-            AND (ds.target_role IS NULL OR LOWER(ds.target_role) NOT IN ('adviser', 'instructor'))
+            AND (ds.target_role IS NULL OR LOWER(ds.target_role) NOT IN ('adviser', 'instructor', 'panelist'))
             ORDER BY ds.sent_at DESC
         `;
 
@@ -24697,7 +26104,7 @@ app.get("/adviser-defense-minutes/:adviserUserId", (req, res) => {
 /* ================= SERVER ================= */
 
 const PORT = Number(process.env.PORT) || 3005;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
     console.log("Server running on port 3005");
     console.log("[HF-CHECK] Loading @huggingface/transformers model: Xenova/all-MiniLM-L6-v2...");
     semEngine.loadModel().then(() => {

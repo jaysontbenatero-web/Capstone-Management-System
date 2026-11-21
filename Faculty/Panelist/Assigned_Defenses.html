@@ -621,17 +621,6 @@
 
             <div class="modal-actions defense-modal-actions">
                 <button
-                    class="view-btn"
-                    type="button"
-                    id="modalPrintReceiptBtn"
-                    style="display:none;"
-                    onclick="printPanelEvaluationsReceipt()"
-                >
-                    <i class="fa-solid fa-print"></i>
-                    Print Panel Receipts
-                </button>
-
-                <button
                     class="archive-btn"
                     type="button"
                     id="modalArchiveLateBtn"
@@ -1381,12 +1370,19 @@
         function isScheduleOngoing(schedule){
             if(!schedule) return false;
             const st = String(schedule.defense_status || "").toLowerCase();
-            if(st === "cancelled") return false;
+            if(st === "cancelled" || st === "completed") return false;
             if(st === "ongoing") return true;
-            if(st === "scheduled"){
-                return isDefenseHappening(schedule.defense_date, schedule.start_time, schedule.end_time);
-            }
-            return false;
+            // Any other active status (Scheduled, Next Up, Rescheduled, ...) becomes ongoing once its time window starts
+            return isDefenseHappening(schedule.defense_date, schedule.start_time, schedule.end_time);
+        }
+
+        function hasScheduleStarted(schedule){
+            if(!schedule) return false;
+            const dateStr = normalizeScheduleDate(schedule.defense_date);
+            const startStr = normalizeScheduleTime(schedule.start_time);
+            if(!dateStr || !startStr) return false;
+            const startDt = new Date(`${dateStr}T${startStr}:00`);
+            return !isNaN(startDt.getTime()) && new Date() >= startDt;
         }
 
         function isScheduleLate(schedule){
@@ -1738,7 +1734,7 @@
                 const isLate = isScheduleLate(schedule);
                 let isNextUp = false;
 
-                if (activeTab !== "history" && !isOngoing && !isLate) {
+                if (activeTab !== "history" && !isOngoing && !isLate && !hasScheduleStarted(schedule)) {
                     if (hasOngoing) {
                         // When an on-going defense exists, the 2nd time closest defense is "Next Up"
                         const secondClosest = upcomingSchedules.find(s => !isScheduleOngoing(s));
@@ -2456,7 +2452,6 @@
             const panelEvalBox = document.getElementById("modalAllPanelEvaluationsBox");
             const panelEvalSummary = document.getElementById("modalAllPanelEvaluations");
             const panelEvalProgress = document.getElementById("modalPanelEvalProgress");
-            const printBtn = document.getElementById("modalPrintReceiptBtn");
 
             const evalRequired =
                 Number(schedule.evaluations_required || panelEvals.length || 0);
@@ -2475,9 +2470,6 @@
             if (panelEvals.length === 0) {
                 panelEvalBox.style.display = "none";
                 panelEvalSummary.innerHTML = "";
-                if (printBtn) {
-                    printBtn.style.display = "none";
-                }
                 return;
             }
 
@@ -2485,10 +2477,6 @@
             panelEvalSummary.innerHTML = panelEvals.map((item, index) =>
                 buildPanelReceiptCardHtml(schedule, item, index)
             ).join("");
-
-            if (printBtn) {
-                printBtn.style.display = "inline-flex";
-            }
         }
 
         function buildPanelPrintDocumentHtml(schedule, panelEvals) {
@@ -2559,11 +2547,6 @@
                 );
 
             if(!schedule){
-                return;
-            }
-
-            if(isScheduleNextUp(schedule)){
-                alert("Grading is disabled while this defense is still marked as 'Next Up'.");
                 return;
             }
 
@@ -3297,7 +3280,7 @@
         }
 
         function isScheduleNextUp(schedule){
-            if (!schedule || isHistoryForPanelist(schedule) || isScheduleOngoing(schedule) || isScheduleLate(schedule)) {
+            if (!schedule || isHistoryForPanelist(schedule) || isScheduleOngoing(schedule) || isScheduleLate(schedule) || hasScheduleStarted(schedule)) {
                 return false;
             }
             if (String(schedule.defense_status || "").toLowerCase() === "next up") {
@@ -3367,11 +3350,6 @@
                 );
 
             if(!schedule){
-                return;
-            }
-
-            if(isScheduleNextUp(schedule)){
-                alert("Grading is disabled while this defense is still marked as 'Next Up'.");
                 return;
             }
 
@@ -4135,6 +4113,23 @@
 
         loadPanelistSignature();
         loadAssignedDefenses();
+
+        // Re-render cards when a defense's time state changes (Next Up -> On-Going -> Late) without a page refresh
+        let lastTimeStateSignature = "";
+        setInterval(() => {
+            if (!Array.isArray(defenseSchedules) || defenseSchedules.length === 0) return;
+            const sig = defenseSchedules
+                .map(s => `${s.id}:${isScheduleOngoing(s) ? 1 : 0}${isScheduleLate(s) ? 1 : 0}${hasScheduleStarted(s) ? 1 : 0}`)
+                .join("|");
+            if (lastTimeStateSignature && sig !== lastTimeStateSignature) {
+                const open = ["defenseModal", "evaluationModal"].some(id => {
+                    const el = document.getElementById(id);
+                    return el && el.style.display === "flex";
+                });
+                if (!open) filterDefenses();
+            }
+            lastTimeStateSignature = sig;
+        }, 15000);
 
     </script>
 

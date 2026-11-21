@@ -6,31 +6,28 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Defense Schedule | CMS</title>
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <link
-        rel="stylesheet"
-        href="Defense_Schedule.css"
-    >
+    <link rel="stylesheet" href="Defense_Schedule.css">
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
 
     <link rel="stylesheet" href="../../shared/custom-alerts.css">
     <script src="../../shared/custom-alerts.js"></script>
+    <style>
+        #defenseDate.past-date,
+        #defenseDate:invalid {
+            border-color: #ef4444 !important;
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
+    </style>
 </head>
 
 <body class="admin-portal">
@@ -42,20 +39,20 @@
         const instructorAccess =
             localStorage.getItem("instructor_access");
 
-        if(userRole === "admin" && instructorAccess !== "1"){
+        if (userRole === "admin" && instructorAccess !== "1") {
 
             document.documentElement.classList.add("capx-auth-blocked");
             alert("Your Instructor access is disabled. Enable it in Admin Settings first.").then(() => {
                 window.location.href =
-                "../../Admin/AdminDash.html";
+                    "../../Admin/AdminDash.html";
             });
 
-        }else if(userRole !== "admin" && instructorAccess !== "1"){
+        } else if (userRole !== "admin" && instructorAccess !== "1") {
 
             document.documentElement.classList.add("capx-auth-blocked");
             alert("You do not have permission to access this role.").then(() => {
                 window.location.href =
-                "../FacultyDash.html";
+                    "../FacultyDash.html";
             });
 
         }
@@ -82,79 +79,49 @@
 
                 <div class="menu-title">Main</div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='InstructorDash.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='InstructorDash.html'">
                     <i class="fa-solid fa-house"></i>
                     <span>Dashboard</span>
                 </div>
 
                 <div class="menu-title">Management</div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='STU_Enroll.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='STU_Enroll.html'">
                     <i class="fa-solid fa-user-plus"></i>
                     <span>Register Students</span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='Manage_Adviser.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='Manage_Adviser.html'">
                     <i class="fa-solid fa-user-tie"></i>
                     <span>Manage Adviser</span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='Capstone_Group.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='Capstone_Group.html'">
                     <i class="fa-solid fa-users-gear"></i>
                     <span>Capstone Groups</span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    onclick="window.location.href='Document_Review.html'"
-                >
+                <div class="menu-item" onclick="window.location.href='Document_Review.html'">
                     <i class="fa-solid fa-file-circle-check"></i>
                     <span>Document Review</span>
                 </div>
 
-                <div
-                    class="menu-item active"
-                    onclick="window.location.href='Defense_Schedule.html'"
-                >
+                <div class="menu-item active" onclick="window.location.href='Defense_Schedule.html'">
                     <i class="fa-solid fa-calendar-days"></i>
                     <span>Schedule Defense</span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    id="nav-consultation"
-                    onclick="window.location.href='Consultation.html'"
-                >
+                <div class="menu-item" id="nav-consultation" onclick="window.location.href='Consultation.html'">
                     <i class="fa-solid fa-comments"></i>
                     <span>Consultation</span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    id="nav-panel-evaluation"
-                    onclick="window.location.href='Panel_Evaluation.html'"
-                >
+                <div class="menu-item" id="nav-panel-evaluation" onclick="window.location.href='Panel_Evaluation.html'">
                     <i class="fa-solid fa-clipboard-list"></i>
                     <span>Panel Evaluation</span>
                 </div>
 
-                <div
-                    class="menu-item"
-                    id="nav-repository"
-                    onclick="window.location.href='Repository.html'"
-                >
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
                     <i class="fa-solid fa-book-open"></i>
                     <span>Repository</span>
                 </div>
@@ -185,12 +152,7 @@
 
             <div class="top-actions">
 
-                <button
-                    class="primary-btn"
-                    id="createScheduleBtn"
-                    onclick="openCreateModal()"
-                    type="button"
-                >
+                <button class="primary-btn" id="createScheduleBtn" onclick="openCreateModal()" type="button">
                     <i class="fa-solid fa-plus"></i>
                     Create Schedule
                 </button>
@@ -205,27 +167,17 @@
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
 
-                <input
-                    type="text"
-                    id="searchSchedule"
-                    placeholder="Search defense schedule..."
-                    onkeyup="renderScheduleSections()"
-                >
+                <input type="text" id="searchSchedule" placeholder="Search defense schedule..."
+                    onkeyup="renderScheduleSections()">
             </div>
 
-            <select
-                id="scopeFilter"
-                onchange="onScopeFilterChange()"
-            >
+            <select id="scopeFilter" onchange="onScopeFilterChange()">
                 <option value="All">All Schedules</option>
                 <option value="My">My Created Schedules</option>
                 <option value="Other">Other Schedules</option>
             </select>
 
-            <select
-                id="statusFilter"
-                onchange="renderScheduleSections()"
-            >
+            <select id="statusFilter" onchange="renderScheduleSections()">
                 <option value="All">All Status</option>
                 <option value="Scheduled">Scheduled</option>
                 <option value="Ongoing">Ongoing</option>
@@ -288,11 +240,7 @@
     </main>
 
     <!-- CREATE / EDIT MODAL -->
-    <div
-        class="modal-overlay"
-        id="scheduleModal"
-        style="display: none;"
-    >
+    <div class="modal-overlay" id="scheduleModal" style="display: none;">
 
         <div class="modal-box schedule-modal">
 
@@ -308,11 +256,7 @@
                     </p>
                 </div>
 
-                <button
-                    class="close-modal-btn"
-                    onclick="closeScheduleModal()"
-                    type="button"
-                >
+                <button class="close-modal-btn" onclick="closeScheduleModal()" type="button">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
 
@@ -325,7 +269,8 @@
             <div id="panelGradingStatusCard" style="display:none;" class="grading-status-card">
                 <div class="grading-status-head">
                     <div>
-                        <span class="grading-status-title"><i class="fa-solid fa-chart-simple"></i> Panelist Grading Progress</span>
+                        <span class="grading-status-title"><i class="fa-solid fa-chart-simple"></i> Panelist Grading
+                            Progress</span>
                         <div id="gradingCountText" class="grading-count-text">0 of 3 Graded</div>
                     </div>
                     <div id="forceCompleteBtnWrap"></div>
@@ -338,10 +283,7 @@
                 <div class="input-group">
                     <label>Defense Type <span class="required-star">*</span></label>
 
-                    <select
-                        id="defenseType"
-                        onchange="onDefenseTypeChange()"
-                    >
+                    <select id="defenseType" onchange="onDefenseTypeChange()">
                         <option value="Concept Presentation">Concept Presentation</option>
                         <option value="Outline Defense">Outline Defense</option>
                         <option value="Pre-Final Defense">Pre-Final Defense</option>
@@ -353,17 +295,36 @@
                 <div class="input-group" id="groupSelectGroup">
                     <label>Capstone Group <span class="required-star">*</span></label>
 
-                    <select
-                        id="groupSelect"
-                        onchange="loadSelectedGroupMembers()"
-                    >
-                        <option value="">Select group</option>
-                    </select>
+                    <div class="group-combobox" id="groupCombobox">
+                        <div class="group-combobox-control" onclick="openGroupDropdown()">
+                            <i class="fa-solid fa-magnifying-glass group-combobox-icon"></i>
+                            <input type="text" id="groupSearchInput" placeholder="Search or select group..."
+                                autocomplete="off" onfocus="openGroupDropdown()" oninput="onGroupSearchInput()"
+                                onkeydown="onGroupSearchKeydown(event)">
+                            <button type="button" id="groupSearchClearBtn" class="group-search-clear"
+                                onclick="event.stopPropagation(); clearGroupSearch()" title="Clear selection"
+                                style="display:none;">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <button type="button" id="groupDropdownToggleBtn" class="group-combobox-toggle"
+                                onclick="event.stopPropagation(); toggleGroupDropdown()" title="Toggle group list">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                        </div>
+
+                        <div class="group-combobox-menu" id="groupDropdownMenu" style="display:none;"></div>
+
+                        <select id="groupSelect" onchange="loadSelectedGroupMembers()" style="display:none;"
+                            tabindex="-1" aria-hidden="true">
+                            <option value="">Select group</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- LOCKED GROUP DISPLAY (EDIT MODE) -->
                 <div class="input-group" id="groupLockedGroup" style="display:none;">
-                    <label>Capstone Group <span class="group-locked-badge"><i class="fa-solid fa-lock"></i> Group Locked</span></label>
+                    <label>Capstone Group <span class="group-locked-badge"><i class="fa-solid fa-lock"></i> Group
+                            Locked</span></label>
                     <div class="group-locked-box">
                         <div id="lockedGroupName" style="font-weight: 700; color: #2e1065;"></div>
                         <div id="lockedProjectTitle" style="font-size: 12px; color: #6d5f85; margin-top: 2px;"></div>
@@ -372,16 +333,15 @@
 
             </div>
 
-            <div
-                class="member-preview"
-                id="memberPreview"
-            >
+            <div class="member-preview" id="memberPreview">
                 Select a group to show student members.
             </div>
 
             <!-- APPROVED CONSULTATION DOCUMENTS -->
-            <div class="approved-papers-box" id="approvedPapersBox" style="display: none; margin: 15px 0; padding: 15px; background: rgba(124, 58, 237, 0.05); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 8px;">
-                <h4 style="color: #7c3aed; margin-bottom: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <div class="approved-papers-box" id="approvedPapersBox"
+                style="display: none; margin: 15px 0; padding: 15px; background: rgba(124, 58, 237, 0.05); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 8px;">
+                <h4
+                    style="color: #7c3aed; margin-bottom: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-file-circle-check"></i> Approved Consultation Documents
                 </h4>
                 <div id="approvedPapersList" style="display: flex; flex-direction: column; gap: 8px;">
@@ -391,14 +351,16 @@
 
             <!-- 1. DEFENSE SCHEDULE TIMELINE & ROOM -->
             <div class="timeline-picker-card" style="margin-top: 15px;">
-                
+
                 <div class="timeline-header">
                     <div>
-                        <h3><i class="fa-solid fa-clock-rotate-left" style="color: #7c3aed;"></i> Defense Schedule Timeline &amp; Room</h3>
+                        <h3><i class="fa-solid fa-clock-rotate-left" style="color: #7c3aed;"></i> Defense Schedule
+                            Timeline &amp; Room</h3>
                         <p>Configure presentation date, time slot, and room venue.</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <button type="button" id="toggleAvailabilityBtn" onclick="toggleBookedAvailability()" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.2); padding: 6px 12px; border-radius: 6px; font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+                        <button type="button" id="toggleAvailabilityBtn" onclick="toggleBookedAvailability()"
+                            style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.2); padding: 6px 12px; border-radius: 6px; font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
                             <i class="fa-solid fa-calendar-check"></i> View All
                         </button>
                         <div id="durationBadge" class="duration-badge" style="display: none;">
@@ -408,79 +370,81 @@
                 </div>
 
                 <!-- COLLAPSIBLE BOOKED AVAILABILITY -->
-                <div id="bookedAvailabilityPanel" style="display: none; padding: 15px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin: 0 15px 15px 15px;">
-                    <h4 style="margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #4b5563; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-calendar-days" style="color: #7c3aed;"></i> Booked Defense Slots (All Instructors)
+                <div id="bookedAvailabilityPanel"
+                    style="display: none; padding: 15px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin: 0 15px 15px 15px;">
+                    <h4
+                        style="margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #4b5563; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-calendar-days" style="color: #7c3aed;"></i> Booked Defense Slots (All
+                        Instructors)
                     </h4>
-                    <div id="bookedSlotsList" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                    <div id="bookedSlotsList"
+                        style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
                         Loading booked slots...
                     </div>
                 </div>
 
-                <div class="timeline-inputs">
-                    
-                    <div class="input-group timeline-field">
-                        <label for="defenseDate"><i class="fa-solid fa-calendar-days"></i> Defense Date</label>
-                        <input
-                            type="date"
-                            id="defenseDate"
-                            onchange="calculateDuration()"
-                        >
-                    </div>
+                <div class="form-grid" style="margin-top: 4px;">
 
                     <div class="input-group timeline-field">
-                        <label for="startTime"><i class="fa-solid fa-hourglass-start"></i> Start Time</label>
-                        <input
-                            type="time"
-                            id="startTime"
-                            onchange="calculateDuration()"
-                        >
+                        <label for="defenseDate"><i class="fa-solid fa-calendar-days"></i> Defense Date <span
+                                class="required-star">*</span></label>
+                        <input type="date" id="defenseDate" onchange="onDefenseDateOrRoomChange()">
                     </div>
-
-                    <div class="input-group timeline-field">
-                        <label for="endTime"><i class="fa-solid fa-hourglass-end"></i> End Time</label>
-                        <input
-                            type="time"
-                            id="endTime"
-                            onchange="calculateDuration()"
-                        >
-                    </div>
-
-                </div>
-
-                <div class="form-grid" style="margin-top: 14px;">
 
                     <div class="input-group">
                         <label>Room Location <span class="required-star">*</span></label>
 
-                        <select
-                            id="roomSelect"
-                            onchange="toggleOtherRoom(); checkRoomAndTimelineConflicts();"
-                        >
-                            <option value="">Select room</option>
-                            <option value="AB3-1">AB3-1</option>
-                            <option value="AB3-2">AB3-2</option>
-                            <option value="AB3-3">AB3-3</option>
-                            <option value="AB3-4">AB3-4</option>
-                            <option value="AB3-5">AB3-5</option>
-                            <option value="AB3-6">AB3-6</option>
-                            <option value="AB3-7">AB3-7</option>
-                            <option value="ComLab 1">ComLab 1</option>
-                            <option value="ComLab 2">ComLab 2</option>
-                            <option value="Other">Other Room</option>
-                        </select>
-
-                        <div id="roomConflictNotice" style="display: none; margin-top: 8px; padding: 10px 12px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
-                            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
-                            <span id="roomConflictNoticeText">This room is already booked for another defense during this date and time slot.</span>
+                        <div class="group-combobox" id="roomCombobox">
+                            <div class="group-combobox-control" onclick="openRoomDropdown()">
+                                <i class="fa-solid fa-magnifying-glass group-combobox-icon"></i>
+                                <input type="text" id="roomSearchInput" placeholder="Search or select room..."
+                                    autocomplete="off" onfocus="openRoomDropdown()" oninput="onRoomSearchInput()"
+                                    onkeydown="onRoomSearchKeydown(event)">
+                                <button type="button" id="roomSearchClearBtn" class="group-search-clear"
+                                    onclick="event.stopPropagation(); clearRoomSearch()" title="Clear selection"
+                                    style="display:none;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <button type="button" class="group-combobox-toggle"
+                                    onclick="event.stopPropagation(); toggleRoomDropdown()" title="Toggle room list">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div class="group-combobox-menu" id="roomDropdownMenu" style="display:none;"></div>
+                            <select id="roomSelect" onchange="toggleOtherRoom(); onDefenseDateOrRoomChange();"
+                                style="display:none;" tabindex="-1" aria-hidden="true">
+                                <option value="">Select room</option>
+                                <option value="AB3-1">AB3-1</option>
+                                <option value="AB3-2">AB3-2</option>
+                                <option value="AB3-3">AB3-3</option>
+                                <option value="AB3-4">AB3-4</option>
+                                <option value="AB3-5">AB3-5</option>
+                                <option value="AB3-6">AB3-6</option>
+                                <option value="AB3-7">AB3-7</option>
+                                <option value="ComLab 1">ComLab 1</option>
+                                <option value="ComLab 2">ComLab 2</option>
+                                <option value="Networking Lab">Networking Lab</option>
+                                <option value="Accreditation Room">Accreditation Room</option>
+                                <option value="Mac Laboratory">Mac Laboratory</option>
+                                <option value="Accounting and Enterprise Lab">Accounting and Enterprise Lab</option>
+                                <option value="GIS and Data Analytics Lab">GIS and Data Analytics Lab</option>
+                                <option value="Other">Online (Meeting Link)</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div
-                        class="input-group"
-                        id="statusBox"
-                        style="display:none;"
-                    >
+                </div>
+
+                <div class="form-grid dynamic-boxes" style="margin-top: 6px;">
+                    <div class="input-group" id="otherRoomBox" style="display:none;">
+                        <label>Online Meeting Link <span class="required-star">*</span></label>
+
+                        <input type="url" id="otherRoom"
+                            placeholder="https://meet.google.com/xxx-xxxx-xxx (students will be notified)"
+                            oninput="onDefenseDateOrRoomChange()">
+                    </div>
+
+                    <div class="input-group" id="statusBox" style="display:none;">
                         <label>Status</label>
 
                         <select id="defenseStatus">
@@ -489,42 +453,98 @@
                             <option value="Cancelled">Cancelled</option>
                         </select>
                     </div>
-
                 </div>
 
-                <div class="form-grid dynamic-boxes" style="margin-top: 8px;">
-                    <div
-                        class="input-group"
-                        id="otherRoomBox"
-                        style="display:none;"
-                    >
-                        <label>Other Room Name</label>
+                <!-- PREDEFINED CLICKABLE DEFENSE TIME SLOTS + OPTIONAL CUSTOM TIME -->
+                <div class="time-slots-section" id="defenseTimeSlotsSection">
+                    <div class="time-slots-header">
+                        <div>
+                            <label class="time-slots-title">
+                                <i class="fa-solid fa-clock"></i> Defense Time Slot <span class="required-star">*</span>
+                                <span class="recommended-duration-badge" id="recommendedDurationBadge">2 hrs
+                                    Recommended</span>
+                            </label>
+                            <div class="time-slots-hint" id="timeSlotsHint">Select a date and room to check slot
+                                availability.</div>
+                        </div>
+                        <button type="button" id="customTimeToggleBtn" class="custom-time-toggle-btn"
+                            onclick="toggleCustomTimeMode()">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Custom Time</span>
+                        </button>
+                    </div>
 
-                        <input
-                            type="text"
-                            id="otherRoom"
-                            placeholder="Enter room name"
-                            oninput="checkRoomAndTimelineConflicts()"
-                        >
+                    <div class="custom-time-panel" id="customTimeInputsWrap" style="display:none;">
+                        <div class="custom-duration-row">
+                            <div class="custom-duration-label">
+                                <i class="fa-solid fa-hourglass-half"></i>
+                                <span>Slot Duration (Hours)</span>
+                            </div>
+                            <div class="custom-duration-controls">
+                                <button type="button" class="duration-chip" data-hours="1"
+                                    onclick="setSlotDurationHours(1)">1 hr</button>
+                                <button type="button" class="duration-chip" data-hours="1.5"
+                                    onclick="setSlotDurationHours(1.5)">1.5 hrs</button>
+                                <button type="button" class="duration-chip active" data-hours="2"
+                                    onclick="setSlotDurationHours(2)">2 hrs</button>
+                                <button type="button" class="duration-chip" data-hours="3"
+                                    onclick="setSlotDurationHours(3)">3 hrs</button>
+                                <div class="custom-duration-input-wrap">
+                                    <input type="number" id="customDurationHoursInput" min="1" max="4" step="0.5"
+                                        value="2" oninput="onCustomDurationHoursInput(this.value)"
+                                        title="Set custom duration in hours (1 to 4)">
+                                    <span>hr(s)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="custom-time-inputs">
+                            <div class="input-group timeline-field">
+                                <label for="startTime"><i class="fa-solid fa-hourglass-start"></i> Custom Start
+                                    Time</label>
+                                <input type="time" id="startTime" oninput="onCustomTimeInputChange('start')"
+                                    onchange="onCustomTimeInputChange('start')">
+                            </div>
+
+                            <div class="input-group timeline-field">
+                                <label for="endTime"><i class="fa-solid fa-hourglass-end"></i> Custom End Time</label>
+                                <input type="time" id="endTime" oninput="onCustomTimeInputChange('end')"
+                                    onchange="onCustomTimeInputChange('end')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="time-slot-grid" id="timeSlotGrid"></div>
+
+                    <div id="roomConflictNotice"
+                        style="display: none; margin-top: 10px; padding: 10px 12px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
+                        <span id="roomConflictNoticeText">This room is already booked for another defense during this
+                            date and time slot.</span>
                     </div>
                 </div>
 
             </div>
 
             <!-- RETAINED OUTLINE PANEL NOTICE -->
-            <div id="retainOutlinePanelNotice" class="retained-panel-notice" style="display:none; margin-top: 15px;"></div>
+            <div id="retainOutlinePanelNotice" class="retained-panel-notice" style="display:none; margin-top: 15px;">
+            </div>
 
             <!-- 2. PANEL SELECTION SYSTEM (DROPDOWN REDESIGN) -->
-            <div class="panel-selection-dropdowns" style="margin-top: 16px; padding: 16px; background: #faf8ff; border: 1px solid #ede9fe; border-radius: 14px;">
+            <div class="panel-selection-dropdowns"
+                style="margin-top: 16px; padding: 16px; background: #faf8ff; border: 1px solid #ede9fe; border-radius: 14px;">
                 <div style="margin-bottom: 12px;">
-                    <h3 style="margin: 0; font-size: 14.5px; color: #2e1065; display: flex; align-items: center; gap: 8px;">
+                    <h3
+                        style="margin: 0; font-size: 14.5px; color: #2e1065; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-users-gear" style="color: #7c3aed;"></i> Assign Panelists
                     </h3>
-                    <p style="margin: 2px 0 0; font-size: 12px; color: #6d5f85;">Select the panel chair and two panel members for this defense.</p>
+                    <p style="margin: 2px 0 0; font-size: 12px; color: #6d5f85;">Select the panel chair and two panel
+                        members for this defense.</p>
                 </div>
                 <div class="form-grid">
                     <div class="input-group" style="grid-column: span 2;">
-                        <label><i class="fa-solid fa-user-tie"></i> Select Panel Chair <span class="required-star">*</span></label>
+                        <label><i class="fa-solid fa-user-tie"></i> Select Panel Chair <span
+                                class="required-star">*</span></label>
                         <select id="panelChairSelect" onchange="onChairChange()">
                             <option value="">Select Panel Chair</option>
                         </select>
@@ -532,13 +552,15 @@
                 </div>
                 <div class="form-grid">
                     <div class="input-group">
-                        <label><i class="fa-solid fa-user"></i> Select Panel Member 1 <span class="required-star">*</span></label>
+                        <label><i class="fa-solid fa-user"></i> Select Panel Member 1 <span
+                                class="required-star">*</span></label>
                         <select id="panelMember1Select" onchange="onMember1Change()">
                             <option value="">Select Panel Member 1</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label><i class="fa-solid fa-user"></i> Select Panel Member 2 <span class="required-star">*</span></label>
+                        <label><i class="fa-solid fa-user"></i> Select Panel Member 2 <span
+                                class="required-star">*</span></label>
                         <select id="panelMember2Select" onchange="onMember2Change()">
                             <option value="">Select Panel Member 2</option>
                         </select>
@@ -556,9 +578,11 @@
                     </div>
                 </div>
 
-                <div id="panelConflictNotice" style="display: none; margin-top: 10px; padding: 10px 14px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
+                <div id="panelConflictNotice"
+                    style="display: none; margin-top: 10px; padding: 10px 14px; background-color: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 500;">
                     <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; color: #ef4444;"></i>
-                    <span id="panelConflictNoticeText">One or more selected panelists are already scheduled for another defense at this date and time.</span>
+                    <span id="panelConflictNoticeText">One or more selected panelists are already scheduled for another
+                        defense at this date and time.</span>
                 </div>
             </div>
 
@@ -566,39 +590,23 @@
             <div class="input-group" style="margin-top: 16px;">
                 <label>Notes (Optional)</label>
 
-                <textarea
-                    id="notes"
-                    placeholder="Add schedule notes or instructions..."
-                ></textarea>
+                <textarea id="notes" placeholder="Add schedule notes or instructions..."></textarea>
             </div>
 
             <div class="modal-actions">
 
-                <button
-                    class="danger-btn modal-delete-btn"
-                    id="modalDeleteScheduleBtn"
-                    onclick="openDeleteReasonModal(selectedScheduleId)"
-                    type="button"
-                    style="margin-right: auto; display: none;"
-                >
+                <button class="danger-btn modal-delete-btn" id="modalDeleteScheduleBtn"
+                    onclick="openDeleteReasonModal(selectedScheduleId)" type="button"
+                    style="margin-right: auto; display: none;">
                     <i class="fa-solid fa-trash-can"></i>
                     Delete Schedule
                 </button>
 
-                <button
-                    class="cancel-btn"
-                    onclick="closeScheduleModal()"
-                    type="button"
-                >
+                <button class="cancel-btn" onclick="closeScheduleModal()" type="button">
                     Cancel
                 </button>
 
-                <button
-                    class="save-btn"
-                    id="saveScheduleBtn"
-                    onclick="saveSchedule()"
-                    type="button"
-                >
+                <button class="save-btn" id="saveScheduleBtn" onclick="saveSchedule()" type="button">
                     <i class="fa-solid fa-floppy-disk"></i>
                     Save Schedule
                 </button>
@@ -610,22 +618,16 @@
     </div>
 
     <!-- CANCEL / DELETE DEFENSE SCHEDULE REASON MODAL -->
-    <div
-        class="modal-overlay"
-        id="deleteReasonModal"
-        style="display: none;"
-    >
+    <div class="modal-overlay" id="deleteReasonModal" style="display: none;">
         <div class="modal-box delete-modal">
             <div class="modal-header">
                 <div>
-                    <h2 style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Cancel Defense Schedule</h2>
-                    <p>Are you sure you want to cancel this defense schedule? Assigned panelists and group members will be notified immediately.</p>
+                    <h2 style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Cancel Defense Schedule
+                    </h2>
+                    <p>Are you sure you want to cancel this defense schedule? Assigned panelists and group members will
+                        be notified immediately.</p>
                 </div>
-                <button
-                    class="close-modal-btn"
-                    onclick="closeDeleteReasonModal()"
-                    type="button"
-                >
+                <button class="close-modal-btn" onclick="closeDeleteReasonModal()" type="button">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -653,24 +655,16 @@
 
             <div class="input-group" style="margin-top: 10px;">
                 <label>Additional Notes for Notification (Optional)</label>
-                <textarea id="deleteNotes" placeholder="Additional notes to include in cancellation notice..."></textarea>
+                <textarea id="deleteNotes"
+                    placeholder="Additional notes to include in cancellation notice..."></textarea>
             </div>
 
             <div class="modal-actions" style="margin-top: 20px;">
-                <button
-                    class="cancel-btn"
-                    type="button"
-                    onclick="closeDeleteReasonModal()"
-                >
+                <button class="cancel-btn" type="button" onclick="closeDeleteReasonModal()">
                     Keep Schedule
                 </button>
 
-                <button
-                    class="danger-btn"
-                    type="button"
-                    id="confirmDeleteBtn"
-                    onclick="confirmDeleteSchedule()"
-                >
+                <button class="danger-btn" type="button" id="confirmDeleteBtn" onclick="confirmDeleteSchedule()">
                     <i class="fa-solid fa-trash-can"></i> Confirm Cancellation
                 </button>
             </div>
@@ -678,30 +672,22 @@
     </div>
 
     <!-- VIEW MODAL -->
-    <div
-        class="modal-overlay"
-        id="viewModal"
-        style="display: none;"
-    >
+    <div class="modal-overlay" id="viewModal" style="display: none;">
 
         <div class="modal-box view-modal">
 
             <div class="modal-header">
 
-                 <div>
-                     <h2 id="viewGroupName">
-                         Group Name
-                     </h2>
-                     <p id="viewScheduleCode" style="display: none;">
-                         DEF2026-0000
-                     </p>
-                 </div>
+                <div>
+                    <h2 id="viewGroupName">
+                        Group Name
+                    </h2>
+                    <p id="viewScheduleCode" style="display: none;">
+                        DEF2026-0000
+                    </p>
+                </div>
 
-                 <button
-                    class="close-modal-btn"
-                    onclick="closeViewModal()"
-                    type="button"
-                >
+                <button class="close-modal-btn" onclick="closeViewModal()" type="button">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
 
@@ -744,10 +730,7 @@
             <div class="section-box">
                 <h3>Panelists</h3>
 
-                <div
-                    class="member-list"
-                    id="viewPanelists"
-                >
+                <div class="member-list" id="viewPanelists">
                     No panelists.
                 </div>
             </div>
@@ -755,10 +738,7 @@
             <div class="section-box">
                 <h3>Students</h3>
 
-                <div
-                    class="member-list"
-                    id="viewMembers"
-                >
+                <div class="member-list" id="viewMembers">
                     No members.
                 </div>
             </div>
@@ -813,7 +793,7 @@
                 try {
                     const response = await fetchWithTimeout(`${getApiBaseUrl()}/group-consultation-approval-status/${group.id}?defenseType=${encodeURIComponent(defenseType)}` + (selectedScheduleId ? `&excludeScheduleId=${selectedScheduleId}` : ''));
                     const data = await response.json();
-                    
+
                     if (data.success) {
                         groupReadinessMap[group.id] = {
                             allowed: data.ready_for_schedule,
@@ -842,9 +822,429 @@
             renderGroupOptions();
         }
 
-        async function loadPageData(){
+        let serverDefaultTimeSlots = [
+            { id: 1, slot_label: "08:00 AM - 10:00 AM", start_time: "08:00", end_time: "10:00", period: "Morning" },
+            { id: 2, slot_label: "10:00 AM - 12:00 PM", start_time: "10:00", end_time: "12:00", period: "Morning" },
+            { id: 3, slot_label: "01:00 PM - 03:00 PM", start_time: "13:00", end_time: "15:00", period: "Afternoon" },
+            { id: 4, slot_label: "03:00 PM - 05:00 PM", start_time: "15:00", end_time: "17:00", period: "Afternoon" }
+        ];
+        let predefinedTimeSlots = [...serverDefaultTimeSlots];
+        let slotDurationHours = 2;
+        let occupiedSlotsForDate = [];
+        let selectedTimeSlotLabel = "";
+        let isCustomTimeMode = false;
+        let isTimeSlotsLocked = false;
+        let occupiedSlotsFetchSeq = 0;
+
+        function formatMinutesTo24(totalMins) {
+            const h = Math.floor(totalMins / 60);
+            const m = totalMins % 60;
+            return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        }
+
+        function formatMinutesTo12(totalMins) {
+            const h24 = Math.floor(totalMins / 60);
+            const m = totalMins % 60;
+            const ampm = h24 >= 12 ? "PM" : "AM";
+            const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+            return `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+        }
+
+        function formatDurationLabel(hours) {
+            const totalMins = Math.round(Number(hours || 2) * 60);
+            const h = Math.floor(totalMins / 60);
+            const m = totalMins % 60;
+            if (h > 0 && m > 0) return `${h} hr${h > 1 ? "s" : ""} ${m} mins`;
+            if (h > 0) return `${h} hr${h > 1 ? "s" : ""}`;
+            return `${m} mins`;
+        }
+
+        function generateTimeSlotsForDuration(hours) {
+            const safeHours = Math.max(0.5, Math.min(4, Number(hours) || 2));
+            if (Math.abs(safeHours - 2) < 0.01 && serverDefaultTimeSlots.length > 0) {
+                return [...serverDefaultTimeSlots];
+            }
+
+            const stepMins = Math.round(safeHours * 60);
+            const windows = [
+                { start: 8 * 60, end: 12 * 60, period: "Morning" },
+                { start: 13 * 60, end: 17 * 60, period: "Afternoon" }
+            ];
+            const generated = [];
+            let idx = 1;
+            windows.forEach(win => {
+                let cursor = win.start;
+                while (cursor + stepMins <= win.end) {
+                    const endM = cursor + stepMins;
+                    generated.push({
+                        id: idx++,
+                        slot_label: `${formatMinutesTo12(cursor)} - ${formatMinutesTo12(endM)}`,
+                        start_time: formatMinutesTo24(cursor),
+                        end_time: formatMinutesTo24(endM),
+                        period: win.period
+                    });
+                    cursor = endM;
+                }
+            });
+            return generated;
+        }
+
+        function updateDurationUiControls() {
+            const badge = document.getElementById("recommendedDurationBadge");
+            if (badge) {
+                const durText = formatDurationLabel(slotDurationHours);
+                badge.textContent = Math.abs(slotDurationHours - 2) < 0.01
+                    ? "2 hrs Recommended"
+                    : `${durText} Slots`;
+            }
+            const numInput = document.getElementById("customDurationHoursInput");
+            if (numInput && Number(numInput.value) !== Number(slotDurationHours)) {
+                numInput.value = String(slotDurationHours);
+            }
+            document.querySelectorAll(".duration-chip").forEach(chip => {
+                const chipHrs = Number(chip.getAttribute("data-hours"));
+                chip.classList.toggle("active", Math.abs(chipHrs - slotDurationHours) < 0.01);
+                chip.disabled = isTimeSlotsLocked;
+            });
+            if (numInput) numInput.disabled = isTimeSlotsLocked;
+        }
+
+        function setSlotDurationHours(hours) {
+            if (isTimeSlotsLocked) return;
+            const parsed = Number(hours);
+            if (!Number.isFinite(parsed) || parsed < 0.5 || parsed > 4) return;
+            slotDurationHours = parsed;
+            predefinedTimeSlots = generateTimeSlotsForDuration(slotDurationHours);
+            updateDurationUiControls();
+
+            // If user already picked a start time in custom inputs, keep end time synced with the new duration
+            const startInput = document.getElementById("startTime");
+            const endInput = document.getElementById("endTime");
+            if (startInput && startInput.value && endInput) {
+                const [sh, sm] = startInput.value.split(":").map(Number);
+                if (Number.isFinite(sh) && Number.isFinite(sm)) {
+                    const endTotal = sh * 60 + sm + Math.round(slotDurationHours * 60);
+                    if (endTotal <= 23 * 60 + 59) {
+                        endInput.value = formatMinutesTo24(endTotal);
+                    }
+                }
+            }
+
+            // Re-match selected label against the newly generated slots
+            const curS = String(startInput?.value || "").slice(0, 5);
+            const curE = String(endInput?.value || "").slice(0, 5);
+            const matched = predefinedTimeSlots.find(s => s.start_time === curS && s.end_time === curE);
+            selectedTimeSlotLabel = matched ? matched.slot_label : (curS && curE ? `${formatTime(curS)} - ${formatTime(curE)}` : "");
+
+            renderDefenseTimeSlots();
+            calculateDuration();
+        }
+
+        function onCustomDurationHoursInput(val) {
+            const parsed = Number(val);
+            if (!Number.isFinite(parsed) || parsed < 0.5 || parsed > 4) return;
+            setSlotDurationHours(parsed);
+        }
+
+        async function loadPredefinedTimeSlots() {
+            try {
+                const res = await fetchWithTimeout("/api/defense-time-slots");
+                const data = await res.json();
+                if (data && data.success && Array.isArray(data.slots) && data.slots.length > 0) {
+                    serverDefaultTimeSlots = data.slots.map(s => ({
+                        id: s.id,
+                        slot_label: s.slot_label,
+                        start_time: String(s.start_time || "").slice(0, 5),
+                        end_time: String(s.end_time || "").slice(0, 5),
+                        period: s.period || (Number(String(s.start_time || "08").slice(0, 2)) < 12 ? "Morning" : "Afternoon")
+                    }));
+                }
+            } catch (err) {
+                console.warn("Using default 2-hour defense time slots:", err);
+            }
+            predefinedTimeSlots = generateTimeSlotsForDuration(slotDurationHours);
+            updateDurationUiControls();
+            renderDefenseTimeSlots();
+        }
+
+        function getSelectedTimeSlotLabel() {
+            if (selectedTimeSlotLabel) return selectedTimeSlotLabel;
+            const s = String(document.getElementById("startTime")?.value || "").slice(0, 5);
+            const e = String(document.getElementById("endTime")?.value || "").slice(0, 5);
+            return (s && e) ? `${formatTime(s)} - ${formatTime(e)}` : null;
+        }
+
+        function timesOverlap(startA, endA, startB, endB) {
+            const sA = String(startA || "").slice(0, 5);
+            const eA = String(endA || "").slice(0, 5);
+            const sB = String(startB || "").slice(0, 5);
+            const eB = String(endB || "").slice(0, 5);
+            if (!sA || !eA || !sB || !eB) return false;
+            return sA < eB && eA > sB;
+        }
+
+        function setTimeSlotsLocked(locked) {
+            isTimeSlotsLocked = Boolean(locked);
+            const customBtn = document.getElementById("customTimeToggleBtn");
+            if (customBtn) customBtn.disabled = isTimeSlotsLocked;
+            updateDurationUiControls();
+            renderDefenseTimeSlots();
+        }
+
+        function toggleCustomTimeMode(forceState) {
+            if (isTimeSlotsLocked && typeof forceState === "undefined") return;
+            isCustomTimeMode = typeof forceState === "boolean" ? forceState : !isCustomTimeMode;
+            const wrap = document.getElementById("customTimeInputsWrap");
+            const btn = document.getElementById("customTimeToggleBtn");
+            if (wrap) wrap.style.display = isCustomTimeMode ? "block" : "none";
+            if (btn) {
+                btn.classList.toggle("active", isCustomTimeMode);
+                btn.innerHTML = isCustomTimeMode
+                    ? `<i class="fa-solid fa-xmark"></i><span>Close Custom</span>`
+                    : `<i class="fa-solid fa-sliders"></i><span>Custom Time</span>`;
+            }
+            if (!isCustomTimeMode && Math.abs(slotDurationHours - 2) >= 0.01) {
+                // Keep chosen duration slots visible if a slot is already selected, otherwise allow easy reset
+                updateDurationUiControls();
+            }
+            renderDefenseTimeSlots();
+            calculateDuration();
+        }
+
+        function onCustomTimeInputChange(changedField) {
+            const startInput = document.getElementById("startTime");
+            const endInput = document.getElementById("endTime");
+            if (changedField === "start" && startInput && startInput.value && endInput && (!endInput.value || startInput.value >= endInput.value)) {
+                const [sh, sm] = startInput.value.split(":").map(Number);
+                if (Number.isFinite(sh) && Number.isFinite(sm)) {
+                    const durHours = Math.max(1, Number(slotDurationHours) || 2);
+                    const endTotal = sh * 60 + sm + Math.round(durHours * 60);
+                    if (endTotal <= 23 * 60 + 59) {
+                        endInput.value = formatMinutesTo24(endTotal);
+                    }
+                }
+            }
+            const sVal = String(startInput?.value || "").slice(0, 5);
+            const eVal = String(endInput?.value || "").slice(0, 5);
+            const matched = predefinedTimeSlots.find(s => s.start_time === sVal && s.end_time === eVal);
+            selectedTimeSlotLabel = matched ? matched.slot_label : (sVal && eVal ? `${formatTime(sVal)} - ${formatTime(eVal)}` : "");
+            renderDefenseTimeSlots();
+            calculateDuration();
+        }
+
+        function selectDefenseTimeSlot(slotStart, slotEnd, slotLabel) {
+            if (isTimeSlotsLocked) return;
+            const startInput = document.getElementById("startTime");
+            const endInput = document.getElementById("endTime");
+            const curStart = String(startInput?.value || "").slice(0, 5);
+            const curEnd = String(endInput?.value || "").slice(0, 5);
+            if (curStart === String(slotStart).slice(0, 5) && curEnd === String(slotEnd).slice(0, 5)) {
+                if (startInput) startInput.value = "";
+                if (endInput) endInput.value = "";
+                selectedTimeSlotLabel = "";
+            } else {
+                if (startInput) startInput.value = slotStart;
+                if (endInput) endInput.value = slotEnd;
+                selectedTimeSlotLabel = slotLabel;
+            }
+            renderDefenseTimeSlots();
+            calculateDuration();
+        }
+
+        function syncTimeSlotSelectionFromInputs() {
+            const startVal = String(document.getElementById("startTime")?.value || "").slice(0, 5);
+            const endVal = String(document.getElementById("endTime")?.value || "").slice(0, 5);
+            if (!startVal || !endVal) {
+                slotDurationHours = 2;
+                predefinedTimeSlots = generateTimeSlotsForDuration(2);
+                selectedTimeSlotLabel = "";
+                updateDurationUiControls();
+                toggleCustomTimeMode(false);
+                return;
+            }
+            // Compute actual duration in hours to pick matching duration preset if applicable
+            const [sh, sm] = startVal.split(":").map(Number);
+            const [eh, em] = endVal.split(":").map(Number);
+            const diffHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+            if (diffHours >= 0.5 && diffHours <= 4 && Math.abs(diffHours * 2 - Math.round(diffHours * 2)) < 0.01) {
+                slotDurationHours = diffHours;
+                predefinedTimeSlots = generateTimeSlotsForDuration(slotDurationHours);
+                updateDurationUiControls();
+            }
+
+            const matched = predefinedTimeSlots.find(s => s.start_time === startVal && s.end_time === endVal);
+            if (matched) {
+                selectedTimeSlotLabel = matched.slot_label;
+                toggleCustomTimeMode(Math.abs(slotDurationHours - 2) >= 0.01);
+            } else {
+                selectedTimeSlotLabel = `${formatTime(startVal)} - ${formatTime(endVal)}`;
+                toggleCustomTimeMode(true);
+            }
+        }
+
+        async function refreshOccupiedDefenseSlots() {
+            const dateVal = document.getElementById("defenseDate")?.value || "";
+            const roomVal = getRoomName() || "";
+            const excludeId = modalMode === "edit" && selectedScheduleId ? selectedScheduleId : "";
+            const hintEl = document.getElementById("timeSlotsHint");
+
+            if (!dateVal) {
+                occupiedSlotsForDate = [];
+                if (hintEl) hintEl.textContent = "Select a date and room to check slot availability.";
+                renderDefenseTimeSlots();
+                return;
+            }
+
+            const seq = ++occupiedSlotsFetchSeq;
+            if (hintEl) hintEl.textContent = "Checking occupied slots...";
+
+            try {
+                const qs = new URLSearchParams({ date: dateVal });
+                if (roomVal) qs.set("room", roomVal);
+                if (excludeId) qs.set("excludeScheduleId", String(excludeId));
+
+                const res = await fetchWithTimeout(`/api/defense-schedules/occupied-slots?${qs.toString()}`);
+                const data = await res.json();
+                if (seq !== occupiedSlotsFetchSeq) return;
+                occupiedSlotsForDate = (data && data.success && Array.isArray(data.occupied)) ? data.occupied : [];
+            } catch (err) {
+                if (seq !== occupiedSlotsFetchSeq) return;
+                console.warn("Occupied slots API fallback to local schedules:", err);
+                const normDate = normalizeScheduleDate(dateVal);
+                occupiedSlotsForDate = (schedules || []).filter(s => {
+                    if (excludeId && Number(s.id) === Number(excludeId)) return false;
+                    const sStatus = String(s.defense_status || "").toLowerCase();
+                    if (sStatus === "cancelled" || sStatus === "completed") return false;
+                    if (normalizeScheduleDate(s.defense_date) !== normDate) return false;
+                    if (roomVal && String(s.room_name || "").trim().toLowerCase() !== roomVal.trim().toLowerCase()) return false;
+                    return true;
+                });
+            }
+
+            // If currently selected slot is now occupied for this date + room, clear it
+            if (roomVal && selectedTimeSlotLabel) {
+                const startVal = String(document.getElementById("startTime")?.value || "").slice(0, 5);
+                const endVal = String(document.getElementById("endTime")?.value || "").slice(0, 5);
+                const conflict = occupiedSlotsForDate.find(o => timesOverlap(startVal, endVal, o.start_time, o.end_time));
+                if (conflict) {
+                    selectedTimeSlotLabel = "";
+                    const st = document.getElementById("startTime");
+                    const en = document.getElementById("endTime");
+                    if (st) st.value = "";
+                    if (en) en.value = "";
+                    calculateDuration();
+                }
+            }
+
+            renderDefenseTimeSlots();
+        }
+
+        function getTodayLocalISO() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        }
+
+        function restrictDefenseDateToFuture(enable) {
+            const el = document.getElementById("defenseDate");
+            if (!el) return;
+            el.classList.remove("past-date");
+            if (enable) el.min = getTodayLocalISO();
+            else el.removeAttribute("min");
+        }
+
+        function onDefenseDateOrRoomChange() {
+            const dateEl = document.getElementById("defenseDate");
+            if (modalMode === "create" && dateEl && dateEl.value && dateEl.value < getTodayLocalISO()) {
+                dateEl.classList.add("past-date");
+                alert("That date has already passed. Please choose today or a future date.");
+                dateEl.value = "";
+                dateEl.classList.remove("past-date");
+            } else if (dateEl) {
+                dateEl.classList.remove("past-date");
+            }
+            calculateDuration();
+            refreshOccupiedDefenseSlots();
+        }
+
+        function renderDefenseTimeSlots() {
+            const grid = document.getElementById("timeSlotGrid");
+            const hintEl = document.getElementById("timeSlotsHint");
+            if (!grid) return;
+
+            const dateVal = document.getElementById("defenseDate")?.value || "";
+            const roomVal = getRoomName() || "";
+            const currentStart = String(document.getElementById("startTime")?.value || "").slice(0, 5);
+            const currentEnd = String(document.getElementById("endTime")?.value || "").slice(0, 5);
+
+            let occupiedCount = 0;
+
+            grid.innerHTML = predefinedTimeSlots.map(slot => {
+                const overlapping = dateVal
+                    ? occupiedSlotsForDate.filter(o => timesOverlap(slot.start_time, slot.end_time, o.start_time, o.end_time))
+                    : [];
+
+                // Occupied & disabled when date + room match an existing schedule
+                const isOccupiedForRoom = Boolean(dateVal && roomVal && overlapping.length > 0);
+                // Info badge when date is chosen but no room selected yet
+                const bookedRoomsOther = (!roomVal && overlapping.length > 0)
+                    ? [...new Set(overlapping.map(o => o.room_name).filter(Boolean))]
+                    : [];
+
+                if (isOccupiedForRoom) occupiedCount++;
+
+                const isSelected = currentStart === slot.start_time && currentEnd === slot.end_time && !isOccupiedForRoom;
+                const isDisabled = isOccupiedForRoom || isTimeSlotsLocked;
+
+                let badgeHtml = `<span class="slot-status-pill slot-pill-open">Available</span>`;
+                let subInfo = `${slot.period} • ${formatDurationLabel(slotDurationHours)}`;
+
+                if (isOccupiedForRoom) {
+                    const first = overlapping[0];
+                    badgeHtml = `<span class="slot-status-pill slot-pill-occupied"><i class="fa-solid fa-ban"></i> Occupied</span>`;
+                    subInfo = `Booked by ${first.group_name || "another group"} (${first.room_name || roomVal})`;
+                } else if (bookedRoomsOther.length > 0) {
+                    badgeHtml = `<span class="slot-status-pill slot-pill-partial">${bookedRoomsOther.length} room${bookedRoomsOther.length > 1 ? "s" : ""} booked</span>`;
+                    subInfo = `Booked in: ${bookedRoomsOther.slice(0, 2).join(", ")}${bookedRoomsOther.length > 2 ? "..." : ""}`;
+                } else if (isSelected) {
+                    badgeHtml = `<span class="slot-status-pill slot-pill-selected"><i class="fa-solid fa-check"></i> Selected</span>`;
+                }
+
+                return `
+                    <button
+                        type="button"
+                        class="time-slot-card ${isSelected ? "selected" : ""} ${isOccupiedForRoom ? "occupied" : ""}"
+                        ${isDisabled ? "disabled" : ""}
+                        onclick="selectDefenseTimeSlot('${slot.start_time}', '${slot.end_time}', '${escapeHtml(slot.slot_label)}')"
+                        title="${escapeHtml(subInfo)}"
+                    >
+                        <div class="time-slot-top">
+                            <span class="time-slot-label">${escapeHtml(slot.slot_label)}</span>
+                            ${badgeHtml}
+                        </div>
+                        <div class="time-slot-meta">${escapeHtml(subInfo)}</div>
+                    </button>
+                `;
+            }).join("");
+
+            if (hintEl) {
+                if (!dateVal) {
+                    hintEl.textContent = "Select a date and room to check slot availability.";
+                } else if (!roomVal) {
+                    hintEl.textContent = "Select a room to lock out occupied time slots for that venue.";
+                } else {
+                    const freeCount = predefinedTimeSlots.length - occupiedCount;
+                    hintEl.textContent = occupiedCount > 0
+                        ? `${freeCount} of ${predefinedTimeSlots.length} preset slots available in ${roomVal} (${occupiedCount} occupied).`
+                        : `All ${predefinedTimeSlots.length} preset slots are available in ${roomVal}.`;
+                }
+            }
+        }
+
+        async function loadPageData() {
             try {
                 await Promise.allSettled([
+                    loadPredefinedTimeSlots(),
                     loadDefenseData(),
                     loadSchedules()
                 ]);
@@ -853,9 +1253,9 @@
             }
         }
 
-        async function loadDefenseData(){
+        async function loadDefenseData() {
 
-            try{
+            try {
 
                 const response =
                     await fetchWithTimeout(
@@ -865,7 +1265,7 @@
                 const data =
                     await response.json();
 
-                if(!data.success){
+                if (!data.success) {
                     console.warn(data.message || "Failed to load schedule data.");
                     return;
                 }
@@ -879,24 +1279,167 @@
                 renderGroupOptions();
                 renderPanelistOptions();
 
-            }catch(error){
+            } catch (error) {
                 console.error("loadDefenseData error:", error);
             }
 
         }
 
-        function renderGroupOptions(){
+        let filteredGroupOptions = [];
+        let isGroupDropdownOpen = false;
+        let groupSearchFilterActive = false;
+
+        function getSelectedGroupLabel() {
+            const groupSelect = document.getElementById("groupSelect");
+            if (!groupSelect || !groupSelect.value) return "";
+            const opt = Array.from(groupSelect.options).find(o => String(o.value) === String(groupSelect.value));
+            return opt ? opt.textContent.trim() : "";
+        }
+
+        function syncGroupComboboxLabel() {
+            const input = document.getElementById("groupSearchInput");
+            const clearBtn = document.getElementById("groupSearchClearBtn");
+            const label = getSelectedGroupLabel();
+            if (input) input.value = label;
+            if (clearBtn) clearBtn.style.display = label ? "flex" : "none";
+            groupSearchFilterActive = false;
+        }
+
+        function openGroupDropdown() {
+            const menu = document.getElementById("groupDropdownMenu");
+            const box = document.getElementById("groupCombobox");
+            if (!menu || !box) return;
+            isGroupDropdownOpen = true;
+            box.classList.add("open");
+            menu.style.display = "block";
+            renderGroupDropdownMenu();
+        }
+
+        function closeGroupDropdown(restoreLabel = true) {
+            const menu = document.getElementById("groupDropdownMenu");
+            const box = document.getElementById("groupCombobox");
+            isGroupDropdownOpen = false;
+            if (box) box.classList.remove("open");
+            if (menu) menu.style.display = "none";
+            if (restoreLabel) {
+                syncGroupComboboxLabel();
+            }
+        }
+
+        function toggleGroupDropdown() {
+            if (isGroupDropdownOpen) {
+                closeGroupDropdown(true);
+            } else {
+                const input = document.getElementById("groupSearchInput");
+                if (input) input.focus();
+                openGroupDropdown();
+            }
+        }
+
+        function onGroupSearchInput() {
+            const input = document.getElementById("groupSearchInput");
+            const clearBtn = document.getElementById("groupSearchClearBtn");
+            groupSearchFilterActive = true;
+            if (clearBtn) {
+                clearBtn.style.display = (input && input.value.trim()) ? "flex" : "none";
+            }
+            if (!isGroupDropdownOpen) openGroupDropdown();
+            renderGroupDropdownMenu();
+        }
+
+        function onGroupSearchKeydown(event) {
+            if (event.key === "Escape") {
+                closeGroupDropdown(true);
+                return;
+            }
+            if (event.key === "Enter" && isGroupDropdownOpen) {
+                event.preventDefault();
+                if (filteredGroupOptions.length > 0) {
+                    selectGroupFromCombobox(filteredGroupOptions[0].id);
+                }
+            }
+        }
+
+        function clearGroupSearch() {
+            const input = document.getElementById("groupSearchInput");
+            const clearBtn = document.getElementById("groupSearchClearBtn");
+            const groupSelect = document.getElementById("groupSelect");
+            const hadSelection = groupSelect && Boolean(groupSelect.value);
+            if (groupSelect) groupSelect.value = "";
+            if (input) {
+                input.value = "";
+                input.focus();
+            }
+            if (clearBtn) clearBtn.style.display = "none";
+            groupSearchFilterActive = false;
+            openGroupDropdown();
+            if (hadSelection) {
+                loadSelectedGroupMembers();
+            }
+        }
+
+        function selectGroupFromCombobox(groupId) {
+            const groupSelect = document.getElementById("groupSelect");
+            if (!groupSelect) return;
+            groupSelect.value = String(groupId);
+            groupSearchFilterActive = false;
+            syncGroupComboboxLabel();
+            closeGroupDropdown(false);
+            loadSelectedGroupMembers();
+        }
+
+        document.addEventListener("click", (e) => {
+            const box = document.getElementById("groupCombobox");
+            if (isGroupDropdownOpen && box && !box.contains(e.target)) {
+                closeGroupDropdown(true);
+            }
+        });
+
+        function renderGroupDropdownMenu() {
+            const menu = document.getElementById("groupDropdownMenu");
+            const groupSelect = document.getElementById("groupSelect");
+            const input = document.getElementById("groupSearchInput");
+            if (!menu) return;
+
+            const selectedVal = groupSelect ? String(groupSelect.value || "") : "";
+            const query = (groupSearchFilterActive && input) ? input.value.trim().toLowerCase() : "";
+
+            const visible = filteredGroupOptions.filter(item => {
+                if (!query) return true;
+                return item.haystack.includes(query);
+            });
+
+            if (visible.length === 0) {
+                menu.innerHTML = `<div class="group-combobox-empty">No matching groups found</div>`;
+                return;
+            }
+
+            menu.innerHTML = visible.map(item => {
+                const isSelected = selectedVal && String(item.id) === selectedVal;
+                return `
+                    <div
+                        class="group-combobox-option ${item.statusClass || ""} ${isSelected ? "selected" : ""}"
+                        onmousedown="event.preventDefault(); selectGroupFromCombobox('${item.id}')"
+                    >
+                        <span class="group-combobox-option-text">${escapeHtml(item.displayName)}</span>
+                        ${isSelected ? `<i class="fa-solid fa-check"></i>` : ""}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderGroupOptions() {
 
             const groupSelect =
                 document.getElementById("groupSelect");
 
-            if(!groupSelect) return;
+            if (!groupSelect) return;
 
             const selectedVal = groupSelect.value;
             const currentDefenseType = (getDefenseType() || "").trim().toLowerCase();
 
-            groupSelect.innerHTML =
-                `<option value="">Select group</option>`;
+            const optionHtmlList = [];
+            filteredGroupOptions = [];
 
             groups.forEach(group => {
                 const readiness = groupReadinessMap[group.id];
@@ -930,12 +1473,13 @@
 
                 const programText =
                     group.program === "IS"
-                    ? "BSIS"
-                    : group.program === "IT"
-                    ? "BSIT"
-                    : "Not Set";
+                        ? "BSIS"
+                        : group.program === "IT"
+                            ? "BSIT"
+                            : "Not Set";
 
                 let styleAttr = "";
+                let statusClass = "";
                 let displayName = `${group.group_id} - ${group.group_name || "Unnamed Group"} (${programText})`;
 
                 // Check re-defense status from readiness map
@@ -944,26 +1488,47 @@
 
                 if (isRedefense && redefenseVerdict === "Conditional Passed") {
                     styleAttr = "style='color: #1d4ed8; background-color: #eff6ff; font-weight: 600;'";
+                    statusClass = "opt-redefense-cond";
                     displayName = `[Re-Defense: Conditional Passed] ${displayName}`;
                 } else if (isRedefense && redefenseVerdict === "For Formal Defense") {
                     styleAttr = "style='color: #ea580c; background-color: #fff7ed; font-weight: 600;'";
+                    statusClass = "opt-redefense-formal";
                     displayName = `[Re-Defense: For Formal Defense] ${displayName}`;
                 } else if (readiness) {
                     if (!readiness.allowed) {
                         styleAttr = "style='color: #94a3b8; background-color: #f8fafc;'";
+                        statusClass = "opt-missing-docs";
                         if (readiness.reason === "Missing Documents") {
                             displayName = `[Missing Docs] ${displayName}`;
                         }
                     }
                 }
 
-                groupSelect.innerHTML += `
+                const haystack = [
+                    group.group_id,
+                    group.group_name,
+                    group.project_title,
+                    group.program,
+                    programText,
+                    displayName
+                ].filter(Boolean).join(" ").toLowerCase();
+
+                filteredGroupOptions.push({
+                    id: group.id,
+                    displayName,
+                    statusClass,
+                    haystack
+                });
+
+                optionHtmlList.push(`
                     <option value="${group.id}" ${styleAttr}>
                         ${displayName}
                     </option>
-                `;
+                `);
 
             });
+
+            groupSelect.innerHTML = `<option value="">Select group</option>` + optionHtmlList.join("");
 
             if (selectedVal) {
                 // Ensure the selected group is actually one of the visible option values
@@ -973,6 +1538,13 @@
                 } else {
                     groupSelect.value = "";
                 }
+            }
+
+            if (!groupSearchFilterActive) {
+                syncGroupComboboxLabel();
+            }
+            if (isGroupDropdownOpen) {
+                renderGroupDropdownMenu();
             }
 
         }
@@ -1198,7 +1770,7 @@
                     .toUpperCase();
                 const isChair = type === "chair";
                 const conflict = getPanelistConflict(person.id);
-                const conflictBadge = conflict 
+                const conflictBadge = conflict
                     ? `<span style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 8px;"><i class="fa-solid fa-circle-exclamation"></i> Already Booked (${formatTime(conflict.start_time)} - ${formatTime(conflict.end_time)})</span>`
                     : '';
                 const cardStyle = conflict ? 'style="border: 1.5px solid #ef4444; background: #fef2f2;"' : '';
@@ -1216,36 +1788,36 @@
             }).join("");
         }
 
-        function renderPanelistOptions(list = panelists){
+        function renderPanelistOptions(list = panelists) {
             renderPanelistDropdowns();
         }
 
         const REQUIRED_PANEL_MEMBER_COUNT = 2;
 
-        function getSelectedPanelistIds(){
-            if(!selectedChairId){
+        function getSelectedPanelistIds() {
+            if (!selectedChairId) {
                 return [];
             }
             return [selectedChairId, ...selectedMemberIds.filter(Boolean)];
         }
 
-        function validatePanelSelection(){
-            if(!selectedChairId){
+        function validatePanelSelection() {
+            if (!selectedChairId) {
                 alert("Please select a panel chair.");
                 return false;
             }
 
             const cleanMembers = selectedMemberIds.filter(Boolean);
-            if(cleanMembers.length < REQUIRED_PANEL_MEMBER_COUNT){
+            if (cleanMembers.length < REQUIRED_PANEL_MEMBER_COUNT) {
                 alert("Please select exactly 2 panel members.");
                 return false;
             }
 
             // Check if any selected panelist is forbidden (group adviser or instructor)
             const allSelectedIds = [selectedChairId, ...cleanMembers];
-            for(const pid of allSelectedIds){
+            for (const pid of allSelectedIds) {
                 const p = panelists.find(item => String(item.id) === String(pid));
-                if(p && isForbiddenPanelist(p)){
+                if (p && isForbiddenPanelist(p)) {
                     alert(`"${p.fullname}" is an adviser or instructor for this group and cannot serve as a panelist.`);
                     return false;
                 }
@@ -1254,13 +1826,13 @@
             return true;
         }
 
-        function setSelectedPanelists(selectedIds){
+        function setSelectedPanelists(selectedIds) {
             selectedChairId = selectedIds[0] ? String(selectedIds[0]) : null;
             selectedMemberIds = selectedIds.slice(1).map(id => String(id));
             renderPanelistDropdowns();
         }
 
-        function calculateDuration(){
+        function calculateDuration() {
             const dateVal = document.getElementById("defenseDate").value;
             const startVal = document.getElementById("startTime").value;
             const endVal = document.getElementById("endTime").value;
@@ -1323,7 +1895,7 @@
         }
 
 
-        async function loadSelectedGroupMembers(){
+        async function loadSelectedGroupMembers() {
 
             const groupDbId =
                 document.getElementById("groupSelect").value;
@@ -1331,7 +1903,7 @@
             const preview =
                 document.getElementById("memberPreview");
 
-            if(!groupDbId){
+            if (!groupDbId) {
                 currentGroupAdviserId = null;
                 currentGroupInstructorIds = [];
                 renderPanelistDropdowns();
@@ -1344,6 +1916,7 @@
             if (readiness && !readiness.allowed) {
                 alert(readiness.message);
                 document.getElementById("groupSelect").value = "";
+                syncGroupComboboxLabel();
                 currentGroupAdviserId = null;
                 currentGroupInstructorIds = [];
                 renderPanelistDropdowns();
@@ -1383,7 +1956,7 @@
             // Check if we should retain outline defense panelists
             checkAndRetainOutlinePanelists(getDefenseType(), groupDbId);
 
-            try{
+            try {
 
                 const response =
                     await fetchWithTimeout(
@@ -1393,7 +1966,7 @@
                 const data =
                     await response.json();
 
-                if(!data.success){
+                if (!data.success) {
 
                     preview.innerHTML =
                         "Failed to load members.";
@@ -1402,7 +1975,7 @@
 
                 }
 
-                if(data.members.length === 0){
+                if (data.members.length === 0) {
 
                     preview.innerHTML =
                         "No members found for this group.";
@@ -1430,7 +2003,7 @@
                         </div>
                     `).join("");
 
-            }catch(error){
+            } catch (error) {
 
                 console.log(error);
 
@@ -1443,9 +2016,16 @@
 
         }
 
-        async function loadSchedules(){
+        function normalizeProgramCode(v) {
+            const p = String(v || "").trim().toUpperCase().replace(/[^A-Z]/g, "");
+            if (p === "IS" || p === "BSIS" || p.includes("INFORMATIONSYSTEM")) return "IS";
+            if (p === "IT" || p === "BSIT" || p.includes("INFORMATIONTECHNOLOGY")) return "IT";
+            return "";
+        }
+
+        async function loadSchedules() {
             const tbody = document.getElementById("scheduleTableBody");
-            try{
+            try {
 
                 const response =
                     await fetchWithTimeout(
@@ -1455,9 +2035,9 @@
                 const data =
                     await response.json();
 
-                if(!data.success){
+                if (!data.success) {
                     schedules = [];
-                    if(tbody){
+                    if (tbody) {
                         tbody.innerHTML = `
                             <tr>
                                 <td colspan="8" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
@@ -1476,9 +2056,9 @@
 
                 renderScheduleSections();
 
-            }catch(error){
+            } catch (error) {
                 console.error("loadSchedules error:", error);
-                if(tbody){
+                if (tbody) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="8" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
@@ -1503,14 +2083,14 @@
         let currentPage = 1;
         const PAGE_SIZE = 10;
 
-        function onScopeFilterChange(){
+        function onScopeFilterChange() {
             currentScopeFilter = document.getElementById("scopeFilter")?.value || "All";
             currentPage = 1;
             renderScheduleSections();
         }
 
-        function isDefenseHappening(defenseDate, startTime, endTime){
-            if(!defenseDate || !startTime || !endTime) return false;
+        function isDefenseHappening(defenseDate, startTime, endTime) {
+            if (!defenseDate || !startTime || !endTime) return false;
             const dateStr = String(defenseDate).slice(0, 10);
             const startStr = String(startTime).slice(0, 5);
             const endStr = String(endTime).slice(0, 5);
@@ -1520,7 +2100,7 @@
             return now >= startDt && now <= endDt;
         }
 
-        function onDefenseTypeChange(){
+        function onDefenseTypeChange() {
             toggleOtherDefenseType();
             const groupDbId = modalMode === "edit"
                 ? (schedules.find(s => Number(s.id) === Number(selectedScheduleId))?.group_db_id)
@@ -1530,16 +2110,16 @@
             updateGroupsReadiness();
         }
 
-        function checkAndRetainOutlinePanelists(defenseType, groupDbId){
+        function checkAndRetainOutlinePanelists(defenseType, groupDbId) {
             const retainNotice = document.getElementById("retainOutlinePanelNotice");
-            if(!retainNotice) return;
+            if (!retainNotice) return;
 
-            if(modalMode !== "create"){
+            if (modalMode !== "create") {
                 retainNotice.style.display = "none";
                 return;
             }
 
-            if(!groupDbId){
+            if (!groupDbId) {
                 retainNotice.style.display = "none";
                 return;
             }
@@ -1589,44 +2169,51 @@
             }
 
             // --- Standard outline → pre-final/final retention ---
-            if(type !== "Pre-Final Defense" && type !== "Final Defense"){
+            if (type !== "Pre-Final Defense" && type !== "Final Defense") {
                 retainNotice.style.display = "none";
                 return;
             }
 
-            // Look for an Outline Defense schedule for this group
-            const outlineSched = schedules.find(s =>
+            // Find this group's Outline Defense schedule (ignore cancelled ones; prefer the one
+            // that still has the most panelists, then the most recent). Retain ALL its panelists
+            // regardless of whether they submitted a grade.
+            const outlineCandidates = (schedules || []).filter(s =>
                 Number(s.group_db_id) === Number(groupDbId)
                 && String(s.defense_type || "").toLowerCase().includes("outline")
+                && String(s.defense_status || "").toLowerCase() !== "cancelled"
                 && Array.isArray(s.panelists)
                 && s.panelists.length > 0
             );
+            outlineCandidates.sort((a, b) => b.panelists.length - a.panelists.length);
+            const outlineSched = outlineCandidates[0];
 
-            if(outlineSched && outlineSched.panelists && outlineSched.panelists.length >= 3){
-                const chair = outlineSched.panelists[0];
-                const mem1 = outlineSched.panelists[1];
-                const mem2 = outlineSched.panelists[2];
+            if (outlineSched) {
+                const retained = outlineSched.panelists.slice(0, 1 + REQUIRED_PANEL_MEMBER_COUNT);
+                const chair = retained[0];
+                const members = retained.slice(1);
 
                 selectedChairId = String(chair.id);
-                selectedMemberIds = [String(mem1.id), String(mem2.id)];
+                selectedMemberIds = members.map(m => String(m.id));
 
                 renderPanelistDropdowns();
                 updatePanelSummary();
 
+                const names = retained.map(p => escapeHtml(p.fullname)).join(", ");
+                const missing = (1 + REQUIRED_PANEL_MEMBER_COUNT) - retained.length;
                 retainNotice.style.display = "flex";
                 retainNotice.style.background = "";
                 retainNotice.style.borderLeft = "";
                 retainNotice.style.color = "";
                 retainNotice.innerHTML = `
                     <i class="fa-solid fa-clock-rotate-left"></i>
-                    <span>Retained panelists from <strong>Outline Defense</strong> (${escapeHtml(chair.fullname)}, ${escapeHtml(mem1.fullname)}, ${escapeHtml(mem2.fullname)}). Still editable if needed.</span>
+                    <span>Retained panelists from <strong>Outline Defense</strong> (${names}). Still editable if needed.${missing > 0 ? ` <strong>Note:</strong> ${missing} panel slot(s) from the outline panel are no longer assigned; please select replacement(s).` : ""}</span>
                 `;
-            }else{
+            } else {
                 retainNotice.style.display = "none";
             }
         }
 
-        function renderScheduleSections(){
+        function renderScheduleSections() {
 
             const keyword =
                 (document.getElementById("searchSchedule")?.value || "").toLowerCase().trim();
@@ -1641,30 +2228,30 @@
                 schedules.filter(item => {
 
                     // 1. Scope Filter (All / My / Other)
-                    if(scope === "My" && item.is_owner !== true) return false;
-                    if(scope === "Other" && item.is_owner === true) return false;
+                    if (scope === "My" && item.is_owner !== true) return false;
+                    if (scope === "Other" && item.is_owner === true) return false;
 
                     // 2. Status Filter
-                    if(status !== "All"){
+                    if (status !== "All") {
                         const itemStatus = String(item.defense_status || "").trim();
-                        if(status === "Ongoing"){
-                            if(!isDefenseHappening(item.defense_date, item.start_time, item.end_time)) return false;
-                        }else if(itemStatus !== status){
+                        if (status === "Ongoing") {
+                            if (!isDefenseHappening(item.defense_date, item.start_time, item.end_time)) return false;
+                        } else if (itemStatus !== status) {
                             return false;
                         }
                     }
 
                     // 3. Search Filter
-                    if(keyword){
+                    if (keyword) {
                         const panelistNames =
                             Array.isArray(item.panelists) && item.panelists.length > 0
-                            ? item.panelists.map(panelist => panelist.fullname || "").join(" ")
-                            : "";
+                                ? item.panelists.map(panelist => panelist.fullname || "").join(" ")
+                                : "";
 
                         const memberNames =
                             Array.isArray(item.members) && item.members.length > 0
-                            ? item.members.map(member => member.fullname || "").join(" ")
-                            : "";
+                                ? item.members.map(member => member.fullname || "").join(" ")
+                                : "";
 
                         const matchesKeyword =
                             String(item.schedule_code || "").toLowerCase().includes(keyword)
@@ -1678,7 +2265,7 @@
                             || panelistNames.toLowerCase().includes(keyword)
                             || memberNames.toLowerCase().includes(keyword);
 
-                        if(!matchesKeyword) return false;
+                        if (!matchesKeyword) return false;
                     }
 
                     return true;
@@ -1688,8 +2275,8 @@
             // Pagination calculation (10 per page)
             const totalRecords = filtered.length;
             const totalPages = Math.ceil(totalRecords / PAGE_SIZE) || 1;
-            if(currentPage > totalPages) currentPage = totalPages;
-            if(currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
 
             const startIndex = (currentPage - 1) * PAGE_SIZE;
             const endIndex = Math.min(startIndex + PAGE_SIZE, totalRecords);
@@ -1699,16 +2286,16 @@
 
         }
 
-        function renderSchedulesTable(list, totalRecords, startIndex, endIndex, totalPages){
+        function renderSchedulesTable(list, totalRecords, startIndex, endIndex, totalPages) {
 
             const tbody =
                 document.getElementById("scheduleTableBody");
 
-            if(!tbody) return;
+            if (!tbody) return;
 
             tbody.innerHTML = "";
 
-            if(totalRecords === 0){
+            if (totalRecords === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="empty-table-row" style="text-align: center; color: #7b6f96; padding: 35px 20px;">
@@ -1723,17 +2310,12 @@
 
             tbody.innerHTML = list.map(item => {
 
-                const programText =
-                    item.program === "IS"
-                    ? "BSIS"
-                    : item.program === "IT"
-                    ? "BSIT"
-                    : "Not Set";
+                const programText = ({ IS: "BSIS", IT: "BSIT" })[normalizeProgramCode(item.program)] || "Not Set";
 
                 const panelistNames =
                     Array.isArray(item.panelists) && item.panelists.length > 0
-                    ? item.panelists.map(panelist => panelist.fullname || "").join(", ")
-                    : "No panelists";
+                        ? item.panelists.map(panelist => panelist.fullname || "").join(", ")
+                        : "No panelists";
 
                 const isHappening = isDefenseHappening(item.defense_date, item.start_time, item.end_time);
                 const displayStatus = isHappening && item.defense_status === "Scheduled" ? "Ongoing" : item.defense_status;
@@ -1753,7 +2335,7 @@
                                 ${ownerPill}
                             </div>
                             <div class="project-title-cell" title="${escapeHtml(item.project_title || "")}">
-                                ${escapeHtml(item.project_title || "No project title")}
+                                ${escapeHtml(item.project_title || ("Program: " + (normalizeProgramCode(item.program) || "Not Set")))}
                             </div>
                         </td>
                         <td class="program-col"><span class="program-badge">${programText}</span></td>
@@ -1762,7 +2344,7 @@
                             <div class="date-cell"><i class="fa-regular fa-calendar-days"></i> ${formatDate(item.defense_date)}</div>
                             <div class="time-cell"><i class="fa-regular fa-clock"></i> ${formatTime(item.start_time)} - ${formatTime(item.end_time)}</div>
                         </td>
-                        <td class="room-col"><span class="room-badge">${escapeHtml(item.room_name)}</span></td>
+                        <td class="room-col"><span class="room-badge">${/^Online:/i.test(String(item.room_name || "")) ? `<i class="fa-solid fa-video"></i> <a href="${escapeHtml(String(item.room_name).replace(/^Online:\s*/i, ""))}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">Online</a>` : escapeHtml(item.room_name)}</span></td>
                         <td class="panelists-col">
                             <div class="panel-cell" title="${escapeHtml(panelistNames)}">
                                 ${escapeHtml(panelistNames)}
@@ -1824,12 +2406,12 @@
 
         }
 
-        function renderPaginationControls(totalRecords, fromRecord, toRecord, totalPages){
+        function renderPaginationControls(totalRecords, fromRecord, toRecord, totalPages) {
             const infoEl = document.getElementById("paginationInfo");
             const controlsEl = document.getElementById("paginationControls");
-            if(!infoEl || !controlsEl) return;
+            if (!infoEl || !controlsEl) return;
 
-            if(totalRecords === 0){
+            if (totalRecords === 0) {
                 infoEl.textContent = "Showing 0 of 0 schedules";
                 controlsEl.innerHTML = "";
                 return;
@@ -1849,7 +2431,7 @@
                 </button>
             `;
 
-            for(let p = 1; p <= totalPages; p++){
+            for (let p = 1; p <= totalPages; p++) {
                 html += `
                     <button
                         class="page-btn ${p === currentPage ? 'active' : ''}"
@@ -1876,12 +2458,12 @@
             controlsEl.innerHTML = html;
         }
 
-        function goToPage(page){
+        function goToPage(page) {
             currentPage = page;
             renderScheduleSections();
         }
 
-        async function openCreateModal(){
+        async function openCreateModal() {
             try {
                 modalMode = "create";
                 selectedScheduleId = null;
@@ -1890,15 +2472,15 @@
 
                 const safeSetText = (id, text) => {
                     const el = document.getElementById(id);
-                    if(el) el.innerText = text;
+                    if (el) el.innerText = text;
                 };
                 const safeSetDisplay = (id, disp) => {
                     const el = document.getElementById(id);
-                    if(el) el.style.display = disp;
+                    if (el) el.style.display = disp;
                 };
                 const safeSetDisabled = (id, dis) => {
                     const el = document.getElementById(id);
-                    if(el) el.disabled = dis;
+                    if (el) el.disabled = dis;
                 };
 
                 safeSetText("modalTitle", "Create Defense Schedule");
@@ -1911,13 +2493,16 @@
                 safeSetDisplay("retainOutlinePanelNotice", "none");
 
                 safeSetDisabled("defenseDate", false);
+                restrictDefenseDateToFuture(true);
                 safeSetDisabled("startTime", false);
                 safeSetDisabled("endTime", false);
                 safeSetDisabled("roomSelect", false);
                 safeSetDisabled("otherRoom", false);
+                setTimeSlotsLocked(false);
+                refreshOccupiedDefenseSlots();
 
                 const saveBtn = document.querySelector("#scheduleModal .save-btn");
-                if(saveBtn) saveBtn.style.display = "inline-flex";
+                if (saveBtn) saveBtn.style.display = "inline-flex";
 
                 safeSetDisplay("modalDeleteScheduleBtn", "none");
                 safeSetDisplay("statusBox", "none");
@@ -1932,21 +2517,21 @@
                 }
 
                 updateGroupsReadiness().catch(err => console.error("updateGroupsReadiness error:", err));
-            } catch(err) {
+            } catch (err) {
                 console.error("openCreateModal error:", err);
                 const modal = document.getElementById("scheduleModal");
                 if (modal) modal.style.display = "flex";
             }
         }
 
-        async function openEditModal(id){
+        async function openEditModal(id) {
 
             const item =
                 schedules.find(schedule =>
                     Number(schedule.id) === Number(id)
                 );
 
-            if(!item){
+            if (!item) {
 
                 alert("Schedule not found.");
 
@@ -1954,7 +2539,7 @@
 
             }
 
-            if(!Boolean(item.is_owner)){
+            if (!Boolean(item.is_owner)) {
 
                 alert("You can only edit schedules that you created.");
 
@@ -1978,7 +2563,7 @@
             document.getElementById("groupSelectGroup").style.display = "none";
             document.getElementById("groupLockedGroup").style.display = "block";
             document.getElementById("lockedGroupName").textContent = `${item.group_id ? item.group_id + " - " : ""}${item.group_name || "Unnamed Group"}`;
-            document.getElementById("lockedProjectTitle").textContent = item.project_title || "No project title";
+            document.getElementById("lockedProjectTitle").textContent = item.project_title || ("Program: " + (normalizeProgramCode(item.program) || "Not Set"));
             document.getElementById("groupSelect").value = item.group_db_id;
 
             // 2. Status Analysis & In-Progress Check
@@ -1990,31 +2575,33 @@
 
             const hasEvaluations = (Number(item.evaluations_submitted || 0) > 0) || (item.evaluation && item.evaluation.score !== null);
             const modalDelBtn = document.getElementById("modalDeleteScheduleBtn");
-            if(isCompleted){
+            if (isCompleted) {
                 statusAlertEl.style.display = "flex";
                 statusAlertEl.className = "defense-status-alert completed-alert";
                 statusAlertEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> <div><strong>Defense Completed:</strong> This defense schedule is completed and graded. Schedule settings are locked.</div>`;
-                if(saveBtn) saveBtn.style.display = "none";
-                if(modalDelBtn) modalDelBtn.style.display = "none";
-            }else if(isHappening){
+                if (saveBtn) saveBtn.style.display = "none";
+                if (modalDelBtn) modalDelBtn.style.display = "none";
+            } else if (isHappening) {
                 statusAlertEl.style.display = "flex";
                 statusAlertEl.className = "defense-status-alert happening-alert";
                 statusAlertEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <div><strong>Defense In Progress:</strong> This defense presentation is currently taking place. Date, time, and room cannot be changed. You can still adjust panelists or force complete if needed.</div>`;
-                if(saveBtn) saveBtn.style.display = "inline-flex";
-                if(modalDelBtn) modalDelBtn.style.display = hasEvaluations ? "none" : "inline-flex";
-            }else{
+                if (saveBtn) saveBtn.style.display = "inline-flex";
+                if (modalDelBtn) modalDelBtn.style.display = hasEvaluations ? "none" : "inline-flex";
+            } else {
                 statusAlertEl.style.display = "none";
-                if(saveBtn) saveBtn.style.display = "inline-flex";
-                if(modalDelBtn) modalDelBtn.style.display = hasEvaluations ? "none" : "inline-flex";
+                if (saveBtn) saveBtn.style.display = "inline-flex";
+                if (modalDelBtn) modalDelBtn.style.display = hasEvaluations ? "none" : "inline-flex";
             }
 
             // 3. Lock date, time, and room if happening or completed
             const lockDateTimeRoom = isCompleted || isHappening;
+            restrictDefenseDateToFuture(false);
             document.getElementById("defenseDate").disabled = lockDateTimeRoom;
             document.getElementById("startTime").disabled = lockDateTimeRoom;
             document.getElementById("endTime").disabled = lockDateTimeRoom;
             document.getElementById("roomSelect").disabled = lockDateTimeRoom;
             document.getElementById("otherRoom").disabled = lockDateTimeRoom;
+            setTimeSlotsLocked(lockDateTimeRoom);
 
             // 4. Populate form values
             document.getElementById("defenseDate").value =
@@ -2028,8 +2615,8 @@
 
             document.getElementById("defenseType").value =
                 isDefaultDefenseType(item.defense_type)
-                ? item.defense_type
-                : "Concept Presentation";
+                    ? item.defense_type
+                    : "Concept Presentation";
 
             toggleOtherDefenseType();
 
@@ -2051,24 +2638,24 @@
 
             const selectedPanelistIds =
                 item.panelists && item.panelists.length > 0
-                ? item.panelists.map(panelist =>
-                    String(panelist.id)
-                )
-                : [];
+                    ? item.panelists.map(panelist =>
+                        String(panelist.id)
+                    )
+                    : [];
 
             setSelectedPanelists(selectedPanelistIds);
 
             document.getElementById("roomSelect").value =
                 isDefaultRoom(item.room_name)
-                ? item.room_name
-                : "Other";
+                    ? item.room_name
+                    : "Other";
 
             toggleOtherRoom();
 
             document.getElementById("otherRoom").value =
                 isDefaultRoom(item.room_name)
-                ? ""
-                : item.room_name;
+                    ? ""
+                    : String(item.room_name || "").replace(/^Online:\s*/i, "");
 
             // 6. Load panel grading progress & Force Complete controls
             await loadPanelGradingProgress(item);
@@ -2077,25 +2664,27 @@
             loadApprovedDocumentsForGroup();
 
             checkRoomAndTimelineConflicts();
+            syncTimeSlotSelectionFromInputs();
+            refreshOccupiedDefenseSlots();
 
             document.getElementById("scheduleModal").style.display =
                 "flex";
 
         }
 
-        async function loadPanelGradingProgress(item){
+        async function loadPanelGradingProgress(item) {
             const card = document.getElementById("panelGradingStatusCard");
             const countText = document.getElementById("gradingCountText");
             const listEl = document.getElementById("panelGradingList");
             const btnWrap = document.getElementById("forceCompleteBtnWrap");
-            if(!card || !countText || !listEl || !btnWrap) return;
+            if (!card || !countText || !listEl || !btnWrap) return;
 
             card.style.display = "block";
             countText.textContent = "Loading grading status...";
             listEl.innerHTML = "";
             btnWrap.innerHTML = "";
 
-            try{
+            try {
                 const res = await fetchWithTimeout(`${getApiBaseUrl()}/defense-panel-evaluations/${item.id}`);
                 const data = await res.json();
 
@@ -2127,49 +2716,49 @@
                 }).join("");
 
                 // Force complete button logic
-                if(!isCompleted){
-                    if(submittedCount >= 2){
+                if (!isCompleted) {
+                    if (submittedCount >= 2) {
                         btnWrap.innerHTML = `
                             <button type="button" class="force-complete-btn" onclick="forceCompleteSchedule(${item.id})">
                                 <i class="fa-solid fa-flag-checkered"></i> Force Complete (${submittedCount}/3 Graded)
                             </button>
                         `;
-                    }else{
+                    } else {
                         btnWrap.innerHTML = `
                             <button type="button" class="force-complete-btn disabled" disabled title="At least 2 panelists must submit grades before force completing.">
                                 <i class="fa-solid fa-lock"></i> Force Complete (Requires 2 Panel Grades)
                             </button>
                         `;
                     }
-                }else{
+                } else {
                     btnWrap.innerHTML = `<span style="font-size:12.5px;font-weight:700;color:#059669;"><i class="fa-solid fa-circle-check"></i> Completed</span>`;
                 }
 
-            }catch(e){
+            } catch (e) {
                 console.error("Grading progress error:", e);
                 countText.textContent = `${item.evaluations_submitted || 0}/3 Graded`;
             }
         }
 
-        async function forceCompleteSchedule(id){
-            if(!(await confirm("Are you sure you want to force complete this defense presentation? The system will calculate final results from the submitted panel evaluations and mark the presentation as Completed."))){
+        async function forceCompleteSchedule(id) {
+            if (!(await confirm("Are you sure you want to force complete this defense presentation? The system will calculate final results from the submitted panel evaluations and mark the presentation as Completed."))) {
                 return;
             }
 
-            try{
+            try {
                 const res = await fetchWithTimeout(`${getApiBaseUrl()}/force-complete-defense-schedule/${id}`, {
-                    method:"POST",
-                    headers:{ "Content-Type":"application/json" },
-                    body:JSON.stringify({ instructorUserId:loggedInInstructorId })
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ instructorUserId: loggedInInstructorId })
                 });
                 const data = await res.json();
                 alert(data.message || "Force complete processed.");
-                if(data.success){
+                if (data.success) {
                     closeScheduleModal();
                     await loadSchedules();
-                    if(window.PortalNotifications) window.PortalNotifications.refresh(false);
+                    if (window.PortalNotifications) window.PortalNotifications.refresh(false);
                 }
-            }catch(e){
+            } catch (e) {
                 console.error("Force complete error:", e);
                 alert("Cannot connect to server to force complete defense.");
             }
@@ -2177,18 +2766,18 @@
 
         let pendingDeleteScheduleId = null;
 
-        function openDeleteReasonModal(id){
+        function openDeleteReasonModal(id) {
             const item = schedules.find(s => Number(s.id) === Number(id));
-            if(!item){
+            if (!item) {
                 alert("Schedule not found.");
                 return;
             }
-            if(!Boolean(item.is_owner)){
+            if (!Boolean(item.is_owner)) {
                 alert("You can only cancel defense schedules that you created.");
                 return;
             }
 
-            if((Number(item.evaluations_submitted || 0) > 0) || (item.evaluation && item.evaluation.score !== null)){
+            if ((Number(item.evaluations_submitted || 0) > 0) || (item.evaluation && item.evaluation.score !== null)) {
                 alert("Cannot delete defense schedule. One or more panel members have already submitted grades/evaluations for this defense.");
                 return;
             }
@@ -2196,7 +2785,7 @@
             pendingDeleteScheduleId = id;
 
             const summaryEl = document.getElementById("deleteSummaryBox");
-            if(summaryEl){
+            if (summaryEl) {
                 summaryEl.innerHTML = `
                     <strong>Group:</strong> ${escapeHtml(item.group_name || "Unnamed Group")}<br>
                     <strong>Defense Type:</strong> ${escapeHtml(item.defense_type)}<br>
@@ -2213,18 +2802,18 @@
             document.getElementById("deleteReasonModal").style.display = "flex";
         }
 
-        function closeDeleteReasonModal(){
+        function closeDeleteReasonModal() {
             pendingDeleteScheduleId = null;
             document.getElementById("deleteReasonModal").style.display = "none";
         }
 
-        function toggleCustomDeleteReason(){
+        function toggleCustomDeleteReason() {
             const sel = document.getElementById("deleteReasonSelect").value;
             document.getElementById("deleteReasonCustomGroup").style.display = (sel === "Other Reason") ? "block" : "none";
         }
 
-        async function confirmDeleteSchedule(){
-            if(!pendingDeleteScheduleId) return;
+        async function confirmDeleteSchedule() {
+            if (!pendingDeleteScheduleId) return;
 
             const reasonSelect = document.getElementById("deleteReasonSelect").value;
             const customReason = document.getElementById("deleteReasonCustom").value.trim();
@@ -2234,16 +2823,16 @@
 
             const btn = document.getElementById("confirmDeleteBtn");
             const origHtml = btn ? btn.innerHTML : "";
-            if(btn){
+            if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...';
             }
 
-            try{
+            try {
                 const response = await fetchWithTimeout(`${getApiBaseUrl()}/delete-defense-schedule/${pendingDeleteScheduleId}`, {
-                    method:"DELETE",
-                    headers:{ "Content-Type":"application/json" },
-                    body:JSON.stringify({
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
                         instructorUserId: loggedInInstructorId,
                         reason: finalReason,
                         notes: notes
@@ -2253,31 +2842,31 @@
                 const data = await response.json();
                 alert(data.message || "Cancellation processed.");
 
-                if(data.success){
+                if (data.success) {
                     closeDeleteReasonModal();
                     closeScheduleModal();
                     await loadSchedules();
-                    if(window.PortalNotifications) window.PortalNotifications.refresh(false);
+                    if (window.PortalNotifications) window.PortalNotifications.refresh(false);
                 }
-            }catch(e){
+            } catch (e) {
                 console.error("Delete schedule error:", e);
                 alert("Cannot connect to server to cancel schedule.");
-            }finally{
-                if(btn){
+            } finally {
+                if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = origHtml;
                 }
             }
         }
 
-        function closeScheduleModal(){
+        function closeScheduleModal() {
 
             document.getElementById("scheduleModal").style.display =
                 "none";
 
         }
 
-        function clearForm(){
+        function clearForm() {
             try {
                 selectedChairId = null;
                 selectedMemberIds = [];
@@ -2286,27 +2875,39 @@
 
                 const safeSetVal = (id, val) => {
                     const el = document.getElementById(id);
-                    if(el) el.value = val;
+                    if (el) el.value = val;
                 };
                 const safeSetDisplay = (id, disp) => {
                     const el = document.getElementById(id);
-                    if(el) el.style.display = disp;
+                    if (el) el.style.display = disp;
                 };
                 const safeSetHtml = (id, html) => {
                     const el = document.getElementById(id);
-                    if(el) el.innerHTML = html;
+                    if (el) el.innerHTML = html;
                 };
 
+                safeSetVal("groupSearchInput", "");
+                safeSetDisplay("groupSearchClearBtn", "none");
                 safeSetVal("groupSelect", "");
+                closeGroupDropdown(false);
                 renderPanelistOptions();
 
                 safeSetVal("roomSelect", "");
                 safeSetVal("otherRoom", "");
                 safeSetDisplay("otherRoomBox", "none");
+                roomSearchFilterActive = false;
+                syncRoomCombobox();
 
                 safeSetVal("defenseDate", "");
                 safeSetVal("startTime", "");
                 safeSetVal("endTime", "");
+                slotDurationHours = 2;
+                predefinedTimeSlots = generateTimeSlotsForDuration(2);
+                selectedTimeSlotLabel = "";
+                occupiedSlotsForDate = [];
+                updateDurationUiControls();
+                toggleCustomTimeMode(false);
+                setTimeSlotsLocked(false);
                 safeSetVal("defenseType", "Concept Presentation");
                 safeSetVal("otherDefenseType", "");
                 safeSetDisplay("otherDefenseTypeBox", "none");
@@ -2335,36 +2936,164 @@
                 resetBorderAndBg("panelChairSelect");
                 resetBorderAndBg("panelMember1Select");
                 resetBorderAndBg("panelMember2Select");
-            } catch(e) {
+            } catch (e) {
                 console.error("clearForm error:", e);
             }
         }
 
-        function toggleOtherRoom(){
+        /* ====== ROOM SEARCHABLE DROPDOWN (mirrors the hidden #roomSelect) ====== */
+        let isRoomDropdownOpen = false;
+        let roomSearchFilterActive = false;
+
+        function syncRoomCombobox() {
+            const sel = document.getElementById("roomSelect");
+            const input = document.getElementById("roomSearchInput");
+            const clearBtn = document.getElementById("roomSearchClearBtn");
+            const box = document.getElementById("roomCombobox");
+            if (!sel || !input) return;
+            const opt = sel.options[sel.selectedIndex];
+            if (!roomSearchFilterActive) input.value = (opt && opt.value) ? opt.textContent.trim() : "";
+            if (clearBtn) clearBtn.style.display = (sel.value && !sel.disabled) ? "flex" : "none";
+            input.disabled = sel.disabled;
+            const ctrl = box && box.querySelector(".group-combobox-control");
+            if (ctrl) {
+                ctrl.style.border = sel.style.border || "";
+                ctrl.style.backgroundColor = sel.style.backgroundColor || "";
+                ctrl.style.opacity = sel.disabled ? "0.6" : "";
+                ctrl.style.pointerEvents = sel.disabled ? "none" : "";
+            }
+        }
+
+        function renderRoomDropdownMenu() {
+            const sel = document.getElementById("roomSelect");
+            const menu = document.getElementById("roomDropdownMenu");
+            const input = document.getElementById("roomSearchInput");
+            if (!sel || !menu) return;
+            const query = (roomSearchFilterActive && input) ? input.value.trim().toLowerCase() : "";
+            const visible = Array.from(sel.options).filter(o => o.value && (!query || o.textContent.toLowerCase().includes(query)));
+            if (visible.length === 0) {
+                menu.innerHTML = `<div class="group-combobox-empty">No matching rooms found</div>`;
+                return;
+            }
+            menu.innerHTML = visible.map(o => {
+                const isSelected = String(o.value) === String(sel.value);
+                const booked = o.style.color ? ` style="color:${o.style.color};background:${o.style.backgroundColor};font-weight:600;"` : "";
+                return `<div class="group-combobox-option ${isSelected ? "selected" : ""}"${booked}
+                    onmousedown="event.preventDefault(); selectRoomFromCombobox(this.dataset.room)" data-room="${escapeHtml(o.value)}">
+                    <span class="group-combobox-option-text">${escapeHtml(o.textContent.trim())}</span>
+                    ${isSelected ? '<i class="fa-solid fa-check"></i>' : ""}
+                </div>`;
+            }).join("");
+        }
+
+        function openRoomDropdown() {
+            const sel = document.getElementById("roomSelect");
+            if (sel && sel.disabled) return;
+            const menu = document.getElementById("roomDropdownMenu");
+            const box = document.getElementById("roomCombobox");
+            if (!menu || !box) return;
+            isRoomDropdownOpen = true;
+            box.classList.add("open");
+            menu.style.display = "block";
+            renderRoomDropdownMenu();
+        }
+
+        function closeRoomDropdown() {
+            const menu = document.getElementById("roomDropdownMenu");
+            const box = document.getElementById("roomCombobox");
+            isRoomDropdownOpen = false;
+            roomSearchFilterActive = false;
+            if (box) box.classList.remove("open");
+            if (menu) menu.style.display = "none";
+            syncRoomCombobox();
+        }
+
+        function toggleRoomDropdown() {
+            if (isRoomDropdownOpen) closeRoomDropdown();
+            else {
+                const input = document.getElementById("roomSearchInput");
+                if (input) input.focus();
+                openRoomDropdown();
+            }
+        }
+
+        function onRoomSearchInput() {
+            roomSearchFilterActive = true;
+            if (!isRoomDropdownOpen) openRoomDropdown();
+            renderRoomDropdownMenu();
+        }
+
+        function onRoomSearchKeydown(event) {
+            if (event.key === "Escape") { closeRoomDropdown(); return; }
+            if (event.key === "Enter" && isRoomDropdownOpen) {
+                event.preventDefault();
+                const first = document.querySelector("#roomDropdownMenu .group-combobox-option");
+                if (first) selectRoomFromCombobox(first.dataset.room);
+            }
+        }
+
+        function selectRoomFromCombobox(value) {
+            const sel = document.getElementById("roomSelect");
+            if (!sel) return;
+            sel.value = String(value);
+            closeRoomDropdown();
+            toggleOtherRoom();
+            onDefenseDateOrRoomChange();
+        }
+
+        function clearRoomSearch() {
+            const sel = document.getElementById("roomSelect");
+            if (!sel) return;
+            sel.value = "";
+            roomSearchFilterActive = false;
+            toggleOtherRoom();
+            onDefenseDateOrRoomChange();
+            const input = document.getElementById("roomSearchInput");
+            if (input) input.focus();
+            openRoomDropdown();
+        }
+
+        document.addEventListener("click", (e) => {
+            const box = document.getElementById("roomCombobox");
+            if (isRoomDropdownOpen && box && !box.contains(e.target)) closeRoomDropdown();
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const sel = document.getElementById("roomSelect");
+            if (!sel) return;
+            new MutationObserver(syncRoomCombobox).observe(sel, { attributes: true, childList: true, subtree: true, characterData: true });
+            syncRoomCombobox();
+        });
+
+        function toggleOtherRoom() {
+            syncRoomCombobox();
 
             const room =
                 document.getElementById("roomSelect").value;
 
             document.getElementById("otherRoomBox").style.display =
                 room === "Other"
-                ? "block"
-                : "none";
+                    ? "block"
+                    : "none";
 
             checkRoomAndTimelineConflicts();
+            syncRoomCombobox();
 
         }
 
-        function getRoomName(){
+        function getRoomName() {
 
             const room =
                 document.getElementById("roomSelect").value;
 
-            if(room === "Other"){
+            if (room === "Other") {
 
-                return document
+                const link = document
                     .getElementById("otherRoom")
                     .value
                     .trim();
+
+                return link ? `Online: ${link}` : "";
 
             }
 
@@ -2372,27 +3101,27 @@
 
         }
 
-        function normalizeScheduleDate(value){
-            if(!value){
+        function normalizeScheduleDate(value) {
+            if (!value) {
                 return "";
             }
-            if(typeof value === "string"){
+            if (typeof value === "string") {
                 const trimmed = value.trim();
-                if(trimmed.includes("T")){
+                if (trimmed.includes("T")) {
                     const d = new Date(trimmed);
-                    if(!isNaN(d.getTime())){
+                    if (!isNaN(d.getTime())) {
                         const year = d.getFullYear();
                         const month = String(d.getMonth() + 1).padStart(2, "0");
                         const day = String(d.getDate()).padStart(2, "0");
                         return `${year}-${month}-${day}`;
                     }
                 }
-                if(/^\d{4}-\d{2}-\d{2}/.test(trimmed)){
+                if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
                     return trimmed.slice(0, 10);
                 }
             }
             const d = new Date(value);
-            if(!isNaN(d.getTime())){
+            if (!isNaN(d.getTime())) {
                 const year = d.getFullYear();
                 const month = String(d.getMonth() + 1).padStart(2, "0");
                 const day = String(d.getDate()).padStart(2, "0");
@@ -2401,10 +3130,10 @@
             return String(value).slice(0, 10);
         }
 
-        function normalizeScheduleTime(value){
+        function normalizeScheduleTime(value) {
             const raw = String(value || "").trim();
 
-            if(!raw){
+            if (!raw) {
                 return "";
             }
 
@@ -2413,7 +3142,7 @@
                 : raw;
         }
 
-        function scheduleTimesOverlap(startA, endA, startB, endB){
+        function scheduleTimesOverlap(startA, endA, startB, endB) {
             return startA < endB && endA > startB;
         }
 
@@ -2423,42 +3152,40 @@
             startTime,
             endTime,
             excludeScheduleId
-        ){
+        ) {
 
             const targetDate = normalizeScheduleDate(defenseDate);
             const targetRoom = String(roomName || "").trim().toLowerCase();
             const targetStart = normalizeScheduleTime(startTime);
             const targetEnd = normalizeScheduleTime(endTime);
 
-            if(!targetDate || !targetRoom || !targetStart || !targetEnd){
+            if (!targetDate || !targetRoom || !targetStart || !targetEnd) {
                 return null;
             }
 
             return schedules.find(item => {
 
-                if(
+                if (
                     excludeScheduleId
                     && Number(item.id) === Number(excludeScheduleId)
-                ){
+                ) {
                     return false;
                 }
 
-                if(
-                    String(item.defense_status || "")
-                    .toLowerCase() === "cancelled"
-                ){
+                const st = String(item.defense_status || "").toLowerCase();
+                if (st === "cancelled" || st === "completed") {
                     return false;
                 }
 
-                if(normalizeScheduleDate(item.defense_date) !== targetDate){
+                if (normalizeScheduleDate(item.defense_date) !== targetDate) {
                     return false;
                 }
 
-                if(
+                if (
                     String(item.room_name || "")
-                    .trim()
-                    .toLowerCase() !== targetRoom
-                ){
+                        .trim()
+                        .toLowerCase() !== targetRoom
+                ) {
                     return false;
                 }
 
@@ -2473,7 +3200,7 @@
 
         }
 
-        function buildLocalRoomConflictMessage(conflict, roomName, defenseDate){
+        function buildLocalRoomConflictMessage(conflict, roomName, defenseDate) {
 
             const start = normalizeScheduleTime(conflict.start_time);
             const end = normalizeScheduleTime(conflict.end_time);
@@ -2485,7 +3212,7 @@
 
         }
 
-        function checkRoomAndTimelineConflicts(){
+        function checkRoomAndTimelineConflicts() {
             const dateVal = document.getElementById("defenseDate")?.value;
             const startVal = document.getElementById("startTime")?.value;
             const endVal = document.getElementById("endTime")?.value;
@@ -2501,8 +3228,8 @@
                 Array.from(roomSelect.options).forEach(opt => {
                     if (!opt.value || opt.value === "Other") return;
                     const optRoom = opt.value;
-                    const conflict = (dateVal && startVal && endVal) 
-                        ? findLocalRoomConflict(dateVal, optRoom, startVal, endVal, excludeId) 
+                    const conflict = (dateVal && startVal && endVal)
+                        ? findLocalRoomConflict(dateVal, optRoom, startVal, endVal, excludeId)
                         : null;
                     if (conflict) {
                         opt.style.color = "#ef4444";
@@ -2573,7 +3300,7 @@
             }
         }
 
-        function isDefaultRoom(roomName){
+        function isDefaultRoom(roomName) {
 
             const rooms = [
                 "AB3-1",
@@ -2584,14 +3311,19 @@
                 "AB3-6",
                 "AB3-7",
                 "ComLab 1",
-                "ComLab 2"
+                "ComLab 2",
+                "Networking Lab",
+                "Accreditation Room",
+                "Mac Laboratory",
+                "Accounting and Enterprise Lab",
+                "GIS and Data Analytics Lab"
             ];
 
             return rooms.includes(roomName);
 
         }
 
-        function toggleOtherDefenseType(){
+        function toggleOtherDefenseType() {
 
             const otherBox = document.getElementById("otherDefenseTypeBox");
             if (otherBox) {
@@ -2606,16 +3338,16 @@
 
         }
 
-        function getDefenseType(){
+        function getDefenseType() {
 
             const el = document.getElementById("defenseType");
-            if(!el) return "Concept Presentation";
+            if (!el) return "Concept Presentation";
 
             return el.value || "Concept Presentation";
 
         }
 
-        function isDefaultDefenseType(defenseType){
+        function isDefaultDefenseType(defenseType) {
 
             const defaultTypes = [
                 "Concept Presentation",
@@ -2634,60 +3366,58 @@
             endTime,
             selectedPanelistIds,
             excludeScheduleId
-        ){
+        ) {
             const targetDate = normalizeScheduleDate(defenseDate);
             const targetStart = normalizeScheduleTime(startTime);
             const targetEnd = normalizeScheduleTime(endTime);
 
             const selected =
                 Array.isArray(selectedPanelistIds)
-                ? selectedPanelistIds.map(id => String(id))
-                : [];
+                    ? selectedPanelistIds.map(id => String(id))
+                    : [];
 
-            if(!targetDate || !targetStart || !targetEnd || selected.length === 0){
+            if (!targetDate || !targetStart || !targetEnd || selected.length === 0) {
                 return null;
             }
 
             return schedules.find(item => {
 
-                if(
+                if (
                     excludeScheduleId
                     && Number(item.id) === Number(excludeScheduleId)
-                ){
+                ) {
                     return false;
                 }
 
-                if(
-                    String(item.defense_status || "")
-                    .toLowerCase() === "cancelled"
-                ){
+                const st = String(item.defense_status || "").toLowerCase();
+                if (st === "cancelled" || st === "completed") {
                     return false;
                 }
 
-                if(normalizeScheduleDate(item.defense_date) !== targetDate){
+                if (normalizeScheduleDate(item.defense_date) !== targetDate) {
                     return false;
                 }
 
-                if(!scheduleTimesOverlap(
+                if (!scheduleTimesOverlap(
                     targetStart,
                     targetEnd,
                     normalizeScheduleTime(item.start_time),
                     normalizeScheduleTime(item.end_time)
-                )){
+                )) {
                     return false;
                 }
 
                 const assigned =
                     Array.isArray(item.panelists)
-                    ? item.panelists.map(p => String(p.id))
-                    : [];
+                        ? item.panelists.map(p => String(p.id))
+                        : [];
 
                 return selected.some(id => assigned.includes(id));
 
             }) || null;
         }
 
-        function buildLocalPanelistConflictMessage(conflict, selectedPanelistIds){
+        function buildLocalPanelistConflictMessage(conflict, selectedPanelistIds) {
             if (!conflict) return "Schedule conflict detected. One or more selected panelists are already assigned to another defense at this date and time.";
             const assigned = Array.isArray(conflict.panelists) ? conflict.panelists.map(p => String(p.id)) : [];
             const conflictingPerson = panelists.find(p => selectedPanelistIds.includes(String(p.id)) && assigned.includes(String(p.id)));
@@ -2697,7 +3427,7 @@
             return `Schedule conflict detected: ${name} is already scheduled for another defense on ${formatDate(conflict.defense_date)} from ${sTime} to ${eTime}. Please select another panelist or change the defense time slot.`;
         }
 
-        async function saveSchedule(){
+        async function saveSchedule() {
 
             const groupDbId =
                 document.getElementById("groupSelect").value;
@@ -2725,18 +3455,18 @@
 
             const notes =
                 document
-                .getElementById("notes")
-                .value
-                .trim();
+                    .getElementById("notes")
+                    .value
+                    .trim();
 
-            if(
+            if (
                 !groupDbId ||
                 !roomName ||
                 !defenseDate ||
                 !defenseType ||
                 !startTime ||
                 !endTime
-            ){
+            ) {
 
                 alert("Please complete all required schedule fields.");
 
@@ -2744,11 +3474,16 @@
 
             }
 
-            if(!validatePanelSelection()){
+            if (document.getElementById("roomSelect").value === "Other" && !/^Online:\s*https?:\/\/\S+$/i.test(roomName)) {
+                alert("Please enter a valid meeting link (starting with http:// or https://) for the online defense.");
                 return;
             }
 
-            if(startTime >= endTime){
+            if (!validatePanelSelection()) {
+                return;
+            }
+
+            if (startTime >= endTime) {
 
                 alert("End time must be later than start time.");
 
@@ -2756,13 +3491,28 @@
 
             }
 
+            const MIN_DEFENSE_MINUTES = 60;
+            const hmToMin = v => { const p = String(v).split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); };
+            if (hmToMin(endTime) - hmToMin(startTime) < MIN_DEFENSE_MINUTES) {
+                alert("Defense duration must be at least 1 hour. A very short slot (e.g. 1 minute or 50 minutes) is not allowed.");
+                return;
+            }
+
+            if (modalMode === "create") {
+                const startAt = new Date(`${String(defenseDate).slice(0, 10)}T${String(startTime).slice(0, 5)}:00`);
+                if (!isNaN(startAt.getTime()) && startAt.getTime() < Date.now()) {
+                    alert("Cannot create a defense schedule in the past. Please choose a future date and time.");
+                    return;
+                }
+            }
+
             const excludeId =
                 modalMode === "edit"
-                ? selectedScheduleId
-                : null;
+                    ? selectedScheduleId
+                    : null;
 
             // Check if group already has an active defense schedule for this type
-            if(modalMode === "create"){
+            if (modalMode === "create") {
                 const currentDefenseTypeLower = (defenseType || "").trim().toLowerCase();
                 const groupConflict = (schedules || []).find(s => {
                     const sStatus = String(s.defense_status || "").toLowerCase();
@@ -2771,7 +3521,7 @@
                     if (sGroupDbId !== Number(groupDbId)) return false;
                     return String(s.defense_type || "").trim().toLowerCase() === currentDefenseTypeLower;
                 });
-                if(groupConflict){
+                if (groupConflict) {
                     alert(`This group already has an active defense schedule for "${defenseType}". Duplicate defense schedules for the same defense type are not allowed.`);
                     return;
                 }
@@ -2785,7 +3535,7 @@
                 excludeId
             );
 
-            if(roomConflict){
+            if (roomConflict) {
                 checkRoomAndTimelineConflicts();
                 alert(
                     buildLocalRoomConflictMessage(
@@ -2806,14 +3556,14 @@
                     excludeId
                 );
 
-            if(panelistConflict){
+            if (panelistConflict) {
                 renderPanelistDropdowns();
                 updatePanelSummary();
                 alert(buildLocalPanelistConflictMessage(panelistConflict, panelistIds));
                 return;
             }
 
-            if(modalMode === "create"){
+            if (modalMode === "create") {
 
                 const documentsReady =
                     await validateDocumentsReadyForScheduleCreate(
@@ -2821,7 +3571,7 @@
                         defenseType
                     );
 
-                if(!documentsReady){
+                if (!documentsReady) {
                     return;
                 }
 
@@ -2836,7 +3586,7 @@
                     notes
                 );
 
-            }else{
+            } else {
 
                 await updateSchedule(
                     groupDbId,
@@ -2863,28 +3613,29 @@
             endTime,
             defenseType,
             notes
-        ){
+        ) {
 
-            try{
+            try {
 
                 const response =
                     await fetchWithTimeout(
                         `${getApiBaseUrl()}/create-defense-schedule`,
                         {
-                            method:"POST",
+                            method: "POST",
 
-                            headers:{
-                                "Content-Type":"application/json"
+                            headers: {
+                                "Content-Type": "application/json"
                             },
 
-                            body:JSON.stringify({
-                                instructorUserId:loggedInInstructorId,
+                            body: JSON.stringify({
+                                instructorUserId: loggedInInstructorId,
                                 groupDbId,
                                 panelistIds,
                                 roomName,
                                 defenseDate,
                                 startTime,
                                 endTime,
+                                timeSlotLabel: getSelectedTimeSlotLabel(),
                                 defenseType,
                                 notes
                             })
@@ -2894,7 +3645,7 @@
                 const data =
                     await response.json();
 
-                if(data.success){
+                if (data.success) {
 
                     alert(data.message || "Defense schedule created successfully.");
 
@@ -2902,7 +3653,7 @@
 
                     loadSchedules();
 
-                }else{
+                } else {
 
                     alert(
                         data.message
@@ -2911,7 +3662,7 @@
 
                 }
 
-            }catch(error){
+            } catch (error) {
 
                 console.log(error);
 
@@ -2931,28 +3682,29 @@
             defenseType,
             defenseStatus,
             notes
-        ){
+        ) {
 
-            try{
+            try {
 
                 const response =
                     await fetchWithTimeout(
                         `${getApiBaseUrl()}/update-defense-schedule/${selectedScheduleId}`,
                         {
-                            method:"PUT",
+                            method: "PUT",
 
-                            headers:{
-                                "Content-Type":"application/json"
+                            headers: {
+                                "Content-Type": "application/json"
                             },
 
-                            body:JSON.stringify({
-                                instructorUserId:loggedInInstructorId,
+                            body: JSON.stringify({
+                                instructorUserId: loggedInInstructorId,
                                 groupDbId,
                                 panelistIds,
                                 roomName,
                                 defenseDate,
                                 startTime,
                                 endTime,
+                                timeSlotLabel: getSelectedTimeSlotLabel(),
                                 defenseType,
                                 defenseStatus,
                                 notes
@@ -2963,7 +3715,7 @@
                 const data =
                     await response.json();
 
-                if(data.success){
+                if (data.success) {
 
                     alert(data.message || "Defense schedule updated successfully.");
 
@@ -2971,7 +3723,7 @@
 
                     loadSchedules();
 
-                }else{
+                } else {
 
                     alert(
                         data.message
@@ -2980,7 +3732,7 @@
 
                 }
 
-            }catch(error){
+            } catch (error) {
 
                 console.log(error);
 
@@ -2990,18 +3742,18 @@
 
         }
 
-        async function deleteSchedule(id){
+        async function deleteSchedule(id) {
             openDeleteReasonModal(id);
         }
 
-        function openViewModal(id){
+        function openViewModal(id) {
 
             const item =
                 schedules.find(schedule =>
                     Number(schedule.id) === Number(id)
                 );
 
-            if(!item){
+            if (!item) {
 
                 alert("Schedule not found.");
 
@@ -3011,10 +3763,10 @@
 
             const panelistText =
                 item.panelists && item.panelists.length > 0
-                ? item.panelists
-                    .map(panelist => `${panelist.fullname} (${panelist.user_id})`)
-                    .join(", ")
-                : "No panelists";
+                    ? item.panelists
+                        .map(panelist => `${panelist.fullname} (${panelist.user_id})`)
+                        .join(", ")
+                    : "No panelists";
 
             document.getElementById("viewGroupName").innerText =
                 item.group_name || "Group Details";
@@ -3052,7 +3804,7 @@
 
         }
 
-        function renderViewPanelists(panelistList){
+        function renderViewPanelists(panelistList) {
 
             const container =
                 document.getElementById("viewPanelists");
@@ -3060,7 +3812,7 @@
             container.innerHTML =
                 "";
 
-            if(panelistList.length === 0){
+            if (panelistList.length === 0) {
 
                 container.innerHTML =
                     `<p class="empty-text">No panelists found.</p>`;
@@ -3073,8 +3825,8 @@
 
                 const roleText =
                     panelist.role === "admin"
-                    ? "Admin"
-                    : "Faculty";
+                        ? "Admin"
+                        : "Faculty";
 
                 container.innerHTML += `
                     <div class="member-row">
@@ -3095,7 +3847,7 @@
 
         }
 
-        function renderViewMembers(memberList){
+        function renderViewMembers(memberList) {
 
             const container =
                 document.getElementById("viewMembers");
@@ -3103,7 +3855,7 @@
             container.innerHTML =
                 "";
 
-            if(memberList.length === 0){
+            if (memberList.length === 0) {
 
                 container.innerHTML =
                     `<p class="empty-text">No members found.</p>`;
@@ -3133,14 +3885,14 @@
 
         }
 
-        function closeViewModal(){
+        function closeViewModal() {
 
             document.getElementById("viewModal").style.display =
                 "none";
 
         }
 
-        function escapeHtml(value){
+        function escapeHtml(value) {
             return String(value ?? "")
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -3148,9 +3900,9 @@
                 .replace(/"/g, "&quot;");
         }
 
-        function formatDate(dateValue){
+        function formatDate(dateValue) {
 
-            if(!dateValue){
+            if (!dateValue) {
                 return "N/A";
             }
 
@@ -3160,17 +3912,17 @@
             return date.toLocaleDateString(
                 "en-US",
                 {
-                    year:"numeric",
-                    month:"short",
-                    day:"numeric"
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
                 }
             );
 
         }
 
-        function formatDateInput(dateValue){
+        function formatDateInput(dateValue) {
 
-            if(!dateValue){
+            if (!dateValue) {
                 return "";
             }
 
@@ -3178,9 +3930,9 @@
 
         }
 
-        function formatTime(timeValue){
+        function formatTime(timeValue) {
 
-            if(!timeValue){
+            if (!timeValue) {
                 return "N/A";
             }
 
@@ -3188,9 +3940,9 @@
 
         }
 
-        function formatTimeInput(timeValue){
+        function formatTimeInput(timeValue) {
 
-            if(!timeValue){
+            if (!timeValue) {
                 return "";
             }
 
@@ -3198,7 +3950,7 @@
 
         }
 
-        function logout(){
+        function logout() {
 
             localStorage.clear();
             window.location.href =
@@ -3216,9 +3968,9 @@
             if (panel.style.display === "none") {
                 panel.style.display = "block";
                 btn.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Hide Slots`;
-                
+
                 // Render booked slots
-                const booked = schedules.filter(item => 
+                const booked = schedules.filter(item =>
                     item.defense_status === "Scheduled" || item.defense_status === "Ongoing"
                 );
 
@@ -3233,7 +3985,7 @@
                 }
 
                 // Sort by date and time
-                booked.sort((a,b) => {
+                booked.sort((a, b) => {
                     const da = new Date(normalizeScheduleDate(a.defense_date) + 'T' + normalizeScheduleTime(a.start_time));
                     const db = new Date(normalizeScheduleDate(b.defense_date) + 'T' + normalizeScheduleTime(b.start_time));
                     return da - db;
@@ -3263,28 +4015,28 @@
             }
         }
 
-        async function fetchGroupApprovalStatus(groupDbId, defenseType, options){
+        async function fetchGroupApprovalStatus(groupDbId, defenseType, options) {
 
             const params = [];
 
-            if(defenseType){
+            if (defenseType) {
                 params.push(
                     `defenseType=${encodeURIComponent(defenseType)}`
                 );
             }
 
-            if(options && options.requireAllPhases){
+            if (options && options.requireAllPhases) {
                 params.push("requireAllPhases=1");
             }
 
-            if(options && options.excludeScheduleId){
+            if (options && options.excludeScheduleId) {
                 params.push(`excludeScheduleId=${encodeURIComponent(options.excludeScheduleId)}`);
             }
 
             const query =
                 params.length > 0
-                ? `?${params.join("&")}`
-                : "";
+                    ? `?${params.join("&")}`
+                    : "";
 
             const response =
                 await fetchWithTimeout(
@@ -3295,7 +4047,7 @@
 
         }
 
-        function isDefenseMinutesRequirement(item){
+        function isDefenseMinutesRequirement(item) {
 
             const label =
                 String(item?.label || "").trim().toLowerCase();
@@ -3309,7 +4061,7 @@
 
         }
 
-        function filterMissingForScheduleCreate(missingItems){
+        function filterMissingForScheduleCreate(missingItems) {
 
             return (missingItems || []).filter(item =>
                 !isDefenseMinutesRequirement(item)
@@ -3317,21 +4069,21 @@
 
         }
 
-        async function validateDocumentsReadyForScheduleCreate(groupDbId, defenseType){
+        async function validateDocumentsReadyForScheduleCreate(groupDbId, defenseType) {
 
-            try{
+            try {
 
                 const data =
                     await fetchGroupApprovalStatus(
                         groupDbId,
                         defenseType,
-                        { 
+                        {
                             requireAllPhases: false,
                             excludeScheduleId: selectedScheduleId
                         }
                     );
 
-                if(!data.success){
+                if (!data.success) {
                     alert(
                         "Could not verify group document approvals. Please try again."
                     );
@@ -3341,7 +4093,7 @@
                 const priorPanel =
                     data.prior_panel_evaluations;
 
-                if(priorPanel && priorPanel.ok === false){
+                if (priorPanel && priorPanel.ok === false) {
                     alert(priorPanel.message || "Prior defense panel evaluations are incomplete.");
                     return false;
                 }
@@ -3355,11 +4107,11 @@
                     data.documents_ready_for_schedule !== false
                     && missing.length === 0;
 
-                if(documentsReady && data.ready_for_schedule){
+                if (documentsReady && data.ready_for_schedule) {
                     return true;
                 }
 
-                if(documentsReady && !data.ready_for_schedule){
+                if (documentsReady && !data.ready_for_schedule) {
                     alert(
                         data.message
                         || "This group is not ready for scheduling yet."
@@ -3367,13 +4119,13 @@
                     return false;
                 }
 
-                if(missing.length > 0){
+                if (missing.length > 0) {
                     const lines =
                         missing
-                        .map(item =>
-                            `• ${item.phase} — ${item.label} (${item.status})`
-                        )
-                        .join("\n");
+                            .map(item =>
+                                `• ${item.phase} — ${item.label} (${item.status})`
+                            )
+                            .join("\n");
 
                     alert(
                         `Cannot create defense schedule.\n\nAll consultation documents for "${defenseType}" must be approved first.\n\nMissing or not approved:\n${lines}`
@@ -3389,7 +4141,7 @@
 
                 return false;
 
-            }catch(error){
+            } catch (error) {
                 console.error(error);
                 alert(
                     "Could not verify group document approvals. Please try again."
@@ -3399,7 +4151,7 @@
 
         }
 
-        async function loadApprovedDocumentsForGroup(){
+        async function loadApprovedDocumentsForGroup() {
             const groupDbId = document.getElementById("groupSelect").value;
             const defenseType = document.getElementById("defenseType").value;
             const approvedBox = document.getElementById("approvedPapersBox");
@@ -3407,7 +4159,7 @@
 
             const requireAllPhases = false;
 
-            if(!groupDbId || (!defenseType && !requireAllPhases)){
+            if (!groupDbId || (!defenseType && !requireAllPhases)) {
                 approvedBox.style.display = "none";
                 return;
             }
@@ -3428,7 +4180,7 @@
 
                 const data = await docsRes.json();
 
-                if(!data.success || !statusData.success){
+                if (!data.success || !statusData.success) {
                     approvedBox.style.display = "none";
                     return;
                 }
@@ -3448,11 +4200,11 @@
                 approvedBox.style.display = "block";
                 approvedList.innerHTML = "";
 
-                if(summaries.length === 0){
+                if (summaries.length === 0) {
                     const emptyLabel =
                         requireAllPhases
-                        ? "Concept through Final consultation documents"
-                        : defenseType;
+                            ? "Concept through Final consultation documents"
+                            : defenseType;
 
                     approvedList.innerHTML = `
                         <div style="font-size: 13px; color: #6b7280; padding: 10px; text-align: center; border: 1px dashed rgba(0,0,0,0.1); border-radius: 6px;">
@@ -3466,54 +4218,54 @@
 
                 const scheduleRequirementLabel =
                     requireAllPhases
-                    ? "Concept through Final (all consultation documents)"
-                    : defenseType;
+                        ? "Concept through Final (all consultation documents)"
+                        : defenseType;
 
                 const priorPanel =
                     statusData.prior_panel_evaluations;
 
                 const priorPanelWarning =
                     priorPanel
-                    && priorPanel.prior_defense_type
-                    && priorPanel.ok === false
-                    ? `
+                        && priorPanel.prior_defense_type
+                        && priorPanel.ok === false
+                        ? `
                         <div style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; line-height: 1.5;">
                             <strong><i class="fa-solid fa-user-group"></i> Panel evaluations required:</strong>
                             ${escapeHtml(priorPanel.message || `${priorPanel.prior_defense_type}: ${priorPanel.evaluations_submitted || 0}/${priorPanel.evaluations_required || 0} panel grades submitted.`)}
                         </div>
                     `
-                    : priorPanel
-                    && priorPanel.prior_defense_type
-                    && priorPanel.ok === true
-                    ? `
+                        : priorPanel
+                            && priorPanel.prior_defense_type
+                            && priorPanel.ok === true
+                            ? `
                         <div style="background: #ecfdf5; border: 1px solid #86efac; color: #166534; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 12px;">
                             <strong><i class="fa-solid fa-circle-check"></i> Prior defense cleared:</strong>
                             ${escapeHtml(priorPanel.prior_defense_type)} — all panel evaluations submitted (${priorPanel.evaluations_submitted}/${priorPanel.evaluations_required}).
                         </div>
                     `
-                    : "";
+                            : "";
 
                 const documentsReady =
                     statusData.documents_ready_for_schedule !== false;
 
                 const documentWarning =
                     !documentsReady
-                    ? `
+                        ? `
                         <div style="background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; line-height: 1.5;">
                             <strong><i class="fa-solid fa-triangle-exclamation"></i> Cannot schedule yet:</strong>
                             ${requireAllPhases
-                                ? "Creating a defense schedule requires every consultation document from Concept through Final to be approved. Missing items are listed below."
-                                : `This group is not fully ready for <strong>${defenseType}</strong>. Missing approved documents are listed below.`}
+                            ? "Creating a defense schedule requires every consultation document from Concept through Final to be approved. Missing items are listed below."
+                            : `This group is not fully ready for <strong>${defenseType}</strong>. Missing approved documents are listed below.`}
                         </div>
                     `
-                    : "";
+                        : "";
 
-                if(!statusData.ready_for_schedule){
+                if (!statusData.ready_for_schedule) {
                     warningHtml = `
                         ${priorPanelWarning}
                         ${documentWarning}
                     `;
-                }else{
+                } else {
                     warningHtml = `
                         ${priorPanelWarning}
                         <div style="background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; line-height: 1.5;">
@@ -3538,8 +4290,8 @@
 
                     const statusLine =
                         phase.complete
-                        ? `<span style="color:#15803d;font-weight:600;">All ${phase.category} documents are approved (${phase.approved_count}/${phase.total_slots})</span>`
-                        : `<span style="color:#b45309;font-weight:600;">Incomplete — ${phase.approved_count}/${phase.total_slots} approved</span>`;
+                            ? `<span style="color:#15803d;font-weight:600;">All ${phase.category} documents are approved (${phase.approved_count}/${phase.total_slots})</span>`
+                            : `<span style="color:#b45309;font-weight:600;">Incomplete — ${phase.approved_count}/${phase.total_slots} approved</span>`;
 
                     let phaseBlock = `
                         <div style="margin-bottom: 14px; padding: 12px; background: white; border-radius: 8px; border: 1px solid rgba(124, 58, 237, 0.15);">
@@ -3549,18 +4301,18 @@
                             <div style="font-size: 12px; margin-bottom: 10px;">${statusLine}</div>
                     `;
 
-                    if(phase.missing && phase.missing.length > 0){
+                    if (phase.missing && phase.missing.length > 0) {
                         phaseBlock += `
                             <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">Missing / not approved:</div>
                             <ul style="margin: 0 0 8px 18px; padding: 0; font-size: 11px; color: #b45309;">
                                 ${phase.missing.map(item =>
-                                    `<li>${item.label} (${item.status})</li>`
-                                ).join("")}
+                            `<li>${item.label} (${item.status})</li>`
+                        ).join("")}
                             </ul>
                         `;
                     }
 
-                    if(phaseApprovedDocs.length > 0){
+                    if (phaseApprovedDocs.length > 0) {
                         phaseBlock += `<div style="display:flex;flex-direction:column;gap:6px;">`;
 
                         phaseApprovedDocs.forEach(doc => {
@@ -3578,7 +4330,7 @@
                         });
 
                         phaseBlock += `</div>`;
-                    }else if(phase.complete){
+                    } else if (phase.complete) {
                         phaseBlock += `
                             <p style="font-size: 11px; color: #6b7280; margin: 0;">No approved file records loaded, but all required slots are marked approved.</p>
                         `;
@@ -3620,7 +4372,7 @@
         window.toggleOtherDefenseType = toggleOtherDefenseType;
         window.saveSchedule = saveSchedule;
 
-        function initSchedulePage(){
+        function initSchedulePage() {
             const createBtn = document.getElementById("createScheduleBtn") || document.querySelector(".primary-btn");
             if (createBtn) {
                 createBtn.onclick = openCreateModal;

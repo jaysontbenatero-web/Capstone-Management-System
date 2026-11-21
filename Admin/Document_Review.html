@@ -620,14 +620,19 @@
                    docType.includes("acceptance for advisory") ||
                    docTitle.includes("acceptance for advisory") ||
                    docType.includes("environmental scanning") ||
-                   docTitle.includes("environmental scanning");
+                   docTitle.includes("environmental scanning") ||
+                   docType.includes("recommendation for deployment") ||
+                   docTitle.includes("recommendation for deployment");
         }
 
         function isEnvironmentalScanningDoc(item){
             if(!item) return false;
             const dt = String(item.document_type  || '').toLowerCase();
             const dl = String(item.document_title || '').toLowerCase();
-            return dt.includes('environmental scanning') || dl.includes('environmental scanning');
+            return dt.includes('environmental scanning')
+                || dl.includes('environmental scanning')
+                || dt.includes('recommendation for deployment')
+                || dl.includes('recommendation for deployment');
         }
 
         async function loadDocumentReview(){
@@ -852,7 +857,7 @@
                                 <div class="document-meta" style="margin:0;">
                                     <span class="${statusCls}">${statusLabel}</span>
                                 </div>
-                                <a class="view-file-btn" href="${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}" target="_blank" title="View document">
+                                <a class="view-file-btn" href="${item.signed_file_path || item.file_path}" target="_blank" title="View document">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
                                 <button
@@ -1020,7 +1025,7 @@
                 ? "Pending Dean Signature"
                 : (item.review_status || "Pending Review");
             const isNew = isNewDocument(item) && !isSigned && !isAdviserSignedPendingDean;
-            const viewUrl = `${isSigned && item.signed_file_path ? item.signed_file_path : item.file_path}`;
+            const viewUrl = `${item.signed_file_path || item.file_path}`;
 
             return `
                 <div class="group-doc-row ${isNew ? "is-new" : ""} ${isSigningDoc ? "needs-sign-row" : ""}" data-submission-id="${item.submission_id}">
@@ -1772,8 +1777,7 @@
 
                 const isSignedReadOnly =
                     item.review_status === 'Approved'
-                    || item.document_status === 'Approved'
-                    || item.document_status === 'Chairperson Signed';
+                    || item.document_status === 'Approved';
                 toggleESignViewOnlyMode(isSignedReadOnly, item);
 
                 const filePath = String(item.signed_file_path || item.file_path).trim();

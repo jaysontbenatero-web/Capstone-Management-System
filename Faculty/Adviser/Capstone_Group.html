@@ -572,6 +572,25 @@
 
             <div class="section-box">
 
+                <h3>
+                    Defense Minutes
+                </h3>
+
+                <p class="section-note">
+                    View draft, student-submitted, and adviser-created defense minutes for this group.
+                </p>
+
+                <div
+                    class="proposal-list"
+                    id="modalDefenseMinutes"
+                >
+                    Loading defense minutes...
+                </div>
+
+            </div>
+
+            <div class="section-box">
+
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
                     <div>
                         <h3 style="margin:0;">
@@ -684,10 +703,16 @@
                 pendingRemark: "Pending Pre-Final Defense approval"
             },
             {
+                key: "Deployment",
+                label: "Deployment",
+                icon: "fa-rocket",
+                pendingRemark: "Pending Final Defense approval"
+            },
+            {
                 key: "Completed",
                 label: "Completed",
                 icon: "fa-circle-check",
-                pendingRemark: "Final compilation pending"
+                pendingRemark: "Pending Deployment completion"
             }
         ];
 
@@ -698,8 +723,9 @@
                 "Stage 3": 2,
                 "Stage 4": 3,
                 "Stage 5": 4,
-                "Final": 5,
-                "Completed": 5
+                "Deployment": 4,
+                "Final": 4,
+                "Completed": 6
             };
 
             return map[stage] ?? 0;
@@ -708,29 +734,33 @@
         function isAllDefenseCompleted(group, defenses){
             if (!group) return false;
             const stageStr = String(group.stage || "").trim().toLowerCase();
-            if (stageStr === "final" || stageStr === "completed" || Number(group.progress ?? group.capstone_progress ?? 0) >= 100) {
-                return true;
-            }
+            return stageStr === "completed";
+        }
+
+        function getCompletedStageCount(group, defenses){
+            if (!group) return 0;
+            if (isAllDefenseCompleted(group, defenses)) return 6;
+            let count = stageToCompletedIndex(group.stage || "Stage 1");
             const defenseList = defenses || group.defenses || [];
             const finalDef = defenseList.find(d => d.defense_type === "Final Defense");
-            if (finalDef) {
+            if (finalDef && count < 4) {
                 const res = String(finalDef.panel_result || "").trim().toLowerCase();
                 const stat = String(finalDef.defense_status || "").trim().toLowerCase();
-                if (
-                    res === "passed" ||
-                    res === "passed with revisions" ||
-                    res === "conditional pass" ||
-                    res === "conditional passed" ||
-                    stat === "completed"
-                ) {
-                    return true;
+                if (res === "passed" || res === "passed with revisions" || stat === "completed") {
+                    count = 4;
                 }
             }
-            return false;
+            return count;
+        }
+
+        function getStageProgressPercent(group, defenses){
+            if (!group) return 0;
+            if (isAllDefenseCompleted(group, defenses)) return 100;
+            return Math.min(getCompletedStageCount(group, defenses) * 20, 80);
         }
 
         function getActiveStageLabel(stage, group){
-            if (isAllDefenseCompleted(group) || stage === "Final" || stage === "Completed") {
+            if (isAllDefenseCompleted(group) || stage === "Completed") {
                 return "Completed";
             }
             const labels = [
@@ -738,13 +768,14 @@
                 "Outline Defense",
                 "Pre-Final Defense",
                 "Final Defense",
+                "Deployment",
                 "Completed"
             ];
 
             const index =
-                stageToCompletedIndex(stage || "Stage 1");
+                group ? getCompletedStageCount(group, group.defenses) : stageToCompletedIndex(stage || "Stage 1");
 
-            if (index >= 4) return "Completed";
+            if (index >= 5) return "Completed";
 
             return labels[index] || "Concept Presentation";
         }
@@ -790,8 +821,12 @@
                 }else{
                     badgeClass = "not-started";
                     badgeLabel = "Pending";
-                    remark = "Pending Final Defense completion";
+                    remark = "Pending Deployment completion";
                 }
+            }else if(stageObj.key === "Deployment" && state === "active"){
+                badgeClass = "for-adviser";
+                badgeLabel = "In Progress";
+                remark = "Upload deployment requirements in Records Management";
             }else if(state === "completed"){
                 const result = defenseRecord?.panel_result || "";
 
@@ -884,18 +919,13 @@
                 Number(group.documents_required || 0);
 
             if(recordsNote){
-                recordsNote.innerText =
-                    `Records Management: ${uploaded}/${required} consultation files uploaded (${docProgress}%).`;
+                recordsNote.innerText = "";
             }
 
             const defenseMap =
                 buildDefenseMap(group.defenses);
 
-            const isFinished = isAllDefenseCompleted(group, group.defenses);
-
-            const completedCount = isFinished
-                ? 5
-                : stageToCompletedIndex(group.stage || "Stage 1");
+            const completedCount = getCompletedStageCount(group, group.defenses);
 
             let stepsHtml = "";
 
@@ -991,7 +1021,7 @@
                 : Math.round(
                     assignedGroups.reduce(
                         (sum, group) =>
-                            sum + Number(group.capstone_progress ?? group.progress ?? 0),
+                            sum + getStageProgressPercent(group, group.defenses),
                         0
                     ) / totalGroups
                 );
@@ -1041,7 +1071,7 @@
                 const isFinished = isAllDefenseCompleted(group, group.defenses);
 
                 const capstoneProgress =
-                    isFinished ? 100 : Number(group.capstone_progress ?? group.progress ?? 0);
+                    getStageProgressPercent(group, group.defenses);
 
                 const documentProgress =
                     Number(group.document_progress || 0);
@@ -1137,31 +1167,6 @@
                                 style="width:${capstoneProgress}%"
                             ></div>
                         </div>
-
-                    </div>
-
-                    <div class="progress-wrap document-progress-wrap">
-
-                        <div class="progress-info">
-                            <span>
-                                Records Uploaded
-                            </span>
-
-                            <span>
-                                ${documentProgress}%
-                            </span>
-                        </div>
-
-                        <div class="progress-bar document-progress-bar">
-                            <div
-                                class="progress-fill document-progress-fill"
-                                style="width:${documentProgress}%"
-                            ></div>
-                        </div>
-
-                        <p class="progress-footnote">
-                            ${group.documents_uploaded || 0} of ${group.documents_required || 0} consultation files
-                        </p>
 
                     </div>
 
@@ -1292,7 +1297,7 @@
                 isFinished ? "Completed" : `${group.stage || "Stage 1"} — ${getActiveStageLabel(group.stage, group)}`;
 
             document.getElementById("modalProgress").innerText =
-                `${isFinished ? 100 : (group.capstone_progress ?? group.progress ?? 0)}%`;
+                `${getStageProgressPercent(group, group.defenses)}%`;
 
             renderWorkflowTracker(group);
 
@@ -1389,11 +1394,142 @@
 
             }
 
+            renderAdviserModalDefenseMinutes(group);
+
             document.getElementById("groupModal").style.display =
                 "flex";
 
             loadAdviserModalApprovedDocs(group.group_db_id || group.id);
 
+        }
+
+        function escapeMinutesHtml(str){
+            return String(str ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function buildMinutesEntriesFromRecord(minRec){
+            if(Array.isArray(minRec.entries) && minRec.entries.length){
+                return minRec.entries.map((e, idx) => ({
+                    roleLabel: e.roleLabel || (idx === 0 ? "Panel Chair" : `Panel ${idx}`),
+                    panelistId: e.panelistId || null,
+                    panelistName: e.panelistName || e.roleLabel || (idx === 0 ? "Panel Chair" : `Panel ${idx}`),
+                    bullets: Array.isArray(e.bullets) ? e.bullets.slice() : []
+                }));
+            }
+            const parseText = (txt) => String(txt || "")
+                .split(/\r?\n/)
+                .map(line => line.replace(/^[•\-\*]\s*/, "").trim())
+                .filter(Boolean);
+            return [
+                { roleLabel: "Panel Chair", panelistId: null, panelistName: "Panel Chair", bullets: parseText(minRec.panel_chair_notes) },
+                { roleLabel: "Panel 1", panelistId: null, panelistName: "Panel 1", bullets: parseText(minRec.panel_1_notes) },
+                { roleLabel: "Panel 2", panelistId: null, panelistName: "Panel 2", bullets: parseText(minRec.panel_2_notes) }
+            ];
+        }
+
+        function renderAdviserModalDefenseMinutes(group){
+            const container = document.getElementById("modalDefenseMinutes");
+            if(!container) return;
+
+            const list = Array.isArray(group.defense_minutes) && group.defense_minutes.length
+                ? group.defense_minutes
+                : (group.latest_minutes ? [group.latest_minutes] : []);
+
+            if(list.length === 0){
+                container.innerHTML = `<p class="empty-text">No draft or adviser-created defense minutes recorded yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(minRec => {
+                const isStudent = String(minRec.submitted_by_role || "").toLowerCase() === "student";
+                const status = String(minRec.minutes_status || "Approved");
+                const statusLower = status.toLowerCase();
+
+                let statusBg = "#dcfce7", statusColor = "#15803d";
+                if(statusLower === "draft" || statusLower === "pending review"){
+                    statusBg = "#fef3c7"; statusColor = "#b45309";
+                }else if(statusLower === "rejected"){
+                    statusBg = "#fee2e2"; statusColor = "#dc2626";
+                }
+
+                const roleBadge = isStudent
+                    ? `<span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">Student Created</span>`
+                    : `<span style="background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">Adviser Created</span>`;
+
+                const statusBadge = `<span style="background:${statusBg};color:${statusColor};padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">${escapeMinutesHtml(status)}</span>`;
+
+                const entries = buildMinutesEntriesFromRecord(minRec);
+                const totalBullets = entries.reduce((sum, e) => sum + (e.bullets ? e.bullets.length : 0), 0);
+
+                const dateStr = minRec.defense_date
+                    ? new Date(minRec.defense_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                    : (minRec.updated_at ? new Date(minRec.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A");
+
+                const feedbackHtml = minRec.adviser_feedback
+                    ? `<p style="font-size:12px;color:#6d28d9;margin:4px 0 6px;"><strong>Feedback:</strong> ${escapeMinutesHtml(minRec.adviser_feedback)}</p>`
+                    : "";
+
+                const btnLabel = isStudent ? "View / Review Minutes" : "View / Edit Minutes";
+                const safeGroupId = escapeMinutesHtml(group.group_id).replace(/'/g, "\\'");
+
+                return `
+                    <div class="proposal-row">
+                        <div class="proposal-icon">
+                            <i class="fa-solid ${isStudent ? 'fa-file-pen' : 'fa-clipboard-list'}"></i>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <h4 style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                                <span>${escapeMinutesHtml(minRec.defense_type || "Defense Minutes")}${minRec.schedule_code ? ` (${escapeMinutesHtml(minRec.schedule_code)})` : ""}</span>
+                                ${roleBadge}
+                                ${statusBadge}
+                            </h4>
+                            <p>${dateStr} &bull; ${totalBullets} note(s) recorded</p>
+                            ${feedbackHtml}
+                            <button
+                                type="button"
+                                onclick="openMinutesRecordFromGroupModal('${safeGroupId}', ${Number(minRec.schedule_id)})"
+                                style="margin-top:4px; border:none; background:#ede9fe; color:#5b21b6; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"
+                            >
+                                <i class="fa-solid fa-eye"></i> ${btnLabel}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function openMinutesRecordFromGroupModal(groupId, scheduleId){
+            const group = assignedGroups.find(g => g.group_id === groupId);
+            if(!group) return;
+            const list = Array.isArray(group.defense_minutes) && group.defense_minutes.length
+                ? group.defense_minutes
+                : (group.latest_minutes ? [group.latest_minutes] : []);
+            const minRec = list.find(m => Number(m.schedule_id) === Number(scheduleId));
+            if(!minRec) return;
+
+            activeMinutesGroup = group;
+            activeMinutesScheduleId = minRec.schedule_id;
+
+            const isStudent = String(minRec.submitted_by_role || "").toLowerCase() === "student";
+            setMinutesModalMode(isStudent);
+
+            document.getElementById("minutesModalTitle").innerText = isStudent
+                ? `Review Student Defense Minutes — ${group.group_name || "Group"}`
+                : `Adviser Defense Minutes — ${group.group_name || "Group"}`;
+            document.getElementById("minutesModalSubtitle").innerText =
+                `${minRec.defense_type || "Defense"}${minRec.schedule_code ? ` (${minRec.schedule_code})` : ""} • Status: ${minRec.minutes_status || "Approved"}`;
+
+            if(isStudent){
+                document.getElementById("minutesReviewFeedback").value = minRec.adviser_feedback || "";
+            }
+
+            activeMinutesEntries = buildMinutesEntriesFromRecord(minRec);
+            renderMinutesPanelCards();
+            document.getElementById("defenseMinutesModal").style.display = "flex";
         }
 
         let activeAdviserModalDocs = [];
@@ -1613,9 +1749,14 @@
                 });
                 const data = await res.json();
                 if(data.success){
+                    const refreshGroupId = activeMinutesGroup.group_id;
                     alert(data.message || `Defense minutes ${decision}.`);
                     closeDefenseMinutesModal();
-                    loadAssignedGroups();
+                    await loadAssignedGroups();
+                    if(document.getElementById("groupModal").style.display === "flex"){
+                        const updated = assignedGroups.find(g => g.group_id === refreshGroupId);
+                        if(updated) renderAdviserModalDefenseMinutes(updated);
+                    }
                 }else{
                     alert(data.message || "Failed to submit review.");
                 }
@@ -1692,7 +1833,8 @@
         }
 
         async function saveDefenseMinutes(){
-            if(!activeMinutesGroup || !activeMinutesGroup.ongoing_defense) return;
+            const targetScheduleId = activeMinutesScheduleId || (activeMinutesGroup && activeMinutesGroup.ongoing_defense ? activeMinutesGroup.ongoing_defense.schedule_id : null);
+            if(!activeMinutesGroup || !targetScheduleId) return;
 
             // Include any un-submitted text typed in the "new bullet" inputs as a single bullet
             activeMinutesEntries.forEach((entry, idx) => {
@@ -1713,16 +1855,21 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         adviserUserId: loggedInUserId,
-                        scheduleId: activeMinutesGroup.ongoing_defense.schedule_id,
+                        scheduleId: targetScheduleId,
                         groupId: activeMinutesGroup.group_db_id,
                         panelEntries: activeMinutesEntries
                     })
                 });
                 const data = await res.json();
                 if(data.success){
+                    const refreshGroupId = activeMinutesGroup.group_id;
                     alert(data.message || "Defense minutes saved.");
                     closeDefenseMinutesModal();
-                    loadAssignedGroups();
+                    await loadAssignedGroups();
+                    if(document.getElementById("groupModal").style.display === "flex"){
+                        const updated = assignedGroups.find(g => g.group_id === refreshGroupId);
+                        if(updated) renderAdviserModalDefenseMinutes(updated);
+                    }
                 }else{
                     alert(data.message || "Failed to save defense minutes.");
                 }

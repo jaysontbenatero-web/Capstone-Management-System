@@ -99,6 +99,10 @@
         const combined = `${title} ${message} ${type}`;
 
         if (type === "announcement" || title.startsWith("new announcement")) {
+            const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
+            if (role === "admin") return resolveRelativeUrl("Admin/Announcements.html");
+            if (role === "faculty") return resolveRelativeUrl("Faculty/Announcements.html");
+            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
             return getNotificationsPageUrl();
         }
 
@@ -139,7 +143,7 @@
             if (role === "faculty") return resolveRelativeUrl("Faculty/Settings.html");
         }
 
-        // 2.5 DEFENSE MINUTES E-SIGNATURE WORKFLOW
+        // 2.5 DEFENSE MINUTES & DEPLOYMENT RECOMMENDATION E-SIGNATURE WORKFLOW
         if (type === "defense minutes" || combined.includes("defense minutes")) {
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
             if (role === "faculty" || role === "admin") {
@@ -150,6 +154,22 @@
                 ) {
                     return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
                 }
+                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+            }
+        }
+
+        if (combined.includes("recommendation for deployment")) {
+            if (role === "student") return resolveRelativeUrl("Student/Documents.html");
+            if (combined.includes("panelist") && (hasPanelistAccess || role === "faculty" || activePath.includes("/panelist/"))) {
+                return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
+            }
+            if ((combined.includes("chairperson") || combined.includes("dean")) && role === "admin") {
+                return resolveRelativeUrl("Admin/Document_Review.html");
+            }
+            if (role === "admin" && !hasAdviserAccess) {
+                return resolveRelativeUrl("Admin/Document_Review.html");
+            }
+            if (hasAdviserAccess || role === "faculty") {
                 return resolveRelativeUrl("Faculty/Adviser/Documents.html");
             }
         }
@@ -167,7 +187,7 @@
             combined.includes("grading") ||
             (combined.includes("schedule") && !combined.includes("consultation"))
         ) {
-            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
+            if (role === "student") return resolveRelativeUrl("Student/Defense_Schedule.html");
 
             if (role === "faculty" || role === "admin") {
                 // Explicit panelist assignment or cancellation goes to Assigned Defenses
@@ -310,6 +330,64 @@
         return getNotificationsPageUrl();
     }
 
+    function getActiveFacultySubPortal() {
+        const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
+        const facultyRole = String(localStorage.getItem("facultyRole") || "").toLowerCase().trim();
+        const sessionRole = String(sessionStorage.getItem("active_faculty_role") || "").toLowerCase().trim();
+
+        for (const sub of ["adviser", "instructor", "panelist"]) {
+            if (activePath.includes(`/${sub}/`)) return sub;
+        }
+        for (const sub of ["adviser", "instructor", "panelist"]) {
+            if (sessionRole === sub || facultyRole === sub) return sub;
+        }
+        return "";
+    }
+
+    const SUB_PORTAL_DASHBOARDS = {
+        adviser: "Faculty/Adviser/AdviserDash.html",
+        instructor: "Faculty/Instructor/InstructorDash.html",
+        panelist: "Faculty/Panelist/PanelistDash.html"
+    };
+
+    // Clicking a notification in the bell opens the dashboard of the portal
+    // (Admin / Faculty / Adviser / Instructor / Panelist / Student) the notification belongs to.
+    function getNotificationDashboardUrl(item) {
+        const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
+        let abs = "";
+
+        try {
+            abs = new URL(String(getNotificationTargetUrl(item) || ""), window.location.href)
+                .pathname.replace(/\\/g, "/").toLowerCase();
+        } catch (e) {
+            abs = "";
+        }
+
+        let dash = "";
+
+        if (abs.includes("/student/")) {
+            dash = "Student/StudentDash.html";
+        } else if (abs.includes("/admin/")) {
+            dash = "Admin/AdminDash.html";
+        } else if (abs.includes("/faculty/adviser/")) {
+            dash = SUB_PORTAL_DASHBOARDS.adviser;
+        } else if (abs.includes("/faculty/instructor/")) {
+            dash = SUB_PORTAL_DASHBOARDS.instructor;
+        } else if (abs.includes("/faculty/panelist/")) {
+            dash = SUB_PORTAL_DASHBOARDS.panelist;
+        } else if (abs.includes("/faculty/")) {
+            dash = SUB_PORTAL_DASHBOARDS[getActiveFacultySubPortal()] || "Faculty/FacultyDash.html";
+        } else if (role === "student") {
+            dash = "Student/StudentDash.html";
+        } else if (role === "admin") {
+            dash = "Admin/AdminDash.html";
+        } else {
+            dash = SUB_PORTAL_DASHBOARDS[getActiveFacultySubPortal()] || "Faculty/FacultyDash.html";
+        }
+
+        return resolveRelativeUrl(dash);
+    }
+
     function formatNotificationTime(value) {
         if (!value) {
             return "";
@@ -444,6 +522,7 @@
                 return;
             }
 
+            this.injectMobileDrawer();
             this.injectBell();
             this.bindEvents();
             this.refresh(true);
@@ -454,6 +533,57 @@
                 if (!document.hidden) {
                     this.refresh(false);
                 }
+            });
+        },
+
+        injectMobileDrawer() {
+            const sidebar = document.querySelector(".sidebar.admin-sidebar");
+            if (!sidebar || document.getElementById("mobileMenuToggleBtn")) {
+                return;
+            }
+
+            let backdrop = document.getElementById("mobileSidebarBackdrop");
+            if (!backdrop) {
+                backdrop = document.createElement("div");
+                backdrop.id = "mobileSidebarBackdrop";
+                backdrop.className = "mobile-sidebar-backdrop";
+                document.body.appendChild(backdrop);
+            }
+
+            const toggleBtn = document.createElement("button");
+            toggleBtn.type = "button";
+            toggleBtn.id = "mobileMenuToggleBtn";
+            toggleBtn.className = "mobile-menu-toggle";
+            toggleBtn.setAttribute("aria-label", "Toggle navigation menu");
+            toggleBtn.innerHTML = `<i class="fa-solid fa-bars"></i>`;
+
+            const header =
+                document.querySelector(".admin-main .topbar")
+                || document.querySelector(".topbar")
+                || document.querySelector(".admin-main .admin-header")
+                || document.querySelector(".admin-header");
+
+            if (header) {
+                header.insertBefore(toggleBtn, header.firstChild);
+            } else {
+                const main = document.querySelector(".admin-main") || document.body;
+                main.insertBefore(toggleBtn, main.firstChild);
+            }
+
+            const closeDrawer = () => {
+                document.body.classList.remove("mobile-sidebar-open");
+                backdrop.classList.remove("is-open");
+            };
+
+            toggleBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const isOpen = document.body.classList.toggle("mobile-sidebar-open");
+                backdrop.classList.toggle("is-open", isOpen);
+            });
+
+            backdrop.addEventListener("click", closeDrawer);
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") closeDrawer();
             });
         },
 
@@ -485,10 +615,18 @@
         injectBell() {
             const topbar =
                 document.querySelector(".admin-main .topbar")
-                || document.querySelector(".topbar");
+                || document.querySelector(".topbar")
+                || document.querySelector(".admin-main .admin-header")
+                || document.querySelector(".admin-header");
 
             if (!topbar || document.getElementById("portalNotifWrap")) {
                 return;
+            }
+
+            if (topbar.classList.contains("admin-header")) {
+                topbar.style.display = "flex";
+                topbar.style.justifyContent = "space-between";
+                topbar.style.alignItems = "center";
             }
 
             if (this.isNotificationsFullPage()) {
@@ -525,7 +663,6 @@
                 if (!isOpen) {
                     this.setDropdownOpen(true);
                     await this.refresh(true);
-                    await this.markAllUnreadAsChecked(true);
                 } else {
                     this.setDropdownOpen(false);
                 }
@@ -657,6 +794,7 @@
                 this.unreadCount = nextUnread;
                 this.cachedNotificationsJson = notificationsStr;
                 this.updateDot(nextUnread);
+                this.syncSidebarDots(nextUnread, changed);
 
                 if (dropdownOpen) {
                     this.cachedNotifications = notifications;
@@ -724,6 +862,116 @@
             }
         },
 
+        ensureSidebarDotStyle() {
+            if (document.getElementById("portalSidebarDotStyle")) return;
+            const style = document.createElement("style");
+            style.id = "portalSidebarDotStyle";
+            style.textContent = `
+                .sidebar .menu-item { position: relative; }
+                .sidebar-new-dot {
+                    width: 9px; height: 9px; min-width: 9px;
+                    margin-left: auto; border-radius: 50%;
+                    background: #ef4444;
+                    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.28);
+                    flex-shrink: 0;
+                }
+            `;
+            document.head.appendChild(style);
+        },
+
+        getSidebarItems() {
+            const items = [];
+            document.querySelectorAll(".sidebar .menu-item").forEach((el) => {
+                let href = "";
+                const onclick = el.getAttribute("onclick") || "";
+                const m = onclick.match(/location(?:\.href)?\s*=\s*['"]([^'"]+)['"]/);
+                if (m) {
+                    href = m[1];
+                } else if (el.tagName === "A") {
+                    href = el.getAttribute("href") || "";
+                } else {
+                    const a = el.querySelector("a[href]");
+                    if (a) href = a.getAttribute("href") || "";
+                }
+                if (!href || href.startsWith("#") || href.startsWith("javascript")) return;
+                try {
+                    const path = new URL(href, window.location.href).pathname.replace(/\\/g, "/").toLowerCase();
+                    items.push({ el, path });
+                } catch (e) { /* ignore */ }
+            });
+            return items;
+        },
+
+        // Puts a red dot on each sidebar item whose page has unread notifications.
+        // Opening that page marks its notifications as read, which clears the dot.
+        async syncSidebarDots(unreadNow, force) {
+            const userId = getLoggedInUserId();
+            if (!userId || this._dotsBusy) return;
+            if (!force && unreadNow === this._dotsUnread) return;
+
+            this._dotsBusy = true;
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/portal-notifications/${encodeURIComponent(userId)}?limit=100`
+                );
+                const data = await response.json();
+                if (!data.success) return;
+
+                this._dotsUnread = Number(data.unread_count || 0);
+                const unread = (data.notifications || []).filter((n) => Number(n.is_read) === 0);
+                const toPath = (url) => {
+                    try {
+                        return new URL(url, window.location.href).pathname.replace(/\\/g, "/").toLowerCase();
+                    } catch (e) {
+                        return "";
+                    }
+                };
+                const here = toPath(window.location.href);
+                const byPage = new Map();
+
+                unread.forEach((n) => {
+                    const p = toPath(getNotificationTargetUrl(n));
+                    if (!p) return;
+                    if (!byPage.has(p)) byPage.set(p, []);
+                    byPage.get(p).push(n.id);
+                });
+
+                // Visiting a page counts as seeing its notifications.
+                if (!this.isNotificationsFullPage() && byPage.has(here)) {
+                    const ids = byPage.get(here);
+                    byPage.delete(here);
+                    this._dotsUnread = -1;
+                    for (const id of ids) {
+                        await this.markRead(id);
+                    }
+                }
+
+                this.ensureSidebarDotStyle();
+
+                this.getSidebarItems().forEach(({ el, path }) => {
+                    const isNotifPage = path.endsWith("/notifications.html");
+                    const shouldShow = isNotifPage
+                        ? (unread.length > 0 && path !== here)
+                        : byPage.has(path);
+                    const existing = el.querySelector(".sidebar-new-dot");
+
+                    if (shouldShow && !existing) {
+                        const dot = document.createElement("span");
+                        dot.className = "sidebar-new-dot";
+                        dot.setAttribute("title", "New notification");
+                        el.appendChild(dot);
+                    } else if (!shouldShow && existing) {
+                        existing.remove();
+                    }
+                });
+            } catch (error) {
+                console.log(error);
+            } finally {
+                this._dotsBusy = false;
+            }
+        },
+
         updateDot(count) {
             const dot = document.getElementById("portalNotifDot");
 
@@ -782,7 +1030,7 @@
                     const id = node.getAttribute("data-notification-id");
                     const item = (this.cachedNotifications || []).find((n) => String(n.id) === String(id));
                     await this.markRead(id);
-                    const targetUrl = getNotificationTargetUrl(item);
+                    const targetUrl = getNotificationDashboardUrl(item);
                     if (targetUrl) {
                         window.location.href = targetUrl;
                     }
@@ -849,6 +1097,7 @@
     }
 
     PortalNotifications.getNotificationTargetUrl = getNotificationTargetUrl;
+    PortalNotifications.getNotificationDashboardUrl = getNotificationDashboardUrl;
     window.PortalNotifications = PortalNotifications;
 
 })();

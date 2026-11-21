@@ -11,7 +11,7 @@
     >
 
     <title>
-        Consultation | CMS</title>
+        Records Management | CMS</title>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -182,7 +182,7 @@
         <div class="topbar">
 
             <div class="welcome">
-                <h1>Consultation</h1>
+                <h1>Records Management</h1>
 
                 <p>
                     Upload, manage, and send consultation and defense documents to faculty or admin users.
@@ -434,24 +434,80 @@
         </div>
     </div>
 
-    <!-- DEFENSE MINUTES A4 PRINT / PREVIEW MODAL -->
-    <div class="modal-overlay" id="defenseMinutesPrintModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.68); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:16px;">
-        <div class="modal-box dm-print-modal-box" style="width:920px; max-width:97%; max-height:94vh; display:flex; flex-direction:column; background:#f8fafc; border-radius:20px; padding:18px 22px; box-shadow:0 25px 60px rgba(0,0,0,0.3);">
-            <div class="modal-header dm-no-print" style="display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #e2e8f0;">
+    <!-- DEFENSE MINUTES VIEW MODAL (MATCHES ADVISER & PANELIST VIEW) -->
+    <div class="modal-overlay esign-workspace-overlay" id="defenseMinutesPrintModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.68); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+        <div class="modal-box esign-workspace-modal dm-esign-modal dm-print-modal-box">
+            <div class="modal-header dm-no-print" style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
                 <div>
-                    <h2 style="color:#2e1065; font-size:18px; margin:0; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-print" style="color:#7c3aed;"></i>
-                        Defense Minutes — A4 Print Preview
+                    <h2 id="stuDmTitle" style="color:#2e1065; font-size:19px; margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        Defense Minutes
                     </h2>
-                    <p style="margin:2px 0 0; color:#64748b; font-size:12px;">Formatted for A4 bond paper with repeating DNSC header &amp; footer across pages.</p>
+                    <p id="stuDmSubtitle" style="margin:4px 0 0; color:#64748b; font-size:12.5px;">
+                        Review your defense minutes sheet, check status and notes, or click Encode Minutes to edit.
+                    </p>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    <button type="button" class="dm-help-btn" onclick="openDefenseMinutesHelpModal()" title="How does defense minutes work?">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span>How does defense minutes work?</span>
+                    </button>
                     <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesPrintModal()" style="border:none; background:#e2e8f0; color:#475569; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             </div>
-            <div id="dmPrintSheetViewport" style="overflow-y:auto; flex:1; padding:8px; background:#cbd5e1; border-radius:12px;"></div>
+
+            <div class="esign-workspace-grid dm-esign-grid">
+                <div class="esign-pdf-panel">
+                    <div class="esign-pdf-toolbar dm-no-print">
+                        <span id="stuDmPageInfo">Page 1 of 1</span>
+                        <div class="esign-page-nav">
+                            <button type="button" class="esign-nav-btn" onclick="stepStudentDmPage(-1)" title="Previous page">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <select id="stuDmPageSelect" onchange="changeStudentDmPage()"
+                                style="padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px;"></select>
+                            <button type="button" class="esign-nav-btn" onclick="stepStudentDmPage(1)" title="Next page">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="esign-pdf-viewport dm-sheet-viewport" id="dmPrintSheetViewport"></div>
+                </div>
+
+                <div class="esign-side-panel dm-no-print">
+                    <div class="detail-card compact-detail">
+                        <span>Capstone Group</span>
+                        <h3 id="stuDmGroupName">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Document Type</span>
+                        <h3 id="stuDmDefenseType">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Adviser</span>
+                        <h3 id="stuDmAdviserName">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Status</span>
+                        <h3 id="stuDmStatus">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail" id="stuDmNotesCard" style="display:none;">
+                        <span id="stuDmNotesLabel">Adviser/Panel Notes</span>
+                        <div id="stuDmReviewNotes" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div class="modal-actions esign-action-stack">
+                        <button class="save-btn" id="stuDmEncodeBtn" type="button" onclick="openDefenseMinutesEditorFromView()">
+                            <i class="fa-solid fa-file-pen"></i>
+                            Encode Minutes
+                        </button>
+                        <button class="cancel-btn" type="button" onclick="closeDefenseMinutesPrintModal()">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -993,10 +1049,10 @@
             }
             if(currentGroup){
                 const stage = String(currentGroup.stage || '').toLowerCase().trim();
-                if(stage.includes('stage 2') || stage.includes('stage 3') || stage.includes('stage 4') || stage.includes('outline') || stage.includes('pre-final') || stage.includes('final')){
+                if(stage.includes('stage 2') || stage.includes('stage 3') || stage.includes('stage 4') || stage.includes('outline') || stage.includes('pre-final') || stage.includes('final') || stage.includes('deployment') || stage.includes('completed')){
                     return true;
                 }
-                if(Number(currentGroup.progress || 0) >= 25){
+                if(Number(currentGroup.progress || 0) >= 20){
                     return true;
                 }
             }
@@ -1723,6 +1779,104 @@
                 return;
             }
 
+            // CASE 2.5: Recommendation for Deployment (Four-stage: Adviser -> Any 1 of 3 Panelists -> Program Chair -> Dean)
+            const isDeploymentRecommendation =
+                docType.includes("recommendation for deployment")
+                || docTitle.includes("recommendation for deployment");
+
+            if(isDeploymentRecommendation){
+                if(!adviser){
+                    selectedTargetRecipient = null;
+                    if(sendBtn) sendBtn.disabled = true;
+                    if(sendBtnText) sendBtnText.innerText = "Adviser Not Assigned";
+                    noticeContainer.innerHTML = `
+                        <div class="routing-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <div>
+                                <strong>No Adviser Assigned:</strong> Your capstone group does not have an assigned adviser yet.
+                                Please get an adviser assigned before sending Recommendation for Deployment.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                selectedTargetRecipient = {
+                    receiverId: adviser.id,
+                    receiverUserId: adviser.user_id,
+                    targetRole: "adviser",
+                    name: adviserName,
+                    roleName: "Adviser"
+                };
+
+                if(sendBtn) sendBtn.disabled = false;
+                if(sendBtnText) sendBtnText.innerText = `Send to Adviser (${adviserName})`;
+
+                noticeContainer.innerHTML = `
+                    <div class="routing-notice-box">
+                        <div class="routing-notice-header">
+                            <i class="fa-solid fa-route"></i>
+                            <span>Four-Stage Deployment E-Sign &amp; Approval Route</span>
+                        </div>
+
+                        <div class="routing-summary-banner">
+                            <i class="fa-solid fa-paper-plane" style="color:#7c3aed;font-size:16px;"></i>
+                            <div>
+                                You are sending <strong>Recommendation for Deployment</strong> to your Adviser: <strong>${adviserName}</strong>.
+                            </div>
+                        </div>
+
+                        <div class="routing-pipeline-label">Signing &amp; Approval Route:</div>
+
+                        <div class="routing-stepper">
+                            <div class="routing-step active">
+                                <div class="routing-step-num active">1</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Adviser (First Signature)</div>
+                                    <div class="routing-step-name">${adviserName}</div>
+                                </div>
+                                <span class="routing-step-badge current">Current Target</span>
+                            </div>
+                            <div class="routing-step-arrow"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div class="routing-step">
+                                <div class="routing-step-num pending">2</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Panelists (All 3 Sign in Any Order)</div>
+                                    <div class="routing-step-name">Defense Panel</div>
+                                </div>
+                                <span class="routing-step-badge pending">Panel E-Sign</span>
+                            </div>
+                            <div class="routing-step-arrow"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div class="routing-step">
+                                <div class="routing-step-num pending">3</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Program Chairperson</div>
+                                    <div class="routing-step-name">${chairpersonName}</div>
+                                </div>
+                                <span class="routing-step-badge pending">Chair E-Sign</span>
+                            </div>
+                            <div class="routing-step-arrow"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div class="routing-step">
+                                <div class="routing-step-num pending">4</div>
+                                <div class="routing-step-content">
+                                    <div class="routing-step-title">Dean (Final Approval)</div>
+                                    <div class="routing-step-name">${deanName}</div>
+                                </div>
+                                <span class="routing-step-badge pending">Final</span>
+                            </div>
+                        </div>
+
+                        <div class="routing-flow-summary">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <div>
+                                After your Adviser signs, it is sent to all 3 panelists (all 3 panelists must sign in any order), then to the Program Chairperson (IS/IT), and finally to the Dean for approval.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
             // CASE 3: Standard Consultation / Defense Documents (Concept Paper, Manuscripts, Consultation Logs, Recommendations, Turnitin, Prototype, Action Matrix, Other)
             if(!adviser){
                 selectedTargetRecipient = null;
@@ -1752,9 +1906,12 @@
             if(sendBtnText) sendBtnText.innerText = `Send to Adviser (${adviserName})`;
 
             const isDefMinutes = docType.includes("defense minutes") || docTitle.includes("defense minutes");
+            const isDeploymentChapter14 = docType.includes("deployment") && (docType.includes("chapter 1-4") || docTitle.includes("chapter 1-4"));
             const summaryText = isDefMinutes
                 ? `You are sending defense minutes photo(s) to your Adviser: <strong>${adviserName}</strong> for physical defense verification and approval. Once approved, the next defense phase will unlock.`
-                : `You are sending this document to your Adviser: <strong>${adviserName}</strong> for consultation review and evaluation. Approved documents unlock defense stage requirements.`;
+                : isDeploymentChapter14
+                    ? `You are sending <strong>Chapter 1-4 (Deployment)</strong> to your Adviser: <strong>${adviserName}</strong> in Document Review for approval only.`
+                    : `You are sending this document to your Adviser: <strong>${adviserName}</strong> for consultation review and evaluation. Approved documents unlock defense stage requirements.`;
 
             noticeContainer.innerHTML = `
                 <div class="routing-notice-box">
@@ -2036,7 +2193,7 @@
                 iconClass: "blue",
                 description: "Upload mid chapters and supporting files. Encode and download your official Defense Minutes in A4 format after the defense presentation.",
                 items: [
-                    { label: "Chapter 3-4", slots: 1 },
+                    { label: "Chapter 1-2", slots: 1 },
                     { label: "Recommendation letter", slots: 1 },
                     { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
                 ]
@@ -2050,6 +2207,16 @@
                     { label: "Chapter 1-4", slots: 1 },
                     { label: "Recommendation letter", slots: 1 },
                     { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
+                ]
+            },
+            {
+                category: "Deployment",
+                icon: "fa-rocket",
+                iconClass: "blue",
+                description: "Upload deployment requirements and complete manuscript chapters.",
+                items: [
+                    { label: "Recommendation for Deployment", slots: 1 },
+                    { label: "Chapter 1-4", slots: 1 }
                 ]
             }
         ];
@@ -2173,6 +2340,23 @@
             return !!(rec && String(rec.status || "").trim() === "Completed");
         }
 
+        function normalizeDefensePhaseKey(val){
+            const s = String(val || "").toLowerCase().trim();
+            if(!s) return "";
+            if(s.includes("concept")) return "concept";
+            if(s.includes("outline")) return "outline";
+            if(s.includes("pre-final") || s.includes("prefinal") || s.includes("pre final")) return "pre-final";
+            if(s.includes("final")) return "final";
+            if(s.includes("deployment")) return "deployment";
+            return s;
+        }
+
+        function doesDefenseTypeMatchPhase(defenseType, category){
+            const a = normalizeDefensePhaseKey(defenseType);
+            const b = normalizeDefensePhaseKey(category);
+            return Boolean(a && b && a === b);
+        }
+
         /* Legacy/plain defense minutes document approved check */
         function isDefenseMinutesApproved(category, baseLabel){
             if(isTypedDefenseMinutesCompleted(category)){
@@ -2181,7 +2365,8 @@
             const docType = `${category} • ${baseLabel}`;
             return (studentDocuments || []).some(doc => {
                 const typeStr = String(doc.document_type || "");
-                const match = typeStr === docType || (typeStr.toLowerCase().includes(category.toLowerCase()) && typeStr.toLowerCase().includes("defense minutes"));
+                const lowerType = typeStr.toLowerCase();
+                const match = typeStr === docType || (doesDefenseTypeMatchPhase(typeStr, category) && lowerType.includes("defense minutes"));
                 return match && (String(doc.document_status || "").trim() === "Approved" || isAdviserLocked(doc));
             });
         }
@@ -2190,19 +2375,13 @@
         function isDefenseGradedForPhase(category){
             const cat = String(category || "").toLowerCase().trim();
 
-            // 1. From server's graded_defense_types
-            if(Array.isArray(gradedDefenseTypes) && gradedDefenseTypes.some(t => {
-                const tLower = String(t || "").toLowerCase().trim();
-                return tLower.includes(cat) || cat.includes(tLower);
-            })){
+            // 1. From server's graded_defense_types (strict phase match so "Pre-Final Defense" never matches "Final Defense")
+            if(Array.isArray(gradedDefenseTypes) && gradedDefenseTypes.some(t => doesDefenseTypeMatchPhase(t, category))){
                 return true;
             }
 
             // 2. From defenseVerdicts
-            if(Array.isArray(defenseVerdicts) && defenseVerdicts.some(v => {
-                const vLower = String(v.defense_type || "").toLowerCase().trim();
-                return (vLower.includes(cat) || cat.includes(vLower)) && v.latest_result;
-            })){
+            if(Array.isArray(defenseVerdicts) && defenseVerdicts.some(v => doesDefenseTypeMatchPhase(v.defense_type, category) && v.latest_result)){
                 return true;
             }
 
@@ -2215,13 +2394,13 @@
             if(currentGroup){
                 const stage = String(currentGroup.stage || '').toLowerCase().trim();
                 const prog = Number(currentGroup.progress || 0);
-                if(cat.includes("concept") && (prog >= 25 || stage.includes('stage 2') || stage.includes('outline') || stage.includes('stage 3') || stage.includes('pre-final') || stage.includes('stage 4') || stage.includes('final'))){
+                if(cat.includes("concept") && (prog >= 20 || stage.includes('stage 2') || stage.includes('outline') || stage.includes('stage 3') || stage.includes('pre-final') || stage.includes('stage 4') || stage.includes('final') || stage.includes('deployment') || stage.includes('completed'))){
                     return true;
                 }
-                if(cat.includes("outline") && (prog >= 50 || stage.includes('stage 3') || stage.includes('pre-final') || stage.includes('stage 4') || stage.includes('final'))){
+                if(cat.includes("outline") && (prog >= 40 || stage.includes('stage 3') || stage.includes('pre-final') || stage.includes('stage 4') || stage.includes('final') || stage.includes('deployment') || stage.includes('completed'))){
                     return true;
                 }
-                if(cat.includes("pre-final") && (prog >= 75 || stage.includes('stage 4') || stage.includes('final'))){
+                if(cat.includes("pre-final") && (prog >= 60 || stage.includes('stage 4') || stage.includes('final') || stage.includes('deployment') || stage.includes('completed'))){
                     return true;
                 }
             }
@@ -3152,7 +3331,14 @@
             const isCompleted = sentRec && sentRec.status === "Completed";
             let hasAnySignature = false;
             if(sentRec){
-                if(sentRec.adviser_signature_json) hasAnySignature = true;
+                try {
+                    if(sentRec.adviser_signature_json){
+                        const advObj = JSON.parse(sentRec.adviser_signature_json);
+                        if(advObj && advObj.signatureImage && advObj.reviewStatus !== "Subject to Change" && advObj.reviewStatus !== "Rejected"){
+                            hasAnySignature = true;
+                        }
+                    }
+                } catch(_) {}
                 try {
                     const pSigs = JSON.parse(sentRec.panelist_signatures_json || "[]");
                     if(Array.isArray(pSigs) && pSigs.some(s => s && s.signatureImage)) hasAnySignature = true;
@@ -3160,27 +3346,21 @@
             }
             const isSendDisabled = isCompleted || hasAnySignature || (sentRec && sentRec.status === "Pending Adviser Signature");
 
-            const encodeBtn = phaseLocked
+            const viewBtn = phaseLocked
                 ? `<button class="slot-btn disabled" type="button" disabled title="Complete previous phase first">
                     <i class="fa-solid fa-lock"></i> Phase Locked
                    </button>`
                 : notGradedLocked
-                ? `<button class="slot-btn disabled" type="button" disabled title="Defense minutes can only be encoded after the defense presentation has been graded by the panel">
+                ? `<button class="slot-btn disabled" type="button" disabled title="Defense minutes can only be viewed and encoded after the defense presentation has been graded by the panel">
                     <i class="fa-solid fa-lock"></i> Awaiting Defense Grading
                    </button>`
-                : isCompleted
-                ? `<button class="slot-btn view" type="button"
-                    onclick="viewSignedDefenseMinutes('${safeCategory}')">
-                    <i class="fa-solid fa-eye"></i> View Signed
-                   </button>`
-                : `<button class="slot-btn upload" type="button"
-                    onclick="openDefenseMinutesEditor('${safeCategory}')">
-                    <i class="fa-solid fa-file-pen"></i>
-                    ${isSaved ? "Edit Minutes" : "Encode Minutes"}
+                : `<button class="slot-btn view" type="button"
+                    onclick="openDefenseMinutesPrintPreview('${safeCategory}')">
+                    <i class="fa-solid fa-eye"></i> View
                    </button>`;
 
             const sendBtn = isSendDisabled
-                ? `<button class="slot-btn disabled" type="button" disabled title="${isCompleted ? 'All grading panelists have signed' : 'Already sent — use Edit Minutes and Save to update'}">
+                ? `<button class="slot-btn disabled" type="button" disabled title="${isCompleted ? 'All grading panelists have signed' : 'Already sent — click View → Encode Minutes and Save to update'}">
                     <i class="fa-solid fa-check"></i> ${isCompleted ? "Completed" : "Sent"}
                    </button>`
                 : isSaved
@@ -3188,7 +3368,7 @@
                     onclick="sendTypedDefenseMinutesToAdviser('${safeCategory}')">
                     <i class="fa-solid fa-paper-plane"></i> Send
                    </button>`
-                : `<button class="slot-btn disabled" type="button" disabled title="Encode and save your defense minutes first">
+                : `<button class="slot-btn disabled" type="button" disabled title="Click View → Encode Minutes and save your defense minutes first">
                     <i class="fa-solid fa-paper-plane"></i> Send
                    </button>`;
 
@@ -3199,7 +3379,7 @@
                         <span class="slot-status ${statusClass}">${statusText}</span>
                     </div>
                     <div class="doc-slot-actions">
-                        ${encodeBtn}
+                        ${viewBtn}
                         ${sendBtn}
                     </div>
                 </div>
@@ -3298,10 +3478,13 @@
                 ? "Signed"
                 : "View";
 
+            const normalizedViewPath = String(viewPath || "").startsWith("/") ? viewPath : ("/" + viewPath);
+            const cacheBust = documentItem.signed_file_path ? `?t=${encodeURIComponent(documentItem.updated_at || Date.now())}` : "";
+
             return `
                 <a
                     class="slot-btn view"
-                    href="${API_BASE}${String(viewPath || "").startsWith("/") ? viewPath : ("/" + viewPath)}"
+                    href="${API_BASE}${normalizedViewPath}${cacheBust}"
                     target="_blank"
                     title="${documentItem.signed_file_path ? 'View signed document' : 'View document'}"
                 >
@@ -3524,6 +3707,7 @@
                 ];
 
             const panelists = rawPanelists.slice(0, 3).map((p, idx) => ({
+                panelistId: p.panelistId || p.panelist_id || null,
                 name: String(p.panelistName || `Panelist ${idx + 1}`).trim(),
                 role: idx === 0 || String(p.roleLabel || "").toLowerCase().includes("chair") ? "Panel Chairman" : "Panel Member"
             }));
@@ -3573,6 +3757,7 @@
                     : [{ pageNo: "", comments: "", actions: "" }];
 
                 return {
+                    panelistId: p.panelistId || null,
                     name: p.name,
                     role: p.role,
                     rows
@@ -3593,6 +3778,7 @@
         }
 
         function closeDefenseMinutesEditor(){
+            dmOpenedFromView = false;
             document.getElementById("defenseMinutesEditorModal").style.display = "none";
         }
 
@@ -3731,8 +3917,11 @@
                 }
             } catch(_) {}
 
-            const findLockedPanelSig = (panelName) => {
-                const target = String(panelName || "").trim().toLowerCase();
+            const findLockedPanelSig = (panelObj, panelIdx) => {
+                if(window.DefenseMinutesSheet && typeof DefenseMinutesSheet.findMatchingPanelistSig === "function"){
+                    return DefenseMinutesSheet.findMatchingPanelistSig(panelObj, lockedPanelSigs, panelIdx);
+                }
+                const target = String((panelObj && panelObj.name) || panelObj || "").trim().toLowerCase();
                 return lockedPanelSigs.find(s => {
                     const by = String(s.signedBy || "").trim().toLowerCase();
                     return by && (by === target || target.includes(by) || by.includes(target));
@@ -3740,10 +3929,12 @@
             };
 
             const adviserBlockHtml = `
-                <div class="dm-adviser-signoff">
-                    ${lockedAdvSig && lockedAdvSig.signatureImage
-                        ? `<div class="dm-anchored-sig-wrap"><img src="${escapeDmHtml(lockedAdvSig.signatureImage)}" alt="Adviser Signature" class="dm-anchored-sig-img"></div>`
-                        : `<div class="dm-adviser-sig-space"></div>`}
+                <div class="dm-adviser-signoff" data-dm-adviser-block="1">
+                    <div class="dm-adviser-sig-slot">
+                        ${lockedAdvSig && lockedAdvSig.signatureImage
+                            ? `<img src="${escapeDmHtml(lockedAdvSig.signatureImage)}" alt="Adviser Signature" class="dm-anchored-sig-img">`
+                            : ""}
+                    </div>
                     <div class="dm-adviser-name">${escapeDmHtml(meta.adviserName)}</div>
                     <div class="dm-adviser-role">Adviser</div>
                     <div class="dm-adviser-date">Date Signed: ${lockedAdvSig && lockedAdvSig.dateSigned ? `<span class="dm-anchored-date">${escapeDmHtml(lockedAdvSig.dateSigned)}</span>` : ""}</div>
@@ -3791,15 +3982,19 @@
                         seenPanelOnPage.add(it.pIdx);
                         const span = pCountsOnPage.get(it.pIdx);
                         const showDetails = it.isFirstOfPanelInTotal;
-                        const lockedPSig = showDetails ? findLockedPanelSig(it.panel.name) : null;
+                        const lockedPSig = showDetails ? findLockedPanelSig(it.panel, it.pIdx) : null;
                         panelistCell = `
-                            <td rowspan="${span}" class="dm-panelist-cell">
+                            <td rowspan="${span}" class="dm-panelist-cell"${showDetails ? ` data-dm-panel-index="${it.pIdx}" data-dm-panelist-name="${escapeDmHtml(it.panel.name)}"` : ""}>
                                 ${showDetails ? `
                                     <div class="dm-panelist-name">${escapeDmHtml(it.panel.name)}</div>
                                     <div class="dm-panelist-role">${escapeDmHtml(it.panel.role)}</div>
-                                    ${lockedPSig ? `<div class="dm-anchored-sig-wrap dm-anchored-sig-center"><img src="${escapeDmHtml(lockedPSig.signatureImage)}" alt="Panelist Signature" class="dm-anchored-sig-img"></div>` : ""}
-                                    <div class="dm-panelist-sig">Signature:</div>
-                                    <div class="dm-panelist-date">Date Signed: ${lockedPSig && lockedPSig.dateSigned ? `<span class="dm-anchored-date">${escapeDmHtml(lockedPSig.dateSigned)}</span>` : ""}</div>
+                                    <div class="dm-panelist-sig-block">
+                                        <div class="dm-panelist-sig">Signature:</div>
+                                        <div class="dm-panelist-sig-slot">
+                                            ${lockedPSig ? `<img src="${escapeDmHtml(lockedPSig.signatureImage)}" alt="Panelist Signature" class="dm-anchored-sig-img">` : ""}
+                                        </div>
+                                        <div class="dm-panelist-date">Date Signed: ${lockedPSig && lockedPSig.dateSigned ? `<span class="dm-anchored-date">${escapeDmHtml(lockedPSig.dateSigned)}</span>` : ""}</div>
+                                    </div>
                                 ` : `<div class="dm-panelist-cont">${escapeDmHtml(it.panel.name)} <span style="font-weight:400;">(cont.)</span></div>`}
                             </td>
                         `;
@@ -3924,8 +4119,13 @@
                     });
                     const resData = await resp.json();
                     if(resData && resData.success){
+                        const reopenView = dmOpenedFromView;
+                        dmOpenedFromView = false;
                         closeDefenseMinutesEditor();
                         await loadStudentDocuments();
+                        if(reopenView){
+                            await openDefenseMinutesPrintPreview(cat);
+                        }
                         alert(resData.message || "Defense minutes updated and synced!");
                         return;
                     }
@@ -3937,14 +4137,19 @@
             renderConsultationHub();
             updateStats();
 
-            if(openPreviewAfter){
-                closeDefenseMinutesEditor();
-                openDefenseMinutesPrintPreview(cat);
-            } else {
-                closeDefenseMinutesEditor();
+            const reopenView = openPreviewAfter || dmOpenedFromView;
+            dmOpenedFromView = false;
+            closeDefenseMinutesEditor();
+            if(reopenView){
+                await openDefenseMinutesPrintPreview(cat);
+            }
+            if(!openPreviewAfter){
                 alert("Defense minutes saved! Click Send to submit to your Adviser.");
             }
         }
+
+        let activeStudentDmCategory = null;
+        let dmOpenedFromView = false;
 
         function formatDmBulletsHtml(text){
             const lines = String(text || "")
@@ -3958,148 +4163,214 @@
             }).join("");
         }
 
+        function resolveStudentDmStatusLabel(category, sentRec){
+            if(sentRec){
+                if(sentRec.status === "Completed") return "Completed — All signatures affixed";
+                if(sentRec.status === "Subject to Change") return "Needs Revision — Edit & re-send";
+                if(sentRec.status === "Rejected") return "Rejected by Panelist — Edit & re-send";
+                if(sentRec.status === "Pending Panelist Signatures"){
+                    let elig = [];
+                    let sigs = [];
+                    try { elig = JSON.parse(sentRec.eligible_panelist_ids_json || "[]"); } catch(_) {}
+                    try { sigs = JSON.parse(sentRec.panelist_signatures_json || "[]").filter(s => s && s.signatureImage); } catch(_) {}
+                    return `Adviser Signed — Pending Panelists (${sigs.length}/${elig.length})`;
+                }
+                return sentRec.status || "Sent to Adviser — Pending Adviser E-Signature";
+            }
+            return hasSavedDefenseMinutes(category)
+                ? "Encoded & Saved (Ready to send to Adviser)"
+                : "Not encoded yet";
+        }
+
         async function openDefenseMinutesPrintPreview(category){
+            activeStudentDmCategory = category;
             const ctx = await ensureDefenseMinutesContextLoaded();
             const meta = resolveDefenseMinutesMeta(category, ctx);
-            const saved = loadSavedDefenseMinutes(category);
+            const savedLocal = loadSavedDefenseMinutes(category);
+            const sentRec = getSentTypedDefenseMinutes(category);
+            const isCompleted = !!(sentRec && sentRec.status === "Completed");
 
-            const panelists = meta.panelists.map((p, idx) => {
-                const savedPanel = saved && Array.isArray(saved.panelists) ? saved.panelists[idx] : null;
-                const rows = savedPanel && Array.isArray(savedPanel.rows) && savedPanel.rows.length > 0
-                    ? savedPanel.rows
-                    : [{ pageNo: "", comments: "", actions: "" }];
-                return { name: p.name, role: p.role, rows };
-            });
+            let serverMinutes = null;
+            try {
+                if(sentRec && sentRec.minutes_json){
+                    serverMinutes = JSON.parse(sentRec.minutes_json);
+                }
+            } catch(_) {}
 
-            let tableRowsHtml = "";
-            panelists.forEach(panel => {
-                const rowCount = panel.rows.length;
-                panel.rows.forEach((r, rIdx) => {
-                    const panelistCell = rIdx === 0
-                        ? `<td rowspan="${rowCount}" class="dm-panelist-cell">
-                                <div class="dm-panelist-name">${escapeDmHtml(panel.name)}</div>
-                                <div class="dm-panelist-role">${escapeDmHtml(panel.role)}</div>
-                                <div class="dm-panelist-sig">Signature:</div>
-                                <div class="dm-panelist-date">Date Signed:</div>
-                           </td>`
-                        : "";
+            let displayMeta = meta;
+            let panelists;
 
-                    tableRowsHtml += `
-                        <tr>
-                            ${panelistCell}
-                            <td class="dm-page-cell">${escapeDmHtml(r.pageNo || "")}</td>
-                            <td class="dm-text-cell">${formatDmBulletsHtml(r.comments)}</td>
-                            <td class="dm-text-cell">${formatDmBulletsHtml(r.actions)}</td>
-                        </tr>
-                    `;
+            if(isCompleted && serverMinutes && Array.isArray(serverMinutes.panelists)){
+                displayMeta = serverMinutes.meta || meta;
+                panelists = serverMinutes.panelists;
+            } else {
+                let sourceSaved = savedLocal;
+                if(serverMinutes && Array.isArray(serverMinutes.panelists)){
+                    const localTs = savedLocal && savedLocal.updatedAt ? new Date(savedLocal.updatedAt).getTime() : 0;
+                    const serverTs = sentRec && sentRec.updated_at ? new Date(sentRec.updated_at).getTime() : 0;
+                    if(!savedLocal || serverTs >= localTs){
+                        sourceSaved = serverMinutes;
+                    }
+                }
+                panelists = meta.panelists.map((p, idx) => {
+                    const savedPanel = sourceSaved && Array.isArray(sourceSaved.panelists) ? sourceSaved.panelists[idx] : null;
+                    const rows = savedPanel && Array.isArray(savedPanel.rows) && savedPanel.rows.length > 0
+                        ? savedPanel.rows
+                        : [{ pageNo: "", comments: "", actions: "" }];
+                    return { panelistId: p.panelistId || null, name: p.name, role: p.role, rows };
                 });
+            }
+
+            const placed = [];
+            try {
+                if(sentRec && sentRec.adviser_signature_json){
+                    placed.push(JSON.parse(sentRec.adviser_signature_json));
+                }
+            } catch(_) {}
+            try {
+                if(sentRec && sentRec.panelist_signatures_json){
+                    const arr = JSON.parse(sentRec.panelist_signatures_json);
+                    if(Array.isArray(arr)) placed.push(...arr);
+                }
+            } catch(_) {}
+
+            const titleEl = document.getElementById("stuDmTitle");
+            if(titleEl) titleEl.innerText = `${category} — Defense Minutes`;
+            const grpEl = document.getElementById("stuDmGroupName");
+            if(grpEl) grpEl.innerText = (currentGroup && currentGroup.group_name) ? currentGroup.group_name : "—";
+            const typeEl = document.getElementById("stuDmDefenseType");
+            if(typeEl) typeEl.innerText = `${category} • Defense minutes`;
+            const advEl = document.getElementById("stuDmAdviserName");
+            if(advEl) advEl.innerText = (currentGroup && currentGroup.adviser_name) ? currentGroup.adviser_name : (displayMeta.adviserName || "—");
+            const statusEl = document.getElementById("stuDmStatus");
+            if(statusEl) statusEl.innerText = resolveStudentDmStatusLabel(category, sentRec);
+
+            const notesCard = document.getElementById("stuDmNotesCard");
+            const notesLabel = document.getElementById("stuDmNotesLabel");
+            const notesContainer = document.getElementById("stuDmReviewNotes");
+            if(notesCard && notesContainer){
+                const noteEntries = [];
+                if(sentRec){
+                    try {
+                        if(sentRec.adviser_signature_json){
+                            const adv = JSON.parse(sentRec.adviser_signature_json);
+                            if(adv && (adv.reviewComment || adv.reviewStatus === "Subject to Change" || adv.reviewStatus === "Rejected")){
+                                noteEntries.push({
+                                    role: "Adviser",
+                                    name: adv.signedBy || (currentGroup && currentGroup.adviser_name) || "Adviser",
+                                    status: adv.reviewStatus || (adv.signatureImage ? "Approved" : "Pending"),
+                                    comment: String(adv.reviewComment || "").trim()
+                                });
+                            }
+                        }
+                    } catch(_) {}
+                    try {
+                        if(sentRec.panelist_signatures_json){
+                            const arr = JSON.parse(sentRec.panelist_signatures_json);
+                            if(Array.isArray(arr)){
+                                arr.forEach(p => {
+                                    if(p && (p.reviewComment || p.reviewStatus === "Subject to Change" || p.reviewStatus === "Rejected")){
+                                        noteEntries.push({
+                                            role: "Panel",
+                                            name: p.signedBy || "Panelist",
+                                            status: p.reviewStatus || (p.signatureImage ? "Approved" : "Pending"),
+                                            comment: String(p.reviewComment || "").trim()
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    } catch(_) {}
+                }
+
+                const needsActionEntries = noteEntries.filter(e => e.status === "Subject to Change" || e.status === "Rejected");
+                const primaryEntries = needsActionEntries.length ? needsActionEntries : noteEntries;
+                const isStatusRevisionOrReject = !!(sentRec && (sentRec.status === "Subject to Change" || sentRec.status === "Rejected"));
+
+                if(notesLabel){
+                    if(primaryEntries.length === 1){
+                        notesLabel.innerText = `${primaryEntries[0].role}: ${primaryEntries[0].name} Notes`;
+                    } else if(primaryEntries.length > 1){
+                        const roles = new Set(primaryEntries.map(e => e.role));
+                        const rolePrefix = roles.size === 1 ? primaryEntries[0].role : "Adviser/Panel";
+                        const names = [...new Set(primaryEntries.map(e => e.name))];
+                        notesLabel.innerText = `${rolePrefix}: ${names.join(", ")} Notes`;
+                    } else if(isStatusRevisionOrReject){
+                        const fallbackName = (currentGroup && currentGroup.adviser_name) ? currentGroup.adviser_name : "Adviser";
+                        notesLabel.innerText = `Adviser: ${fallbackName} Notes`;
+                    } else {
+                        notesLabel.innerText = "Adviser/Panel Notes";
+                    }
+                }
+
+                if(noteEntries.length > 0){
+                    notesContainer.innerHTML = DefenseMinutesSheet.renderReviewNotesHtml(sentRec);
+                    notesCard.style.display = "block";
+                } else if(isStatusRevisionOrReject){
+                    notesContainer.innerHTML = `<p style="color:#94a3b8;font-size:12px;margin:0;">No note was saved for this revision/rejection.</p>`;
+                    notesCard.style.display = "block";
+                } else {
+                    notesContainer.innerHTML = "";
+                    notesCard.style.display = "none";
+                }
+            }
+
+            const encodeBtn = document.getElementById("stuDmEncodeBtn");
+            if(encodeBtn){
+                encodeBtn.style.display = isCompleted ? "none" : "flex";
+            }
+
+            const viewport = document.getElementById("dmPrintSheetViewport");
+            const renderRes = DefenseMinutesSheet.renderPages(viewport, {
+                minutesData: { meta: displayMeta, panelists },
+                placedSignatures: placed,
+                imgBasePath: "../Images/dnsc"
             });
 
-            const membersHtml = meta.members.length
-                ? meta.members.map((m, i) => `
-                    <div class="dm-member-row">
-                        <span class="dm-member-label">${i === 0 ? "Members:" : ""}</span>
-                        <span class="dm-member-name">${escapeDmHtml(m)}</span>
-                    </div>
-                  `).join("")
-                : `<div class="dm-member-row"><span class="dm-member-label">Members:</span><span class="dm-member-name">N/A</span></div>`;
-
-            document.getElementById("dmPrintSheetViewport").innerHTML = `
-                <div class="dm-a4-sheet" id="dmPrintableSheet">
-                    <table class="dm-print-shell">
-                        <thead>
-                            <tr>
-                                <td>
-                                    <div class="dm-dnsc-header">
-                                        <div class="dm-dnsc-header-left">
-                                            <img src="../Images/dnsc/dnsc_logo.png" alt="DNSC Seal" class="dm-dnsc-seal">
-                                            <div>
-                                                <div class="dm-dnsc-name">DAVAO DEL NORTE<br>STATE COLLEGE</div>
-                                                <div class="dm-dnsc-motto">"Inspiring Change, Creating Futures"</div>
-                                            </div>
-                                        </div>
-                                        <div class="dm-dnsc-header-right">
-                                            <div>president@dnsc.edu.ph <img src="../Images/dnsc/icon_email.png" alt="" class="dm-dnsc-icon"></div>
-                                            <div>dnsc.edu.ph <img src="../Images/dnsc/icon_web.png" alt="" class="dm-dnsc-icon"></div>
-                                            <div>@officialdnsc <img src="../Images/dnsc/icon_fb.png" alt="" class="dm-dnsc-icon"></div>
-                                            <div>New Visayas, Panabo City, 8105</div>
-                                        </div>
-                                    </div>
-                                    <div class="dm-institute-bar">Institute of Computing</div>
-                                </td>
-                            </tr>
-                        </thead>
-
-                        <tfoot>
-                            <tr>
-                                <td>
-                                    <div class="dm-dnsc-footer">
-                                        <div class="dm-footer-vmc">
-                                            <div class="dm-vmc-col">
-                                                <div class="dm-vmc-title">VISION</div>
-                                                <div class="dm-vmc-text">An institution leading in agri-fisheries and socio-cultural development in the ASEAN region.</div>
-                                            </div>
-                                            <div class="dm-vmc-col">
-                                                <div class="dm-vmc-title">MISSION</div>
-                                                <div class="dm-vmc-text">DNSC shall produce future-ready workforce, create innovative solutions and technologies, empower communities, and uphold good governance towards sustainable development.</div>
-                                            </div>
-                                            <div class="dm-vmc-col">
-                                                <div class="dm-vmc-title">CORE VALUES</div>
-                                                <div class="dm-vmc-text">Stewardship<br>Adaptability and Excellence<br>Integrity and Innovativeness<br>Love of God and Country</div>
-                                            </div>
-                                        </div>
-                                        <div class="dm-footer-logos">
-                                            <img src="../Images/dnsc/bagong_pilipinas.png" alt="Bagong Pilipinas">
-                                            <img src="../Images/dnsc/iso_w3.png" alt="ISO 9001:2015">
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tfoot>
-
-                        <tbody>
-                            <tr>
-                                <td class="dm-print-body-cell">
-                                    <div class="dm-doc-title">[${escapeDmHtml(meta.phaseTag)}] DEFENSE MINUTES</div>
-
-                                    <div class="dm-meta-block">
-                                        <div class="dm-meta-line"><strong>Title:</strong> ${escapeDmHtml(meta.title)}</div>
-                                        <div class="dm-meta-split">
-                                            <div><strong>Program:</strong> ${escapeDmHtml(meta.program)}</div>
-                                            <div><strong>Date of Defense:</strong> ${escapeDmHtml(meta.defenseDate)}</div>
-                                        </div>
-                                        <div class="dm-members-block">
-                                            ${membersHtml}
-                                        </div>
-                                    </div>
-
-                                    <table class="dm-minutes-table">
-                                        <thead>
-                                            <tr>
-                                                <th style="width:22%;">Panelists</th>
-                                                <th style="width:9%;">Page No.</th>
-                                                <th style="width:34.5%;">Comments/Suggestions/Recommendations</th>
-                                                <th style="width:34.5%;">Action/s Taken</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${tableRowsHtml}
-                                        </tbody>
-                                    </table>
-
-                                    <div class="dm-adviser-signoff">
-                                        <div class="dm-adviser-name">${escapeDmHtml(meta.adviserName)}</div>
-                                        <div class="dm-adviser-role">Adviser</div>
-                                        <div class="dm-adviser-date">Date Signed:</div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            `;
+            const pageCount = Math.max(1, Number((renderRes && renderRes.pageCount) || 1));
+            const pageSelect = document.getElementById("stuDmPageSelect");
+            if(pageSelect){
+                pageSelect.innerHTML = Array.from({ length: pageCount }, (_, i) =>
+                    `<option value="${i}" ${i === 0 ? "selected" : ""}>Page ${i + 1} of ${pageCount}</option>`
+                ).join("");
+            }
+            const pageInfoEl = document.getElementById("stuDmPageInfo");
+            if(pageInfoEl) pageInfoEl.innerText = `Page 1 of ${pageCount}`;
 
             document.getElementById("defenseMinutesPrintModal").style.display = "flex";
+            DefenseMinutesSheet.fitPagesToViewport(viewport);
+
+            const firstPageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="0"]`);
+            if(firstPageEl) firstPageEl.scrollIntoView({ behavior: "auto", block: "start" });
+        }
+
+        function stepStudentDmPage(delta){
+            const sel = document.getElementById("stuDmPageSelect");
+            if(!sel || !sel.options.length) return;
+            const nextIdx = Math.max(0, Math.min(sel.options.length - 1, Number(sel.value || 0) + delta));
+            sel.value = String(nextIdx);
+            changeStudentDmPage();
+        }
+
+        function changeStudentDmPage(){
+            const sel = document.getElementById("stuDmPageSelect");
+            if(!sel) return;
+            const idx = Number(sel.value || 0);
+            const total = sel.options.length || 1;
+            const pageInfoEl = document.getElementById("stuDmPageInfo");
+            if(pageInfoEl) pageInfoEl.innerText = `Page ${idx + 1} of ${total}`;
+            const viewport = document.getElementById("dmPrintSheetViewport");
+            if(!viewport) return;
+            const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
+            if(pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function openDefenseMinutesEditorFromView(){
+            const cat = activeStudentDmCategory;
+            if(!cat) return;
+            dmOpenedFromView = true;
+            closeDefenseMinutesPrintModal();
+            openDefenseMinutesEditor(cat);
         }
 
         function closeDefenseMinutesPrintModal(){
@@ -4152,29 +4423,7 @@
         }
 
         function viewSignedDefenseMinutes(category){
-            const sentRec = getSentTypedDefenseMinutes(category);
-            if(!sentRec) return;
-            let minutesData = {};
-            try { minutesData = JSON.parse(sentRec.minutes_json || "{}"); } catch(_) {}
-            const placed = [];
-            try {
-                if(sentRec.adviser_signature_json){
-                    placed.push(JSON.parse(sentRec.adviser_signature_json));
-                }
-            } catch(_) {}
-            try {
-                if(sentRec.panelist_signatures_json){
-                    const arr = JSON.parse(sentRec.panelist_signatures_json);
-                    if(Array.isArray(arr)) placed.push(...arr);
-                }
-            } catch(_) {}
-
-            DefenseMinutesSheet.renderPages(document.getElementById("dmPrintSheetViewport"), {
-                minutesData,
-                placedSignatures: placed,
-                imgBasePath: "../Images/dnsc"
-            });
-            document.getElementById("defenseMinutesPrintModal").style.display = "flex";
+            openDefenseMinutesPrintPreview(category);
         }
 
         function printDefenseMinutesSheet(){

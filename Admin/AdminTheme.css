@@ -936,57 +936,176 @@
 }
 
 /* Responsive */
-@media(max-width:768px) {
+html,
+body.admin-portal {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.mobile-menu-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    border: 1px solid #e9d5ff;
+    background: #fff;
+    color: #6d28d9;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(109, 40, 217, 0.08);
+}
+
+.mobile-sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 10, 35, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 95;
+}
+
+.mobile-sidebar-backdrop.is-open {
+    display: block;
+}
+
+@media (max-width: 1100px) {
+    .admin-portal .main.admin-main {
+        padding: 24px 20px;
+    }
+
+    .admin-portal .admin-main .esign-workspace-grid,
+    .admin-portal .admin-main .dm-esign-grid,
+    .admin-portal .admin-main .dashboard-grid,
+    .admin-portal .admin-main .grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: inline-flex;
+    }
 
     .admin-portal .sidebar.admin-sidebar {
-        width: 88px;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 264px !important;
+        max-width: 82vw;
+        transform: translateX(-105%);
+        transition: transform 0.25s ease;
+        z-index: 120 !important;
     }
 
-    .admin-portal .main.admin-main {
-        margin-left: 88px;
-        padding: 20px 16px;
-    }
-
-    .admin-portal .main.admin-main::before {
-        left: 88px;
+    .admin-portal.mobile-sidebar-open .sidebar.admin-sidebar {
+        transform: translateX(0);
     }
 
     .admin-portal .admin-sidebar .logo {
-        flex-direction: column;
-        padding: 12px 8px;
-        gap: 8px;
-    }
-
-    .admin-portal .admin-sidebar .logo-mark {
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-    }
-
-    .admin-portal .admin-sidebar .logo-mark img {
-        width: 26px;
-        height: 26px;
-    }
-
-    .admin-portal .admin-sidebar .logo h1 {
-        font-size: 14px;
-        text-align: center;
+        flex-direction: row;
+        padding: 16px 14px;
+        gap: 10px;
     }
 
     .admin-portal .admin-sidebar .logo p,
     .admin-portal .admin-sidebar .menu-title,
     .admin-portal .admin-sidebar .menu-item span {
-        display: none;
+        display: revert !important;
     }
 
     .admin-portal .admin-sidebar .menu-item {
-        justify-content: center;
-        padding: 12px 10px;
+        justify-content: flex-start;
+        padding: 11px 12px;
     }
 
-    .admin-portal .admin-sidebar .menu-item:hover,
-    .admin-portal .admin-sidebar .menu-item.active {
-        transform: none;
+    .admin-portal .main.admin-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 16px 12px !important;
+    }
+
+    .admin-portal .main.admin-main::before {
+        left: 0 !important;
+    }
+
+    .admin-portal .admin-main .topbar,
+    .admin-portal .admin-main .admin-header {
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .admin-portal .admin-main .topbar .welcome,
+    .admin-portal .admin-main .admin-header > div:first-child {
+        flex: 1 1 200px;
+        min-width: 0;
+    }
+
+    .admin-portal .admin-main .topbar h1,
+    .admin-portal .admin-main .welcome h1,
+    .admin-portal .admin-main .admin-header h1 {
+        font-size: 1.25rem !important;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+
+    .admin-portal .admin-main .top-actions {
+        width: auto;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-left: auto;
+    }
+
+    .admin-portal .admin-main .search-box,
+    .admin-portal .admin-main .toolbar-card,
+    .admin-portal .admin-main .toolbar,
+    .admin-portal .admin-main .section-header,
+    .admin-portal .admin-main .hub-header,
+    .admin-portal .admin-main .group-card {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px;
+    }
+
+    .admin-portal .admin-main .search-box {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .admin-portal .admin-main .stats-grid,
+    .admin-portal .admin-main .phase-grid,
+    .admin-portal .admin-main .cards-grid,
+    .admin-portal .admin-main .document-grid,
+    .admin-portal .admin-main .form-grid,
+    .admin-portal .admin-main .form-row,
+    .admin-portal .admin-main .two-col {
+        grid-template-columns: 1fr !important;
+    }
+
+    .admin-portal .admin-main .table-container,
+    .admin-portal .admin-main .table-wrapper,
+    .admin-portal .admin-main .table-card {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-portal .admin-main table {
+        min-width: 640px;
+    }
+
+    .admin-portal .admin-main .content-card,
+    .admin-portal .admin-main .side-card,
+    .admin-portal .admin-main .card,
+    .admin-portal .admin-main .form-card {
+        padding: 16px 14px !important;
+        border-radius: 16px;
     }
 
     .admin-portal .admin-main .role-header,
@@ -1001,6 +1120,39 @@
         grid-template-columns: 1fr;
     }
 
+    .modal-box,
+    .esign-workspace-modal,
+    .dm-esign-modal {
+        width: calc(100vw - 18px) !important;
+        max-width: 100% !important;
+        max-height: 92vh !important;
+        overflow-y: auto !important;
+        padding: 16px 14px !important;
+        border-radius: 16px !important;
+    }
+
+    .esign-workspace-grid,
+    .dm-esign-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .chat-layout,
+    .messages-container {
+        grid-template-columns: 1fr !important;
+        flex-direction: column !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-portal .main.admin-main {
+        padding: 12px 10px !important;
+    }
+
+    .admin-portal .portal-notif-bell {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
 }
 
 /* Portal notification bell */

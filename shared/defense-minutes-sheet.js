@@ -69,7 +69,33 @@
     function formatBullets(text) {
         const lines = String(text || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         if (!lines.length) return "&nbsp;";
-        return lines.map(l => `<div class="dm-bullet-item">${esc(l)}</div>`).join("");
+        return lines.map(l => {
+            const clean = l.replace(/^[-•*]\s*/, "");
+            return `<div class="dm-bullet-item">- ${esc(clean)}</div>`;
+        }).join("");
+    }
+
+    function normalizePersonName(name) {
+        return String(name || "")
+            .toLowerCase()
+            .replace(/\b(dr|engr|prof|mr|ms|mrs|sir|maam|phd|mit|msit|mscs|dit)\b\.?/g, " ")
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function namesMatch(a, b) {
+        const na = normalizePersonName(a);
+        const nb = normalizePersonName(b);
+        if (!na || !nb) return false;
+        if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+        const ta = na.split(" ").filter(t => t.length > 1);
+        const tb = nb.split(" ").filter(t => t.length > 1);
+        if (ta.length >= 2 && tb.length >= 2) {
+            const shared = ta.filter(t => tb.includes(t));
+            if (shared.length >= 2) return true;
+        }
+        return false;
     }
 
     function estimateRowHeight(row) {
@@ -78,29 +104,107 @@
         return Math.max(64, Math.max(commLines, actLines) * 15 + 24);
     }
 
-    function renderPlacedSignaturesForPage(pageIndex, placedSignatures) {
-        return (placedSignatures || [])
-            .filter(sig => sig && sig.signatureImage && Number(sig.pageIndex || 0) === Number(pageIndex))
-            .map(sig => `
-                <div class="dm-placed-sig-box" style="left:${Number(sig.xPct || 8)}%; top:${Number(sig.yPct || 70)}%; width:${Number(sig.widthPct || 20)}%;">
-                    <img src="${esc(sig.signatureImage)}" alt="Signature">
-                    ${sig.dateSigned ? `<div class="dm-placed-sig-date">${esc(sig.dateSigned)}</div>` : ""}
-                </div>
-            `).join("");
-    }
-
-    function findMatchingPanelistSig(panelName, placedSignatures) {
-        const target = String(panelName || "").trim().toLowerCase();
-        if (!target) return null;
-        return (placedSignatures || []).find(sig => {
-            if (!sig || !sig.signatureImage || sig.adviserId) return false;
-            const by = String(sig.signedBy || sig.panelistName || "").trim().toLowerCase();
-            return by && (by === target || target.includes(by) || by.includes(target));
-        }) || null;
+    function findMatchingPanelistSig(panel, placedSignatures, panelIdx) {
+        const panelName = typeof panel === "string" ? panel : (panel && panel.name);
+        const panelId = (panel && typeof panel === "object" && panel.panelistId) ? Number(panel.panelistId) : 0;
+        const validSigs = (placedSignatures || []).filter(sig =>
+            sig && sig.signatureImage && !sig.adviserId &&
+            sig.reviewStatus !== "Subject to Change" && sig.reviewStatus !== "Rejected"
+        );
+        // 1. Strict panelistId match first so each panelist's signature ONLY ever appears on their own slot
+        if (panelId) {
+            const byPanelId = validSigs.find(sig => sig.panelistId && Number(sig.panelistId) === panelId);
+            if (byPanelId) return byPanelId;
+            // If this slot has an explicit panelistId, do not let a DIFFERENT panelistId's signature render here
+            return validSigs.find(sig => !sig.panelistId && namesMatch(panelName, sig.signedBy || sig.panelistName || sig.targetPanelName || "")) || null;
+        }
+        // 2. Fallback when panel row has no panelistId: match by signer name or clicked slot
+        const bySignerName = validSigs.find(sig => namesMatch(panelName, sig.signedBy || sig.panelistName || ""));
+        if (bySignerName) return bySignerName;
+        if (panelIdx !== undefined && panelIdx !== null) {
+            const byIdx = validSigs.find(sig =>
+                sig.targetPanelIndex !== undefined && sig.targetPanelIndex !== null && Number(sig.targetPanelIndex) === Number(panelIdx)
+            );
+            if (byIdx) return byIdx;
+        }
+        return validSigs.find(sig => sig.targetPanelName && namesMatch(panelName, sig.targetPanelName)) || null;
     }
 
     function findAdviserSig(placedSignatures) {
         return (placedSignatures || []).find(sig => sig && sig.signatureImage && sig.adviserId) || null;
+    }
+
+    const resizeObservers = new WeakMap();
+
+    /**
+     * Proportionally fits .dm-a4-page elements inside containerEl when narrower than 210mm,
+     * keeping the exact A4 Student document layout intact without horizontal clipping.
+     */
+    function fitPagesToViewport(containerEl) {
+        if (!containerEl) return;
+        const wraps = containerEl.querySelectorAll(".dm-a4-scale-wrap");
+        if (!wraps.length) return;
+        const style = window.getComputedStyle(containerEl);
+        const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+        const availableW = containerEl.clientWidth - padX - 8;
+        if (availableW <= 0) return;
+
+        wraps.forEach(wrap => {
+            const page = wrap.querySelector(".dm-a4-page");
+            if (!page) return;
+            page.style.transform = "none";
+            const naturalW = page.offsetWidth || 794;
+            const naturalH = page.offsetHeight || 1123;
+            const scale = availableW < naturalW ? Math.max(0.45, availableW / naturalW) : 1;
+            page.style.transform = scale < 1 ? `scale(${scale})` : "none";
+            wrap.style.width = `${Math.round(naturalW * scale)}px`;
+            wrap.style.height = `${Math.round(naturalH * scale)}px`;
+        });
+    }
+
+    function observeViewportResize(containerEl) {
+        if (!containerEl || typeof ResizeObserver === "undefined") return;
+        if (resizeObservers.has(containerEl)) return;
+        const ro = new ResizeObserver(() => fitPagesToViewport(containerEl));
+        ro.observe(containerEl);
+        resizeObservers.set(containerEl, ro);
+    }
+
+    /**
+     * Returns a neutral starting position near the top of Page 1 so signers can
+     * freely drag their e-signature to any spot on the document without auto-snapping
+     * onto a specific panelist or adviser slot.
+     */
+    function getAnchorPosition(containerEl, role, signerName) {
+        return {
+            pageIndex: 0,
+            xPct: 6,
+            yPct: 16,
+            widthPct: role === "adviser" ? 22 : 18
+        };
+    }
+
+    function buildPlacedSignaturesHtmlForPage(placedSignatures, pageIdx, totalPages) {
+        const list = Array.isArray(placedSignatures) ? placedSignatures : [];
+        const maxIdx = Math.max(0, Number(totalPages || 1) - 1);
+        return list
+            .filter(sig => sig && sig.signatureImage && sig.reviewStatus !== "Subject to Change" && sig.reviewStatus !== "Rejected")
+            .filter(sig => {
+                const targetIdx = Math.max(0, Math.min(maxIdx, Number(sig.pageIndex || 0)));
+                return targetIdx === pageIdx;
+            })
+            .map(sig => {
+                const xPct = Number.isFinite(Number(sig.xPct)) ? Number(sig.xPct) : 6;
+                const yPct = Number.isFinite(Number(sig.yPct)) ? Number(sig.yPct) : 16;
+                const widthPct = Number.isFinite(Number(sig.widthPct)) ? Number(sig.widthPct) : (sig.adviserId ? 22 : 18);
+                return `
+                    <div class="dm-placed-sig-box" style="left:${xPct}%; top:${yPct}%; width:${widthPct}%;">
+                        <img src="${esc(sig.signatureImage)}" alt="${esc(sig.signedBy || "E-Signature")}">
+                        ${sig.dateSigned ? `<div class="dm-placed-sig-date">${esc(sig.dateSigned)}</div>` : ""}
+                    </div>
+                `;
+            })
+            .join("");
     }
 
     /**
@@ -140,10 +244,12 @@
         `;
 
         const adviserBlockHtml = `
-            <div class="dm-adviser-signoff">
-                ${adviserSig
-                    ? `<div class="dm-anchored-sig-wrap"><img src="${esc(adviserSig.signatureImage)}" alt="Adviser Signature" class="dm-anchored-sig-img"></div>`
-                    : `<div class="dm-adviser-sig-space"></div>`}
+            <div class="dm-adviser-signoff" data-dm-adviser-block="1"${adviserSig ? ' data-dm-has-committed-sig="1"' : ""}>
+                <div class="dm-adviser-sig-slot">
+                    ${adviserSig
+                        ? `<img src="${esc(adviserSig.signatureImage)}" alt="Adviser Signature" class="dm-anchored-sig-img">`
+                        : ""}
+                </div>
                 <div class="dm-adviser-name">${esc(meta.adviserName || "ADVISER")}</div>
                 <div class="dm-adviser-role">Adviser</div>
                 <div class="dm-adviser-date">Date Signed: ${adviserSig && adviserSig.dateSigned ? `<span class="dm-anchored-date">${esc(adviserSig.dateSigned)}</span>` : ""}</div>
@@ -187,15 +293,21 @@
                 if (!seenPanelOnPage.has(it.pIdx)) {
                     seenPanelOnPage.add(it.pIdx);
                     const span = pCountsOnPage.get(it.pIdx);
-                    const pSig = findMatchingPanelistSig(it.panel.name, placedSignatures);
+                    const pSig = it.isFirstOfPanelInTotal
+                        ? findMatchingPanelistSig(it.panel, placedSignatures, it.pIdx)
+                        : null;
                     panelistCell = `
-                        <td rowspan="${span}" class="dm-panelist-cell">
+                        <td rowspan="${span}" class="dm-panelist-cell"${it.isFirstOfPanelInTotal ? ` data-dm-panel-index="${it.pIdx}" data-dm-panelist-id="${it.panel.panelistId ? Number(it.panel.panelistId) : ""}" data-dm-panelist-name="${esc(it.panel.name)}"${pSig ? ' data-dm-has-committed-sig="1"' : ""}` : ""}>
                             ${it.isFirstOfPanelInTotal ? `
                                 <div class="dm-panelist-name">${esc(it.panel.name)}</div>
                                 <div class="dm-panelist-role">${esc(it.panel.role)}</div>
-                                ${pSig ? `<div class="dm-anchored-sig-wrap dm-anchored-sig-center"><img src="${esc(pSig.signatureImage)}" alt="Panelist Signature" class="dm-anchored-sig-img"></div>` : ""}
-                                <div class="dm-panelist-sig">Signature:</div>
-                                <div class="dm-panelist-date">Date Signed: ${pSig && pSig.dateSigned ? `<span class="dm-anchored-date">${esc(pSig.dateSigned)}</span>` : ""}</div>
+                                <div class="dm-panelist-sig-block">
+                                    <div class="dm-panelist-sig">Signature:</div>
+                                    <div class="dm-panelist-sig-slot">
+                                        ${pSig ? `<img src="${esc(pSig.signatureImage)}" alt="Panelist Signature" class="dm-anchored-sig-img">` : ""}
+                                    </div>
+                                    <div class="dm-panelist-date">Date Signed: ${pSig && pSig.dateSigned ? `<span class="dm-anchored-date">${esc(pSig.dateSigned)}</span>` : ""}</div>
+                                </div>
                             ` : `<div class="dm-panelist-cont">${esc(it.panel.name)} <span style="font-weight:400;">(cont.)</span></div>`}
                         </td>
                     `;
@@ -212,28 +324,30 @@
 
             const isLast = pageIdx === pages.length - 1;
             return `
-                <div class="dm-a4-page" data-dm-page="${pageIdx}">
-                    <div class="dm-a4-page-inner">
-                        ${buildHeaderHtml(imgBase)}
-                        <div class="dm-a4-page-body">
-                            ${pageIdx === 0 ? page1TopHtml : ""}
-                            <table class="dm-minutes-table">
-                                ${pageIdx === 0 ? `
-                                    <thead>
-                                        <tr>
-                                            <th style="width:22%;">Panelists</th>
-                                            <th style="width:10%;">Page No.</th>
-                                            <th style="width:34%;">Comments/Suggestions/Recommendations</th>
-                                            <th style="width:34%;">Action/s Taken</th>
-                                        </tr>
-                                    </thead>
-                                ` : ""}
-                                <tbody>${rowsHtml}</tbody>
-                            </table>
-                            ${(isLast && !adviserOnSeparatePage) ? adviserBlockHtml : ""}
+                <div class="dm-a4-scale-wrap">
+                    <div class="dm-a4-page" data-dm-page="${pageIdx}">
+                        <div class="dm-a4-page-inner">
+                            ${buildHeaderHtml(imgBase)}
+                            <div class="dm-a4-page-body">
+                                ${pageIdx === 0 ? page1TopHtml : ""}
+                                <table class="dm-minutes-table">
+                                    ${pageIdx === 0 ? `
+                                        <thead>
+                                            <tr>
+                                                <th style="width:22%;">Panelists</th>
+                                                <th style="width:10%;">Page No.</th>
+                                                <th style="width:34%;">Comments/Suggestions/Recommendations</th>
+                                                <th style="width:34%;">Action/s Taken</th>
+                                            </tr>
+                                        </thead>
+                                    ` : ""}
+                                    <tbody>${rowsHtml}</tbody>
+                                </table>
+                                ${(isLast && !adviserOnSeparatePage) ? adviserBlockHtml : ""}
+                            </div>
                         </div>
+                        ${buildFooterHtml(imgBase)}
                     </div>
-                    ${buildFooterHtml(imgBase)}
                 </div>
             `;
         }).join("");
@@ -241,17 +355,21 @@
         if (adviserOnSeparatePage) {
             const advPageIdx = pages.length;
             html += `
-                <div class="dm-a4-page" data-dm-page="${advPageIdx}">
-                    <div class="dm-a4-page-inner">
-                        ${buildHeaderHtml(imgBase)}
-                        <div class="dm-a4-page-body">${adviserBlockHtml}</div>
+                <div class="dm-a4-scale-wrap">
+                    <div class="dm-a4-page" data-dm-page="${advPageIdx}">
+                        <div class="dm-a4-page-inner">
+                            ${buildHeaderHtml(imgBase)}
+                            <div class="dm-a4-page-body">${adviserBlockHtml}</div>
+                        </div>
+                        ${buildFooterHtml(imgBase)}
                     </div>
-                    ${buildFooterHtml(imgBase)}
                 </div>
             `;
         }
 
         containerEl.innerHTML = html;
+        observeViewportResize(containerEl);
+        requestAnimationFrame(() => fitPagesToViewport(containerEl));
         return {
             pageCount: totalPages,
             pageElements: Array.from(containerEl.querySelectorAll(".dm-a4-page"))
@@ -325,10 +443,10 @@
         try {
             if (rec.adviser_signature_json) {
                 const adv = JSON.parse(rec.adviser_signature_json);
-                if (adv && (adv.reviewComment || adv.signedBy)) {
+                if (adv && (adv.reviewComment || adv.reviewStatus === "Subject to Change" || adv.reviewStatus === "Rejected")) {
                     items.push({
                         who: `${adv.signedBy || "Adviser"} (Adviser)`,
-                        status: "Approved",
+                        status: adv.reviewStatus || (adv.signatureImage ? "Approved" : "Pending"),
                         comment: adv.reviewComment || ""
                     });
                 }
@@ -339,7 +457,7 @@
                 const arr = JSON.parse(rec.panelist_signatures_json);
                 if (Array.isArray(arr)) {
                     arr.forEach(p => {
-                        if (p) {
+                        if (p && (p.reviewComment || p.reviewStatus === "Subject to Change" || p.reviewStatus === "Rejected")) {
                             items.push({
                                 who: `${p.signedBy || "Panelist"} (Panelist)`,
                                 status: p.reviewStatus || (p.signatureImage ? "Approved" : "Pending"),
@@ -351,13 +469,13 @@
             }
         } catch (_) {}
 
-        const withNotesOrStatus = items.filter(it => it.comment || it.status);
-        if (!withNotesOrStatus.length) {
-            return `<p style="color:#94a3b8;font-size:12px;margin:0;">No panel or adviser notes recorded yet.</p>`;
+        if (!items.length) {
+            return `<p style="color:#94a3b8;font-size:12px;margin:0;">No revision or rejection notes recorded yet.</p>`;
         }
 
-        return withNotesOrStatus.map(it => {
+        return items.map(it => {
             const st = String(it.status || "");
+            const displaySt = st === "Subject to Change" ? "Needs Revision" : st;
             const badgeStyle = st === "Approved"
                 ? "background:#dcfce7;color:#15803d;"
                 : (st === "Subject to Change" ? "background:#fef3c7;color:#b45309;" : (st === "Rejected" ? "background:#fee2e2;color:#dc2626;" : "background:#f1f5f9;color:#475569;"));
@@ -365,17 +483,131 @@
                 <div style="background:#faf8ff;border:1px solid #ede9fe;border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:3px;">
                         <strong style="color:#2e1065;">${esc(it.who)}</strong>
-                        <span style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;${badgeStyle}">${esc(st)}</span>
+                        <span style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;${badgeStyle}">${esc(displaySt)}</span>
                     </div>
-                    <div style="color:#334155;line-height:1.4;">${it.comment ? esc(it.comment) : "<span style='color:#94a3b8;font-style:italic;'>No comment</span>"}</div>
+                    <div style="color:#334155;line-height:1.4;white-space:pre-wrap;">${it.comment ? esc(it.comment) : "<span style='color:#94a3b8;font-style:italic;'>No comment</span>"}</div>
                 </div>
             `;
         }).join("");
     }
 
+    /**
+     * Enables click-to-sign directly on the rendered panelist or adviser name/title slots.
+     * options: { role: "panelist" | "adviser", signatureImage, dateSigned, onSelectSlot(selection) }
+     */
+    function enableClickToSign(containerEl, options) {
+        if (!containerEl) return;
+        const opts = options || {};
+        const role = opts.role === "adviser" ? "adviser" : "panelist";
+        const sigImg = opts.signatureImage || "";
+        let currentDate = opts.dateSigned || "";
+
+        const selector = role === "adviser"
+            ? ".dm-adviser-signoff[data-dm-adviser-block='1']:not([data-dm-has-committed-sig='1'])"
+            : ".dm-panelist-cell[data-dm-panel-index]:not([data-dm-has-committed-sig='1'])";
+
+        let targets = Array.from(containerEl.querySelectorAll(selector));
+        if (role === "panelist" && (opts.panelistId || opts.panelistName)) {
+            const targetPid = Number(opts.panelistId || 0);
+            const targetName = String(opts.panelistName || "").trim();
+            const ownTargets = targets.filter(el => {
+                const elPid = Number(el.getAttribute("data-dm-panelist-id") || 0);
+                const elName = el.getAttribute("data-dm-panelist-name") || "";
+                if (targetPid && elPid) return elPid === targetPid;
+                if (targetName && elName) return namesMatch(elName, targetName);
+                return false;
+            });
+            targets = ownTargets;
+        }
+        const slotSelector = role === "adviser" ? ".dm-adviser-sig-slot" : ".dm-panelist-sig-slot";
+        const dateSelector = role === "adviser" ? ".dm-adviser-date" : ".dm-panelist-date";
+
+        const clearPreviewFromTarget = (el) => {
+            el.classList.remove("dm-slot-signed-preview");
+            el.removeAttribute("data-dm-preview-selected");
+            const slotEl = el.querySelector(slotSelector);
+            if (slotEl) {
+                slotEl.innerHTML = `<span class="dm-click-to-sign-hint">Click here to sign</span>`;
+            }
+            const dateEl = el.querySelector(dateSelector);
+            if (dateEl) {
+                dateEl.innerHTML = `Date Signed: `;
+            }
+        };
+
+        const applyPreviewToTarget = (el) => {
+            targets.forEach(clearPreviewFromTarget);
+            el.classList.add("dm-slot-signed-preview");
+            el.setAttribute("data-dm-preview-selected", "1");
+            const slotEl = el.querySelector(slotSelector);
+            if (slotEl && sigImg) {
+                slotEl.innerHTML = `<img src="${esc(sigImg)}" alt="E-Signature" class="dm-anchored-sig-img">`;
+            }
+            const dateEl = el.querySelector(dateSelector);
+            if (dateEl) {
+                dateEl.innerHTML = `Date Signed: ${currentDate ? `<span class="dm-anchored-date">${esc(currentDate)}</span>` : ""}`;
+            }
+
+            const pageEl = el.closest(".dm-a4-page");
+            const pageIndex = pageEl ? Number(pageEl.getAttribute("data-dm-page") || 0) : 0;
+
+            if (typeof opts.onSelectSlot === "function") {
+                if (role === "adviser") {
+                    const advNameEl = el.querySelector(".dm-adviser-name");
+                    opts.onSelectSlot({
+                        pageIndex,
+                        targetSlot: "adviser",
+                        targetName: advNameEl ? advNameEl.textContent.trim() : "Adviser"
+                    });
+                } else {
+                    opts.onSelectSlot({
+                        pageIndex,
+                        targetPanelIndex: Number(el.getAttribute("data-dm-panel-index")),
+                        targetPanelName: el.getAttribute("data-dm-panelist-name") || ""
+                    });
+                }
+            }
+        };
+
+        targets.forEach(el => {
+            el.classList.add("dm-clickable-sign-slot");
+            el.title = "Click to sign under this name";
+            clearPreviewFromTarget(el);
+            el.addEventListener("click", () => {
+                if (!sigImg) {
+                    alert("No saved e-signature found in Faculty Settings. Please upload your e-signature first.");
+                    return;
+                }
+                applyPreviewToTarget(el);
+            });
+        });
+
+        containerEl._dmUpdateClickSignDate = (newDate) => {
+            currentDate = newDate || "";
+            const selected = containerEl.querySelector("[data-dm-preview-selected='1']");
+            if (!selected) return;
+            const dateEl = selected.querySelector(dateSelector);
+            if (dateEl) {
+                dateEl.innerHTML = `Date Signed: ${currentDate ? `<span class="dm-anchored-date">${esc(currentDate)}</span>` : ""}`;
+            }
+        };
+    }
+
+    function updateClickToSignDate(containerEl, newDate) {
+        if (containerEl && typeof containerEl._dmUpdateClickSignDate === "function") {
+            containerEl._dmUpdateClickSignDate(newDate);
+        }
+    }
+
     window.DefenseMinutesSheet = {
         renderPages: renderDefenseMinutesPages,
         mountDraggableSignature,
-        renderReviewNotesHtml
+        enableClickToSign,
+        updateClickToSignDate,
+        renderReviewNotesHtml,
+        fitPagesToViewport,
+        getAnchorPosition,
+        findMatchingPanelistSig,
+        buildPlacedSignaturesHtmlForPage
     };
 })();

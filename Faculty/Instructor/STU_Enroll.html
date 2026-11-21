@@ -680,18 +680,19 @@
                         <td>${statusBadge}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="view-btn" type="button" title="View student">
+                                <button class="view-btn" type="button" title="View student" aria-label="View student">
                                     <i class="fa-solid fa-eye"></i>
-                                    View
                                 </button>
-                                <button class="edit-btn" type="button">Edit</button>
+                                <button class="edit-btn" type="button" title="Edit student" aria-label="Edit student">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
                                 <button
                                     class="delete-btn"
                                     type="button"
+                                    aria-label="Delete student"
                                     ${inGroup ? 'disabled title="Cannot delete: Student belongs to a capstone group" style="opacity:0.4; cursor:not-allowed;"' : 'title="Delete Student"'}
                                 >
                                     <i class="fa-solid fa-trash-can"></i>
-                                    Delete
                                 </button>
                             </div>
                         </td>

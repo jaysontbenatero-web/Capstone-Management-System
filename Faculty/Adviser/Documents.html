@@ -865,7 +865,7 @@
 
     <!-- ===================== ADVISER DEFENSE MINUTES E-SIGN MODAL ===================== -->
     <div class="modal-overlay esign-workspace-overlay" id="adviserDmSignModal" style="display:none; z-index:10000;">
-        <div class="modal-box esign-workspace-modal">
+        <div class="modal-box esign-workspace-modal dm-esign-modal">
             <div class="modal-header">
                 <div>
                     <h2 id="advDmTitle">Defense Minutes</h2>
@@ -876,7 +876,7 @@
                 </button>
             </div>
 
-            <div class="esign-workspace-grid">
+            <div class="esign-workspace-grid dm-esign-grid">
                 <div class="esign-pdf-panel">
                     <div class="esign-pdf-toolbar">
                         <span id="advDmPageInfo">Page 1 of 1</span>
@@ -889,7 +889,7 @@
                                 title="Next page"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
                     </div>
-                    <div class="esign-pdf-viewport" id="advDmSheetViewport" style="overflow-y:auto; padding:14px;">
+                    <div class="esign-pdf-viewport dm-sheet-viewport" id="advDmSheetViewport">
                     </div>
                 </div>
 
@@ -913,7 +913,7 @@
                             <textarea id="advDmNotes" placeholder="Add optional notes for panelists..."></textarea>
                         </div>
                         <div class="input-group">
-                            <label>Date Signed (Drags with Signature)</label>
+                            <label>Date Signed</label>
                             <input type="text" id="advDmDateSigned" oninput="updateAdviserDmDateText()"
                                 style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:12px; font-size:13px; box-sizing:border-box;">
                         </div>
@@ -924,17 +924,18 @@
                                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                                 <div>
                                     <h3>Saved Signature</h3>
-                                    <p>Using your uploaded signature from Settings.</p>
+                                    <p>Click your name/Adviser slot on the sheet to sign.</p>
                                 </div>
                             </div>
                             <div id="advDmSigPreview"
                                 style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:12px; display:inline-block; min-width:180px; margin-bottom:10px;">
                                 <span style="font-size:12px; color:#64748b;">Loading signature...</span>
                             </div>
-                            <button class="esign-place-btn" type="button" onclick="placeAdviserDmSigOnSelectedPage()">
-                                <i class="fa-solid fa-file-signature"></i>
-                                Place Signature on Page
-                            </button>
+                            <div id="advDmSelectedSlotStatus"
+                                style="font-size:12px; font-weight:600; color:#6d28d9; background:#ede9fe; padding:8px 12px; border-radius:10px;">
+                                <i class="fa-solid fa-hand-pointer"></i> Click the Adviser name/title on the sheet to
+                                place your e-signature.
+                            </div>
                         </div>
 
                         <label class="dm-approval-attestation" for="advDmApproveCheck">
@@ -1006,6 +1007,8 @@
                 docTitle.includes("recommendation for concept") ||
                 docType.includes("recommendation for outline") ||
                 docTitle.includes("recommendation for outline") ||
+                docType.includes("recommendation for deployment") ||
+                docTitle.includes("recommendation for deployment") ||
                 /* Pre-Final and Final Defense recommendation letters */
                 (docType.includes("recommendation letter") ||
                     docTitle.includes("recommendation letter"));
@@ -2317,22 +2320,22 @@
             const statusClass = isPending
                 ? "status-pending"
                 : isRevision
-                ? "status-subject"
-                : isRejected
-                ? "status-rejected"
-                : "status-approved";
+                    ? "status-subject"
+                    : isRejected
+                        ? "status-rejected"
+                        : "status-approved";
             const statusLabel = isPending
                 ? "Pending Signature"
                 : isRevision
-                ? "Subject to Change"
-                : isRejected
-                ? "Rejected"
-                : "Signed";
+                    ? "Subject to Change"
+                    : isRejected
+                        ? "Rejected"
+                        : "Signed";
             const pillHtml = isPending
                 ? `<span class="new-doc-pill">New</span><span class="sign-needed-pill"><i class="fa-solid fa-file-signature"></i> Signature Required</span>`
                 : isSigned
-                ? `<span class="signed-badge-pill"><i class="fa-solid fa-circle-check"></i> Signed</span>`
-                : "";
+                    ? `<span class="signed-badge-pill"><i class="fa-solid fa-circle-check"></i> Signed</span>`
+                    : "";
             return `
                 <div class="group-doc-row ${isPending ? "is-new" : ""} needs-sign-row">
                     <div class="group-doc-main">
@@ -2368,6 +2371,7 @@
             { name: "Outline Defense", icon: "fa-clipboard-check", colorClass: "phase-outline" },
             { name: "Pre-Final Defense", icon: "fa-person-chalkboard", colorClass: "phase-prefinal" },
             { name: "Final Defense", icon: "fa-graduation-cap", colorClass: "phase-final" },
+            { name: "Deployment", icon: "fa-rocket", colorClass: "phase-final" },
             { name: "Other Documents", icon: "fa-folder-open", colorClass: "phase-other" }
         ];
 
@@ -2376,6 +2380,10 @@
             const title = String(item.document_title || "").toLowerCase();
             const code = String(item.document_code || "").toLowerCase();
             const combined = `${dt} ${title} ${code}`;
+
+            if (combined.includes("deployment")) {
+                return "Deployment";
+            }
 
             if (
                 combined.includes("concept presentation") ||
@@ -3648,15 +3656,24 @@
             if (advApproveChk) advApproveChk.checked = false;
             toggleAdvDmApprovalCheckbox();
 
+            document.getElementById("adviserDmSignModal").style.display = "flex";
+            DefenseMinutesSheet.fitPagesToViewport(viewport);
+
             const pageSelect = document.getElementById("advDmPageSelect");
             pageSelect.innerHTML = Array.from({ length: renderRes.pageCount }, (_, i) =>
-                `<option value="${i}" ${i === renderRes.pageCount - 1 ? "selected" : ""}>Page ${i + 1} of ${renderRes.pageCount}</option>`
+                `<option value="${i}" ${i === 0 ? "selected" : ""}>Page ${i + 1} of ${renderRes.pageCount}</option>`
             ).join("");
             const pageInfoEl = document.getElementById("advDmPageInfo");
-            if (pageInfoEl) pageInfoEl.innerText = `Page ${renderRes.pageCount} of ${renderRes.pageCount}`;
+            if (pageInfoEl) pageInfoEl.innerText = `Page 1 of ${renderRes.pageCount}`;
+
+            const slotStatusEl = document.getElementById("advDmSelectedSlotStatus");
+            if (slotStatusEl) {
+                slotStatusEl.style.background = "#ede9fe";
+                slotStatusEl.style.color = "#6d28d9";
+                slotStatusEl.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Click the Adviser name/title on the sheet to place your e-signature.`;
+            }
 
             if (isPending) {
-
                 const todayStr = new Date().toLocaleDateString("en-US");
                 document.getElementById("advDmDateSigned").value = todayStr;
 
@@ -3670,9 +3687,23 @@
                         widthPct: 22,
                         signatureImage: savedSignaturePath,
                         dateSigned: todayStr,
-                        label: "Drag Adviser E-Sign + Date"
+                        placed: false
                     };
-                    DefenseMinutesSheet.mountDraggableSignature(viewport, advDmDragState);
+                    DefenseMinutesSheet.enableClickToSign(viewport, {
+                        role: "adviser",
+                        signatureImage: savedSignaturePath,
+                        dateSigned: todayStr,
+                        onSelectSlot: (sel) => {
+                            if (!advDmDragState) return;
+                            advDmDragState.placed = true;
+                            advDmDragState.pageIndex = sel.pageIndex;
+                            if (slotStatusEl) {
+                                slotStatusEl.style.background = "#dcfce7";
+                                slotStatusEl.style.color = "#15803d";
+                                slotStatusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Signature placed under: <strong>${escapeHtml(sel.targetName || "Adviser")}</strong>`;
+                            }
+                        }
+                    });
                 } else {
                     sigPreview.innerHTML = `<span style="font-size:12px; color:#dc2626;">No saved e-signature found in Settings. Please upload your e-signature in Faculty Settings first.</span>`;
                     advDmDragState = null;
@@ -3681,7 +3712,8 @@
                 advDmDragState = null;
             }
 
-            document.getElementById("adviserDmSignModal").style.display = "flex";
+            const firstPageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="0"]`);
+            if (firstPageEl) firstPageEl.scrollIntoView({ behavior: "auto", block: "start" });
         }
 
         function closeAdviserDmModal() {
@@ -3706,31 +3738,13 @@
             const viewport = document.getElementById("advDmSheetViewport");
             const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
             if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
-            if (!advDmDragState) return;
-            advDmDragState.pageIndex = idx;
-            DefenseMinutesSheet.mountDraggableSignature(viewport, advDmDragState);
-        }
-
-        function placeAdviserDmSigOnSelectedPage() {
-            const idx = Number(document.getElementById("advDmPageSelect").value || 0);
-            const viewport = document.getElementById("advDmSheetViewport");
-            if (!advDmDragState || !advDmDragState.signatureImage) {
-                alert("No saved e-signature found in Faculty Settings.");
-                return;
-            }
-            advDmDragState.pageIndex = idx;
-            advDmDragState.xPct = 6;
-            advDmDragState.yPct = 70;
-            DefenseMinutesSheet.mountDraggableSignature(viewport, advDmDragState);
-            const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
-            if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
         function updateAdviserDmDateText() {
             if (!advDmDragState) return;
             advDmDragState.dateSigned = document.getElementById("advDmDateSigned").value || "";
-            const dateEl = document.querySelector("#advDmSheetViewport .dm-draggable-sig-date");
-            if (dateEl) dateEl.innerText = advDmDragState.dateSigned;
+            const viewport = document.getElementById("advDmSheetViewport");
+            DefenseMinutesSheet.updateClickToSignDate(viewport, advDmDragState.dateSigned);
         }
 
         function toggleAdvDmApprovalCheckbox() {
@@ -3751,6 +3765,10 @@
                 }
                 if (!advDmDragState || !advDmDragState.signatureImage) {
                     alert("Please set up your saved e-signature in Faculty Settings before signing.");
+                    return;
+                }
+                if (!advDmDragState.placed) {
+                    alert("Please click on the Adviser name/title on the defense minutes sheet to place your e-signature before approving.");
                     return;
                 }
             }

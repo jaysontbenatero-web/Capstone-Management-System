@@ -16,6 +16,7 @@
     <script src="../../shared/custom-alerts.js"></script>
     <link rel="stylesheet" href="../../shared/defense-minutes-sheet.css">
     <script src="../../shared/defense-minutes-sheet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <style>
         .admin-portal .bg1,
@@ -128,6 +129,19 @@
             </div>
         </section>
 
+        <section class="content-card" style="margin-bottom: 22px;">
+            <div class="section-header">
+                <div>
+                    <h2>Deployment Recommendation E-Signatures</h2>
+                    <p>Adviser-signed Recommendation for Deployment documents requiring all 3 panelists' e-signatures (in any order) before forwarding to the Program Chairperson.</p>
+                </div>
+            </div>
+
+            <div class="document-grid grouped-view" id="panelistSigningGrid">
+                <div class="empty-card">Loading documents...</div>
+            </div>
+        </section>
+
         <section class="content-card">
             <div class="section-header">
                 <div>
@@ -142,9 +156,94 @@
         </section>
     </main>
 
+    <!-- ===================== PANELIST PDF E-SIGNATURE MODAL (RECOMMENDATION FOR DEPLOYMENT) ===================== -->
+    <div class="modal-overlay esign-workspace-overlay" id="panPdfSignModal" style="display:none; z-index:10000;">
+        <div class="modal-box esign-workspace-modal">
+            <div class="modal-header">
+                <div>
+                    <h2 id="panPdfTitle">Recommendation for Deployment</h2>
+                    <p id="panPdfSubtitle">Review the PDF, place your signature, then approve.</p>
+                </div>
+                <button class="close-modal-btn" onclick="closePanPdfModal()" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="esign-workspace-grid">
+                <div class="esign-pdf-panel">
+                    <div class="esign-pdf-toolbar">
+                        <span id="panPdfPageInfo">Page 1 of 1</span>
+                        <div class="esign-page-nav">
+                            <button type="button" class="esign-nav-btn" onclick="stepPanPdfPage(-1)"><i
+                                    class="fa-solid fa-chevron-left"></i></button>
+                            <button type="button" class="esign-nav-btn" onclick="stepPanPdfPage(1)"><i
+                                    class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="esign-pdf-viewport" id="panPdfViewport">
+                        <canvas id="panPdfCanvas"></canvas>
+                        <div id="panPdfSigLayer" class="signature-placement-layer"></div>
+                    </div>
+                </div>
+
+                <div class="esign-side-panel">
+                    <div class="detail-card compact-detail">
+                        <span>Group / Student</span>
+                        <h3 id="panPdfRequester">—</h3>
+                    </div>
+                    <div class="detail-card compact-detail">
+                        <span>Status</span>
+                        <h3 id="panPdfStatus">Pending Review</h3>
+                    </div>
+
+                    <div id="panPdfViewBanner"
+                        style="display:none; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; border-radius:12px; padding:12px 14px; font-size:12.5px; font-weight:600;">
+                        <i class="fa-solid fa-lock"></i> Signed &amp; Locked — View Only Mode.
+                    </div>
+
+                    <div id="panPdfControls">
+                        <div class="esign-canvas-wrapper">
+                            <div class="esign-canvas-header">
+                                <h3>Saved Signature</h3>
+                                <p>Using your uploaded signature from Settings.</p>
+                            </div>
+                            <div id="panPdfSigPreview"
+                                style="padding:10px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; text-align:center; min-height:60px; display:flex; align-items:center; justify-content:center;">
+                                <span style="font-size:12px; color:#64748b;">Loading signature...</span>
+                            </div>
+                            <button class="esign-place-btn" type="button" onclick="placePanPdfSig()">
+                                <i class="fa-solid fa-file-signature"></i> Place Signature on Page
+                            </button>
+                        </div>
+
+                        <div class="input-group" style="margin-top:10px;">
+                            <label>Notes / Comment (required for Revision or Rejection)</label>
+                            <textarea id="panPdfComment" rows="3"
+                                placeholder="Optional for approval; required if requesting revision or rejecting..."></textarea>
+                        </div>
+
+                        <div class="modal-actions esign-action-stack">
+                            <button class="save-btn" type="button" onclick="submitPanPdfSignature('Approved')">
+                                <i class="fa-solid fa-check"></i> Approve &amp; Save
+                            </button>
+                            <button class="esign-revision-toggle-btn" type="button"
+                                onclick="submitPanPdfSignature('Subject to Change')">
+                                <i class="fa-solid fa-rotate-left"></i> Request Revision
+                            </button>
+                            <button class="cancel-btn reject-outline-btn" type="button"
+                                onclick="submitPanPdfSignature('Rejected')">
+                                <i class="fa-solid fa-xmark"></i> Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ===================== PANELIST DEFENSE MINUTES E-SIGN MODAL ===================== -->
     <div class="modal-overlay esign-workspace-overlay" id="panelistDmSignModal" style="display:none; z-index:10000;">
-        <div class="modal-box esign-workspace-modal">
+        <div class="modal-box esign-workspace-modal dm-esign-modal">
             <div class="modal-header">
                 <div>
                     <h2 id="panDmTitle">Defense Minutes</h2>
@@ -155,7 +254,7 @@
                 </button>
             </div>
 
-            <div class="esign-workspace-grid">
+            <div class="esign-workspace-grid dm-esign-grid">
                 <div class="esign-pdf-panel">
                     <div class="esign-pdf-toolbar">
                         <span id="panDmPageInfo">Page 1 of 1</span>
@@ -168,7 +267,7 @@
                                 title="Next page"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
                     </div>
-                    <div class="esign-pdf-viewport" id="panDmSheetViewport" style="overflow-y:auto; padding:14px;">
+                    <div class="esign-pdf-viewport dm-sheet-viewport" id="panDmSheetViewport">
                     </div>
                 </div>
 
@@ -198,7 +297,7 @@
                         </div>
 
                         <div class="input-group">
-                            <label>Date Signed (Drags with Signature)</label>
+                            <label>Date Signed</label>
                             <input type="text" id="panDmDateSigned" oninput="updatePanelistDmDateText()"
                                 style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:12px; font-size:13px; box-sizing:border-box;">
                         </div>
@@ -209,17 +308,18 @@
                                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                                 <div>
                                     <h3>Saved Signature</h3>
-                                    <p>Using your uploaded signature from Settings.</p>
+                                    <p>Click your name on the sheet to sign under it.</p>
                                 </div>
                             </div>
                             <div id="panDmSigPreview"
                                 style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:12px; display:inline-block; min-width:180px; margin-bottom:10px;">
                                 <span style="font-size:12px; color:#64748b;">Loading signature...</span>
                             </div>
-                            <button class="esign-place-btn" type="button" onclick="placePanelistDmSigOnSelectedPage()">
-                                <i class="fa-solid fa-file-signature"></i>
-                                Place Signature on Page
-                            </button>
+                            <div id="panDmSelectedSlotStatus"
+                                style="font-size:12px; font-weight:600; color:#6d28d9; background:#ede9fe; padding:8px 12px; border-radius:10px;">
+                                <i class="fa-solid fa-hand-pointer"></i> Click your name/title on the defense minutes
+                                sheet to place your e-signature.
+                            </div>
                         </div>
 
                         <label class="dm-approval-attestation" for="panDmApproveCheck">
@@ -252,12 +352,41 @@
     </div>
 
     <script>
-        const loggedInUserId = localStorage.getItem("userId");
+        let loggedInUserId = localStorage.getItem("userId");
         let panelistDbId = null;
+        let panelistFullName = localStorage.getItem("fullname") || "";
         let savedPanelistSignature = null;
         let panelistDmRecords = [];
         let activePanDmRecord = null;
         let panDmDragState = null;
+
+        function syncLoggedInPanelistSession() {
+            const currentUid = localStorage.getItem("userId");
+            if (currentUid && currentUid !== loggedInUserId) {
+                loggedInUserId = currentUid;
+                panelistFullName = localStorage.getItem("fullname") || "";
+                closePanelistDmModal();
+                closePanPdfModal();
+                loadPanelistSignature();
+                loadPanelistDefenseMinutes();
+                loadPanelistSigningDocs();
+                return true;
+            }
+            return false;
+        }
+
+        window.addEventListener("storage", (e) => {
+            if (!e.key || e.key === "userId" || e.key === "fullname" || e.key === "role") {
+                syncLoggedInPanelistSession();
+            }
+        });
+
+        window.addEventListener("focus", () => {
+            if (!syncLoggedInPanelistSession()) {
+                loadPanelistDefenseMinutes();
+                loadPanelistSigningDocs();
+            }
+        });
 
         function escapeHtml(str) {
             return String(str || "")
@@ -290,6 +419,7 @@
                 if (data && data.success) {
                     const account = data.admin || data.faculty;
                     savedPanelistSignature = account ? account.digital_signature : null;
+                    if (account && account.fullname) panelistFullName = account.fullname;
                 }
             } catch (err) {
                 console.warn("Could not load panelist signature:", err);
@@ -302,6 +432,7 @@
                 const data = await resp.json();
                 if (data && data.success) {
                     panelistDbId = Number(data.panelistDbId || 0);
+                    if (data.panelistFullName) panelistFullName = data.panelistFullName;
                     panelistDmRecords = data.minutes || [];
                 } else {
                     panelistDmRecords = [];
@@ -490,11 +621,21 @@
             if (panApproveChk) panApproveChk.checked = false;
             togglePanDmApprovalCheckbox();
 
+            document.getElementById("panelistDmSignModal").style.display = "flex";
+            DefenseMinutesSheet.fitPagesToViewport(viewport);
+
             const pageSelect = document.getElementById("panDmPageSelect");
             pageSelect.innerHTML = Array.from({ length: renderRes.pageCount }, (_, i) =>
-                `<option value="${i}">Page ${i + 1} of ${renderRes.pageCount}</option>`
+                `<option value="${i}" ${i === 0 ? "selected" : ""}>Page ${i + 1} of ${renderRes.pageCount}</option>`
             ).join("");
             document.getElementById("panDmPageInfo").innerText = `Page 1 of ${renderRes.pageCount}`;
+
+            const slotStatusEl = document.getElementById("panDmSelectedSlotStatus");
+            if (slotStatusEl) {
+                slotStatusEl.style.background = "#ede9fe";
+                slotStatusEl.style.color = "#6d28d9";
+                slotStatusEl.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Click your name/title on the defense minutes sheet to place your e-signature.`;
+            }
 
             if (!alreadySigned) {
                 document.getElementById("panDmNotes").value = "";
@@ -507,13 +648,33 @@
                     panDmDragState = {
                         pageIndex: 0,
                         xPct: 6,
-                        yPct: 48,
+                        yPct: 16,
                         widthPct: 18,
                         signatureImage: savedPanelistSignature,
                         dateSigned: todayStr,
-                        label: "Drag Panelist E-Sign + Date"
+                        placed: false,
+                        targetPanelIndex: null,
+                        targetPanelName: ""
                     };
-                    DefenseMinutesSheet.mountDraggableSignature(viewport, panDmDragState);
+                    DefenseMinutesSheet.enableClickToSign(viewport, {
+                        role: "panelist",
+                        panelistId: panelistDbId,
+                        panelistName: panelistFullName,
+                        signatureImage: savedPanelistSignature,
+                        dateSigned: todayStr,
+                        onSelectSlot: (sel) => {
+                            if (!panDmDragState) return;
+                            panDmDragState.placed = true;
+                            panDmDragState.pageIndex = sel.pageIndex;
+                            panDmDragState.targetPanelIndex = sel.targetPanelIndex;
+                            panDmDragState.targetPanelName = sel.targetPanelName;
+                            if (slotStatusEl) {
+                                slotStatusEl.style.background = "#dcfce7";
+                                slotStatusEl.style.color = "#15803d";
+                                slotStatusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Signature placed under: <strong>${escapeHtml(sel.targetPanelName || "Selected Panelist")}</strong>`;
+                            }
+                        }
+                    });
                 } else {
                     sigPreview.innerHTML = `<span style="font-size:12px; color:#dc2626;">No saved e-signature found in Settings. Please upload your e-signature in Faculty Settings first.</span>`;
                     panDmDragState = null;
@@ -522,7 +683,8 @@
                 panDmDragState = null;
             }
 
-            document.getElementById("panelistDmSignModal").style.display = "flex";
+            const firstPageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="0"]`);
+            if (firstPageEl) firstPageEl.scrollIntoView({ behavior: "auto", block: "start" });
         }
 
         function closePanelistDmModal() {
@@ -547,31 +709,13 @@
             const viewport = document.getElementById("panDmSheetViewport");
             const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
             if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
-            if (!panDmDragState) return;
-            panDmDragState.pageIndex = idx;
-            DefenseMinutesSheet.mountDraggableSignature(viewport, panDmDragState);
-        }
-
-        function placePanelistDmSigOnSelectedPage() {
-            const idx = Number(document.getElementById("panDmPageSelect").value || 0);
-            const viewport = document.getElementById("panDmSheetViewport");
-            if (!panDmDragState || !panDmDragState.signatureImage) {
-                alert("No saved e-signature found in Faculty Settings.");
-                return;
-            }
-            panDmDragState.pageIndex = idx;
-            panDmDragState.xPct = 6;
-            panDmDragState.yPct = 48;
-            DefenseMinutesSheet.mountDraggableSignature(viewport, panDmDragState);
-            const pageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`);
-            if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
         function updatePanelistDmDateText() {
             if (!panDmDragState) return;
             panDmDragState.dateSigned = document.getElementById("panDmDateSigned").value || "";
-            const dateEl = document.querySelector("#panDmSheetViewport .dm-draggable-sig-date");
-            if (dateEl) dateEl.innerText = panDmDragState.dateSigned;
+            const viewport = document.getElementById("panDmSheetViewport");
+            DefenseMinutesSheet.updateClickToSignDate(viewport, panDmDragState.dateSigned);
         }
 
         function togglePanDmApprovalCheckbox() {
@@ -592,6 +736,10 @@
             }
             if (isApproval && (!panDmDragState || !panDmDragState.signatureImage)) {
                 alert("Please set up your saved e-signature in Faculty Settings before approving.");
+                return;
+            }
+            if (isApproval && !panDmDragState.placed) {
+                alert("Please click on your name/title on the defense minutes sheet to place your e-signature before approving.");
                 return;
             }
 
@@ -618,7 +766,9 @@
                         pageIndex: isApproval ? panDmDragState.pageIndex : 0,
                         xPct: isApproval ? panDmDragState.xPct : 0,
                         yPct: isApproval ? panDmDragState.yPct : 0,
-                        widthPct: isApproval ? panDmDragState.widthPct : 18
+                        widthPct: isApproval ? panDmDragState.widthPct : 18,
+                        targetPanelIndex: isApproval ? panDmDragState.targetPanelIndex : null,
+                        targetPanelName: isApproval ? panDmDragState.targetPanelName : ""
                     })
                 });
                 const data = await resp.json();
@@ -635,8 +785,343 @@
             }
         }
 
+        /* ================= PANELIST PDF E-SIGNING (RECOMMENDATION FOR DEPLOYMENT) ================= */
+        let panelistSigningDocs = [];
+        let activePanPdfSub = null;
+        let panPdfDoc = null;
+        let panPdfPage = 1;
+        let panPdfTotal = 1;
+        let panPdfPlacement = null;
+
+        if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        }
+
+        async function loadPanelistSigningDocs() {
+            const grid = document.getElementById("panelistSigningGrid");
+            if (!grid) return;
+            try {
+                const resp = await fetch(`/panelist-signing-documents/${encodeURIComponent(loggedInUserId)}`);
+                const data = await resp.json();
+                panelistSigningDocs = (data && data.success) ? (data.documents || []) : [];
+                renderPanelistSigningDocs();
+            } catch (err) {
+                console.error("Load panelist signing docs error:", err);
+                grid.innerHTML = `<div class="empty-card">Cannot load deployment documents.</div>`;
+            }
+        }
+
+        function renderPanelistSigningDocs() {
+            const grid = document.getElementById("panelistSigningGrid");
+            if (!grid) return;
+            const q = String(document.getElementById("dmSearchInput")?.value || "").toLowerCase().trim();
+            const filter = document.getElementById("dmStatusFilter")?.value || "All";
+
+            const filtered = panelistSigningDocs.filter(d => {
+                const isDone = d.review_status === "Approved";
+                if (filter === "Pending" && isDone) return false;
+                if (filter === "Signed" && !isDone) return false;
+                if (!q) return true;
+                return `${d.document_title || ""} ${d.group_name || ""} ${d.sender_name || ""}`.toLowerCase().includes(q);
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="empty-card">No deployment recommendation documents pending your e-signature.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(d => {
+                const isDone = d.review_status === "Approved";
+                const signedCnt = Number(d.panelist_signed_count || 0);
+                const totalCnt = Number(d.panelist_total_count || 0);
+                const progressSuffix = totalCnt > 0 ? ` (${signedCnt}/${totalCnt} Panelists Signed)` : "";
+                const statusText = isDone
+                    ? `You Signed${progressSuffix}`
+                    : `${d.review_status || "Pending Review"}${progressSuffix}`;
+                const cls = isDone ? "approved" : "pending";
+                return `
+                    <div class="doc-card" style="padding:16px; border-radius:14px; background:#fff; border:1px solid #ede9fe; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <div>
+                            <h3 style="margin:0 0 4px; font-size:15px; color:#2e1065;">${escapeHtml(d.document_title || "Recommendation for Deployment")}</h3>
+                            <p style="margin:0; font-size:12.5px; color:#64748b;">${escapeHtml(d.group_name || "Group")} (${escapeHtml(d.program || "")}) • Sent by ${escapeHtml(d.sender_name || "Student")}</p>
+                            <span class="status-badge ${cls}" style="display:inline-block; margin-top:6px;">${escapeHtml(statusText)}</span>
+                        </div>
+                        <button type="button" class="save-btn" onclick="openPanPdfModal(${Number(d.submission_id)})">
+                            <i class="fa-solid ${isDone ? 'fa-eye' : 'fa-file-signature'}"></i> ${isDone ? 'View Signed PDF' : 'Review & E-Sign'}
+                        </button>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function openPanPdfModal(submissionId) {
+            syncLoggedInPanelistSession();
+            const doc = panelistSigningDocs.find(d => Number(d.submission_id) === Number(submissionId));
+            if (!doc) return;
+            activePanPdfSub = doc;
+            panPdfPlacement = null;
+
+            const isLocked = doc.review_status === "Approved";
+            document.getElementById("panPdfTitle").textContent = doc.document_title || "Recommendation for Deployment";
+            document.getElementById("panPdfRequester").textContent = `${doc.group_name || "Group"} — ${doc.sender_name || "Student"}`;
+            document.getElementById("panPdfStatus").textContent = doc.document_status || doc.review_status || "Pending Review";
+            document.getElementById("panPdfComment").value = "";
+            document.getElementById("panPdfViewBanner").style.display = isLocked ? "block" : "none";
+            document.getElementById("panPdfControls").style.display = isLocked ? "none" : "block";
+            document.getElementById("panPdfSigLayer").innerHTML = "";
+
+            const preview = document.getElementById("panPdfSigPreview");
+            if (preview) {
+                preview.innerHTML = savedPanelistSignature
+                    ? `<img src="${savedPanelistSignature}" alt="Saved Signature" style="max-height:56px; max-width:100%;">`
+                    : `<span style="font-size:12px; color:#b91c1c;">No saved signature found. Upload one in Settings.</span>`;
+            }
+
+            document.getElementById("panPdfSignModal").style.display = "flex";
+
+            try {
+                const resp = await fetch(`/panelist-signing-document-file/${submissionId}?panelistUserId=${encodeURIComponent(loggedInUserId)}&t=${Date.now()}`, { cache: "no-store" });
+                if (!resp.ok) throw new Error("Failed to load PDF");
+                const buf = await resp.arrayBuffer();
+                panPdfDoc = await window.pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+                panPdfTotal = panPdfDoc.numPages || 1;
+                panPdfPage = 1;
+                await renderPanPdfPage(panPdfPage);
+            } catch (err) {
+                console.error(err);
+                document.getElementById("panPdfPageInfo").textContent = "Unable to load PDF";
+            }
+        }
+
+        function closePanPdfModal() {
+            document.getElementById("panPdfSignModal").style.display = "none";
+            activePanPdfSub = null;
+            panPdfPlacement = null;
+        }
+
+        async function renderPanPdfPage(pageNum) {
+            if (!panPdfDoc) return;
+            const page = await panPdfDoc.getPage(pageNum);
+            const vp = page.getViewport({ scale: 1.35 });
+            const canvas = document.getElementById("panPdfCanvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = vp.width;
+            canvas.height = vp.height;
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            document.getElementById("panPdfPageInfo").textContent = `Page ${pageNum} of ${panPdfTotal}`;
+            renderPanPdfSigBox();
+        }
+
+        async function stepPanPdfPage(delta) {
+            const next = panPdfPage + delta;
+            if (!panPdfDoc || next < 1 || next > panPdfTotal) return;
+            panPdfPage = next;
+            await renderPanPdfPage(panPdfPage);
+        }
+
+        function formatPanSignatureDateMMDDYYYY(date = new Date()) {
+            const mm = String(date.getMonth() + 1).padStart(2, "0");
+            const dd = String(date.getDate()).padStart(2, "0");
+            const yyyy = date.getFullYear();
+            return `${mm}/${dd}/${yyyy}`;
+        }
+
+        function syncPanSigDateLabel(sigEl) {
+            const dateEl = document.getElementById("panDraggableSignatureDate");
+            if (!sigEl || !dateEl) return;
+            dateEl.style.left = `${sigEl.offsetLeft}px`;
+            dateEl.style.top = `${sigEl.offsetTop + sigEl.offsetHeight + 2}px`;
+            dateEl.style.width = `${Math.max(sigEl.offsetWidth, 80)}px`;
+        }
+
+        function updatePanPdfPlacementFromDom() {
+            const sigEl = document.getElementById("panDraggableSignature");
+            const canvas = document.getElementById("panPdfCanvas");
+            if (!sigEl || !canvas || !canvas.offsetWidth || !canvas.offsetHeight) return;
+            const cw = canvas.offsetWidth;
+            const ch = canvas.offsetHeight;
+            const sw = sigEl.offsetWidth || 150;
+            const sh = sigEl.offsetHeight || 55;
+            panPdfPlacement = {
+                pageIndex: panPdfPage - 1,
+                sigLeft: sigEl.offsetLeft,
+                sigTop: sigEl.offsetTop,
+                sigWidth: sw,
+                sigHeight: sh,
+                containerWidth: cw,
+                containerHeight: ch,
+                xRatio: Math.max(0, Math.min(1, sigEl.offsetLeft / cw)),
+                yRatio: Math.max(0, Math.min(1, sigEl.offsetTop / ch)),
+                widthRatio: Math.max(0.05, Math.min(1, sw / cw)),
+                heightRatio: Math.max(0.02, Math.min(1, sh / ch))
+            };
+        }
+
+        function placePanPdfSig() {
+            if (!savedPanelistSignature) {
+                alert("Please upload your digital signature in Settings first.");
+                return;
+            }
+            const canvas = document.getElementById("panPdfCanvas");
+            const cw = (canvas && canvas.offsetWidth) || 600;
+            const ch = (canvas && canvas.offsetHeight) || 800;
+            panPdfPlacement = {
+                pageIndex: panPdfPage - 1,
+                sigLeft: 40,
+                sigTop: 40,
+                sigWidth: 150,
+                sigHeight: 55,
+                containerWidth: cw,
+                containerHeight: ch,
+                xRatio: 40 / cw,
+                yRatio: 40 / ch,
+                widthRatio: 150 / cw,
+                heightRatio: 55 / ch
+            };
+            renderPanPdfSigBox();
+        }
+
+        function renderPanPdfSigBox() {
+            const layer = document.getElementById("panPdfSigLayer");
+            const canvas = document.getElementById("panPdfCanvas");
+            if (!layer || !canvas) return;
+            layer.innerHTML = "";
+            if (canvas.offsetWidth && canvas.offsetHeight) {
+                layer.style.width = `${canvas.offsetWidth}px`;
+                layer.style.height = `${canvas.offsetHeight}px`;
+            }
+            if (!panPdfPlacement || panPdfPlacement.pageIndex !== panPdfPage - 1 || !savedPanelistSignature) return;
+
+            layer.innerHTML = `
+                <img
+                    id="panDraggableSignature"
+                    class="draggable-signature"
+                    src="${savedPanelistSignature}"
+                    alt="Signature"
+                    draggable="false"
+                >
+                <div
+                    id="panDraggableSignatureDate"
+                    style="position:absolute; pointer-events:none; text-align:center; font-size:11px; font-weight:600; color:#1e293b; font-family:Helvetica, Arial, sans-serif; line-height:1.1; white-space:nowrap;"
+                >${formatPanSignatureDateMMDDYYYY()}</div>
+            `;
+
+            const sigEl = document.getElementById("panDraggableSignature");
+            if (!sigEl) return;
+
+            const initLeft = Math.round((panPdfPlacement.xRatio || 0) * (canvas.offsetWidth || 600));
+            const initTop = Math.round((panPdfPlacement.yRatio || 0) * (canvas.offsetHeight || 800));
+            sigEl.style.left = `${Math.max(0, initLeft)}px`;
+            sigEl.style.top = `${Math.max(0, initTop)}px`;
+
+            sigEl.addEventListener("load", () => {
+                syncPanSigDateLabel(sigEl);
+                updatePanPdfPlacementFromDom();
+            });
+            syncPanSigDateLabel(sigEl);
+            updatePanPdfPlacementFromDom();
+
+            let dragState = null;
+            const onStart = (clientX, clientY) => {
+                dragState = {
+                    startX: clientX,
+                    startY: clientY,
+                    origLeft: sigEl.offsetLeft,
+                    origTop: sigEl.offsetTop
+                };
+            };
+            const onMove = (clientX, clientY) => {
+                if (!dragState) return;
+                const maxLeft = Math.max(0, (canvas.offsetWidth || 600) - (sigEl.offsetWidth || 150));
+                const maxTop = Math.max(0, (canvas.offsetHeight || 800) - (sigEl.offsetHeight || 55) - 16);
+                const nextLeft = Math.max(0, Math.min(maxLeft, dragState.origLeft + (clientX - dragState.startX)));
+                const nextTop = Math.max(0, Math.min(maxTop, dragState.origTop + (clientY - dragState.startY)));
+                sigEl.style.left = `${nextLeft}px`;
+                sigEl.style.top = `${nextTop}px`;
+                syncPanSigDateLabel(sigEl);
+                updatePanPdfPlacementFromDom();
+            };
+            const onEnd = () => {
+                if (!dragState) return;
+                dragState = null;
+                updatePanPdfPlacementFromDom();
+            };
+
+            sigEl.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                onStart(e.clientX, e.clientY);
+                const mm = (ev) => onMove(ev.clientX, ev.clientY);
+                const mu = () => {
+                    onEnd();
+                    window.removeEventListener("mousemove", mm);
+                    window.removeEventListener("mouseup", mu);
+                };
+                window.addEventListener("mousemove", mm);
+                window.addEventListener("mouseup", mu);
+            });
+
+            sigEl.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                const t = e.touches[0];
+                if (!t) return;
+                onStart(t.clientX, t.clientY);
+                const tm = (ev) => {
+                    const tt = ev.touches[0];
+                    if (tt) onMove(tt.clientX, tt.clientY);
+                };
+                const tu = () => {
+                    onEnd();
+                    window.removeEventListener("touchmove", tm);
+                    window.removeEventListener("touchend", tu);
+                };
+                window.addEventListener("touchmove", tm, { passive: false });
+                window.addEventListener("touchend", tu);
+            }, { passive: false });
+        }
+
+        async function submitPanPdfSignature(reviewStatus) {
+            if (!activePanPdfSub) return;
+            const comment = document.getElementById("panPdfComment").value.trim();
+            if (reviewStatus === "Approved") {
+                updatePanPdfPlacementFromDom();
+                if (!panPdfPlacement) {
+                    alert("Please click 'Place Signature on Page' before approving.");
+                    return;
+                }
+            }
+            if ((reviewStatus === "Rejected" || reviewStatus === "Subject to Change") && !comment) {
+                alert("Please add notes explaining your decision.");
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/panelist-apply-document-signature/${activePanPdfSub.submission_id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        panelistUserId: loggedInUserId,
+                        reviewStatus,
+                        reviewComment: comment,
+                        signatureType: "saved",
+                        placement: panPdfPlacement
+                    })
+                });
+                const data = await resp.json();
+                alert(data.message || (data.success ? "Saved!" : "Failed."));
+                if (data.success) {
+                    closePanPdfModal();
+                    await loadPanelistSigningDocs();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Cannot connect to server.");
+            }
+        }
+
         loadPanelistSignature();
         loadPanelistDefenseMinutes();
+        loadPanelistSigningDocs();
     </script>
 
     <script src="../../shared/portal-notifications.js" defer></script>

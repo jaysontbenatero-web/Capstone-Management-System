@@ -1940,3 +1940,482 @@ body{
     background: #b91c1c;
     box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
+
+/* ================= UNIFIED SEARCHABLE GROUP COMBOBOX ================= */
+
+.group-combobox {
+    position: relative;
+    width: 100%;
+}
+
+.group-combobox-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: #f5f3ff;
+    border: 1.5px solid transparent;
+    border-radius: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    cursor: text;
+}
+
+.group-combobox.open .group-combobox-control,
+.group-combobox-control:focus-within {
+    border-color: #7c3aed;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.group-combobox-icon {
+    position: absolute;
+    left: 14px;
+    color: #7c3aed;
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.group-combobox-control input {
+    width: 100% !important;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    padding: 13px 64px 13px 38px !important;
+    border-radius: 16px !important;
+    color: #2e1065 !important;
+    font-size: 14px !important;
+    box-shadow: none !important;
+    text-overflow: ellipsis;
+}
+
+.group-combobox-control input::placeholder {
+    color: #7b6f96;
+}
+
+.group-search-clear {
+    position: absolute;
+    right: 36px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: #ede9fe;
+    color: #6d28d9;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: background 0.15s;
+}
+
+.group-search-clear:hover {
+    background: #ddd6fe;
+}
+
+.group-combobox-toggle {
+    position: absolute;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: #4c1d95;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    border-radius: 8px;
+    transition: transform 0.2s, background 0.15s;
+}
+
+.group-combobox-toggle:hover {
+    background: rgba(124, 58, 237, 0.08);
+}
+
+.group-combobox.open .group-combobox-toggle i {
+    transform: rotate(180deg);
+}
+
+.group-combobox-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1.5px solid #ddd6fe;
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(46, 16, 101, 0.16);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 80;
+    padding: 6px;
+}
+
+.group-combobox-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #2e1065;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.group-combobox-option:hover {
+    background: #f5f3ff;
+}
+
+.group-combobox-option.selected {
+    background: #ede9fe;
+    font-weight: 600;
+    color: #5b21b6;
+}
+
+.group-combobox-option.opt-redefense-cond {
+    color: #1d4ed8;
+    background: #eff6ff;
+    font-weight: 600;
+}
+
+.group-combobox-option.opt-redefense-cond:hover {
+    background: #dbeafe;
+}
+
+.group-combobox-option.opt-redefense-formal {
+    color: #ea580c;
+    background: #fff7ed;
+    font-weight: 600;
+}
+
+.group-combobox-option.opt-redefense-formal:hover {
+    background: #ffedd5;
+}
+
+.group-combobox-option.opt-missing-docs {
+    color: #94a3b8;
+    background: #f8fafc;
+}
+
+.group-combobox-option.opt-missing-docs:hover {
+    background: #f1f5f9;
+}
+
+.group-combobox-option-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.group-combobox-empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* ================= PREDEFINED CLICKABLE DEFENSE TIME SLOTS ================= */
+
+.time-slots-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.time-slots-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.time-slots-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #2e1065;
+    margin-bottom: 2px;
+}
+
+.time-slots-title i {
+    color: #7c3aed;
+}
+
+.time-slots-hint {
+    font-size: 12px;
+    color: #6d5f85;
+}
+
+.custom-time-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #ddd6fe;
+    background: #faf8ff;
+    color: #6d28d9;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.custom-time-toggle-btn:hover:not(:disabled) {
+    background: #ede9fe;
+    border-color: #a78bfa;
+}
+
+.custom-time-toggle-btn.active {
+    background: linear-gradient(135deg, #6d28d9, #7c3aed);
+    border-color: #6d28d9;
+    color: #ffffff;
+}
+
+.custom-time-toggle-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.time-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 640px) {
+    .time-slot-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.time-slot-card {
+    text-align: left;
+    padding: 11px 13px;
+    border-radius: 13px;
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.time-slot-card:hover:not(:disabled) {
+    border-color: #a78bfa;
+    background: #faf8ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+}
+
+.time-slot-card.selected {
+    border-color: #7c3aed;
+    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14);
+}
+
+.time-slot-card.occupied {
+    border-color: #fecaca;
+    background: #fef2f2;
+    opacity: 0.78;
+    cursor: not-allowed;
+}
+
+.time-slot-card:disabled:not(.occupied) {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.time-slot-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.time-slot-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2e1065;
+}
+
+.time-slot-card.occupied .time-slot-label {
+    color: #991b1b;
+    text-decoration: line-through;
+}
+
+.time-slot-meta {
+    font-size: 11.5px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.time-slot-card.occupied .time-slot-meta {
+    color: #b91c1c;
+    font-weight: 500;
+}
+
+.slot-status-pill {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.slot-pill-open {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.slot-pill-selected {
+    background: #7c3aed;
+    color: #ffffff;
+}
+
+.slot-pill-occupied {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.slot-pill-partial {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.custom-time-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: #faf8ff;
+    border: 1px dashed #c4b5fd;
+}
+
+.recommended-duration-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #ede9fe;
+    color: #6d28d9;
+    margin-left: 4px;
+}
+
+.custom-time-panel {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #faf8ff;
+    border: 1.5px dashed #c4b5fd;
+}
+
+.custom-duration-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ede9fe;
+}
+
+.custom-duration-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #4c1d95;
+}
+
+.custom-duration-label i {
+    color: #7c3aed;
+}
+
+.custom-duration-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.duration-chip {
+    border: 1.5px solid #ddd6fe;
+    background: #ffffff;
+    color: #5b21b6;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.duration-chip:hover:not(:disabled) {
+    background: #f5f3ff;
+    border-color: #a78bfa;
+}
+
+.duration-chip.active {
+    background: #7c3aed;
+    border-color: #7c3aed;
+    color: #ffffff;
+}
+
+.duration-chip:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.custom-duration-input-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #ffffff;
+    border: 1.5px solid #ddd6fe;
+    border-radius: 9px;
+    padding: 3px 8px;
+    font-size: 12px;
+    color: #5b21b6;
+    font-weight: 600;
+}
+
+.custom-duration-input-wrap input {
+    width: 46px !important;
+    padding: 2px 4px !important;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    font-size: 12.5px !important;
+    font-weight: 700;
+    color: #2e1065 !important;
+    text-align: center;
+}
+
+.custom-time-panel .custom-time-inputs {
+    margin-top: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}

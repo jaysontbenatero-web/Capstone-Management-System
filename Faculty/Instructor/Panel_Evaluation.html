@@ -169,7 +169,6 @@
             </select>
             <select id="outcomeFilter" onchange="applyFilters()">
                 <option value="All">All Outcomes</option>
-                <option value="In Progress">In Progress</option>
                 <option value="Passed">Passed</option>
                 <option value="Passed with Revisions">Passed with Revisions</option>
                 <option value="Failed">Failed</option>
@@ -266,6 +265,11 @@
             return false;
         }
 
+        function isDefenseCompleted(sched) {
+            if (!sched) return false;
+            return String(sched.defense_status || "").trim().toLowerCase() === "completed";
+        }
+
         function isCreatedByLoggedInInstructor(sched) {
             const userId = String(localStorage.getItem("userId") || "").trim();
             if (!sched || !userId) return false;
@@ -327,6 +331,7 @@
 
                 if (data.success) {
                     const candidates = (data.schedules || []).filter(sched =>
+                        isDefenseCompleted(sched) &&
                         Number(sched.evaluations_submitted || 0) > 0 &&
                         !scheduleHasNonFinalVerdict(sched)
                     );
@@ -391,7 +396,7 @@
             const outcomeVal = document.getElementById("outcomeFilter").value;
 
             const scopeFiltered = allSchedules.filter(sched => {
-                if (scheduleHasNonFinalVerdict(sched)) return false;
+                if (!isDefenseCompleted(sched) || scheduleHasNonFinalVerdict(sched)) return false;
                 if (scopeVal === "Created") {
                     return isCreatedByLoggedInInstructor(sched);
                 }
@@ -679,6 +684,20 @@
                 }
             } catch (e) {
                 console.error("Failed to refresh panel evaluations:", e);
+            }
+
+            if (!isDefenseCompleted(sched)) {
+                actions.style.display = "none";
+                allSchedules = allSchedules.filter(s => Number(s.id) !== Number(id));
+                applyFilters();
+                viewport.innerHTML = `
+                    <div class="empty-receipt">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                        <h3>Evaluation Not Generated Yet</h3>
+                        <p>This defense is not completed yet. The evaluation sheet will only be generated once the defense is completed or force-completed.</p>
+                    </div>
+                `;
+                return;
             }
 
             if (scheduleHasNonFinalVerdict(sched)) {
@@ -1964,6 +1983,4 @@
         loadInstructorSubtitle();
         loadEvaluations();
     </script>
-    <script src="../../shared/portal-notifications.js" defer></script>
-</body>
-</html>
+    <script src="../../shared/portal-notifications.js" de
