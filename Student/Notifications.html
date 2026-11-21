@@ -374,6 +374,18 @@
 
                 renderCurrentTab();
 
+                if (!window._autoOpenedNotifModal) {
+                    const params = new URLSearchParams(window.location.search);
+                    const targetNotifId = params.get("notifId");
+                    if (targetNotifId) {
+                        const matched = (systemNotifications || []).find(n => String(n.id) === String(targetNotifId));
+                        if (matched) {
+                            window._autoOpenedNotifModal = true;
+                            openSystemModal(matched);
+                        }
+                    }
+                }
+
             }catch(error){
 
                 console.log(error);
@@ -917,6 +929,36 @@
                 card.className =
                     `update-card ${item.type}-card${showNewBadge ? " is-recent" : ""}`;
 
+                const rawContent = String(item.content || "");
+                const feedbackSep = "\n\nAdviser Feedback:\n";
+                const fbIdx = rawContent.indexOf(feedbackSep);
+                const mainPreviewText = fbIdx !== -1 ? rawContent.substring(0, fbIdx) : rawContent;
+                const cardFeedbackText = fbIdx !== -1 ? rawContent.substring(fbIdx + feedbackSep.length).trim() : "";
+                const isCardDeclined = ((item.title || "") + " " + mainPreviewText).toLowerCase().includes("declined")
+                    || ((item.title || "") + " " + mainPreviewText).toLowerCase().includes("rejected");
+
+                const cardFeedbackHtml = cardFeedbackText
+                    ? `
+                        <div style="
+                            margin: 8px 0 12px;
+                            padding: 11px 14px;
+                            border-radius: 12px;
+                            background: ${isCardDeclined ? "#fef2f2" : "#f0fdf4"};
+                            border: 1.5px solid ${isCardDeclined ? "#fca5a5" : "#86efac"};
+                            color: #1f2937;
+                            font-size: 13.5px;
+                            line-height: 1.55;
+                            white-space: pre-wrap;
+                        ">
+                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; color:${isCardDeclined ? "#dc2626" : "#15803d"}; font-weight:700; font-size:13px;">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <span>Adviser Comment / Feedback:</span>
+                            </div>
+                            <div>${cardFeedbackText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+                        </div>
+                    `
+                    : "";
+
                 card.innerHTML = `
                     <div class="update-icon ${iconColor}">
                         <i class="fa-solid ${icon}"></i>
@@ -941,8 +983,9 @@
                         </div>
 
                         <p class="update-preview">
-                            ${shortenText(item.content, 150)}
+                            ${shortenText(mainPreviewText, 180)}
                         </p>
+                        ${cardFeedbackHtml}
 
                         <div class="update-footer">
                             <span>

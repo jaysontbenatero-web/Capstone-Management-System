@@ -934,16 +934,38 @@
                     const p = toPath(getNotificationTargetUrl(n));
                     if (!p) return;
                     if (!byPage.has(p)) byPage.set(p, []);
-                    byPage.get(p).push(n.id);
+                    byPage.get(p).push(n);
                 });
 
-                // Visiting a page counts as seeing its notifications.
+                // Visiting a page counts as seeing its notifications, except for Adviser Request
+                // notifications with feedback/comments which should stay unread in the Bell and
+                // Notifications sidebar until explicitly viewed in the Bell or Notifications page.
                 if (!this.isNotificationsFullPage() && byPage.has(here)) {
-                    const ids = byPage.get(here);
-                    byPage.delete(here);
-                    this._dotsUnread = -1;
-                    for (const id of ids) {
-                        await this.markRead(id);
+                    const itemsOnHere = byPage.get(here) || [];
+                    const autoMarkIds = itemsOnHere
+                        .filter((n) => {
+                            const t = String(n.notification_type || "").toLowerCase();
+                            const ttl = String(n.notification_title || "").toLowerCase();
+                            const msg = String(n.notification_message || "").toLowerCase();
+                            if (t.includes("adviser") || ttl.includes("adviser") || msg.includes("adviser feedback:")) {
+                                return false;
+                            }
+                            return true;
+                        })
+                        .map((n) => n.id);
+
+                    const remaining = itemsOnHere.filter((n) => !autoMarkIds.includes(n.id));
+                    if (remaining.length > 0) {
+                        byPage.set(here, remaining);
+                    } else {
+                        byPage.delete(here);
+                    }
+
+                    if (autoMarkIds.length > 0) {
+                        this._dotsUnread = -1;
+                        for (const id of autoMarkIds) {
+                            await this.markRead(id);
+                        }
                     }
                 }
 
@@ -1004,10 +1026,21 @@
 
             list.innerHTML = items.map((item) => {
                 const unread = Number(item.is_read) === 0;
-                const title = escapeHtml(item.notification_title);
-                const message = escapeHtml(item.notification_message);
+                const rawTitle = String(item.notification_title || "");
+                const rawMsg = String(item.notification_message || "");
+                const title = escapeHtml(rawTitle);
                 const type = escapeHtml(item.notification_type || "System");
                 const time = formatNotificationTime(item.created_at);
+
+                const feedbackSeparator = "\n\nAdviser Feedback:\n";
+                const feedbackIdx = rawMsg.indexOf(feedbackSeparator);
+                const mainMsg = feedbackIdx !== -1 ? rawMsg.substring(0, feedbackIdx) : rawMsg;
+                const feedbackMsg = feedbackIdx !== -1 ? rawMsg.substring(feedbackIdx + feedbackSeparator.length).trim() : "";
+
+                const isDeclined = rawTitle.toLowerCase().includes("declined") || rawTitle.toLowerCase().includes("rejected") || rawMsg.toLowerCase().includes("declined");
+                const feedbackHtml = feedbackMsg
+                    ? `<span class="portal-notif-item-feedback" style="display:block; margin-top:7px; padding:8px 10px; border-radius:9px; background:${isDeclined ? "#fef2f2" : "#f5f3ff"}; border:1px solid ${isDeclined ? "#fecaca" : "#ddd6fe"}; color:${isDeclined ? "#991b1b" : "#4c1d95"}; font-size:12px; line-height:1.45; white-space:pre-wrap;"><strong style="display:block; margin-bottom:2px; color:${isDeclined ? "#dc2626" : "#6d28d9"};"><i class="fa-solid fa-comment-dots"></i> Adviser Comment:</strong>${escapeHtml(feedbackMsg)}</span>`
+                    : "";
 
                 return `
                     <button
@@ -1020,7 +1053,8 @@
                             <span class="portal-notif-item-time">${time}</span>
                         </div>
                         <span class="portal-notif-item-type">${type}</span>
-                        <span class="portal-notif-item-msg">${message}</span>
+                        <span class="portal-notif-item-msg">${escapeHtml(mainMsg)}</span>
+                        ${feedbackHtml}
                     </button>
                 `;
             }).join("");
@@ -1030,6 +1064,17 @@
                     const id = node.getAttribute("data-notification-id");
                     const item = (this.cachedNotifications || []).find((n) => String(n.id) === String(id));
                     await this.markRead(id);
+                    const rawType = String(item?.notification_type || "").toLowerCase();
+                    const rawTitle = String(item?.notification_title || "").toLowerCase();
+                    const rawMsg = String(item?.notification_message || "").toLowerCase();
+                    const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
+                    if (
+                        role === "student" &&
+                        (rawType.includes("adviser") || rawTitle.includes("adviser") || rawMsg.includes("adviser feedback:"))
+                    ) {
+                        window.location.href = `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id)}`;
+                        return;
+                    }
                     const targetUrl = getNotificationDashboardUrl(item);
                     if (targetUrl) {
                         window.location.href = targetUrl;

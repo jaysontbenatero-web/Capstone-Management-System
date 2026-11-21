@@ -1610,9 +1610,9 @@
                 removeAssignmentBtn.style.display =
                     "flex";
 
-                // Show saved feedback read-only
+                // Allow entering comment/feedback when removing assignment and also show any saved feedback
                 document.getElementById("feedbackInputArea").style.display =
-                    "none";
+                    "block";
 
                 document.getElementById("feedbackDisplayArea").style.display =
                     "block";
@@ -1744,6 +1744,9 @@
 
             try{
 
+                const adviserFeedback =
+                    (document.getElementById("adviserFeedbackInput")?.value || "").trim();
+
                 const response =
                     await fetch(
                         `${API_BASE}/remove-adviser-assignment`,
@@ -1756,7 +1759,8 @@
 
                             body:JSON.stringify({
                                 requestId:selectedRequestId,
-                                adviserUserId:loggedInUserId
+                                adviserUserId:loggedInUserId,
+                                adviserFeedback:adviserFeedback
                             })
                         }
                     );

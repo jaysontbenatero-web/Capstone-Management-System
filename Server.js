@@ -851,6 +851,15 @@ db.getConnection((err, connection) => {
             }
         });
 
+        db.query("SHOW COLUMNS FROM adviser_requests", (arColErr, arCols) => {
+            if (!arColErr && Array.isArray(arCols)) {
+                const arNames = arCols.map(c => String(c.Field || "").toLowerCase());
+                if (!arNames.includes("adviser_feedback")) {
+                    db.query("ALTER TABLE adviser_requests ADD COLUMN adviser_feedback TEXT NULL", () => { });
+                }
+            }
+        });
+
         db.query(`
             CREATE TABLE IF NOT EXISTS defense_minutes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -3952,7 +3961,25 @@ app.get("/student-advisers/:userId", (req, res) => {
                     AND ar.adviser_id = u.id
                     ORDER BY ar.id DESC
                     LIMIT 1
-                ) AS request_status
+                ) AS request_status,
+
+                (
+                    SELECT adviser_feedback
+                    FROM adviser_requests ar
+                    WHERE ar.group_id = ?
+                    AND ar.adviser_id = u.id
+                    ORDER BY ar.id DESC
+                    LIMIT 1
+                ) AS adviser_feedback,
+
+                (
+                    SELECT updated_at
+                    FROM adviser_requests ar
+                    WHERE ar.group_id = ?
+                    AND ar.adviser_id = u.id
+                    ORDER BY ar.id DESC
+                    LIMIT 1
+                ) AS request_updated_at
 
             FROM users u
 
@@ -3966,7 +3993,7 @@ app.get("/student-advisers/:userId", (req, res) => {
             ORDER BY u.fullname ASC
         `;
 
-        db.query(advisersSql, [currentYear, group.id, currentYear], (err, advisersResult) => {
+        db.query(advisersSql, [currentYear, group.id, group.id, group.id, currentYear], (err, advisersResult) => {
 
             if (err) {
                 console.log(err);
@@ -7655,6 +7682,7 @@ app.get("/adviser-requests/:adviserUserId", (req, res) => {
             ar.id AS request_id,
             ar.request_status,
             ar.request_message,
+            ar.adviser_feedback,
             ar.created_at,
 
             cg.id AS group_db_id,
@@ -7972,7 +8000,8 @@ app.put("/remove-adviser-assignment", (req, res) => {
 
     const {
         requestId,
-        adviserUserId
+        adviserUserId,
+        adviserFeedback
     } = req.body;
 
     if (!requestId || !adviserUserId) {
@@ -7991,9 +8020,11 @@ app.put("/remove-adviser-assignment", (req, res) => {
             ar.adviser_id,
             ar.request_status,
 
+            cg.group_name,
             cg.adviser_id AS current_group_adviser_id,
 
-            adviser.user_id AS adviser_user_id
+            adviser.user_id AS adviser_user_id,
+            adviser.fullname AS adviser_name
         FROM adviser_requests ar
 
         JOIN capstone_groups cg
@@ -8077,13 +8108,15 @@ app.put("/remove-adviser-assignment", (req, res) => {
 
                     const updateRequestSql = `
                         UPDATE adviser_requests
-                        SET request_status = 'Removed'
+                        SET request_status = 'Removed',
+                            adviser_feedback = COALESCE(NULLIF(?, ''), adviser_feedback)
                         WHERE id = ?
                     `;
 
                     db.query(
                         updateRequestSql,
                         [
+                            String(adviserFeedback || "").trim(),
                             requestId
                         ],
                         (err) => {
@@ -8096,6 +8129,14 @@ app.put("/remove-adviser-assignment", (req, res) => {
                                     message: "Assignment removed, but failed to update request status."
                                 });
                             }
+
+                            const feedbackComment = String(adviserFeedback || "").trim() || "No comment provided.";
+                            const removeMsg = `${request.adviser_name || "Your adviser"} removed the adviser assignment for "${request.group_name || "your group"}". You may request another available adviser.\n\nAdviser Feedback:\n${feedbackComment}`;
+                            notifyGroupMembersAboutAdviserRequest(
+                                request.group_id,
+                                "Adviser Request Declined",
+                                removeMsg
+                            );
 
                             res.json({
                                 success: true,
@@ -17046,25 +17087,32 @@ app.post("/hide-student-update", (req, res) => {
 function notifyGroupMembersAboutAdviserRequest(groupDbId, title, message) {
 
     const membersSql = `
-        SELECT student_id
+        SELECT student_id AS student_id
         FROM group_members
         WHERE group_id = ?
+        UNION
+        SELECT project_manager_id AS student_id
+        FROM capstone_groups
+        WHERE id = ?
+          AND project_manager_id IS NOT NULL
     `;
 
-    db.query(membersSql, [groupDbId], (err, members) => {
+    db.query(membersSql, [groupDbId, groupDbId], (err, members) => {
 
         if (err) {
             console.log(err);
             return;
         }
 
-        if (members.length === 0) {
+        const uniqueStudentIds = [...new Set((members || []).map(m => m.student_id).filter(Boolean))];
+
+        if (uniqueStudentIds.length === 0) {
             return;
         }
 
         const values =
-            members.map(member => [
-                member.student_id,
+            uniqueStudentIds.map(studentId => [
+                studentId,
                 title,
                 message,
                 "Adviser Request"
@@ -17430,10 +17478,8 @@ app.post("/respond-adviser-request", (req, res) => {
 
                         }
 
-                        let finalMessage = `${adviserName} declined your adviser request for "${request.group_name}". You may request another available adviser.`;
-                        if (adviserFeedback) {
-                            finalMessage += `\n\nAdviser Feedback:\n${adviserFeedback}`;
-                        }
+                        const feedbackText = String(adviserFeedback || "").trim() || "No comment provided.";
+                        const finalMessage = `${adviserName} declined your adviser request for "${request.group_name}". You may request another available adviser.\n\nAdviser Feedback:\n${feedbackText}`;
 
                         notifyGroupMembersAboutAdviserRequest(
                             request.group_id,
