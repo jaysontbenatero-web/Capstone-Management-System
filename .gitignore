@@ -54,3 +54,5 @@ yarn-error.log*
 # editor
 .vscode/*
 !.vscode/settings.json
+
+Images/Downloads/

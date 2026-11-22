@@ -29,6 +29,7 @@
     >
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="student-portal.css">
 
     <link rel="stylesheet" href="../shared/custom-alerts.css">
     <script src="../shared/custom-alerts.js"></script>
@@ -382,6 +383,24 @@
                         if (matched) {
                             window._autoOpenedNotifModal = true;
                             openSystemModal(matched);
+                        } else {
+                            const rawMatched = (data.notifications || []).find(n => String(n.id) === String(targetNotifId));
+                            if (rawMatched) {
+                                window._autoOpenedNotifModal = true;
+                                if (String(rawMatched.notification_type || "").toLowerCase() === "announcement") {
+                                    const matchedAnn = (announcements || []).find(a =>
+                                        String(rawMatched.notification_title || "").toLowerCase().includes(String(a.announcement_title || "").toLowerCase())
+                                        || String(rawMatched.notification_message || "").toLowerCase().includes(String(a.announcement_title || "").toLowerCase())
+                                    );
+                                    if (matchedAnn) {
+                                        openAnnouncementModal(matchedAnn);
+                                    } else {
+                                        openSystemModal(rawMatched);
+                                    }
+                                } else {
+                                    openSystemModal(rawMatched);
+                                }
+                            }
                         }
                     }
                 }
@@ -1098,23 +1117,24 @@
         function openAnnouncementModal(item){
 
             markUpdateViewed("announcement", item.id);
-            renderUpdates();
+            renderCurrentTab();
 
             document.getElementById("modalTitle").innerText =
-                item.announcement_title;
+                item.announcement_title || "Announcement";
 
+            const codePrefix = item.announcement_code ? `${item.announcement_code} • ` : "";
             document.getElementById("modalSubtitle").innerText =
-                `${item.announcement_code} • Posted by ${item.created_by_name || "CapstoneX"}`;
+                `${codePrefix}Posted by ${item.created_by_name || "CapstoneX"}`;
 
             document.getElementById("modalTags").innerHTML =
                 `
-                    <span>${item.announcement_type}</span>
+                    <span>${item.announcement_type || "Announcement"}</span>
                     <span>${getAudienceText(item)}</span>
                     <span>Published</span>
                 `;
 
             document.getElementById("modalContent").innerText =
-                item.announcement_content;
+                item.announcement_content || "No announcement content provided.";
 
             document.getElementById("modalExtra").innerHTML =
                 `
@@ -1130,7 +1150,7 @@
         function openDefenseModal(item){
 
             markUpdateViewed("defense", item.schedule_id || item.id);
-            renderUpdates();
+            renderCurrentTab();
 
             const panelistText =
                 item.panelists && item.panelists.length > 0
@@ -1394,11 +1414,8 @@
 
                 if(data.success){
 
-                    (allUpdates || []).forEach(u => {
-                        if(u.type !== "system"){
-                            markUpdateViewed(u.type, getUpdateId(u));
-                        }
-                    });
+                    (announcements || []).forEach(a => markUpdateViewed("announcement", a.id));
+                    (defenseSchedules || []).forEach(d => markUpdateViewed("defense", d.schedule_id || d.id));
                     loadStudentNotifications();
                     if(window.PortalNotifications){
                         window.PortalNotifications.refresh(false);
@@ -1480,11 +1497,8 @@
 
                 if(data.success){
 
-                    (allUpdates || []).forEach(u => {
-                        if(u.type !== "system"){
-                            markUpdateViewed(u.type, getUpdateId(u));
-                        }
-                    });
+                    (announcements || []).forEach(a => markUpdateViewed("announcement", a.id));
+                    (defenseSchedules || []).forEach(d => markUpdateViewed("defense", d.schedule_id || d.id));
                     loadStudentNotifications();
                     if(window.PortalNotifications){
                         window.PortalNotifications.refresh(false);

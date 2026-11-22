@@ -167,6 +167,8 @@
                 </p>
             </div>
 
+            <div class="top-actions"></div>
+
         </div>
 
         <div class="messages-container card">
@@ -199,6 +201,14 @@
                             onclick="setRoleFilter('all')"
                         >
                             All
+                        </div>
+
+                        <div
+                            class="filter-chip"
+                            id="filter-group"
+                            onclick="setRoleFilter('group')"
+                        >
+                            Groups
                         </div>
 
                         <div
@@ -236,9 +246,7 @@
                     <!-- Loaded dynamically -->
                 </div>
 
-            <div class="top-actions"></div>
-
-        </div>
+            </div>
 
             <!-- CHAT PANEL -->
             <div
@@ -269,6 +277,16 @@
 
                     <div class="chat-header">
 
+                        <button
+                            type="button"
+                            class="mobile-chat-back-btn"
+                            id="mobileChatBackBtn"
+                            onclick="closeMobileChat()"
+                            aria-label="Back to chats"
+                        >
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+
                         <div class="active-chat-user">
 
                             <div
@@ -296,7 +314,20 @@
 
                         </div>
 
+                        <button
+                            type="button"
+                            class="group-members-toggle-btn"
+                            id="groupMembersToggleBtn"
+                            onclick="toggleGroupMembersDrawer()"
+                            style="display:none;"
+                        >
+                            <i class="fa-solid fa-users"></i>
+                            <span id="groupMembersBtnLabel">Members</span>
+                        </button>
+
                     </div>
+
+                    <div class="group-members-drawer" id="groupMembersDrawer" style="display:none;"></div>
 
                     <div
                         class="chat-messages"
@@ -336,6 +367,8 @@
                             <input
                                 type="file"
                                 id="chatFileInput"
+                                aria-label="Attach a file"
+                                title="Attach a file"
                                 style="display: none;"
                                 onchange="handleFileSelected(event)"
                             >
@@ -343,6 +376,8 @@
                             <button
                                 type="button"
                                 class="attachment-trigger"
+                                aria-label="Attach file"
+                                title="Attach file"
                                 onclick="triggerFileInput()"
                             >
                                 <i class="fa-solid fa-paperclip"></i>
@@ -359,6 +394,8 @@
                             <button
                                 type="submit"
                                 class="send-message-btn"
+                                aria-label="Send message"
+                                title="Send message"
                             >
                                 <i class="fa-solid fa-paper-plane"></i>
                             </button>
@@ -378,13 +415,17 @@
     <script>
         const API_URL = "";
 
+        let activeChatMode = "direct";
         let activeReceiverId = null;
         let activeReceiverData = null;
+        let activeGroupId = null;
+        let activeGroupData = null;
         let roleFilter = "all";
         let searchTimeout = null;
         let pollInterval = null;
         let contactsPollInterval = null;
         let allUsers = [];
+        let allChatGroups = [];
         let lastMessageMap = {};
         let unreadMap = {};
 
@@ -393,23 +434,86 @@
             window.location.href = "../Log-in.html";
         }
 
+        function closeMobileChat() {
+            document.body.classList.remove("mobile-chat-active");
+        }
+
+        function toggleGroupMembersDrawer() {
+            const drawer = document.getElementById("groupMembersDrawer");
+            if (!drawer) return;
+            drawer.style.display = drawer.style.display === "none" ? "block" : "none";
+        }
+
+        function renderGroupMembersDrawer(group) {
+            const drawer = document.getElementById("groupMembersDrawer");
+            const btn = document.getElementById("groupMembersToggleBtn");
+            const label = document.getElementById("groupMembersBtnLabel");
+            if (!drawer || !btn) return;
+
+            const members = Array.isArray(group?.members) ? group.members : [];
+            btn.style.display = "inline-flex";
+            if (label) label.textContent = `Members (${members.length})`;
+
+            const topicHtml = group?.topic_title
+                ? `<div class="group-topic-banner"><strong><i class="fa-solid fa-book-open"></i> Topic:</strong> ${escapeHTML(group.topic_title)}</div>`
+                : "";
+
+            const chipsHtml = members.map(function(m) {
+                const isPanel = String(m.member_role || "").toLowerCase() === "panelist";
+                return `
+                    <span class="group-member-chip ${isPanel ? "is-panelist" : ""}">
+                        <i class="fa-solid ${isPanel ? "fa-user-tie" : "fa-user-graduate"}"></i>
+                        <span>${escapeHTML(m.fullname || m.user_id)}</span>
+                        <span class="chip-role">${escapeHTML(m.member_role || m.role || "Member")}</span>
+                    </span>
+                `;
+            }).join("");
+
+            drawer.innerHTML = `${topicHtml}<div class="group-members-chips">${chipsHtml}</div>`;
+        }
+
         async function fetchUsers() {
             try {
                 const search = document.getElementById("userSearchInput").value.trim();
 
-                const response = await fetch(
-                    `${API_URL}/chat-users?userId=${currentUserId}&search=${encodeURIComponent(search)}`
-                );
+                const usersPromise = fetch(
+                    `${API_URL}/chat-users?userId=${encodeURIComponent(currentUserId)}&search=${encodeURIComponent(search)}`
+                )
+                    .then(function(res) { return res.json(); })
+                    .catch(function(err) {
+                        console.error("Error fetching users:", err);
+                        return { success: false };
+                    });
 
-                const data = await response.json();
+                const groupsPromise = fetch(
+                    `${API_URL}/chat-groups?userId=${encodeURIComponent(currentUserId)}&search=${encodeURIComponent(search)}`
+                )
+                    .then(function(res) { return res.ok ? res.json() : { success: false }; })
+                    .catch(function(groupErr) {
+                        console.warn("Group chats unavailable:", groupErr);
+                        return { success: false };
+                    });
 
-                if (data.success) {
-                    allUsers = data.users || [];
+                const [usersData, groupsData] = await Promise.all([usersPromise, groupsPromise]);
 
-                    await loadContactMessageStatus();
-
-                    renderContacts();
+                if (groupsData && groupsData.success) {
+                    allChatGroups = groupsData.groups || [];
+                    if (activeChatMode === "group" && activeGroupId) {
+                        const updated = allChatGroups.find(function(g) { return Number(g.id) === Number(activeGroupId); });
+                        if (updated) {
+                            activeGroupData = updated;
+                            renderGroupMembersDrawer(updated);
+                        }
+                    }
                 }
+
+                if (usersData && usersData.success) {
+                    allUsers = usersData.users || [];
+                    renderContacts();
+                    await loadContactMessageStatus();
+                }
+
+                renderContacts();
             } catch (error) {
                 console.error("Error fetching users:", error);
             }
@@ -476,13 +580,19 @@
 
             list.innerHTML = "";
 
-            const filtered = allUsers.filter(function(user) {
-                if (roleFilter === "all") {
-                    return true;
-                }
+            const showGroups = roleFilter === "all" || roleFilter === "group";
+            const showUsers = roleFilter !== "group";
 
-                return String(user.role).toLowerCase() === roleFilter.toLowerCase();
-            });
+            const filteredGroups = showGroups ? (allChatGroups || []) : [];
+            const filtered = showUsers
+                ? allUsers.filter(function(user) {
+                    if (roleFilter === "all") {
+                        return true;
+                    }
+
+                    return String(user.role).toLowerCase() === roleFilter.toLowerCase();
+                })
+                : [];
 
             const unreadTotal = Object.values(unreadMap).filter(function(value) {
                 return value === 1;
@@ -495,15 +605,67 @@
                 `;
             }
 
-            if (filtered.length === 0) {
+            if (filteredGroups.length === 0 && filtered.length === 0) {
                 list.innerHTML = `
                     <div class="empty-contact-state">
                         <i class="fa-regular fa-message"></i>
-                        <p>No contacts found</p>
+                        <p>${roleFilter === "group" ? "No capstone group chats yet" : "No contacts found"}</p>
                     </div>
                 `;
                 return;
             }
+
+            const sortedGroups = filteredGroups.slice().sort(function(a, b) {
+                const aTime = a.last_message ? new Date(a.last_message.created_at).getTime() : new Date(a.created_at || 0).getTime();
+                const bTime = b.last_message ? new Date(b.last_message.created_at).getTime() : new Date(b.created_at || 0).getTime();
+                return bTime - aTime;
+            });
+
+            sortedGroups.forEach(function(group) {
+                const isSelected = activeChatMode === "group" && Number(activeGroupId) === Number(group.id);
+                const memberCount = (group.members || []).length;
+                const lastMsg = group.last_message;
+                let preview = `${memberCount} participants • Capstone Panel`;
+                if (lastMsg) {
+                    if (Number(lastMsg.is_system) === 1) {
+                        preview = escapeHTML(shortenText(lastMsg.message_text || preview, 38));
+                    } else if (lastMsg.file_path && !lastMsg.message_text) {
+                        preview = `<i class="fa-solid fa-paperclip"></i> ${escapeHTML(lastMsg.sender_name || "Member")} sent a file`;
+                    } else {
+                        const prefix = lastMsg.sender_id === currentUserId ? "You" : (lastMsg.sender_name || "Member");
+                        preview = escapeHTML(shortenText(`${prefix}: ${lastMsg.message_text || ""}`, 38));
+                    }
+                }
+                const time = lastMsg ? formatChatTime(lastMsg.created_at) : "";
+
+                const item = document.createElement("div");
+                item.className = `contact-item ${isSelected ? "active" : ""}`;
+                item.addEventListener("click", function() {
+                    selectGroupChat(group);
+                });
+                item.innerHTML = `
+                    <div class="contact-avatar-wrap">
+                        <div class="contact-avatar group-chat-avatar"><i class="fa-solid fa-users"></i></div>
+                    </div>
+                    <div class="contact-details">
+                        <div class="contact-name-row">
+                            <span class="contact-name">${escapeHTML(group.room_name || group.group_name || "Capstone Group Chat")}</span>
+                            <span class="contact-time">${time}</span>
+                        </div>
+                        <div class="contact-preview-row">
+                            <span class="contact-subinfo">${preview}</span>
+                        </div>
+                        <div class="contact-footer-row">
+                            <span class="contact-role-badge group">
+                                <i class="fa-solid fa-users"></i>
+                                Group Chat
+                            </span>
+                            <span class="contact-user-id">${memberCount} members</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
 
             filtered.sort(function(a, b) {
                 const aLast = lastMessageMap[a.user_id];
@@ -520,7 +682,7 @@
                 const avatarContent = user.profile_image
                     ? `<img src="${user.profile_image}" alt="Profile">`
                     : initials;
-                const isSelected = activeReceiverId === user.user_id;
+                const isSelected = activeChatMode === "direct" && activeReceiverId === user.user_id;
                 const lastMessage = lastMessageMap[user.user_id];
                 const hasUnread = unreadMap[user.user_id] === 1;
 
@@ -578,9 +740,57 @@
             });
         }
 
+        function selectGroupChat(group) {
+            activeChatMode = "group";
+            activeGroupId = group.id;
+            activeGroupData = group;
+            activeReceiverId = null;
+            activeReceiverData = null;
+            document.body.classList.add("mobile-chat-active");
+
+            renderContacts();
+
+            document.getElementById("noChatSelected").style.display = "none";
+            document.getElementById("chatWindowContent").style.display = "flex";
+
+            const avatarEl = document.getElementById("activeChatAvatar");
+            avatarEl.classList.add("group-chat-avatar");
+            avatarEl.innerHTML = `<i class="fa-solid fa-users"></i>`;
+            document.getElementById("activeChatName").innerText = group.room_name || group.group_name || "Capstone Group Chat";
+
+            const memberCount = (group.members || []).length;
+            const topicSummary = group.topic_title ? ` • ${group.topic_title}` : "";
+            document.getElementById("activeChatMeta").innerText = `CAPSTONE GROUP CHAT • ${memberCount} Members${topicSummary}`;
+
+            renderGroupMembersDrawer(group);
+            document.getElementById("groupMembersDrawer").style.display = "none";
+
+            loadChatHistory(true);
+
+            document.getElementById("chatInputField").value = "";
+            clearSelectedFile();
+
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+
+            pollInterval = setInterval(function() {
+                loadChatHistory(false);
+            }, 3000);
+        }
+
         function selectContact(user) {
+            activeChatMode = "direct";
             activeReceiverId = user.user_id;
             activeReceiverData = user;
+            activeGroupId = null;
+            activeGroupData = null;
+            document.body.classList.add("mobile-chat-active");
+
+            const btn = document.getElementById("groupMembersToggleBtn");
+            const drawer = document.getElementById("groupMembersDrawer");
+            if (btn) btn.style.display = "none";
+            if (drawer) drawer.style.display = "none";
 
             unreadMap[user.user_id] = 0;
 
@@ -591,6 +801,7 @@
 
             const initials = getInitials(user.fullname);
             const avatarEl = document.getElementById("activeChatAvatar");
+            avatarEl.classList.remove("group-chat-avatar");
             if (user.profile_image) {
                 avatarEl.innerHTML = `<img src="${user.profile_image}" alt="Profile">`;
             } else {
@@ -600,7 +811,7 @@
 
             const detailLabel = user.role === "student"
                 ? `${user.program || "Student"} • Year ${user.year_level || "N/A"}`
-                : `${user.position || "Faculty"} • Department ${user.program || "N/A"}`;
+                : `${user.position || (user.role === "admin" ? "Admin" : "Faculty")}${user.program ? " • Department " + user.program : ""}`;
 
             document.getElementById("activeChatMeta").innerText =
                 `${String(user.role).toUpperCase()} • ${detailLabel}`;
@@ -621,6 +832,22 @@
         }
 
         async function loadChatHistory(isFirstLoad = false) {
+            if (activeChatMode === "group") {
+                if (!activeGroupId) return;
+                try {
+                    const response = await fetch(
+                        `${API_URL}/group-chat-messages?chatGroupId=${encodeURIComponent(activeGroupId)}&userId=${encodeURIComponent(currentUserId)}`
+                    );
+                    const data = await response.json();
+                    if (data.success) {
+                        renderMessages(data.messages || [], isFirstLoad);
+                    }
+                } catch (error) {
+                    console.error("Error loading group messages:", error);
+                }
+                return;
+            }
+
             if (!activeReceiverId) {
                 return;
             }
@@ -685,6 +912,14 @@
                     lastDateLabel = currentDateLabel;
                 }
 
+                if (Number(msg.is_system) === 1) {
+                    const sysBanner = document.createElement("div");
+                    sysBanner.className = "system-chat-banner";
+                    sysBanner.innerHTML = `<i class="fa-solid fa-users-line"></i>${escapeHTML(msg.message_text)}`;
+                    container.appendChild(sysBanner);
+                    return;
+                }
+
                 const isSent = msg.sender_id === currentUserId;
                 const bubble = document.createElement("div");
 
@@ -694,6 +929,17 @@
                     hour: "2-digit",
                     minute: "2-digit"
                 });
+
+                let senderLabelHtml = "";
+                if (activeChatMode === "group" && !isSent) {
+                    const isPanel = String(msg.sender_role || "").toLowerCase() === "panelist";
+                    senderLabelHtml = `
+                        <div class="group-sender-label">
+                            <span>${escapeHTML(msg.sender_name || msg.sender_id)}</span>
+                            <span class="group-sender-role-pill ${isPanel ? "is-panelist" : ""}">${escapeHTML(msg.sender_role || "Member")}</span>
+                        </div>
+                    `;
+                }
 
                 let contentHTML = "";
 
@@ -706,13 +952,15 @@
                 }
 
                 if (msg.file_path) {
-                    const downloadUrl = `${API_URL}/${msg.file_path}`;
+                    const cleanPath = String(msg.file_path).replace(/^\/+/, "");
+                    const downloadUrl = `${API_URL}/${cleanPath}`;
                     const fileIcon = getFileIconClass(msg.file_name);
 
                     contentHTML += `
                         <a
                             href="${downloadUrl}"
                             target="_blank"
+                            rel="noopener noreferrer"
                             download="${escapeHTML(msg.file_name || "attachment")}"
                             class="attachment-card"
                         >
@@ -739,6 +987,7 @@
 
                 bubble.innerHTML = `
                     <div class="message-bubble ${isSent ? "sent" : "received"}">
+                        ${senderLabelHtml}
                         ${contentHTML}
 
                         <span class="message-time">
@@ -945,7 +1194,9 @@
         async function handleSendMessage(event) {
             event.preventDefault();
 
-            if (!activeReceiverId) {
+            if (activeChatMode === "group") {
+                if (!activeGroupId) return;
+            } else if (!activeReceiverId) {
                 return;
             }
 
@@ -962,15 +1213,22 @@
             const formData = new FormData();
 
             formData.append("senderId", currentUserId);
-            formData.append("receiverId", activeReceiverId);
             formData.append("messageText", text);
 
             if (file) {
                 formData.append("file", file);
             }
 
+            let endpoint = `${API_URL}/send-chat-message`;
+            if (activeChatMode === "group") {
+                formData.append("chatGroupId", activeGroupId);
+                endpoint = `${API_URL}/send-group-chat-message`;
+            } else {
+                formData.append("receiverId", activeReceiverId);
+            }
+
             try {
-                const response = await fetch(`${API_URL}/send-chat-message`, {
+                const response = await fetch(endpoint, {
                     method: "POST",
                     body: formData
                 });

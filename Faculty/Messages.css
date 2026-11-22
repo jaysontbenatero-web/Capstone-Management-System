@@ -55,6 +55,7 @@ body {
     box-sizing: border-box;
 }
 
+/* Keep page fixed, let AdminTheme.css handle sidebar/topbar styling */
 html,
 body {
     width: 100%;
@@ -63,47 +64,19 @@ body {
     overflow: hidden !important;
 }
 
-/* Structural only — AdminTheme.css still controls the design */
-.sidebar.admin-sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 272px !important;
+.admin-portal .main.admin-main {
     height: 100vh !important;
-    min-height: 100vh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-    z-index: 100 !important;
-}
-
-/* Main content should start beside the sidebar, not below it */
-.main.admin-main {
-    position: fixed !important;
-    top: 0 !important;
-    left: 272px !important;
-    width: calc(100vw - 272px) !important;
-    height: 100vh !important;
-    margin: 0 !important;
-    padding: 28px 32px 40px !important;
+    max-height: 100vh !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    padding-bottom: 24px !important;
 }
 
 /* Keep the header at the top */
 .topbar {
     flex: 0 0 auto !important;
-    margin-bottom: 22px !important;
-}
-
-/* The chat card fills the remaining screen */
-.messages-container {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    height: auto !important;
-    margin-top: 0 !important;
-    overflow: hidden !important;
+    margin-bottom: 18px !important;
 }
 
 /* Only chat areas scroll */
@@ -112,42 +85,39 @@ body {
     overflow-y: auto !important;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-    .sidebar.admin-sidebar {
-        width: 88px !important;
-    }
-
-    .main.admin-main {
-        left: 88px !important;
-        width: calc(100vw - 88px) !important;
-        padding: 20px 16px !important;
-    }
-}
-* {
-    box-sizing: border-box;
+.admin-portal .admin-main .chat-input-field {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
-/* Keep page fixed, but do not redesign sidebar/topbar */
-html,
-body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    overflow: hidden !important;
+.admin-portal .admin-main .message-bubble.sent a.attachment-card {
+    color: #ffffff !important;
 }
 
-/* Let AdminTheme.css handle sidebar and welcome card design */
-.main.admin-main {
-    height: 100vh !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
+.admin-portal .admin-main .message-bubble.received a.attachment-card {
+    color: #332b4f !important;
 }
 
-/* Do not change topbar appearance, only prevent stretching */
-.topbar {
-    flex: 0 0 auto !important;
+.mobile-chat-back-btn {
+    display: none;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 12px;
+    border: 1px solid #e9d5ff;
+    background: #f5f3ff;
+    color: #6d28d9;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
+.mobile-chat-back-btn:hover {
+    background: #ede9fe;
 }
 
 /* ============================================================
@@ -158,7 +128,7 @@ body {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     height: auto !important;
-    margin-top: 18px !important;
+    margin-top: 0 !important;
     padding: 14px !important;
     display: grid !important;
     grid-template-columns: 360px minmax(0, 1fr) !important;
@@ -1137,22 +1107,70 @@ body {
 @media (max-width: 900px) {
     html,
     body {
-        overflow: auto !important;
+        overflow: hidden !important;
     }
 
-    .main.admin-main {
-        height: auto !important;
-        min-height: 100vh !important;
-        overflow: visible !important;
+    .admin-portal .main.admin-main {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        padding: 12px 10px !important;
+    }
+
+    .admin-portal .admin-main .topbar {
+        margin-bottom: 10px !important;
+        padding: 12px 14px !important;
+    }
+
+    .admin-portal .admin-main .topbar .welcome p {
+        display: none !important;
     }
 
     .messages-container {
-        grid-template-columns: 1fr !important;
-        min-height: 720px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        margin-top: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
     }
 
     .contacts-panel {
-        min-height: 320px !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        display: flex !important;
+    }
+
+    .chat-panel {
+        display: none !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+
+    body.mobile-chat-active .contacts-panel {
+        display: none !important;
+    }
+
+    body.mobile-chat-active .chat-panel {
+        display: flex !important;
+    }
+
+    body.mobile-chat-active .mobile-chat-back-btn {
+        display: inline-flex !important;
+    }
+
+    .chat-header {
+        min-height: 62px !important;
+        padding: 10px 12px !important;
+        gap: 10px !important;
+    }
+
+    .contact-subinfo {
+        max-width: none !important;
     }
 
     .message-bubble {
@@ -1160,3 +1178,141 @@ body {
     }
 }
 
+
+
+/* ============================================================
+   OUTLINE DEFENSE GROUP CHAT STYLES
+   ============================================================ */
+
+.contact-role-badge.group {
+    background: #ecfeff;
+    color: #0e7490;
+    border-color: #a5f3fc;
+}
+
+.contact-avatar.group-chat-avatar,
+.active-chat-avatar.group-chat-avatar {
+    background: linear-gradient(135deg, #6d28d9 0%, #0891b2 100%) !important;
+    color: #ffffff !important;
+    font-size: 16px;
+}
+
+.group-members-toggle-btn {
+    border: 1px solid #ddd6fe;
+    background: #f5f3ff;
+    color: #6d28d9;
+    padding: 7px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.group-members-toggle-btn:hover {
+    background: #ede9fe;
+    border-color: #c4b5fd;
+}
+
+.group-members-drawer {
+    background: #faf8ff;
+    border-bottom: 1px solid #ede9fe;
+    padding: 12px 18px;
+    flex-shrink: 0;
+}
+
+.group-topic-banner {
+    font-size: 12px;
+    color: #4c1d95;
+    background: #ede9fe;
+    border-radius: 10px;
+    padding: 7px 11px;
+    margin-bottom: 10px;
+    line-height: 1.45;
+}
+
+.group-members-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.group-member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid #e9d5ff;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    color: #2e1065;
+    font-weight: 500;
+}
+
+.group-member-chip .chip-role {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #f3e8ff;
+    color: #6d28d9;
+}
+
+.group-member-chip.is-panelist {
+    border-color: #bae6fd;
+    background: #f0f9ff;
+}
+
+.group-member-chip.is-panelist .chip-role {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.group-sender-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6d28d9;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.group-sender-role-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.group-sender-role-pill.is-panelist {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.system-chat-banner {
+    align-self: center;
+    max-width: 88%;
+    text-align: center;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    color: #4c1d95;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 9px 14px;
+    border-radius: 14px;
+    margin: 4px 0;
+}
+
+.system-chat-banner i {
+    color: #7c3aed;
+    margin-right: 6px;
+}

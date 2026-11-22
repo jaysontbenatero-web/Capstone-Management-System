@@ -601,6 +601,86 @@ body{
 
 /* ================= TABLE ================= */
 
+.table-card-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+.table-card-header .card-title{
+    margin-bottom:0;
+}
+
+.student-count-badge{
+    display:inline-block;
+    margin-top:4px;
+    font-size:12.5px;
+    font-weight:600;
+    color:#6d28d9;
+    background:#f3e8ff;
+    padding:3px 10px;
+    border-radius:999px;
+}
+
+.student-search-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#f8f5ff;
+    border:1px solid #e9d5ff;
+    border-radius:14px;
+    padding:10px 14px;
+    min-width:280px;
+    max-width:380px;
+    flex:1 1 280px;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.student-search-box:focus-within{
+    border-color:#7c3aed;
+    box-shadow:0 0 0 3px rgba(124, 58, 237, 0.12);
+    background:#ffffff;
+}
+
+.student-search-box i{
+    color:#7c3aed;
+    font-size:14px;
+    flex-shrink:0;
+}
+
+.student-search-box input{
+    border:none;
+    outline:none;
+    background:transparent;
+    color:#2e1065;
+    font-size:14px;
+    width:100%;
+    min-width:0;
+}
+
+.student-search-box .clear-search-btn{
+    border:none;
+    background:#ede9fe;
+    color:#6d28d9;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    flex-shrink:0;
+    transition:background 0.2s ease;
+}
+
+.student-search-box .clear-search-btn:hover{
+    background:#ddd6fe;
+}
+
 .table-section{
     margin-top:28px;
 }

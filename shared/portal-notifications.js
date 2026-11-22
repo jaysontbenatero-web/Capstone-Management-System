@@ -3,7 +3,7 @@
     const API_BASE = "";
     const POLL_MS = 4000;
     const POLL_HIDDEN_MS = 45000;
-    const DROPDOWN_LIMIT = 5;
+    const DROPDOWN_LIMIT = 8;
 
     function getLoggedInUserId() {
         return localStorage.getItem("userId");
@@ -135,6 +135,8 @@
             title.includes("message") ||
             combined.includes("sent you a message")
         ) {
+            const curPath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
+            if (curPath.includes("/faculty/panelist/")) return resolveRelativeUrl("Faculty/Panelist/Messages.html");
             if (role === "student") return resolveRelativeUrl("Student/Messages.html");
             if (role === "admin") return resolveRelativeUrl("Admin/Messages.html");
             return resolveRelativeUrl("Faculty/Messages.html");
@@ -513,15 +515,43 @@
                 backdrop.classList.remove("is-open");
             };
 
+            const sidebarLogo = sidebar.querySelector(".logo");
+            if (sidebarLogo && !document.getElementById("mobileSidebarCloseBtn")) {
+                const closeBtn = document.createElement("button");
+                closeBtn.type = "button";
+                closeBtn.id = "mobileSidebarCloseBtn";
+                closeBtn.className = "mobile-sidebar-close";
+                closeBtn.setAttribute("aria-label", "Close navigation menu");
+                closeBtn.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+                closeBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    closeDrawer();
+                });
+                sidebarLogo.appendChild(closeBtn);
+            }
+
             toggleBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const isOpen = document.body.classList.toggle("mobile-sidebar-open");
                 backdrop.classList.toggle("is-open", isOpen);
             });
 
+            sidebar.querySelectorAll(".menu-item").forEach((item) => {
+                item.addEventListener("click", () => {
+                    if (window.innerWidth <= 768) {
+                        closeDrawer();
+                    }
+                });
+            });
+
             backdrop.addEventListener("click", closeDrawer);
             document.addEventListener("keydown", (e) => {
                 if (e.key === "Escape") closeDrawer();
+            });
+            window.addEventListener("resize", () => {
+                if (window.innerWidth > 768 && document.body.classList.contains("mobile-sidebar-open")) {
+                    closeDrawer();
+                }
             });
         },
 
@@ -597,20 +627,6 @@
             bell.addEventListener("click", async (event) => {
                 event.stopPropagation();
 
-                // Admin and Faculty (including Adviser, Panelist, Instructor) redirect straight to their Notifications sidebar view
-                if (isAdminOrFacultyRole()) {
-                    if (this.isNotificationsFullPage()) {
-                        await this.refresh(true);
-                        if (typeof window.loadPortalNotificationsPage === "function") {
-                            window.loadPortalNotificationsPage(false);
-                        }
-                        return;
-                    }
-                    window.location.href = getNotificationsPageUrl();
-                    return;
-                }
-
-                // Student portal bell dropdown behavior
                 const isOpen = dropdown.classList.contains("is-open");
 
                 if (!isOpen) {
@@ -753,41 +769,17 @@
                     return;
                 }
 
-                let nextUnread = Number(data.unread_count || 0);
-                const sections = (data.sections && typeof data.sections === "object") ? { ...data.sections } : {};
+                const nextUnread = Number(data.unread_count || 0);
                 const notifications = data.notifications || [];
-                const here = this.getCurrentNormalizedPath();
-
-                // Automatically mark unread notifications for the current module page as read in DB
-                // (never auto-clear Notifications.html itself so the user can see and review unread items)
-                if (!isFullPage && here && Number(sections[here] || 0) > 0) {
-                    try {
-                        const markResp = await fetch(`${API_BASE}/api/portal-notifications/mark-section-read`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ userId, sectionPath: here })
-                        });
-                        const markData = await markResp.json();
-                        if (markData && markData.success) {
-                            const markedCount = Number(markData.marked_count || 0);
-                            nextUnread = Number(markData.unread_count ?? Math.max(0, nextUnread - markedCount));
-                            if (markedCount >= Number(sections[here] || 0)) {
-                                delete sections[here];
-                            } else if (markedCount > 0) {
-                                sections[here] = Math.max(0, Number(sections[here] || 0) - markedCount);
-                            }
-                        }
-                    } catch (_) { }
-                }
 
                 const notificationsStr = JSON.stringify(notifications);
                 const changed = (nextUnread !== this.unreadCount) || (notificationsStr !== this.cachedNotificationsJson);
 
                 this.unreadCount = nextUnread;
-                this.sectionCounts = sections;
+                this.sectionCounts = {};
                 this.cachedNotificationsJson = notificationsStr;
                 this.updateDot(nextUnread);
-                this.renderSidebarDots(sections, nextUnread);
+                this.renderSidebarDots({}, 0);
 
                 if (dropdownOpen) {
                     this.cachedNotifications = notifications;
@@ -923,49 +915,10 @@
             return items;
         },
 
-        renderSidebarDots(sectionsMap, totalUnread) {
-            this.ensureSidebarDotStyle();
-            const map = sectionsMap || {};
-            const unreadTotal = Math.max(0, Number(totalUnread || 0));
-
-            this.getSidebarItems().forEach(({ el, path, isNotifItem }) => {
-                const existingDot = el.querySelector(".sidebar-new-dot");
-                const existingBadge = el.querySelector(".sidebar-notif-badge");
-
-                if (isNotifItem) {
-                    if (existingDot) existingDot.remove();
-                    if (unreadTotal > 0) {
-                        const label = unreadTotal > 99 ? "99+" : String(unreadTotal);
-                        if (existingBadge) {
-                            existingBadge.textContent = label;
-                            existingBadge.setAttribute("title", `${unreadTotal} unread notification${unreadTotal === 1 ? "" : "s"}`);
-                        } else {
-                            const badge = document.createElement("span");
-                            badge.className = "sidebar-notif-badge";
-                            badge.textContent = label;
-                            badge.setAttribute("title", `${unreadTotal} unread notification${unreadTotal === 1 ? "" : "s"}`);
-                            el.appendChild(badge);
-                        }
-                    } else if (existingBadge) {
-                        existingBadge.remove();
-                    }
-                    return;
-                }
-
-                if (existingBadge) existingBadge.remove();
-                const sectionCount = Number(map[path] || 0);
-                const shouldShow = sectionCount > 0;
-
-                if (shouldShow && !existingDot) {
-                    const dot = document.createElement("span");
-                    dot.className = "sidebar-new-dot";
-                    dot.setAttribute("title", `${sectionCount} unread update${sectionCount === 1 ? "" : "s"}`);
-                    el.appendChild(dot);
-                } else if (shouldShow && existingDot) {
-                    existingDot.setAttribute("title", `${sectionCount} unread update${sectionCount === 1 ? "" : "s"}`);
-                } else if (!shouldShow && existingDot) {
-                    existingDot.remove();
-                }
+        renderSidebarDots() {
+            // Sidebar red dots and badges are disabled; clean up any stale elements
+            document.querySelectorAll(".sidebar .sidebar-new-dot, .sidebar .sidebar-notif-badge").forEach((node) => {
+                node.remove();
             });
         },
 
@@ -1007,14 +960,14 @@
                 const type = escapeHtml(item.notification_type || "System");
                 const time = formatNotificationTime(item.created_at);
 
-                const feedbackSeparator = "\n\nAdviser Feedback:\n";
-                const feedbackIdx = rawMsg.indexOf(feedbackSeparator);
-                const mainMsg = feedbackIdx !== -1 ? rawMsg.substring(0, feedbackIdx) : rawMsg;
-                const feedbackMsg = feedbackIdx !== -1 ? rawMsg.substring(feedbackIdx + feedbackSeparator.length).trim() : "";
+                const noteMatch = rawMsg.match(/\n\n(Adviser Feedback|Adviser Note|Panelist Note(?:\s*\([^)]+\))?|Feedback|Comment):\n([\s\S]*)$/i);
+                const mainMsg = noteMatch ? rawMsg.substring(0, noteMatch.index) : rawMsg;
+                const noteLabel = noteMatch ? noteMatch[1] : "";
+                const feedbackMsg = noteMatch ? noteMatch[2].trim() : "";
 
-                const isDeclined = rawTitle.toLowerCase().includes("declined") || rawTitle.toLowerCase().includes("rejected") || rawMsg.toLowerCase().includes("declined");
+                const isDeclined = rawTitle.toLowerCase().includes("declined") || rawTitle.toLowerCase().includes("rejected") || rawTitle.toLowerCase().includes("revision") || rawMsg.toLowerCase().includes("declined");
                 const feedbackHtml = feedbackMsg
-                    ? `<span class="portal-notif-item-feedback" style="display:block; margin-top:7px; padding:8px 10px; border-radius:9px; background:${isDeclined ? "#fef2f2" : "#f5f3ff"}; border:1px solid ${isDeclined ? "#fecaca" : "#ddd6fe"}; color:${isDeclined ? "#991b1b" : "#4c1d95"}; font-size:12px; line-height:1.45; white-space:pre-wrap;"><strong style="display:block; margin-bottom:2px; color:${isDeclined ? "#dc2626" : "#6d28d9"};"><i class="fa-solid fa-comment-dots"></i> Adviser Comment:</strong>${escapeHtml(feedbackMsg)}</span>`
+                    ? `<span class="portal-notif-item-feedback" style="display:block; margin-top:7px; padding:8px 10px; border-radius:9px; background:${isDeclined ? "#fef2f2" : "#f5f3ff"}; border:1px solid ${isDeclined ? "#fecaca" : "#ddd6fe"}; color:${isDeclined ? "#991b1b" : "#4c1d95"}; font-size:12px; line-height:1.45; white-space:pre-wrap;"><strong style="display:block; margin-bottom:2px; color:${isDeclined ? "#dc2626" : "#6d28d9"};"><i class="fa-solid fa-comment-dots"></i> ${escapeHtml(noteLabel || "Feedback")}:</strong>${escapeHtml(feedbackMsg)}</span>`
                     : "";
 
                 return `
@@ -1037,30 +990,10 @@
             list.querySelectorAll(".portal-notif-item").forEach((node) => {
                 node.addEventListener("click", async () => {
                     const id = node.getAttribute("data-notification-id");
-                    const item = (this.cachedNotifications || []).find((n) => String(n.id) === String(id));
                     await this.markRead(id);
-
-                    // Admin and Faculty (Adviser, Panelist, Instructor) go directly to Notifications sidebar view
-                    if (isAdminOrFacultyRole()) {
-                        window.location.href = `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id)}`;
-                        return;
-                    }
-
-                    const rawType = String(item?.notification_type || "").toLowerCase();
-                    const rawTitle = String(item?.notification_title || "").toLowerCase();
-                    const rawMsg = String(item?.notification_message || "").toLowerCase();
-                    const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
-                    if (
-                        role === "student" &&
-                        (rawType.includes("adviser") || rawTitle.includes("adviser") || rawMsg.includes("adviser feedback:"))
-                    ) {
-                        window.location.href = `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id)}`;
-                        return;
-                    }
-                    const targetUrl = getNotificationTargetUrl(item);
-                    if (targetUrl) {
-                        window.location.href = targetUrl;
-                    }
+                    this.setDropdownOpen(false);
+                    // Always navigate directly to the user's respective Notifications sidebar page
+                    window.location.href = `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id)}`;
                 });
             });
         },

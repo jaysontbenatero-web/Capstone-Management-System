@@ -35,6 +35,7 @@
     >
 
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="student-portal.css">
 
     <link rel="stylesheet" href="../shared/custom-alerts.css">
     <script src="../shared/custom-alerts.js"></script>
@@ -544,10 +545,41 @@
             return map[stage] ?? 0;
         }
 
+        function computeDeploymentStatusFromDocs(docs) {
+            let recApproved = false;
+            let ch14Approved = false;
+            (docs || []).forEach(doc => {
+                const status = String(doc.document_status || "").trim().toLowerCase();
+                if (status !== "approved") return;
+                const dt = String(doc.document_type || "").toLowerCase();
+                const tl = String(doc.document_title || "").toLowerCase();
+                if (dt.includes("recommendation for deployment") || tl.includes("recommendation for deployment")) {
+                    recApproved = true;
+                }
+                const hasDeployment = dt.includes("deployment") || tl.includes("deployment");
+                const hasCh14 =
+                    dt.includes("chapter 1-4") || dt.includes("chapter 1 to 4") || dt.includes("chapters 1-4") ||
+                    tl.includes("chapter 1-4") || tl.includes("chapter 1 to 4") || tl.includes("chapters 1-4");
+                if (hasDeployment && hasCh14) {
+                    ch14Approved = true;
+                }
+            });
+            const approvedCount = (recApproved ? 1 : 0) + (ch14Approved ? 1 : 0);
+            return {
+                recommendation_approved: recApproved,
+                chapter14_approved: ch14Approved,
+                approved_count: approvedCount,
+                required_count: 2,
+                all_approved: recApproved && ch14Approved
+            };
+        }
+
         function isAllDefenseCompleted(group, defenses) {
             if (!group) return false;
             const stageStr = String(group.stage || "").trim().toLowerCase();
-            return stageStr === "completed";
+            if (stageStr === "completed") return true;
+            if (group.deployment_status && group.deployment_status.all_approved) return true;
+            return false;
         }
 
         function getCompletedStageCount(group, defenses) {
@@ -577,29 +609,36 @@
             return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         }
 
-        function buildStepHtml(stageObj, state, defenseRecord, isLast, allDefensesMap) {
+        function buildStepHtml(stageObj, state, defenseRecord, isLast, allDefensesMap, group) {
             /* state: 'completed' | 'active' | 'pending' */
             let badgeClass = "not-started";
             let badgeLabel = "Not Started";
             let remark = stageObj.pendingRemark;
+            const depStatus = group && group.deployment_status ? group.deployment_status : null;
 
             if (stageObj.key === "Completed") {
                 if (state === "completed" || state === "active") {
                     badgeClass = "approved";
                     badgeLabel = "Completed";
-                    const finalDef = allDefensesMap ? allDefensesMap["Final Defense"] : null;
-                    remark = finalDef?.defense_date
-                        ? `All defense stages completed • Finished ${formatDate(finalDef.defense_date)}`
+                    remark = depStatus && depStatus.all_approved
+                        ? "All defenses & Deployment requirements (2/2) approved"
                         : "All defense stages completed successfully";
                 } else {
                     badgeClass = "not-started";
                     badgeLabel = "Pending";
                     remark = "Pending Deployment completion";
                 }
+            } else if (stageObj.key === "Deployment" && state === "completed") {
+                badgeClass = "approved";
+                badgeLabel = "Approved";
+                remark = "Both Deployment records approved (2/2)";
             } else if (stageObj.key === "Deployment" && state === "active") {
                 badgeClass = "for-adviser";
                 badgeLabel = "In Progress";
-                remark = "Upload deployment requirements in Records Management";
+                const count = depStatus ? Number(depStatus.approved_count || 0) : 0;
+                remark = count > 0
+                    ? `${count}/2 Deployment records approved in Records Management`
+                    : "0/2 Deployment records approved — upload in Records Management";
             } else if (state === "completed") {
                 const result = defenseRecord?.panel_result || "";
                 if (result === "Passed") {
@@ -903,7 +942,10 @@
                 return;
             }
 
-            const statusInfo = normalizeProjectStatus(group.status);
+            const isFinished = isAllDefenseCompleted(group, []);
+            const statusInfo = isFinished
+                ? { label: "Completed", className: "completed" }
+                : normalizeProjectStatus(group.status);
             const programLabel =
                 (group.program === "IS" || group.program === "BSIS")
                 ? "BSIS"
@@ -920,7 +962,7 @@
                 ? `Adviser: ${group.adviser_name}`
                 : "Adviser: Not assigned yet";
 
-            const displayStage = group.stage === "Completed"
+            const displayStage = (isFinished || group.stage === "Completed")
                 ? "Completed"
                 : (group.stage === "Final" || group.stage === "Stage 5" || group.stage === "Deployment"
                     ? "Deployment"
@@ -997,7 +1039,7 @@
                 const defRec = defenseMap[stageObj.key] || null;
                 const isLast = (idx === STAGES.length - 1);
 
-                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast, defenseMap);
+                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast, defenseMap, group);
             });
 
             document.getElementById("workflowSteps").innerHTML = stepsHtml;
@@ -1061,6 +1103,23 @@
                     groupData.success
                     ? groupData.group
                     : null;
+
+                if (group && !group.deployment_status) {
+                    try {
+                        const docsRes = await fetch(`/student-documents/${userId}`);
+                        const docsData = await parseApiJson(docsRes, "student-documents");
+                        if (docsData.success && Array.isArray(docsData.documents)) {
+                            group.deployment_status = computeDeploymentStatusFromDocs(docsData.documents);
+                            if (group.deployment_status.all_approved) {
+                                group.stage = "Completed";
+                                group.progress = 100;
+                                group.status = "Completed";
+                            }
+                        }
+                    } catch (docFallbackErr) {
+                        console.warn("Deployment status fallback failed:", docFallbackErr);
+                    }
+                }
 
                 const defenses =
                     defenseData.success

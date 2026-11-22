@@ -29,9 +29,122 @@
     >
 
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="../../shared/defense-minutes-sheet.css">
+    <script src="../../shared/defense-minutes-sheet.js"></script>
 
     <link rel="stylesheet" href="../../shared/custom-alerts.css">
     <script src="../../shared/custom-alerts.js"></script>
+    <style>
+        .approved-dm-viewer-modal {
+            width: min(1320px, 96vw) !important;
+            max-width: 1320px !important;
+            max-height: 94vh !important;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 20px 24px !important;
+        }
+        .approved-dm-viewer-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 310px;
+            gap: 18px;
+            flex: 1;
+            min-height: 0;
+            margin-top: 12px;
+        }
+        @media (max-width: 1024px) {
+            .approved-dm-viewer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .approved-dm-pdf-panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            gap: 10px;
+        }
+        .approved-dm-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #f8f5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2e1065;
+        }
+        .approved-dm-page-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .approved-dm-nav-btn {
+            border: 1px solid #ddd6fe;
+            background: #fff;
+            color: #5b21b6;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .approved-dm-nav-btn:hover {
+            background: #ede9fe;
+        }
+        .approved-dm-side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            max-height: 76vh;
+            padding-right: 4px;
+        }
+        .approved-dm-side-card {
+            background: #faf8ff;
+            border: 1px solid #ece3ff;
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+        .approved-dm-side-card span {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #7c6b96;
+            margin-bottom: 4px;
+        }
+        .approved-dm-side-card h4 {
+            margin: 0;
+            font-size: 14px;
+            color: #2e1065;
+            font-weight: 600;
+        }
+        .view-dm-sheet-btn {
+            border: none;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #ffffff;
+            padding: 7px 13px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .view-dm-sheet-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(16, 185, 129, 0.28);
+        }
+    </style>
 </head>
 
 <body class="admin-portal">
@@ -189,17 +302,6 @@
                     <i class="fa-solid fa-book-open"></i>
                     <span>
                         Repository
-                    </span>
-                </div>
-
-                <div class="menu-title">
-                    System
-                </div>
-
-                <div class="menu-item" id="nav-notifications" data-notif-nav="1" onclick="window.location.href='../Notifications.html'">
-                    <i class="fa-solid fa-bell"></i>
-                    <span>
-                        Notifications
                     </span>
                 </div>
 
@@ -440,6 +542,17 @@
                 </div>
             </div>
 
+            <!-- APPROVED DEFENSE MINUTES -->
+            <div class="document-section" style="margin-top: 25px; margin-bottom: 20px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
+                <div style="margin-bottom: 14px;">
+                    <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin: 0;">Approved Defense Minutes</h3>
+                    <p style="color: #7b6f96; font-size: 12.5px; margin: 4px 0 0;">Fully signed and approved defense minutes from Student Records Management.</p>
+                </div>
+                <div id="modalApprovedDefenseMinutesList" style="display: flex; flex-direction: column; gap: 10px;">
+                    Loading approved defense minutes...
+                </div>
+            </div>
+
             <!-- APPROVED DOCUMENTS -->
             <div class="document-section" style="margin-top: 25px; margin-bottom: 25px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -626,12 +739,78 @@
 
     </div>
 
+    <!-- APPROVED DEFENSE MINUTES SHEET VIEWER MODAL -->
+    <div class="modal-overlay" id="approvedDmViewerModal" style="display:none; z-index:10050;">
+        <div class="modal-box approved-dm-viewer-modal">
+            <div class="modal-header" style="margin-bottom:0;">
+                <div>
+                    <h2 id="approvedDmTitle" style="margin:0 0 2px;">Approved Defense Minutes</h2>
+                    <p id="approvedDmSubtitle" style="margin:0; color:#64748b; font-size:13px;">Fully signed and approved defense minutes from Student Records Management.</p>
+                </div>
+                <button class="close-modal-btn" type="button" onclick="closeApprovedDmViewerModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="approved-dm-viewer-grid">
+                <div class="approved-dm-pdf-panel">
+                    <div class="approved-dm-toolbar">
+                        <span id="approvedDmPageInfo">Page 1 of 1</span>
+                        <div class="approved-dm-page-nav">
+                            <button type="button" class="approved-dm-nav-btn" onclick="stepApprovedDmPage(-1)" title="Previous page">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <select id="approvedDmPageSelect" onchange="changeApprovedDmPage()" style="padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px;"></select>
+                            <button type="button" class="approved-dm-nav-btn" onclick="stepApprovedDmPage(1)" title="Next page">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dm-sheet-viewport" id="approvedDmSheetViewport"></div>
+                </div>
+
+                <div class="approved-dm-side-panel">
+                    <div class="approved-dm-side-card">
+                        <span>Capstone Group</span>
+                        <h4 id="approvedDmGroupName">—</h4>
+                    </div>
+                    <div class="approved-dm-side-card">
+                        <span>Defense Phase</span>
+                        <h4 id="approvedDmDefenseType">—</h4>
+                    </div>
+                    <div class="approved-dm-side-card">
+                        <span>Adviser</span>
+                        <h4 id="approvedDmAdviserName">—</h4>
+                    </div>
+                    <div class="approved-dm-side-card">
+                        <span>Status</span>
+                        <h4 id="approvedDmStatus" style="color:#15803d;">Approved &amp; Fully Signed</h4>
+                    </div>
+                    <div class="approved-dm-side-card" id="approvedDmNotesCard" style="display:none;">
+                        <span>Adviser / Panel Notes</span>
+                        <div id="approvedDmReviewNotes" style="margin-top:6px;"></div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:auto;">
+                        <button type="button" onclick="printApprovedDefenseMinutes()" style="border:none; background:linear-gradient(135deg,#7c3aed,#9333ea); color:#fff; padding:11px 16px; border-radius:12px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                            <i class="fa-solid fa-print"></i> Print / Save as PDF
+                        </button>
+                        <button type="button" class="cancel-btn" onclick="closeApprovedDmViewerModal()" style="width:100%;">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
 
         let groups = [];
         let advisers = [];
         let selectedGroupId = null;
         let groupDocuments = [];
+        let activeInstructorApprovedDms = [];
+        let activeViewingGroup = null;
         let currentScopeFilter = 'all';
 
         function setScopeFilter(scope) {
@@ -1070,6 +1249,9 @@
                 // Fetch documents (include all approved, signed, and completed defense minutes)
                 const docResponse = await fetch(`/group-documents/${group.id}`);
                 const docData = await docResponse.json();
+                activeInstructorApprovedDms = (docData && docData.success && Array.isArray(docData.approved_defense_minutes))
+                    ? docData.approved_defense_minutes
+                    : [];
                 groupDocuments = docData.success ? (docData.documents || []).filter(d => {
                     const st = String(d.document_status || "").trim().toLowerCase();
                     const rev = String(d.latest_review_status || "").trim().toLowerCase();
@@ -1082,10 +1264,66 @@
                         !!d.signed_file_path
                     );
                 }) : [];
+                renderModalApprovedDefenseMinutes();
                 renderModalDocuments();
             } catch (err) {
                 console.error("Error loading group progress or documents:", err);
             }
+        }
+
+        function renderModalApprovedDefenseMinutes() {
+            const container = document.getElementById("modalApprovedDefenseMinutesList");
+            if (!container) return;
+
+            const approvedTyped = Array.isArray(activeInstructorApprovedDms) ? activeInstructorApprovedDms : [];
+            const approvedUploadedDm = (groupDocuments || []).filter(d =>
+                !d.is_typed_defense_minutes &&
+                `${d.document_type || ""} ${d.document_title || ""}`.toLowerCase().includes("defense minutes")
+            );
+
+            if (approvedTyped.length === 0 && approvedUploadedDm.length === 0) {
+                container.innerHTML = `<p style="color: #7b6f96; font-size: 13px; text-align: center; padding: 10px 0;">No approved defense minutes yet.</p>`;
+                return;
+            }
+
+            const typedHtml = approvedTyped.map(dm => {
+                const dateStr = (dm.updated_at || dm.created_at)
+                    ? new Date(dm.updated_at || dm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                    : "N/A";
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid #d1fae5; border-left: 4px solid #10b981;">
+                        <div style="text-align: left;">
+                            <h4 style="color: #2e1065; font-size: 14px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0;">
+                                <span><i class="fa-solid fa-file-signature" style="color:#059669; margin-right:6px;"></i>${escapeHtml(dm.defense_type || "Defense")} — Defense Minutes</span>
+                                <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-circle-check"></i> Approved &amp; E-Signed</span>
+                            </h4>
+                            <p style="color: #7b6f96; font-size: 12px; margin: 4px 0 0;">Approved in Student Records Management • ${dateStr}</p>
+                        </div>
+                        <button type="button" class="view-dm-sheet-btn" onclick="openApprovedDefenseMinutesSheet(${Number(dm.id)})">
+                            <i class="fa-solid fa-eye"></i> View Defense Minutes
+                        </button>
+                    </div>
+                `;
+            }).join("");
+
+            const uploadedHtml = approvedUploadedDm.map(doc => {
+                const dateStr = doc.created_at ? new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A";
+                const filePath = doc.signed_file_path || doc.file_path || "";
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid #ece3ff;">
+                        <div style="text-align: left;">
+                            <h4 style="color: #2e1065; font-size: 14px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0;">
+                                <span>${escapeHtml(doc.document_title || doc.file_name || "Defense Minutes")}</span>
+                                <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;">Approved</span>
+                            </h4>
+                            <p style="color: #7b6f96; font-size: 12px; margin: 4px 0 0;">${escapeHtml(doc.document_type || "Defense Minutes")} • Approved on ${dateStr}</p>
+                        </div>
+                        ${filePath ? `<a href="${escapeHtml(filePath)}" target="_blank" rel="noopener noreferrer" class="view-dm-sheet-btn" style="text-decoration:none;"><i class="fa-solid fa-eye"></i> View File</a>` : ""}
+                    </div>
+                `;
+            }).join("");
+
+            container.innerHTML = typedHtml + uploadedHtml;
         }
 
         function renderModalDocuments() {
@@ -1122,11 +1360,15 @@
                 const signatureBadge = isSigned 
                     ? `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 8px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-signature"></i> Signed</span>` 
                     : `<span style="background: #ede9fe; color: #6d28d9; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 8px;">Approved</span>`;
-                const actionHtml = filePath
-                    ? `<a href="${filePath}" target="_blank" style="color: #7c3aed; font-size: 16px; padding: 8px; background: #f3e8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;" title="${isSigned ? 'Download / View Signed File' : 'Download / View File'}">
-                            <i class="fa-solid fa-download"></i>
-                        </a>`
-                    : `<span style="font-size: 11px; color: #15803d; font-weight: 700; background: #dcfce7; padding: 5px 10px; border-radius: 8px;">Completed</span>`;
+                const actionHtml = doc.is_typed_defense_minutes && doc.typed_dm_id
+                    ? `<button type="button" class="view-dm-sheet-btn" onclick="openApprovedDefenseMinutesSheet(${Number(doc.typed_dm_id)})">
+                            <i class="fa-solid fa-eye"></i> View Minutes
+                        </button>`
+                    : filePath
+                        ? `<a href="${filePath}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; font-size: 16px; padding: 8px; background: #f3e8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;" title="${isSigned ? 'Download / View Signed File' : 'Download / View File'}">
+                                <i class="fa-solid fa-download"></i>
+                            </a>`
+                        : `<span style="font-size: 11px; color: #15803d; font-weight: 700; background: #dcfce7; padding: 5px 10px; border-radius: 8px;">Completed</span>`;
 
                 container.innerHTML += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid #ece3ff;">
@@ -1264,8 +1506,12 @@
             }
 
             // Reset filters and document lists
+            activeViewingGroup = group;
+            activeInstructorApprovedDms = [];
             document.getElementById("docFilter").value = "all";
             document.getElementById("modalDocumentsList").innerHTML = "Loading documents...";
+            const dmListEl = document.getElementById("modalApprovedDefenseMinutesList");
+            if (dmListEl) dmListEl.innerHTML = "Loading approved defense minutes...";
             document.getElementById("workflowSteps").innerHTML = `
                 <div style="text-align:center;color:#7b6f96;padding:20px 0;width:100%">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size:18px;color:#7c3aed;"></i>
@@ -1286,6 +1532,128 @@
             document.getElementById("viewModal").style.display =
                 "none";
 
+        }
+
+        function openApprovedDefenseMinutesSheet(dmId) {
+            const dm = (activeInstructorApprovedDms || []).find(item => Number(item.id) === Number(dmId));
+            if (!dm) {
+                alert("Approved defense minutes record could not be loaded.");
+                return;
+            }
+            if (!window.DefenseMinutesSheet) {
+                alert("Defense minutes viewer failed to load. Please refresh the page.");
+                return;
+            }
+
+            let minutesData = {};
+            try {
+                minutesData = typeof dm.minutes_json === "string" ? JSON.parse(dm.minutes_json || "{}") : (dm.minutes_json || {});
+            } catch (_) {
+                minutesData = {};
+            }
+
+            const placed = [];
+            try {
+                if (dm.adviser_signature_json) {
+                    const advSig = typeof dm.adviser_signature_json === "string" ? JSON.parse(dm.adviser_signature_json) : dm.adviser_signature_json;
+                    if (advSig) placed.push(advSig);
+                }
+            } catch (_) { }
+            try {
+                if (dm.panelist_signatures_json) {
+                    const panSigs = typeof dm.panelist_signatures_json === "string" ? JSON.parse(dm.panelist_signatures_json) : dm.panelist_signatures_json;
+                    if (Array.isArray(panSigs)) placed.push(...panSigs);
+                }
+            } catch (_) { }
+
+            const groupName = (activeViewingGroup && activeViewingGroup.group_name) ? activeViewingGroup.group_name : "Capstone Group";
+            const adviserName = dm.adviser_name || (activeViewingGroup && activeViewingGroup.adviser_name) || (minutesData.meta && minutesData.meta.adviserName) || "Adviser";
+
+            document.getElementById("approvedDmTitle").innerText = `${dm.defense_type || "Defense"} — Approved Defense Minutes`;
+            document.getElementById("approvedDmSubtitle").innerText = `${groupName} • Approved & fully signed in Student Records Management`;
+            document.getElementById("approvedDmGroupName").innerText = groupName;
+            document.getElementById("approvedDmDefenseType").innerText = `${dm.defense_type || "Defense"} • Defense minutes`;
+            document.getElementById("approvedDmAdviserName").innerText = adviserName;
+            document.getElementById("approvedDmStatus").innerText = "Approved & Fully Signed";
+
+            const notesCard = document.getElementById("approvedDmNotesCard");
+            const notesContainer = document.getElementById("approvedDmReviewNotes");
+            if (notesCard && notesContainer && typeof DefenseMinutesSheet.renderReviewNotesHtml === "function") {
+                const notesHtml = DefenseMinutesSheet.renderReviewNotesHtml(dm);
+                if (notesHtml && notesHtml.trim()) {
+                    notesContainer.innerHTML = notesHtml;
+                    notesCard.style.display = "block";
+                } else {
+                    notesContainer.innerHTML = "";
+                    notesCard.style.display = "none";
+                }
+            }
+
+            const viewport = document.getElementById("approvedDmSheetViewport");
+            const renderRes = DefenseMinutesSheet.renderPages(viewport, {
+                minutesData,
+                placedSignatures: placed,
+                imgBasePath: "../../Images/dnsc"
+            });
+
+            const pageCount = Math.max(1, Number((renderRes && renderRes.pageCount) || 1));
+            const pageSelect = document.getElementById("approvedDmPageSelect");
+            if (pageSelect) {
+                pageSelect.innerHTML = Array.from({ length: pageCount }, (_, i) =>
+                    `<option value="${i}" ${i === 0 ? "selected" : ""}>Page ${i + 1} of ${pageCount}</option>`
+                ).join("");
+            }
+            document.getElementById("approvedDmPageInfo").innerText = `Page 1 of ${pageCount}`;
+
+            document.getElementById("approvedDmViewerModal").style.display = "flex";
+            requestAnimationFrame(() => DefenseMinutesSheet.fitPagesToViewport(viewport));
+            const firstPage = viewport.querySelector('.dm-a4-page[data-dm-page="0"]');
+            if (firstPage) firstPage.scrollIntoView({ behavior: "auto", block: "start" });
+        }
+
+        function stepApprovedDmPage(delta) {
+            const sel = document.getElementById("approvedDmPageSelect");
+            if (!sel || !sel.options.length) return;
+            const nextIdx = Math.max(0, Math.min(sel.options.length - 1, Number(sel.value || 0) + delta));
+            sel.value = String(nextIdx);
+            changeApprovedDmPage();
+        }
+
+        function changeApprovedDmPage() {
+            const sel = document.getElementById("approvedDmPageSelect");
+            if (!sel) return;
+            const idx = Number(sel.value || 0);
+            const total = sel.options.length || 1;
+            document.getElementById("approvedDmPageInfo").innerText = `Page ${idx + 1} of ${total}`;
+            const viewport = document.getElementById("approvedDmSheetViewport");
+            const pageEl = viewport ? viewport.querySelector(`.dm-a4-page[data-dm-page="${idx}"]`) : null;
+            if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function printApprovedDefenseMinutes() {
+            const viewport = document.getElementById("approvedDmSheetViewport");
+            if (!viewport) return;
+            const pages = Array.from(viewport.querySelectorAll(".dm-a4-page"));
+            if (!pages.length) return;
+            const pagesHtml = pages.map(p => {
+                const clone = p.cloneNode(true);
+                clone.style.transform = "none";
+                clone.style.margin = "0 auto 12mm";
+                clone.style.boxShadow = "none";
+                return clone.outerHTML;
+            }).join("");
+            const printWin = window.open("", "_blank");
+            if (!printWin) {
+                alert("Please allow pop-ups to print or save as PDF.");
+                return;
+            }
+            const baseHref = new URL("../../", window.location.href).href;
+            printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><base href="${baseHref}"><title>Approved Defense Minutes</title><link rel="stylesheet" href="shared/defense-minutes-sheet.css"><style>body{margin:0;background:#fff;} @media print { .dm-a4-page{page-break-after:always; box-shadow:none !important; margin:0 !important;} .dm-a4-page:last-child{page-break-after:auto;} }</style></head><body>${pagesHtml}<script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script></body></html>`);
+            printWin.document.close();
+        }
+
+        function closeApprovedDmViewerModal() {
+            document.getElementById("approvedDmViewerModal").style.display = "none";
         }
 
         function openEditModal(groupId){

@@ -956,6 +956,28 @@ body.admin-portal {
     justify-content: center;
     font-size: 18px;
     box-shadow: 0 2px 8px rgba(109, 40, 217, 0.08);
+    flex-shrink: 0;
+}
+
+.mobile-sidebar-close {
+    display: none;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.mobile-sidebar-close:hover {
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .mobile-sidebar-backdrop {
@@ -969,6 +991,10 @@ body.admin-portal {
 
 .mobile-sidebar-backdrop.is-open {
     display: block;
+}
+
+body.mobile-sidebar-open {
+    overflow: hidden;
 }
 
 @media (max-width: 1100px) {
@@ -989,15 +1015,19 @@ body.admin-portal {
         display: inline-flex;
     }
 
+    .mobile-sidebar-close {
+        display: inline-flex;
+    }
+
     .admin-portal .sidebar.admin-sidebar {
         position: fixed !important;
         top: 0;
         left: 0;
         bottom: 0;
-        width: 264px !important;
-        max-width: 82vw;
+        width: 272px !important;
+        max-width: 84vw;
         transform: translateX(-105%);
-        transition: transform 0.25s ease;
+        transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
         z-index: 120 !important;
     }
 
@@ -1007,6 +1037,7 @@ body.admin-portal {
 
     .admin-portal .admin-sidebar .logo {
         flex-direction: row;
+        align-items: center;
         padding: 16px 14px;
         gap: 10px;
     }
@@ -1026,7 +1057,7 @@ body.admin-portal {
         margin-left: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        padding: 16px 12px !important;
+        padding: 14px 12px 28px !important;
     }
 
     .admin-portal .main.admin-main::before {
@@ -1035,14 +1066,16 @@ body.admin-portal {
 
     .admin-portal .admin-main .topbar,
     .admin-portal .admin-main .admin-header {
+        flex-direction: row !important;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 10px 12px;
         align-items: center;
+        margin-bottom: 18px;
     }
 
     .admin-portal .admin-main .topbar .welcome,
     .admin-portal .admin-main .admin-header > div:first-child {
-        flex: 1 1 200px;
+        flex: 1 1 0;
         min-width: 0;
     }
 
@@ -1054,14 +1087,21 @@ body.admin-portal {
         word-break: break-word;
     }
 
+    .admin-portal .admin-main .topbar .welcome p,
+    .admin-portal .admin-main .admin-header p {
+        font-size: 12.5px !important;
+        line-height: 1.45 !important;
+        margin-top: 3px !important;
+    }
+
     .admin-portal .admin-main .top-actions {
         width: auto;
         flex-wrap: wrap;
         gap: 8px;
         margin-left: auto;
+        align-items: center;
     }
 
-    .admin-portal .admin-main .search-box,
     .admin-portal .admin-main .toolbar-card,
     .admin-portal .admin-main .toolbar,
     .admin-portal .admin-main .section-header,
@@ -1073,8 +1113,19 @@ body.admin-portal {
     }
 
     .admin-portal .admin-main .search-box {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 10px !important;
         width: 100% !important;
         min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .admin-portal .admin-main .search-box input {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
     }
 
     .admin-portal .admin-main .stats-grid,
@@ -1089,15 +1140,19 @@ body.admin-portal {
 
     .admin-portal .admin-main .table-container,
     .admin-portal .admin-main .table-wrapper,
-    .admin-portal .admin-main .table-card {
+    .admin-portal .admin-main .table-card,
+    .admin-portal .admin-main .table-responsive {
         width: 100%;
         max-width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
 
-    .admin-portal .admin-main table {
-        min-width: 640px;
+    .admin-portal .admin-main .table-container table,
+    .admin-portal .admin-main .table-wrapper table,
+    .admin-portal .admin-main .table-card table,
+    .admin-portal .admin-main .table-responsive table {
+        min-width: 600px;
     }
 
     .admin-portal .admin-main .content-card,

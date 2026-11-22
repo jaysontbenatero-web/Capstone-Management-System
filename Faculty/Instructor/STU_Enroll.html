@@ -182,17 +182,6 @@
                 </span>
             </div>
 
-            <div class="menu-title">
-                System
-            </div>
-
-            <div class="menu-item" id="nav-notifications" data-notif-nav="1" onclick="window.location.href='../Notifications.html'">
-                <i class="fa-solid fa-bell"></i>
-                <span>
-                    Notifications
-                </span>
-            </div>
-
         </div>
 
     </div>
@@ -424,11 +413,38 @@
 
         <!-- STUDENT TABLE -->
         <section class="table-card">
-            <div class="card-title">
-                <div class="icon">
-                    <i class="fa-solid fa-users"></i>
+            <div class="table-card-header">
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h2>Registered Students</h2>
+                        <span class="student-count-badge" id="registeredStudentCount">0 students</span>
+                    </div>
                 </div>
-                <h2>My Enrolled Students</h2>
+
+                <div class="search-box student-search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input
+                        type="text"
+                        id="studentSearchInput"
+                        placeholder="Search by ID, name, program, year, status..."
+                        oninput="renderStudentsTable()"
+                        autocomplete="off"
+                    >
+                    <button
+                        type="button"
+                        id="clearStudentSearchBtn"
+                        class="clear-search-btn"
+                        onclick="clearStudentSearch()"
+                        title="Clear search"
+                        aria-label="Clear search"
+                        style="display:none;"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
 
             <table class="student-table">
@@ -645,6 +661,126 @@
         }
 
         /* ================= LOAD STUDENTS ================= */
+        function clearStudentSearch() {
+            const input = document.getElementById("studentSearchInput");
+            if (input) {
+                input.value = "";
+                input.focus();
+            }
+            renderStudentsTable();
+        }
+
+        function renderStudentsTable() {
+            const table = document.getElementById("studentTableBody");
+            const searchInput = document.getElementById("studentSearchInput");
+            const clearBtn = document.getElementById("clearStudentSearchBtn");
+            const countEl = document.getElementById("registeredStudentCount");
+
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+            if (clearBtn) {
+                clearBtn.style.display = query ? "inline-flex" : "none";
+            }
+
+            const filtered = (lastLoadedStudents || []).filter((student) => {
+                if (!query) return true;
+                const haystack = [
+                    student.user_id,
+                    student.fullname,
+                    student.program,
+                    student.year_level,
+                    student.student_position || "Not Assigned",
+                    student.student_status || "ACTIVE",
+                    student.group_name,
+                    student.group_code
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
+                return haystack.includes(query);
+            });
+
+            if (countEl) {
+                const total = (lastLoadedStudents || []).length;
+                if (query) {
+                    countEl.textContent = `Showing ${filtered.length} of ${total} registered student${total === 1 ? "" : "s"}`;
+                } else {
+                    countEl.textContent = `${total} registered student${total === 1 ? "" : "s"}`;
+                }
+            }
+
+            table.innerHTML = "";
+
+            if (filtered.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align:center; color:#6d5f85; padding:24px;">
+                            ${query ? "No matching registered students found." : "No registered students found."}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filtered.forEach((student) => {
+                const row = document.createElement("tr");
+
+                const rawStatus = String(student.student_status || "ACTIVE").toUpperCase();
+                let statusBadge = '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Active</span>';
+                if(rawStatus === "INACTIVE"){
+                    statusBadge = '<span style="background:#fef9c3;color:#854d0e;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Inactive</span>';
+                } else if(rawStatus === "DROPPED"){
+                    statusBadge = '<span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Dropped</span>';
+                }
+
+                const inGroup = !!(student.group_db_id || student.group_name || student.group_code);
+
+                row.innerHTML = `
+                    <td>${student.user_id}</td>
+                    <td>${student.fullname}</td>
+                    <td>${student.program}</td>
+                    <td>${student.year_level}</td>
+                    <td>${student.student_position || "Not Assigned"}</td>
+                    <td>••••••••</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="view-btn" type="button" title="View student" aria-label="View student">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button class="edit-btn" type="button" title="Edit student" aria-label="Edit student">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button
+                                class="delete-btn"
+                                type="button"
+                                aria-label="Delete student"
+                                ${inGroup ? 'disabled title="Cannot delete: Student belongs to a capstone group" style="opacity:0.4; cursor:not-allowed;"' : 'title="Delete Student"'}
+                            >
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                table.appendChild(row);
+
+                /* VIEW */
+                row.querySelector(".view-btn").addEventListener("click", () => {
+                    openViewModal(student);
+                });
+
+                /* EDIT */
+                row.querySelector(".edit-btn").addEventListener("click", () => {
+                    handleOpenEditModal(student);
+                });
+
+                /* DELETE */
+                row.querySelector(".delete-btn").addEventListener("click", () => {
+                    handleDeleteStudent(student.id, student.fullname, inGroup);
+                });
+            });
+        }
+
         async function loadStudents() {
             try {
                 const response = await fetch(
@@ -652,80 +788,8 @@
                 );
                 const data = await response.json();
 
-                const table = document.getElementById("studentTableBody");
-                table.innerHTML = "";
-
-                if (!data.success || data.students.length === 0) {
-                    table.innerHTML = `
-                        <tr>
-                            <td colspan="7">
-                                No students found.
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-
-                lastLoadedStudents = data.students || [];
-
-                data.students.forEach((student) => {
-                    const row = document.createElement("tr");
-
-                    const rawStatus = String(student.student_status || "ACTIVE").toUpperCase();
-                    let statusBadge = '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Active</span>';
-                    if(rawStatus === "INACTIVE"){
-                        statusBadge = '<span style="background:#fef9c3;color:#854d0e;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Inactive</span>';
-                    } else if(rawStatus === "DROPPED"){
-                        statusBadge = '<span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">Dropped</span>';
-                    }
-
-                    const inGroup = !!(student.group_db_id || student.group_name || student.group_code);
-
-                    row.innerHTML = `
-                        <td>${student.user_id}</td>
-                        <td>${student.fullname}</td>
-                        <td>${student.program}</td>
-                        <td>${student.year_level}</td>
-                        <td>${student.student_position || "Not Assigned"}</td>
-                        <td>••••••••</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="view-btn" type="button" title="View student" aria-label="View student">
-                                    <i class="fa-solid fa-eye"></i>
-                                </button>
-                                <button class="edit-btn" type="button" title="Edit student" aria-label="Edit student">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button
-                                    class="delete-btn"
-                                    type="button"
-                                    aria-label="Delete student"
-                                    ${inGroup ? 'disabled title="Cannot delete: Student belongs to a capstone group" style="opacity:0.4; cursor:not-allowed;"' : 'title="Delete Student"'}
-                                >
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-
-                    table.appendChild(row);
-
-                    /* VIEW */
-                    row.querySelector(".view-btn").addEventListener("click", () => {
-                        openViewModal(student);
-                    });
-
-                    /* EDIT */
-                    row.querySelector(".edit-btn").addEventListener("click", () => {
-                        handleOpenEditModal(student);
-                    });
-
-                    /* DELETE */
-                    row.querySelector(".delete-btn").addEventListener("click", () => {
-                        handleDeleteStudent(student.id, student.fullname, inGroup);
-                    });
-                });
+                lastLoadedStudents = (data.success && Array.isArray(data.students)) ? data.students : [];
+                renderStudentsTable();
             } catch (error) {
                 console.log(error);
             }

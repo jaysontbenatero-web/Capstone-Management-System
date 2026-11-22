@@ -436,17 +436,20 @@
             const pageItems = filtered.slice(start, start + itemsPerPage);
             renderPagination(filtered.length, totalPages);
 
+            const focusNotifId = new URLSearchParams(window.location.search).get("notifId");
+
             list.innerHTML = pageItems.map((item, index) => {
                 const unread = Number(item.is_read) === 0;
+                const isFocused = focusNotifId && String(item.id) === String(focusNotifId);
                 const badgeHtml = unread ? `<span class="recent-new-badge">New</span>` : "";
                 return `
-                    <article class="portal-notif-page-item${unread ? " unread is-recent" : ""}" data-index="${start + index}" style="cursor:pointer;">
+                    <article class="portal-notif-page-item${unread ? " unread is-recent" : ""}" data-index="${start + index}" data-notif-id="${item.id}" style="cursor:pointer;${isFocused ? " box-shadow: 0 0 0 2px #7c3aed; background: #faf5ff;" : ""}">
                         <div class="portal-notif-page-head">
                             <h3>${escapeHtml(item.notification_title)}${badgeHtml}</h3>
                             <span class="portal-notif-page-meta">${formatPageTime(item.created_at)}</span>
                         </div>
                         <span class="portal-notif-item-type">${escapeHtml(item.notification_type || "System")}</span>
-                        <p class="portal-notif-page-body">${escapeHtml(item.notification_message)}</p>
+                        <p class="portal-notif-page-body" style="white-space:pre-line;">${escapeHtml(item.notification_message)}</p>
                     </article>
                 `;
             }).join("");
@@ -455,22 +458,20 @@
                 node.addEventListener("click", async () => {
                     const idx = Number(node.getAttribute("data-index"));
                     const item = filtered[idx];
-                    if (item && window.PortalNotifications) {
+                    if (item && Number(item.is_read) === 0 && window.PortalNotifications) {
                         await window.PortalNotifications.markRead(item.id);
                         item.is_read = 1;
-                        const targetUrl = window.PortalNotifications.getNotificationTargetUrl(item);
-                        if (targetUrl) {
-                            const resolved = new URL(targetUrl, window.location.href).pathname.toLowerCase();
-                            if (resolved === window.location.pathname.toLowerCase()) {
-                                renderNotificationsPage();
-                                window.PortalNotifications.refresh(false);
-                            } else {
-                                window.location.href = targetUrl;
-                            }
-                        }
+                        renderNotificationsPage();
                     }
                 });
             });
+
+            if (focusNotifId) {
+                const focusedNode = list.querySelector(`.portal-notif-page-item[data-notif-id="${focusNotifId}"]`);
+                if (focusedNode) {
+                    focusedNode.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }
         }
 
         let handledInitialNotifId = false;

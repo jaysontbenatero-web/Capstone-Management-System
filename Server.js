@@ -633,6 +633,58 @@ db.getConnection((err, connection) => {
             }
         });
 
+        const createChatGroupsTable = `
+            CREATE TABLE IF NOT EXISTS chat_groups (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                group_db_id INT NOT NULL,
+                schedule_id INT NULL,
+                room_name VARCHAR(255) NOT NULL,
+                topic_title VARCHAR(500) NULL,
+                defense_type VARCHAR(100) NOT NULL DEFAULT 'Outline Defense',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_group_defense_chat (group_db_id, defense_type)
+            )
+        `;
+        db.query(createChatGroupsTable, (err) => {
+            if (err) console.error("Error creating chat_groups table:", err);
+            else console.log("chat_groups table verified/created");
+        });
+
+        const createChatGroupMembersTable = `
+            CREATE TABLE IF NOT EXISTS chat_group_members (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chat_group_id INT NOT NULL,
+                user_db_id INT NOT NULL,
+                user_id VARCHAR(50) NOT NULL,
+                member_role VARCHAR(60) NOT NULL DEFAULT 'Member',
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_chat_group_member (chat_group_id, user_id)
+            )
+        `;
+        db.query(createChatGroupMembersTable, (err) => {
+            if (err) console.error("Error creating chat_group_members table:", err);
+            else console.log("chat_group_members table verified/created");
+        });
+
+        const createChatGroupMessagesTable = `
+            CREATE TABLE IF NOT EXISTS chat_group_messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chat_group_id INT NOT NULL,
+                sender_id VARCHAR(50) NOT NULL,
+                sender_name VARCHAR(255) NULL,
+                sender_role VARCHAR(60) NULL,
+                message_text TEXT NULL,
+                file_path VARCHAR(255) NULL,
+                file_name VARCHAR(255) NULL,
+                is_system TINYINT(1) NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+        db.query(createChatGroupMessagesTable, (err) => {
+            if (err) console.error("Error creating chat_group_messages table:", err);
+            else console.log("chat_group_messages table verified/created");
+        });
+
         const createPanelEvaluationsTable = `
             CREATE TABLE IF NOT EXISTS defense_panel_evaluations (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1000,6 +1052,18 @@ db.getConnection((err, connection) => {
             else console.log("sidebar_section_seen table verified/created");
         });
 
+        db.query(`SHOW COLUMNS FROM users LIKE 'faculty_status'`, (fsColErr, fsColRows) => {
+            if (!fsColErr && (!fsColRows || fsColRows.length === 0)) {
+                db.query(
+                    `ALTER TABLE users ADD COLUMN faculty_status VARCHAR(20) NOT NULL DEFAULT 'Active'`,
+                    (altErr) => {
+                        if (altErr) console.error("Error adding faculty_status column:", altErr);
+                        else console.log("Added faculty_status column to users");
+                    }
+                );
+            }
+        });
+
         db.query(`SHOW COLUMNS FROM defense_schedules LIKE 'time_slot_label'`, (colErr, colRows) => {
             if (!colErr && (!colRows || colRows.length === 0)) {
                 db.query(
@@ -1254,12 +1318,55 @@ app.post("/enroll-admin", (req, res) => {
 
 /* ================= LOAD FACULTY ================= */
 
+function getFacultyActivitySummary(facultyDbId, callback) {
+    const uid = Number(facultyDbId);
+    const sql = `
+        SELECT
+            (SELECT COUNT(*) FROM capstone_groups WHERE adviser_id = ?) AS advisory_groups,
+            (SELECT COUNT(*) FROM adviser_requests WHERE adviser_id = ? AND request_status IN ('Pending', 'Accepted')) AS adviser_requests,
+            (SELECT COUNT(DISTINCT ds.id)
+             FROM defense_schedules ds
+             LEFT JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+             WHERE ds.defense_status != 'Cancelled'
+               AND (dsp.panelist_id = ? OR ds.panelist_id = ? OR ds.created_by = ?)) AS defense_schedules,
+            (SELECT COUNT(*) FROM defense_panel_evaluations WHERE panelist_id = ?) AS panel_evaluations
+    `;
+    db.query(sql, [uid, uid, uid, uid, uid, uid], (err, rows) => {
+        if (err || !rows || rows.length === 0) {
+            return callback(err || new Error("Activity check failed"));
+        }
+        const r = rows[0];
+        const advisoryGroups = Number(r.advisory_groups || 0);
+        const adviserRequests = Number(r.adviser_requests || 0);
+        const defenseSchedules = Number(r.defense_schedules || 0);
+        const panelEvaluations = Number(r.panel_evaluations || 0);
+        const hasActivity = advisoryGroups > 0 || adviserRequests > 0 || defenseSchedules > 0 || panelEvaluations > 0;
+        callback(null, {
+            advisory_groups: advisoryGroups,
+            adviser_requests: adviserRequests,
+            defense_schedules: defenseSchedules,
+            panel_evaluations: panelEvaluations,
+            has_activity: hasActivity
+        });
+    });
+}
+
 app.get("/faculty-accounts", (req, res) => {
     const sql = `
-        SELECT *
-        FROM users
-        WHERE role = 'faculty'
-        ORDER BY id DESC
+        SELECT
+            u.*,
+            COALESCE(NULLIF(TRIM(u.faculty_status), ''), 'Active') AS faculty_status,
+            (SELECT COUNT(*) FROM capstone_groups cg WHERE cg.adviser_id = u.id) AS advisory_group_count,
+            (SELECT COUNT(*) FROM adviser_requests ar WHERE ar.adviser_id = u.id AND ar.request_status IN ('Pending', 'Accepted')) AS adviser_request_count,
+            (SELECT COUNT(DISTINCT ds.id)
+             FROM defense_schedules ds
+             LEFT JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+             WHERE ds.defense_status != 'Cancelled'
+               AND (dsp.panelist_id = u.id OR ds.panelist_id = u.id OR ds.created_by = u.id)) AS defense_schedule_count,
+            (SELECT COUNT(*) FROM defense_panel_evaluations dpe WHERE dpe.panelist_id = u.id) AS panel_evaluation_count
+        FROM users u
+        WHERE u.role = 'faculty'
+        ORDER BY u.id DESC
     `;
 
     db.query(sql, (err, result) => {
@@ -1268,28 +1375,123 @@ app.get("/faculty-accounts", (req, res) => {
             return res.json({ success: false });
         }
 
+        const faculty = (result || []).map((row) => {
+            const advisoryCount = Number(row.advisory_group_count || 0) + Number(row.adviser_request_count || 0);
+            const defenseCount = Number(row.defense_schedule_count || 0) + Number(row.panel_evaluation_count || 0);
+            return {
+                ...row,
+                faculty_status: row.faculty_status || "Active",
+                advisory_count: advisoryCount,
+                defense_count: defenseCount,
+                has_activity: advisoryCount > 0 || defenseCount > 0
+            };
+        });
+
         res.json({
             success: true,
-            faculty: result
+            faculty
         });
     });
+});
+
+/* ================= TOGGLE FACULTY ACTIVE / INACTIVE STATUS ================= */
+
+app.put("/api/faculty/status", (req, res) => {
+    const { id, status } = req.body || {};
+    const normalizedStatus = String(status || "").trim().toLowerCase() === "inactive" ? "Inactive" : "Active";
+
+    if (!id) {
+        return res.json({ success: false, message: "Missing faculty ID." });
+    }
+
+    db.query(
+        "UPDATE users SET faculty_status = ? WHERE id = ? AND role = 'faculty'",
+        [normalizedStatus, id],
+        (err, result) => {
+            if (err) {
+                console.log("Update faculty status error:", err);
+                return res.json({ success: false, message: "Failed to update faculty status." });
+            }
+            if (!result || result.affectedRows === 0) {
+                return res.json({ success: false, message: "Faculty account not found." });
+            }
+
+            // Keep adviser_settings aligned with Active/Inactive account status
+            if (normalizedStatus === "Inactive") {
+                db.query(
+                    "UPDATE adviser_settings SET adviser_status = 'Inactive' WHERE faculty_id = ?",
+                    [id],
+                    () => { }
+                );
+            } else {
+                db.query(
+                    "UPDATE adviser_settings SET adviser_status = 'Available' WHERE faculty_id = ? AND adviser_status = 'Inactive'",
+                    [id],
+                    () => { }
+                );
+            }
+
+            return res.json({
+                success: true,
+                status: normalizedStatus,
+                message: normalizedStatus === "Inactive"
+                    ? "Faculty account set to Inactive. Students can no longer request them for advisory, and they cannot be picked as a panelist."
+                    : "Faculty account reactivated."
+            });
+        }
+    );
 });
 
 /* ================= DELETE FACULTY ================= */
 
 app.delete("/delete-faculty/:id", (req, res) => {
-    const sql = `
-        DELETE FROM users
-        WHERE id = ?
-    `;
+    const facultyDbId = req.params.id;
 
-    db.query(sql, [req.params.id], (err) => {
-        if (err) {
-            console.log(err);
-            return res.json({ success: false });
+    getFacultyActivitySummary(facultyDbId, (actErr, summary) => {
+        if (actErr) {
+            console.log("Faculty activity check error:", actErr);
+            return res.json({
+                success: false,
+                message: "Unable to verify faculty activity before deletion."
+            });
         }
 
-        res.json({ success: true });
+        if (summary.has_activity) {
+            const reasons = [];
+            if (summary.advisory_groups > 0) reasons.push(`${summary.advisory_groups} advisory group(s)`);
+            if (summary.adviser_requests > 0) reasons.push(`${summary.adviser_requests} adviser request(s)`);
+            if (summary.defense_schedules > 0) reasons.push(`${summary.defense_schedules} defense schedule(s)`);
+            if (summary.panel_evaluations > 0) reasons.push(`${summary.panel_evaluations} panel evaluation(s)`);
+            return res.json({
+                success: false,
+                hasActivity: true,
+                message: `Cannot delete this faculty member because they already have existing activity (${reasons.join(", ")}). Please set their account to Inactive instead.`
+            });
+        }
+
+        db.query("DELETE FROM adviser_settings WHERE faculty_id = ?", [facultyDbId], () => {
+            db.query("DELETE FROM user_notifications WHERE user_id = ?", [facultyDbId], () => {
+                const sql = `
+                    DELETE FROM users
+                    WHERE id = ? AND role = 'faculty'
+                `;
+
+                db.query(sql, [facultyDbId], (err, delResult) => {
+                    if (err) {
+                        console.log(err);
+                        return res.json({
+                            success: false,
+                            message: "Cannot delete this faculty account because it is referenced by existing records. Please set their account to Inactive instead."
+                        });
+                    }
+                    if (!delResult || delResult.affectedRows === 0) {
+                        return res.json({ success: false, message: "Faculty account not found." });
+                    }
+
+                    res.json({ success: true });
+                });
+            });
+        });
     });
 });
 
@@ -3159,38 +3361,72 @@ app.get("/student-group/:userId", (req, res) => {
         }
 
         const first = result[0];
+        const groupDbId = first.id;
 
-        res.json({
-            success: true,
-            group: {
-                id: first.id,
-                group_id: first.group_id,
-                group_name: first.group_name,
-                project_title: first.project_title,
-                program: first.program,
-                progress: first.progress,
-                stage: first.stage,
-                status: first.status,
+        db.query(
+            `SELECT document_type, document_title, document_status FROM student_documents WHERE group_id = ?`,
+            [groupDbId],
+            (depErr, depRows) => {
+                const depStatus = evaluateDeploymentApprovalStatus(depErr ? [] : depRows);
+                let resolvedStage = first.stage;
+                let resolvedProgress = first.progress;
+                let resolvedStatus = first.status;
 
-                adviser_user_id: first.adviser_user_id,
-                adviser_name: first.adviser_name,
-                adviser_position: first.adviser_position,
-                adviser_profile_image: first.adviser_profile_image,
-                adviser_program: first.adviser_program,
-                adviser_year_level: first.adviser_year_level,
-                adviser_capacity: first.adviser_capacity,
-                adviser_status: first.adviser_status,
+                const sendGroupResponse = () => {
+                    res.json({
+                        success: true,
+                        group: {
+                            id: first.id,
+                            group_id: first.group_id,
+                            group_name: first.group_name,
+                            project_title: first.project_title,
+                            program: first.program,
+                            progress: resolvedProgress,
+                            stage: resolvedStage,
+                            status: resolvedStatus,
+                            deployment_status: {
+                                recommendation_approved: depStatus.recommendationApproved,
+                                chapter14_approved: depStatus.chapter14Approved,
+                                approved_count: depStatus.approvedCount,
+                                required_count: depStatus.requiredCount,
+                                all_approved: depStatus.allApproved
+                            },
 
-                members: result.map(member => ({
-                    fullname: member.fullname,
-                    user_id: member.user_id,
-                    member_position: member.member_position,
-                    enrolled_by_user_id: member.enrolled_by_user_id,
-                    profile_image: member.profile_image,
-                    instructor_name: member.instructor_name
-                }))
+                            adviser_user_id: first.adviser_user_id,
+                            adviser_name: first.adviser_name,
+                            adviser_position: first.adviser_position,
+                            adviser_profile_image: first.adviser_profile_image,
+                            adviser_program: first.adviser_program,
+                            adviser_year_level: first.adviser_year_level,
+                            adviser_capacity: first.adviser_capacity,
+                            adviser_status: first.adviser_status,
+
+                            members: result.map(member => ({
+                                fullname: member.fullname,
+                                user_id: member.user_id,
+                                member_position: member.member_position,
+                                enrolled_by_user_id: member.enrolled_by_user_id,
+                                profile_image: member.profile_image,
+                                instructor_name: member.instructor_name
+                            }))
+                        }
+                    });
+                };
+
+                if (depStatus.allApproved && String(first.stage || "").trim().toLowerCase() !== "completed") {
+                    resolvedStage = "Completed";
+                    resolvedProgress = 100;
+                    resolvedStatus = "Completed";
+                    db.query(
+                        `UPDATE capstone_groups SET stage = 'Completed', progress = 100, status = 'Completed' WHERE id = ?`,
+                        [groupDbId],
+                        () => sendGroupResponse()
+                    );
+                } else {
+                    sendGroupResponse();
+                }
             }
-        });
+        );
     });
 });
 
@@ -3840,6 +4076,7 @@ app.get("/adviser-management", (req, res) => {
             u.position,
             u.role,
             u.adviser_access,
+            COALESCE(NULLIF(TRIM(u.faculty_status), ''), 'Active') AS faculty_status,
 
             COALESCE(a.group_capacity, 0) AS group_capacity,
             COALESCE(a.program_cater, 'Not Set') AS program_cater,
@@ -3904,14 +4141,19 @@ app.get("/adviser-management", (req, res) => {
                 });
             }
 
-            const normalizedAdvisers = (advisersResult || []).map(adviser => ({
-                ...adviser,
-                adviser_status: resolveAdviserStatus(
-                    adviser.raw_adviser_status,
-                    adviser.group_capacity,
-                    adviser.assigned_groups
-                )
-            }));
+            const normalizedAdvisers = (advisersResult || []).map(adviser => {
+                const isInactiveFaculty = String(adviser.faculty_status || "Active").trim().toLowerCase() === "inactive";
+                return {
+                    ...adviser,
+                    adviser_status: isInactiveFaculty
+                        ? "Inactive"
+                        : resolveAdviserStatus(
+                            adviser.raw_adviser_status,
+                            adviser.group_capacity,
+                            adviser.assigned_groups
+                        )
+                };
+            });
 
             const groupStats = (groupsResult && groupsResult[0]) || {};
             const totalAdvisers = normalizedAdvisers.length;
@@ -4318,6 +4560,7 @@ app.get("/student-advisers/:userId", (req, res) => {
                 u.position,
                 u.role,
                 u.profile_image,
+                COALESCE(NULLIF(TRIM(u.faculty_status), ''), 'Active') AS faculty_status,
 
                 COALESCE(a.group_capacity, 0) AS group_capacity,
                 COALESCE(a.program_cater, 'Not Set') AS program_cater,
@@ -4381,14 +4624,19 @@ app.get("/student-advisers/:userId", (req, res) => {
                 });
             }
 
-            const normalizedAdvisers = (advisersResult || []).map(adviser => ({
-                ...adviser,
-                adviser_status: resolveAdviserStatus(
-                    adviser.raw_adviser_status,
-                    adviser.group_capacity,
-                    adviser.assigned_groups
-                )
-            }));
+            const normalizedAdvisers = (advisersResult || []).map(adviser => {
+                const isInactiveFaculty = String(adviser.faculty_status || "Active").trim().toLowerCase() === "inactive";
+                return {
+                    ...adviser,
+                    adviser_status: isInactiveFaculty
+                        ? "Inactive"
+                        : resolveAdviserStatus(
+                            adviser.raw_adviser_status,
+                            adviser.group_capacity,
+                            adviser.assigned_groups
+                        )
+                };
+            });
 
             res.json({
                 success: true,
@@ -4491,6 +4739,7 @@ app.post("/request-adviser", (req, res) => {
                 u.user_id,
                 u.fullname,
                 u.role,
+                COALESCE(NULLIF(TRIM(u.faculty_status), ''), 'Active') AS faculty_status,
 
                 COALESCE(a.group_capacity, 0) AS group_capacity,
                 COALESCE(a.program_cater, 'Not Set') AS program_cater,
@@ -4546,6 +4795,13 @@ app.post("/request-adviser", (req, res) => {
                         message: "Selected adviser was not found or does not have adviser access."
                     });
 
+                }
+
+                if (String(adviserResult[0].faculty_status || "Active").trim().toLowerCase() === "inactive") {
+                    return res.json({
+                        success: false,
+                        message: "Cannot request this adviser because their faculty account is currently Inactive."
+                    });
                 }
 
                 const adviser = {
@@ -4815,6 +5071,7 @@ app.get("/admin-capstone-groups", (req, res) => {
 
         WHERE u.role IN ('faculty', 'admin')
 AND u.adviser_access = 1
+AND COALESCE(NULLIF(TRIM(u.faculty_status), ''), 'Active') != 'Inactive'
 ORDER BY u.fullname ASC
     `;
 
@@ -5293,6 +5550,7 @@ app.get("/instructor-capstone-groups", (req, res) => {
 
         WHERE u.role IN ('faculty', 'admin')
 AND u.adviser_access = 1
+AND COALESCE(NULLIF(TRIM(u.faculty_status), ''), 'Active') != 'Inactive'
 ORDER BY u.fullname ASC
     `;
 
@@ -6599,6 +6857,97 @@ function isDeploymentChapter14Document(documentType, documentTitle) {
         dt.includes("chapter 1-4") || dt.includes("chapter 1 to 4") || dt.includes("chapters 1-4") ||
         tl.includes("chapter 1-4") || tl.includes("chapter 1 to 4") || tl.includes("chapters 1-4");
     return hasDeployment && hasCh14;
+}
+
+function evaluateDeploymentApprovalStatus(docRows) {
+    let recApproved = false;
+    let ch14Approved = false;
+    (docRows || []).forEach(doc => {
+        const status = String(doc.document_status || "").trim().toLowerCase();
+        if (status !== "approved") return;
+        const dt = String(doc.document_type || "").toLowerCase();
+        const tl = String(doc.document_title || "").toLowerCase();
+        if (dt.includes("recommendation for deployment") || tl.includes("recommendation for deployment")) {
+            recApproved = true;
+        }
+        if (isDeploymentChapter14Document(doc.document_type, doc.document_title)) {
+            ch14Approved = true;
+        }
+    });
+    const approvedCount = (recApproved ? 1 : 0) + (ch14Approved ? 1 : 0);
+    return {
+        recommendationApproved: recApproved,
+        chapter14Approved: ch14Approved,
+        approvedCount,
+        requiredCount: 2,
+        allApproved: recApproved && ch14Approved
+    };
+}
+
+function checkAndCompleteGroupDeployment(groupDbId, callback) {
+    const done = typeof callback === "function" ? callback : () => {};
+    if (!groupDbId) return done(false);
+
+    db.query(
+        `SELECT id, stage, progress, status FROM capstone_groups WHERE id = ? LIMIT 1`,
+        [groupDbId],
+        (errG, groupRows) => {
+            if (errG || !groupRows || groupRows.length === 0) return done(false);
+            const currentStage = String(groupRows[0].stage || "").trim().toLowerCase();
+            if (currentStage === "completed") return done(true);
+
+            db.query(
+                `SELECT document_type, document_title, document_status FROM student_documents WHERE group_id = ?`,
+                [groupDbId],
+                (errD, docRows) => {
+                    if (errD) return done(false);
+                    const depStatus = evaluateDeploymentApprovalStatus(docRows);
+                    if (!depStatus.allApproved) return done(false);
+
+                    db.query(
+                        `UPDATE capstone_groups SET stage = 'Completed', progress = 100, status = 'Completed' WHERE id = ?`,
+                        [groupDbId],
+                        (errU) => {
+                            if (errU) {
+                                console.log("Error marking group Completed after Deployment approvals:", errU);
+                                return done(false);
+                            }
+
+                            db.query(
+                                `SELECT student_id FROM group_members WHERE group_id = ?`,
+                                [groupDbId],
+                                (errM, members) => {
+                                    if (!errM && members && members.length > 0 && typeof insertUserNotificationsByDbIds === "function") {
+                                        insertUserNotificationsByDbIds(
+                                            members.map(m => m.student_id),
+                                            "Capstone Completed!",
+                                            "Congratulations! Both Deployment requirements (Recommendation for Deployment and Chapter 1-4) have been approved. Your capstone progress is now Complete (100%).",
+                                            "Document Review"
+                                        );
+                                    }
+                                    done(true);
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
+}
+
+function checkAndCompleteGroupDeploymentByDocumentId(documentId, callback) {
+    const done = typeof callback === "function" ? callback : () => {};
+    if (!documentId) return done(false);
+
+    db.query(
+        `SELECT group_id FROM student_documents WHERE id = ? LIMIT 1`,
+        [documentId],
+        (err, rows) => {
+            if (err || !rows || rows.length === 0 || !rows[0].group_id) return done(false);
+            checkAndCompleteGroupDeployment(rows[0].group_id, done);
+        }
+    );
 }
 
 function inferRepositoryCategoryFromText(title, abstractText, methodologyText) {
@@ -13833,6 +14182,7 @@ app.get("/defense-schedule-data", (req, res) => {
         FROM users
         WHERE role IN ('faculty', 'admin')
         AND panelist_access = 1
+        AND COALESCE(NULLIF(TRIM(faculty_status), ''), 'Active') != 'Inactive'
         ORDER BY fullname ASC
     `;
 
@@ -14377,6 +14727,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                                 WHERE id IN (?)
                                 AND role IN ('faculty', 'admin')
                                 AND panelist_access = 1
+                                AND COALESCE(NULLIF(TRIM(faculty_status), ''), 'Active') != 'Inactive'
                             `;
 
                             db.query(panelistSql, [panelistIds], (err, panelistResult) => {
@@ -14901,6 +15252,10 @@ app.post("/force-complete-defense-schedule/:scheduleId", (req, res) => {
                     const nextStage = getGroupStageAfterDefense(schedule.defense_type, compiledResult);
                     if (nextStage && schedule.group_id) {
                         db.query("UPDATE capstone_groups SET stage = ?, progress = ? WHERE id = ?", [nextStage, getProgressPercentForStage(nextStage), schedule.group_id], () => { });
+                    }
+
+                    if (String(schedule.defense_type || "").toLowerCase().includes("outline")) {
+                        ensureOutlineDefenseGroupChat(scheduleId, () => { });
                     }
 
                     const memberSql = `SELECT student_id FROM group_members WHERE group_id = ?`;
@@ -15879,14 +16234,34 @@ app.get("/group-documents/:groupDbId", (req, res) => {
         const docList = Array.isArray(documents) ? [...documents] : [];
 
         db.query(
-            `SELECT id, defense_type, status, updated_at, created_at
-             FROM typed_defense_minutes
-             WHERE group_id = ? AND status = 'Completed'
-             ORDER BY updated_at DESC`,
+            `SELECT tdm.id, tdm.group_id, tdm.schedule_id, tdm.defense_type, tdm.minutes_json,
+                    tdm.status, tdm.adviser_signature_json, tdm.eligible_panelist_ids_json,
+                    tdm.panelist_signatures_json, tdm.updated_at, tdm.created_at,
+                    u.fullname AS adviser_name
+             FROM typed_defense_minutes tdm
+             LEFT JOIN users u ON u.id = tdm.adviser_id
+             WHERE tdm.group_id = ? AND tdm.status = 'Completed'
+             ORDER BY tdm.updated_at DESC`,
             [groupDbId],
             (dmErr, dmRows) => {
+                const approvedDefenseMinutes = [];
                 if (!dmErr && Array.isArray(dmRows)) {
                     dmRows.forEach(dm => {
+                        const dmRecord = {
+                            id: dm.id,
+                            group_id: dm.group_id,
+                            schedule_id: dm.schedule_id,
+                            defense_type: dm.defense_type,
+                            minutes_json: dm.minutes_json,
+                            status: dm.status,
+                            adviser_signature_json: dm.adviser_signature_json,
+                            eligible_panelist_ids_json: dm.eligible_panelist_ids_json,
+                            panelist_signatures_json: dm.panelist_signatures_json,
+                            adviser_name: dm.adviser_name || "",
+                            updated_at: dm.updated_at,
+                            created_at: dm.created_at
+                        };
+                        approvedDefenseMinutes.push(dmRecord);
                         docList.push({
                             id: `tdm-${dm.id}`,
                             typed_dm_id: dm.id,
@@ -15899,6 +16274,12 @@ app.get("/group-documents/:groupDbId", (req, res) => {
                             document_status: "Approved",
                             latest_review_status: "Approved",
                             is_typed_defense_minutes: true,
+                            defense_type: dm.defense_type,
+                            minutes_json: dm.minutes_json,
+                            adviser_signature_json: dm.adviser_signature_json,
+                            eligible_panelist_ids_json: dm.eligible_panelist_ids_json,
+                            panelist_signatures_json: dm.panelist_signatures_json,
+                            adviser_name: dm.adviser_name || "",
                             created_at: dm.updated_at || dm.created_at
                         });
                     });
@@ -15906,7 +16287,8 @@ app.get("/group-documents/:groupDbId", (req, res) => {
 
                 res.json({
                     success: true,
-                    documents: docList
+                    documents: docList,
+                    approved_defense_minutes: approvedDefenseMinutes
                 });
             }
         );
@@ -16121,6 +16503,7 @@ app.post("/create-defense-schedule", (req, res) => {
                 WHERE id IN (?)
                 AND role IN ('faculty', 'admin')
                 AND panelist_access = 1
+                AND COALESCE(NULLIF(TRIM(faculty_status), ''), 'Active') != 'Inactive'
             `;
 
                     db.query(panelistSql, [panelistIds], (err, panelistResult) => {
@@ -16137,7 +16520,7 @@ app.post("/create-defense-schedule", (req, res) => {
                         if (panelistResult.length !== panelistIds.length) {
                             return res.json({
                                 success: false,
-                                message: "One or more selected panelists are invalid."
+                                message: "One or more selected panelists are invalid or currently Inactive."
                             });
                         }
 
@@ -16446,6 +16829,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
             WHERE id IN (?)
             AND role IN ('faculty', 'admin')
             AND panelist_access = 1
+            AND COALESCE(NULLIF(TRIM(faculty_status), ''), 'Active') != 'Inactive'
         `;
 
             db.query(panelistSql, [panelistIds], (err, panelistResult) => {
@@ -16462,7 +16846,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
                 if (panelistResult.length !== panelistIds.length) {
                     return res.json({
                         success: false,
-                        message: "One or more selected panelists are invalid."
+                        message: "One or more selected panelists are invalid or currently Inactive."
                     });
                 }
 
@@ -17753,7 +18137,7 @@ app.get("/api/portal-notifications/summary/:userId", (req, res) => {
     }
 
     const userSql = `
-        SELECT id, role, position, adviser_access, panelist_access, instructor_access
+        SELECT id, role
         FROM users
         WHERE user_id = ?
         LIMIT 1
@@ -17764,95 +18148,50 @@ app.get("/api/portal-notifications/summary/:userId", (req, res) => {
             return res.json({ success: false, message: "Account not found." });
         }
 
-        const user = userRows[0];
-        const userDbId = Number(user.id);
-        const roleLower = String(user.role || "").toLowerCase().trim();
+        const userDbId = Number(userRows[0].id);
 
-        const unreadSql = `
-            SELECT id, notification_title, notification_message, notification_type, is_read, created_at
-            FROM user_notifications
-            WHERE user_id = ? AND is_read = 0
-            ORDER BY created_at DESC, id DESC
-        `;
+        db.query(
+            "SELECT COUNT(*) AS unread_count FROM user_notifications WHERE user_id = ? AND is_read = 0",
+            [userDbId],
+            (cErr, cRows) => {
+                if (cErr) {
+                    console.log(cErr);
+                    return res.json({ success: false, message: "Failed to load unread count." });
+                }
 
-        db.query(unreadSql, [userDbId], (uErr, unreadRows) => {
-            if (uErr) {
-                console.log(uErr);
-                return res.json({ success: false, message: "Failed to load unread notifications." });
-            }
+                const unreadCount = (cRows && cRows[0]) ? Number(cRows[0].unread_count || 0) : 0;
 
-            const finishSummary = (pendingCounts) => {
-                const staleIds = [];
-                const sections = {};
-                const activeUnread = [];
+                if (limit <= 0) {
+                    return res.json({
+                        success: true,
+                        unread_count: unreadCount,
+                        sections: {},
+                        notifications: []
+                    });
+                }
 
-                (unreadRows || []).forEach((n) => {
-                    const secPath = classifyNotificationSectionPath(n, user);
-                    // For Admin/Faculty action-queue pages: if DB shows 0 pending items and the notification
-                    // is purely a stale "New/Pending/Ready for E-Signature" prompt, auto-resolve it so no false red dot appears.
-                    if (
-                        roleLower !== "student" &&
-                        secPath &&
-                        Object.prototype.hasOwnProperty.call(pendingCounts, secPath) &&
-                        Number(pendingCounts[secPath] || 0) === 0 &&
-                        isActionablePendingNotification(n)
-                    ) {
-                        staleIds.push(n.id);
-                        return;
-                    }
-                    activeUnread.push(n);
-                    if (secPath) {
-                        sections[secPath] = (sections[secPath] || 0) + 1;
-                    }
-                });
-
-                const finalizeResponse = () => {
-                    const unreadCount = activeUnread.length;
-                    if (limit <= 0) {
-                        return res.json({
+                db.query(
+                    `SELECT id, notification_title, notification_message, notification_type, is_read, created_at
+                     FROM user_notifications
+                     WHERE user_id = ?
+                     ORDER BY created_at DESC, id DESC
+                     LIMIT ?`,
+                    [userDbId, limit],
+                    (lErr, listRows) => {
+                        if (lErr) {
+                            console.log(lErr);
+                            return res.json({ success: false, message: "Failed to load notifications." });
+                        }
+                        res.json({
                             success: true,
                             unread_count: unreadCount,
-                            sections,
-                            pending_counts: pendingCounts,
-                            notifications: []
+                            sections: {},
+                            notifications: listRows || []
                         });
                     }
-                    db.query(
-                        `SELECT id, notification_title, notification_message, notification_type, is_read, created_at
-                         FROM user_notifications
-                         WHERE user_id = ?
-                         ORDER BY created_at DESC, id DESC
-                         LIMIT ?`,
-                        [userDbId, limit],
-                        (lErr, listRows) => {
-                            res.json({
-                                success: true,
-                                unread_count: unreadCount,
-                                sections,
-                                pending_counts: pendingCounts,
-                                notifications: (!lErr && listRows) ? listRows : []
-                            });
-                        }
-                    );
-                };
-
-                if (staleIds.length > 0) {
-                    db.query(
-                        "UPDATE user_notifications SET is_read = 1 WHERE user_id = ? AND id IN (?)",
-                        [userDbId, staleIds],
-                        () => finalizeResponse()
-                    );
-                } else {
-                    finalizeResponse();
-                }
-            };
-
-            if (roleLower === "student") {
-                finishSummary({});
-            } else {
-                fetchUserActionQueuePendingCounts(user, finishSummary);
+                );
             }
-        });
+        );
     });
 });
 
@@ -19988,6 +20327,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
                             );
 
                         const finishGroupUpdate = () => {
+                            const continueAfterOutlineChat = () => {
 
                             const membersSql = `
                                 SELECT student_id
@@ -20042,6 +20382,16 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
 
                                 }
                             );
+
+                            };
+
+                            if (String(schedule.defense_type || "").toLowerCase().includes("outline")) {
+                                ensureOutlineDefenseGroupChat(scheduleId, () => {
+                                    continueAfterOutlineChat();
+                                });
+                            } else {
+                                continueAfterOutlineChat();
+                            }
 
                         };
 
@@ -24286,6 +24636,10 @@ app.put("/admin-apply-document-signature/:submissionId", async (req, res) => {
                                     routeToDean(0);
                                 }
                             });
+                        } else if (finalStatus === "Approved" && targetDocStatus === "Approved" && isDeploymentRec) {
+                            checkAndCompleteGroupDeploymentByDocumentId(submission.document_id, () => {
+                                proceedWithDeanRouting();
+                            });
                         } else {
                             proceedWithDeanRouting();
                         }
@@ -25143,6 +25497,15 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
 
                                     if (isDeploymentChapter14Document(submission.document_type, submission.document_title)) {
                                         archiveDeploymentChapter14ToRepository(submission, adviserName, () => {
+                                            checkAndCompleteGroupDeploymentByDocumentId(submission.document_id, () => {
+                                                finishAdviserReview();
+                                            });
+                                        });
+                                        return;
+                                    }
+
+                                    if (isDeploymentRecommendationDoc(submission.document_type, submission.document_title)) {
+                                        checkAndCompleteGroupDeploymentByDocumentId(submission.document_id, () => {
                                             finishAdviserReview();
                                         });
                                         return;
@@ -25822,7 +26185,450 @@ const consultationUpload = multer({
     }
 });
 
+/* ================= OUTLINE DEFENSE GROUP CHAT HELPERS ================= */
+
+function ensureOutlineDefenseGroupChat(scheduleId, callback) {
+    const done = typeof callback === "function" ? callback : () => {};
+    if (!scheduleId) return done(null);
+
+    const schedSql = `
+        SELECT
+            ds.id AS schedule_id,
+            ds.group_id AS group_db_id,
+            ds.defense_type,
+            ds.panel_result,
+            ds.score,
+            cg.group_id AS group_code,
+            cg.group_name,
+            COALESCE(
+                NULLIF(TRIM(cg.project_title), ''),
+                (
+                    SELECT tp.proposed_title
+                    FROM defense_schedules ds_c
+                    JOIN title_proposals tp ON tp.id = CAST(ds_c.approved_title_id AS UNSIGNED)
+                    WHERE ds_c.group_id = cg.id
+                      AND ds_c.approved_title_id IS NOT NULL
+                      AND TRIM(ds_c.approved_title_id) != ''
+                    ORDER BY ds_c.id DESC
+                    LIMIT 1
+                ),
+                (
+                    SELECT tp2.proposed_title
+                    FROM title_proposals tp2
+                    WHERE tp2.group_id = cg.id AND LOWER(tp2.status) = 'approved'
+                    ORDER BY tp2.id DESC
+                    LIMIT 1
+                )
+            ) AS project_title
+        FROM defense_schedules ds
+        JOIN capstone_groups cg ON ds.group_id = cg.id
+        WHERE ds.id = ?
+        LIMIT 1
+    `;
+
+    db.query(schedSql, [scheduleId], (err, schedRows) => {
+        if (err || !schedRows || schedRows.length === 0) {
+            if (err) console.error("ensureOutlineDefenseGroupChat sched err:", err);
+            return done(null);
+        }
+
+        const sched = schedRows[0];
+        if (!String(sched.defense_type || "").toLowerCase().includes("outline")) {
+            return done(null);
+        }
+
+        const groupDbId = sched.group_db_id;
+        const groupDisplayName = sched.group_name || sched.group_code || `Group #${groupDbId}`;
+        const roomName = `${groupDisplayName} — Capstone Panel`;
+        const topicTitle = String(sched.project_title || "").trim();
+
+        const studentsSql = `
+            SELECT u.id AS user_db_id, u.user_id, u.fullname, COALESCE(NULLIF(TRIM(gm.member_position), ''), 'Student') AS member_role
+            FROM group_members gm
+            JOIN users u ON gm.student_id = u.id
+            WHERE gm.group_id = ?
+        `;
+        const panelistsSql = `
+            SELECT u.id AS user_db_id, u.user_id, u.fullname, 'Panelist' AS member_role
+            FROM defense_schedule_panelists dsp
+            JOIN users u ON dsp.panelist_id = u.id
+            WHERE dsp.schedule_id = ?
+            UNION
+            SELECT u.id AS user_db_id, u.user_id, u.fullname, 'Panelist' AS member_role
+            FROM defense_schedules ds_pan
+            JOIN users u ON ds_pan.panelist_id = u.id
+            WHERE ds_pan.id = ? AND ds_pan.panelist_id IS NOT NULL
+        `;
+
+        db.query(studentsSql, [groupDbId], (sErr, studentRows) => {
+            if (sErr) {
+                console.error("ensureOutlineDefenseGroupChat students err:", sErr);
+                return done(null);
+            }
+            db.query(panelistsSql, [scheduleId, scheduleId], (pErr, panelRows) => {
+                if (pErr) {
+                    console.error("ensureOutlineDefenseGroupChat panelists err:", pErr);
+                    return done(null);
+                }
+
+                const participantsMap = new Map();
+                (panelRows || []).forEach(p => {
+                    if (p.user_id) participantsMap.set(p.user_id, p);
+                });
+                (studentRows || []).forEach(s => {
+                    if (s.user_id && !participantsMap.has(s.user_id)) {
+                        participantsMap.set(s.user_id, s);
+                    }
+                });
+                const participants = Array.from(participantsMap.values());
+                if (participants.length === 0) return done(null);
+
+                db.query(
+                    `SELECT id FROM chat_groups WHERE group_db_id = ? AND defense_type = 'Outline Defense' LIMIT 1`,
+                    [groupDbId],
+                    (existErr, existRows) => {
+                        if (existErr) {
+                            console.error("ensureOutlineDefenseGroupChat exist err:", existErr);
+                            return done(null);
+                        }
+
+                        const syncMembersAndFinish = (chatGroupId, wasCreated) => {
+                            let pending = participants.length;
+                            if (pending === 0) return done(chatGroupId);
+
+                            participants.forEach(part => {
+                                db.query(
+                                    `INSERT IGNORE INTO chat_group_members (chat_group_id, user_db_id, user_id, member_role)
+                                     VALUES (?, ?, ?, ?)`,
+                                    [chatGroupId, part.user_db_id, part.user_id, part.member_role || "Member"],
+                                    () => {
+                                        pending -= 1;
+                                        if (pending === 0) {
+                                            if (!wasCreated) return done(chatGroupId);
+
+                                            const topicNote = topicTitle ? ` Topic: "${topicTitle}".` : "";
+                                            const welcomeMsg = `Capstone group chat created for ${groupDisplayName}.${topicNote} All group members and assigned panelists can now discuss capstone topics, feedback, and revisions here.`;
+                                            db.query(
+                                                `INSERT INTO chat_group_messages (chat_group_id, sender_id, sender_name, sender_role, message_text, is_system)
+                                                 VALUES (?, 'SYSTEM', 'System', 'System', ?, 1)`,
+                                                [chatGroupId, welcomeMsg],
+                                                () => {
+                                                    if (typeof insertUserNotificationsByDbIds === "function") {
+                                                        insertUserNotificationsByDbIds(
+                                                            participants.map(p => p.user_db_id),
+                                                            "Capstone Group Chat Created",
+                                                            `A group chat for "${groupDisplayName}" with your assigned panelists and group members is now open in Messages for discussing your capstone topic.`,
+                                                            "Message"
+                                                        );
+                                                    }
+                                                    done(chatGroupId);
+                                                }
+                                            );
+                                        }
+                                    }
+                                );
+                            });
+                        };
+
+                        if (existRows && existRows.length > 0) {
+                            const existingId = existRows[0].id;
+                            db.query(
+                                `UPDATE chat_groups SET schedule_id = ?, room_name = ?, topic_title = COALESCE(NULLIF(?, ''), topic_title) WHERE id = ?`,
+                                [scheduleId, roomName, topicTitle, existingId],
+                                () => syncMembersAndFinish(existingId, false)
+                            );
+                        } else {
+                            db.query(
+                                `INSERT INTO chat_groups (group_db_id, schedule_id, room_name, topic_title, defense_type)
+                                 VALUES (?, ?, ?, ?, 'Outline Defense')`,
+                                [groupDbId, scheduleId, roomName, topicTitle || null],
+                                (insErr, insResult) => {
+                                    if (insErr) {
+                                        if (insErr.code === "ER_DUP_ENTRY") {
+                                            db.query(
+                                                `SELECT id FROM chat_groups WHERE group_db_id = ? AND defense_type = 'Outline Defense' LIMIT 1`,
+                                                [groupDbId],
+                                                (reErr, reRows) => {
+                                                    if (!reErr && reRows && reRows.length > 0) {
+                                                        syncMembersAndFinish(reRows[0].id, false);
+                                                    } else {
+                                                        done(null);
+                                                    }
+                                                }
+                                            );
+                                            return;
+                                        }
+                                        console.error("ensureOutlineDefenseGroupChat insert err:", insErr);
+                                        return done(null);
+                                    }
+                                    syncMembersAndFinish(insResult.insertId, true);
+                                }
+                            );
+                        }
+                    }
+                );
+            });
+        });
+    });
+}
+
+function syncMissingOutlineDefenseGroupChatsForUser(userId, callback) {
+    const done = typeof callback === "function" ? callback : () => {};
+    if (!userId) return done();
+
+    const findSql = `
+        SELECT DISTINCT ds.id AS schedule_id
+        FROM defense_schedules ds
+        LEFT JOIN group_members gm ON gm.group_id = ds.group_id
+        LEFT JOIN users stu ON stu.id = gm.student_id
+        LEFT JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+        LEFT JOIN users pan ON pan.id = dsp.panelist_id
+        LEFT JOIN users pan_legacy ON pan_legacy.id = ds.panelist_id
+        WHERE LOWER(ds.defense_type) LIKE '%outline%'
+          AND (
+              ds.defense_status = 'Completed'
+              OR (
+                  ds.panel_result IS NOT NULL
+                  AND TRIM(ds.panel_result) != ''
+                  AND LOWER(ds.panel_result) NOT LIKE '%did not evaluate%'
+              )
+          )
+          AND (stu.user_id = ? OR pan.user_id = ? OR pan_legacy.user_id = ?)
+        ORDER BY ds.id DESC
+    `;
+
+    db.query(findSql, [userId, userId, userId], (err, rows) => {
+        if (err || !rows || rows.length === 0) return done();
+        let idx = 0;
+        const next = () => {
+            if (idx >= rows.length) return done();
+            const schedId = rows[idx].schedule_id;
+            idx += 1;
+            ensureOutlineDefenseGroupChat(schedId, () => next());
+        };
+        next();
+    });
+}
+
 /* ================= CHAT API ENDPOINTS ================= */
+
+app.get("/chat-groups", (req, res) => {
+    const currentUserId = String(req.query.userId || "").trim();
+    const search = String(req.query.search || "").trim().toLowerCase();
+
+    if (!currentUserId) {
+        return res.json({ success: false, message: "Missing userId", groups: [] });
+    }
+
+    syncMissingOutlineDefenseGroupChatsForUser(currentUserId, () => {
+        const sql = `
+            SELECT
+                cg_room.id,
+                cg_room.group_db_id,
+                cg_room.schedule_id,
+                cg_room.room_name,
+                cg_room.topic_title,
+                cg_room.defense_type,
+                cg_room.created_at,
+                cap.group_name,
+                cap.group_id AS group_code,
+                cap.program
+            FROM chat_groups cg_room
+            JOIN chat_group_members my_m ON my_m.chat_group_id = cg_room.id AND my_m.user_id = ?
+            LEFT JOIN capstone_groups cap ON cap.id = cg_room.group_db_id
+            ORDER BY cg_room.created_at DESC
+        `;
+
+        db.query(sql, [currentUserId], (err, groupRows) => {
+            if (err) {
+                console.error("Error fetching chat groups:", err);
+                return res.json({ success: false, message: "Error fetching group chats", groups: [] });
+            }
+
+            if (!groupRows || groupRows.length === 0) {
+                return res.json({ success: true, groups: [] });
+            }
+
+            const groupIds = groupRows.map(g => g.id);
+            const membersSql = `
+                SELECT
+                    cgm.chat_group_id,
+                    cgm.user_id,
+                    cgm.member_role,
+                    u.fullname,
+                    u.role,
+                    u.position,
+                    u.profile_image
+                FROM chat_group_members cgm
+                JOIN users u ON u.id = cgm.user_db_id
+                WHERE cgm.chat_group_id IN (?)
+                ORDER BY (cgm.member_role = 'Panelist') DESC, u.fullname ASC
+            `;
+            const lastMsgSql = `
+                SELECT m.*
+                FROM chat_group_messages m
+                INNER JOIN (
+                    SELECT chat_group_id, MAX(id) AS max_id
+                    FROM chat_group_messages
+                    WHERE chat_group_id IN (?)
+                    GROUP BY chat_group_id
+                ) latest ON latest.max_id = m.id
+            `;
+
+            db.query(membersSql, [groupIds], (mErr, memberRows) => {
+                const membersByGroup = {};
+                if (!mErr && memberRows) {
+                    memberRows.forEach(m => {
+                        if (!membersByGroup[m.chat_group_id]) membersByGroup[m.chat_group_id] = [];
+                        membersByGroup[m.chat_group_id].push(m);
+                    });
+                }
+
+                db.query(lastMsgSql, [groupIds], (lErr, lastRows) => {
+                    const lastByGroup = {};
+                    if (!lErr && lastRows) {
+                        lastRows.forEach(l => {
+                            lastByGroup[l.chat_group_id] = l;
+                        });
+                    }
+
+                    let enriched = groupRows.map(g => ({
+                        ...g,
+                        room_name: String(g.room_name || "").replace(/\s*—\s*Outline Defense Panel$/i, " — Capstone Panel"),
+                        members: membersByGroup[g.id] || [],
+                        last_message: lastByGroup[g.id] || null
+                    }));
+
+                    if (search) {
+                        enriched = enriched.filter(g => {
+                            const memberNames = (g.members || []).map(m => `${m.fullname || ""} ${m.user_id || ""}`).join(" ");
+                            const hay = `${g.room_name || ""} ${g.topic_title || ""} ${g.group_name || ""} ${g.group_code || ""} ${memberNames}`.toLowerCase();
+                            return hay.includes(search);
+                        });
+                    }
+
+                    res.json({ success: true, groups: enriched });
+                });
+            });
+        });
+    });
+});
+
+app.get("/group-chat-messages", (req, res) => {
+    const chatGroupId = Number(req.query.chatGroupId);
+    const userId = String(req.query.userId || "").trim();
+
+    if (!chatGroupId || !userId) {
+        return res.json({ success: false, message: "Missing chatGroupId or userId" });
+    }
+
+    db.query(
+        `SELECT id FROM chat_group_members WHERE chat_group_id = ? AND user_id = ? LIMIT 1`,
+        [chatGroupId, userId],
+        (memErr, memRows) => {
+            if (memErr || !memRows || memRows.length === 0) {
+                return res.json({ success: false, message: "You are not a member of this group chat." });
+            }
+
+            const sql = `
+                SELECT
+                    m.id,
+                    m.chat_group_id,
+                    m.sender_id,
+                    COALESCE(u.fullname, m.sender_name, m.sender_id) AS sender_name,
+                    COALESCE(cgm.member_role, m.sender_role, u.role, 'Member') AS sender_role,
+                    u.profile_image AS sender_profile_image,
+                    m.message_text,
+                    m.file_path,
+                    m.file_name,
+                    m.is_system,
+                    m.created_at
+                FROM chat_group_messages m
+                LEFT JOIN users u ON u.user_id = m.sender_id
+                LEFT JOIN chat_group_members cgm ON cgm.chat_group_id = m.chat_group_id AND cgm.user_id = m.sender_id
+                WHERE m.chat_group_id = ?
+                ORDER BY m.created_at ASC, m.id ASC
+            `;
+
+            db.query(sql, [chatGroupId], (err, results) => {
+                if (err) {
+                    console.error("Error fetching group chat messages:", err);
+                    return res.json({ success: false, message: "Error fetching group messages" });
+                }
+                res.json({ success: true, messages: results || [] });
+            });
+        }
+    );
+});
+
+app.post("/send-group-chat-message", chatFileUpload.single("file"), (req, res) => {
+    const chatGroupId = Number(req.body.chatGroupId);
+    const senderId = String(req.body.senderId || "").trim();
+    const messageText = String(req.body.messageText || "");
+
+    if (!chatGroupId || !senderId) {
+        return res.json({ success: false, message: "Missing chatGroupId or senderId" });
+    }
+
+    const verifySql = `
+        SELECT cgm.member_role, u.fullname, u.role
+        FROM chat_group_members cgm
+        JOIN users u ON u.id = cgm.user_db_id
+        WHERE cgm.chat_group_id = ? AND cgm.user_id = ?
+        LIMIT 1
+    `;
+
+    db.query(verifySql, [chatGroupId, senderId], (vErr, vRows) => {
+        if (vErr || !vRows || vRows.length === 0) {
+            return res.json({ success: false, message: "You are not a member of this group chat." });
+        }
+
+        const senderInfo = vRows[0];
+        let filePath = null;
+        let fileName = null;
+
+        if (req.file) {
+            filePath = "uploads/chat_files/" + req.file.filename;
+            fileName = req.file.originalname;
+        }
+
+        if (!messageText.trim() && !filePath) {
+            return res.json({ success: false, message: "Message cannot be empty." });
+        }
+
+        const insertSql = `
+            INSERT INTO chat_group_messages (chat_group_id, sender_id, sender_name, sender_role, message_text, file_path, file_name, is_system)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+        `;
+
+        db.query(
+            insertSql,
+            [chatGroupId, senderId, senderInfo.fullname || senderId, senderInfo.member_role || senderInfo.role || "Member", messageText, filePath, fileName],
+            (err, result) => {
+                if (err) {
+                    console.error("Error sending group chat message:", err);
+                    return res.json({ success: false, message: "Error sending group message" });
+                }
+
+                res.json({
+                    success: true,
+                    message: {
+                        id: result.insertId,
+                        chat_group_id: chatGroupId,
+                        sender_id: senderId,
+                        sender_name: senderInfo.fullname || senderId,
+                        sender_role: senderInfo.member_role || senderInfo.role || "Member",
+                        message_text: messageText,
+                        file_path: filePath,
+                        file_name: fileName,
+                        is_system: 0,
+                        created_at: new Date()
+                    }
+                });
+            }
+        );
+    });
+});
 
 app.get("/chat-users", (req, res) => {
     const currentUserId = req.query.userId;
