@@ -29,6 +29,11 @@
         return null;
     }
 
+    function isAdminOrFacultyRole() {
+        const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
+        return role === "admin" || role === "faculty";
+    }
+
     function findPortalInPath(path) {
         const normalized = String(path || "").replace(/\\/g, "/");
 
@@ -51,6 +56,17 @@
         }
 
         return null;
+    }
+
+    function trackActiveSubPortal() {
+        const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
+        if (activePath.includes("/faculty/adviser/")) {
+            sessionStorage.setItem("active_faculty_role", "Adviser");
+        } else if (activePath.includes("/faculty/instructor/")) {
+            sessionStorage.setItem("active_faculty_role", "Instructor");
+        } else if (activePath.includes("/faculty/panelist/")) {
+            sessionStorage.setItem("active_faculty_role", "Panelist");
+        }
     }
 
     function getNotificationsPageUrl() {
@@ -88,304 +104,201 @@
         return `${ups}${targetPath}`;
     }
 
+    // Strict deterministic notification target resolver (never guesses from activePath or stale localStorage.facultyRole)
     function getNotificationTargetUrl(item) {
         if (!item) {
             return getNotificationsPageUrl();
         }
 
-        const title = String(item.notification_title || "").toLowerCase();
-        const message = String(item.notification_message || "").toLowerCase();
-        const type = String(item.notification_type || "").toLowerCase();
+        const title = String(item.notification_title || "").toLowerCase().trim();
+        const message = String(item.notification_message || "").toLowerCase().trim();
+        const type = String(item.notification_type || "").toLowerCase().trim();
         const combined = `${title} ${message} ${type}`;
-
-        if (type === "announcement" || title.startsWith("new announcement")) {
-            const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
-            if (role === "admin") return resolveRelativeUrl("Admin/Announcements.html");
-            if (role === "faculty") return resolveRelativeUrl("Faculty/Announcements.html");
-            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
-            return getNotificationsPageUrl();
-        }
 
         const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
         const position = String(localStorage.getItem("position") || "").toLowerCase().trim();
-        const facultyRole = String(localStorage.getItem("facultyRole") || "").toLowerCase().trim();
-        const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
-        const sessionRole = String(sessionStorage.getItem("active_faculty_role") || "").toLowerCase();
         const hasPanelistAccess = localStorage.getItem("panelist_access") === "1";
         const hasInstructorAccess = localStorage.getItem("instructor_access") === "1";
         const hasAdviserAccess = localStorage.getItem("adviser_access") === "1";
 
-        // 1. MESSAGES / CHAT / CONVERSATION
+        // 1. Announcements
+        if (type === "announcement" || title.startsWith("new announcement")) {
+            if (role === "admin") return resolveRelativeUrl("Admin/Announcements.html");
+            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
+            return resolveRelativeUrl("Faculty/Announcements.html");
+        }
+
+        // 2. Messages / Chat
         if (
             type === "message" ||
+            title.includes("new message") ||
             title.includes("message") ||
-            combined.includes("new message") ||
-            combined.includes("chat") ||
-            combined.includes("conversation") ||
-            combined.includes("inbox")
+            combined.includes("sent you a message")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Messages.html");
             if (role === "admin") return resolveRelativeUrl("Admin/Messages.html");
-            if (role === "faculty") {
-                return resolveRelativeUrl("Faculty/Messages.html");
-            }
+            return resolveRelativeUrl("Faculty/Messages.html");
         }
 
-        // 2. PROFILE / SETTINGS / ACCOUNT
+        // 3. Account / Security / Settings
         if (
-            combined.includes("profile") ||
-            combined.includes("settings") ||
-            combined.includes("account") ||
-            combined.includes("password")
+            title.includes("security update") ||
+            combined.includes("password has been changed") ||
+            combined.includes("profile updated")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Settings.html");
             if (role === "admin") return resolveRelativeUrl("Admin/Settings.html");
-            if (role === "faculty") return resolveRelativeUrl("Faculty/Settings.html");
+            return resolveRelativeUrl("Faculty/Settings.html");
         }
 
-        // 2.5 DEFENSE MINUTES & DEPLOYMENT RECOMMENDATION E-SIGNATURE WORKFLOW
+        // 4. Defense Minutes E-Signature Workflow
         if (type === "defense minutes" || combined.includes("defense minutes")) {
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
-            if (role === "faculty" || role === "admin") {
-                if (
-                    combined.includes("panelist document review") ||
-                    combined.includes("ready for e-signature") ||
-                    activePath.includes("/panelist/")
-                ) {
-                    return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
-                }
-                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
-            }
-        }
-
-        if (combined.includes("recommendation for deployment")) {
-            if (role === "student") return resolveRelativeUrl("Student/Documents.html");
-            if (combined.includes("panelist") && (hasPanelistAccess || role === "faculty" || activePath.includes("/panelist/"))) {
+            if (
+                combined.includes("panelist document review") ||
+                title.includes("ready for e-signature") ||
+                title.includes("updated defense minutes for review") ||
+                combined.includes("open for your e-signature")
+            ) {
                 return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
             }
-            if ((combined.includes("chairperson") || combined.includes("dean")) && role === "admin") {
+            return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+        }
+
+        // 5. Recommendation for Deployment (check Chairperson/Dean BEFORE Panelist!)
+        if (combined.includes("recommendation for deployment")) {
+            if (role === "student") return resolveRelativeUrl("Student/Documents.html");
+            if (
+                combined.includes("pending your chairperson signature") ||
+                combined.includes("pending your signature") ||
+                combined.includes("pending chairperson") ||
+                combined.includes("pending dean") ||
+                title.includes("chairperson") ||
+                title.includes("dean")
+            ) {
                 return resolveRelativeUrl("Admin/Document_Review.html");
             }
-            if (role === "admin" && !hasAdviserAccess) {
-                return resolveRelativeUrl("Admin/Document_Review.html");
+            if (
+                combined.includes("pending a panelist e-signature") ||
+                combined.includes("panelist e-signature")
+            ) {
+                return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
             }
             if (hasAdviserAccess || role === "faculty") {
                 return resolveRelativeUrl("Faculty/Adviser/Documents.html");
             }
+            return resolveRelativeUrl("Admin/Document_Review.html");
         }
 
-        // 3. DEFENSE / SCHEDULE / EVALUATION / PANELIST / GRADING
-        // Checked before generic document matching so "Concept Presentation" defense schedules route here.
+        // 6. Adviser Requests / Title Proposals
         if (
-            type === "defense schedule" ||
+            type === "adviser request" ||
+            title.includes("adviser request") ||
+            combined.includes("requested you as their adviser") ||
+            combined.includes("adviser assignment")
+        ) {
+            if (role === "student") return resolveRelativeUrl("Student/Req_Adviser.html");
+            return resolveRelativeUrl("Faculty/Adviser/Adviser_Request.html");
+        }
+
+        // 7. Consultations
+        if (type === "consultation" || combined.includes("consultation")) {
+            if (role === "student") return resolveRelativeUrl("Student/Consultation.html");
+            if (combined.includes("instructor") && hasInstructorAccess) {
+                return resolveRelativeUrl("Faculty/Instructor/Consultation.html");
+            }
+            if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
+            if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Consultation.html");
+            return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
+        }
+
+        // 8. Defense Evaluation & Schedules
+        if (
             type === "defense evaluation" ||
+            type === "defense schedule" ||
             type === "defense" ||
-            combined.includes("defense") ||
-            combined.includes("panelist") ||
-            combined.includes("panel assignment") ||
-            combined.includes("panel evaluation") ||
-            combined.includes("grading") ||
-            (combined.includes("schedule") && !combined.includes("consultation"))
+            title.includes("panel evaluation") ||
+            title.includes("defense schedule") ||
+            title.includes("defense completed") ||
+            title.includes("defense evaluation")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Defense_Schedule.html");
 
-            if (role === "faculty" || role === "admin") {
-                // Explicit panelist assignment or cancellation goes to Assigned Defenses
-                if (
-                    combined.includes("panelist") ||
-                    combined.includes("panel assignment") ||
-                    combined.includes("assigned as a panelist") ||
-                    title.includes("defense created") ||
-                    title.includes("defense scheduled")
-                ) {
-                    if (hasPanelistAccess || role === "faculty") {
-                        return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
-                    }
-                }
-
-                // Completed / evaluation notifications go to Panel Evaluation for instructors
-                if (
-                    type === "defense evaluation" ||
-                    combined.includes("evaluation") ||
-                    combined.includes("completed")
-                ) {
-                    if (hasInstructorAccess) {
-                        return resolveRelativeUrl("Faculty/Instructor/Panel_Evaluation.html");
-                    }
-                    if (hasPanelistAccess) {
-                        return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
-                    }
-                    if (hasAdviserAccess) {
-                        return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
-                    }
-                }
-
-                // Respect active sub-portal if currently browsing one
-                if (activePath.includes("/panelist/") || facultyRole === "panelist" || sessionRole === "panelist") {
-                    return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
-                }
-                if (activePath.includes("/adviser/") || facultyRole === "adviser" || sessionRole === "adviser") {
-                    return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
-                }
-                if (activePath.includes("/instructor/") || facultyRole === "instructor" || sessionRole === "instructor") {
-                    return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
-                }
-
-                // Fallback by granted access
-                if (hasPanelistAccess && !hasInstructorAccess) {
-                    return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
-                }
-                if (hasInstructorAccess) {
-                    return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
-                }
-                if (hasAdviserAccess) {
-                    return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
-                }
-                if (role === "admin") {
-                    return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
-                }
-                return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+            if (
+                title.includes("panel evaluation submitted") ||
+                title.includes("panel evaluations complete") ||
+                combined.includes("please create schedule again")
+            ) {
+                return resolveRelativeUrl("Faculty/Instructor/Panel_Evaluation.html");
             }
+
+            if (
+                combined.includes("assigned as a panelist") ||
+                combined.includes("panelist") ||
+                title.includes("defense schedule")
+            ) {
+                if (hasPanelistAccess) return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+                if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
+                if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+            }
+
+            if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+            if (hasPanelistAccess) return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+            if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
+            return getNotificationsPageUrl();
         }
 
-        // 4. ADVISER REQUEST / ADVISORY / TITLE PROPOSALS
+        // 9. Document Review / Signing / Environmental Scanning / Submissions
         if (
-            combined.includes("adviser request") ||
+            type === "document" ||
+            type === "document review" ||
+            combined.includes("document") ||
+            combined.includes("environmental scanning") ||
             combined.includes("adviser acceptance") ||
             combined.includes("acceptance for advisory") ||
-            combined.includes("title proposal") ||
-            combined.includes("proposed title")
-        ) {
-            if (role === "student") return resolveRelativeUrl("Student/Req_Adviser.html");
-            if (role === "faculty" || (role === "admin" && hasAdviserAccess)) {
-                return resolveRelativeUrl("Faculty/Adviser/Adviser_Request.html");
-            }
-            if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
-        }
-
-        // 4.5 CONSULTATIONS
-        if (combined.includes("consultation") || type === "consultation") {
-            if (role === "student") return resolveRelativeUrl("Student/Consultation.html");
-            if (role === "faculty" || role === "admin") {
-                if (activePath.includes("/instructor/") || position.includes("instructor") || facultyRole === "instructor" || sessionRole === "instructor") {
-                    return resolveRelativeUrl("Faculty/Instructor/Consultation.html");
-                }
-                return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
-            }
-        }
-
-        // 5. DOCUMENTS / SIGNING / E-SIGNATURE / ENVIRONMENTAL SCANNING / REVISION / CONCEPT PRESENTATION
-        if (
-            combined.includes("document") ||
-            combined.includes("signing") ||
             combined.includes("signature") ||
-            combined.includes("environmental scanning") ||
-            combined.includes("concept presentation") ||
-            combined.includes("concept paper") ||
             combined.includes("recommendation") ||
-            combined.includes("review") ||
-            combined.includes("revision") ||
-            combined.includes("manuscript")
+            combined.includes("concept paper")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
-            if (role === "admin") {
-                if (combined.includes("adviser") && hasAdviserAccess) {
-                    return resolveRelativeUrl("Faculty/Adviser/Documents.html");
-                }
-                if (combined.includes("instructor") && hasInstructorAccess) {
-                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
-                }
+
+            if (
+                role === "admin" && (
+                    combined.includes("pending your signature") ||
+                    combined.includes("pending dean") ||
+                    combined.includes("pending chairperson") ||
+                    title.includes("adviser acceptance form") ||
+                    title.includes("environmental scanning") ||
+                    title.includes("declined by organization") ||
+                    position.includes("dean") ||
+                    position.includes("chairperson")
+                ) && !title.includes("new document submission")
+            ) {
                 return resolveRelativeUrl("Admin/Document_Review.html");
             }
-            if (role === "faculty") {
-                // If message specifically indicates adviser or user is currently inside Adviser portal
-                if (combined.includes("adviser") || facultyRole === "adviser" || sessionRole === "adviser" || activePath.includes("/adviser/")) {
-                    return resolveRelativeUrl("Faculty/Adviser/Documents.html");
-                }
 
-                if (combined.includes("instructor") || facultyRole === "instructor" || sessionRole === "instructor" || activePath.includes("/instructor/")) {
-                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+            if (combined.includes("environmental scanning")) {
+                if (role === "admin" && (position.includes("dean") || position.includes("chairperson")) && !title.includes("new document submission")) {
+                    return resolveRelativeUrl("Admin/Document_Review.html");
                 }
-
-                if (position.includes("adviser") && !position.includes("instructor")) {
-                    return resolveRelativeUrl("Faculty/Adviser/Documents.html");
-                }
-
-                if (position.includes("instructor") || position.includes("chairperson")) {
-                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
-                }
-
-                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+                if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+                if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
             }
+
+            if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+            if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+            if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
+            return resolveRelativeUrl("Faculty/Adviser/Documents.html");
         }
 
-        // 6. ANNOUNCEMENTS
-        if (combined.includes("announcement") || type === "announcement") {
-            if (role === "student") return resolveRelativeUrl("Student/StudentDash.html");
-            if (role === "admin") return resolveRelativeUrl("Admin/Announcements.html");
-            if (role === "faculty") return resolveRelativeUrl("Faculty/Announcements.html");
-        }
-
-        // Fallback
         return getNotificationsPageUrl();
     }
 
-    function getActiveFacultySubPortal() {
-        const activePath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
-        const facultyRole = String(localStorage.getItem("facultyRole") || "").toLowerCase().trim();
-        const sessionRole = String(sessionStorage.getItem("active_faculty_role") || "").toLowerCase().trim();
-
-        for (const sub of ["adviser", "instructor", "panelist"]) {
-            if (activePath.includes(`/${sub}/`)) return sub;
-        }
-        for (const sub of ["adviser", "instructor", "panelist"]) {
-            if (sessionRole === sub || facultyRole === sub) return sub;
-        }
-        return "";
-    }
-
-    const SUB_PORTAL_DASHBOARDS = {
-        adviser: "Faculty/Adviser/AdviserDash.html",
-        instructor: "Faculty/Instructor/InstructorDash.html",
-        panelist: "Faculty/Panelist/PanelistDash.html"
-    };
-
-    // Clicking a notification in the bell opens the dashboard of the portal
-    // (Admin / Faculty / Adviser / Instructor / Panelist / Student) the notification belongs to.
     function getNotificationDashboardUrl(item) {
-        const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
-        let abs = "";
-
-        try {
-            abs = new URL(String(getNotificationTargetUrl(item) || ""), window.location.href)
-                .pathname.replace(/\\/g, "/").toLowerCase();
-        } catch (e) {
-            abs = "";
+        if (isAdminOrFacultyRole()) {
+            return getNotificationsPageUrl();
         }
-
-        let dash = "";
-
-        if (abs.includes("/student/")) {
-            dash = "Student/StudentDash.html";
-        } else if (abs.includes("/admin/")) {
-            dash = "Admin/AdminDash.html";
-        } else if (abs.includes("/faculty/adviser/")) {
-            dash = SUB_PORTAL_DASHBOARDS.adviser;
-        } else if (abs.includes("/faculty/instructor/")) {
-            dash = SUB_PORTAL_DASHBOARDS.instructor;
-        } else if (abs.includes("/faculty/panelist/")) {
-            dash = SUB_PORTAL_DASHBOARDS.panelist;
-        } else if (abs.includes("/faculty/")) {
-            dash = SUB_PORTAL_DASHBOARDS[getActiveFacultySubPortal()] || "Faculty/FacultyDash.html";
-        } else if (role === "student") {
-            dash = "Student/StudentDash.html";
-        } else if (role === "admin") {
-            dash = "Admin/AdminDash.html";
-        } else {
-            dash = SUB_PORTAL_DASHBOARDS[getActiveFacultySubPortal()] || "Faculty/FacultyDash.html";
-        }
-
-        return resolveRelativeUrl(dash);
+        return getNotificationTargetUrl(item);
     }
 
     function formatNotificationTime(value) {
@@ -493,6 +406,7 @@
                     id="portalNotifBell"
                     aria-label="Notifications"
                     aria-expanded="false"
+                    title="Notifications"
                 >
                     <i class="fa-solid fa-bell"></i>
                     <span class="portal-notif-dot" id="portalNotifDot" hidden></span>
@@ -510,10 +424,13 @@
 
     const PortalNotifications = {
         unreadCount: 0,
+        sectionCounts: {},
         cachedNotifications: [],
         cachedNotificationsJson: "",
         pollTimer: null,
         isDropdownOpen: false,
+        _refreshBusy: false,
+        _markedCurrentSection: false,
 
         init() {
             const userId = getLoggedInUserId();
@@ -522,8 +439,10 @@
                 return;
             }
 
+            trackActiveSubPortal();
             this.injectMobileDrawer();
             this.injectBell();
+            this.bindNotificationsSidebarLinks();
             this.bindEvents();
             this.refresh(true);
             this.startPolling();
@@ -534,6 +453,25 @@
                     this.refresh(false);
                 }
             });
+        },
+
+        // Ensure Notifications sidebar links inside Adviser/Panelist/Instructor route Admin users to Admin/Notifications.html
+        // and Faculty users to Faculty/Notifications.html
+        bindNotificationsSidebarLinks() {
+            document.querySelectorAll('.sidebar .menu-item[data-notif-nav="1"], .sidebar .menu-item#nav-notifications').forEach((el) => {
+                if (el.dataset.notifBound === "1") return;
+                el.dataset.notifBound = "1";
+                el.removeAttribute("onclick");
+                el.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = getNotificationsPageUrl();
+                });
+            });
+        },
+
+        openNotificationsPage() {
+            window.location.href = getNotificationsPageUrl();
         },
 
         injectMobileDrawer() {
@@ -658,6 +596,21 @@
 
             bell.addEventListener("click", async (event) => {
                 event.stopPropagation();
+
+                // Admin and Faculty (including Adviser, Panelist, Instructor) redirect straight to their Notifications sidebar view
+                if (isAdminOrFacultyRole()) {
+                    if (this.isNotificationsFullPage()) {
+                        await this.refresh(true);
+                        if (typeof window.loadPortalNotificationsPage === "function") {
+                            window.loadPortalNotificationsPage(false);
+                        }
+                        return;
+                    }
+                    window.location.href = getNotificationsPageUrl();
+                    return;
+                }
+
+                // Student portal bell dropdown behavior
                 const isOpen = dropdown.classList.contains("is-open");
 
                 if (!isOpen) {
@@ -673,7 +626,7 @@
             if (viewAll) {
                 viewAll.addEventListener("click", async (event) => {
                     event.preventDefault();
-                    await this.markAllUnreadAsChecked();
+                    this.setDropdownOpen(false);
                     window.location.href = getNotificationsPageUrl();
                 });
             }
@@ -746,12 +699,25 @@
             }
         },
 
+        getCurrentNormalizedPath() {
+            try {
+                return new URL(window.location.href).pathname.replace(/\\/g, "/").toLowerCase();
+            } catch (e) {
+                return "";
+            }
+        },
+
         async refresh(showLoading) {
             const userId = getLoggedInUserId();
 
             if (!userId) {
                 return;
             }
+
+            if (this._refreshBusy && !showLoading) {
+                return;
+            }
+            this._refreshBusy = true;
 
             const list = document.getElementById("portalNotifList");
             const isFullPage = this.isNotificationsFullPage();
@@ -769,7 +735,8 @@
 
             try {
                 const response = await fetch(
-                    `${API_BASE}/portal-notifications/${encodeURIComponent(userId)}?limit=${limit}`
+                    `${API_BASE}/api/portal-notifications/summary/${encodeURIComponent(userId)}?limit=${limit}`,
+                    { cache: "no-store" }
                 );
 
                 const data = await response.json();
@@ -780,21 +747,47 @@
                     }
 
                     this.unreadCount = 0;
+                    this.sectionCounts = {};
                     this.updateDot(0);
+                    this.renderSidebarDots({}, 0);
                     return;
                 }
 
-                const nextUnread =
-                    Number(data.unread_count || 0);
+                let nextUnread = Number(data.unread_count || 0);
+                const sections = (data.sections && typeof data.sections === "object") ? { ...data.sections } : {};
                 const notifications = data.notifications || [];
-                const notificationsStr = JSON.stringify(notifications);
+                const here = this.getCurrentNormalizedPath();
 
+                // Automatically mark unread notifications for the current module page as read in DB
+                // (never auto-clear Notifications.html itself so the user can see and review unread items)
+                if (!isFullPage && here && Number(sections[here] || 0) > 0) {
+                    try {
+                        const markResp = await fetch(`${API_BASE}/api/portal-notifications/mark-section-read`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ userId, sectionPath: here })
+                        });
+                        const markData = await markResp.json();
+                        if (markData && markData.success) {
+                            const markedCount = Number(markData.marked_count || 0);
+                            nextUnread = Number(markData.unread_count ?? Math.max(0, nextUnread - markedCount));
+                            if (markedCount >= Number(sections[here] || 0)) {
+                                delete sections[here];
+                            } else if (markedCount > 0) {
+                                sections[here] = Math.max(0, Number(sections[here] || 0) - markedCount);
+                            }
+                        }
+                    } catch (_) { }
+                }
+
+                const notificationsStr = JSON.stringify(notifications);
                 const changed = (nextUnread !== this.unreadCount) || (notificationsStr !== this.cachedNotificationsJson);
 
                 this.unreadCount = nextUnread;
+                this.sectionCounts = sections;
                 this.cachedNotificationsJson = notificationsStr;
                 this.updateDot(nextUnread);
-                this.syncSidebarDots(nextUnread, changed);
+                this.renderSidebarDots(sections, nextUnread);
 
                 if (dropdownOpen) {
                     this.cachedNotifications = notifications;
@@ -816,6 +809,8 @@
                 if (showLoading && list) {
                     list.innerHTML = `<div class="portal-notif-empty">Unable to load notifications.</div>`;
                 }
+            } finally {
+                this._refreshBusy = false;
             }
         },
 
@@ -824,12 +819,13 @@
 
             if (!userId || this.unreadCount <= 0) {
                 this.updateDot(0);
+                this.renderSidebarDots({}, 0);
                 return;
             }
 
             try {
                 const response = await fetch(
-                    `${API_BASE}/portal-notifications-read-all`,
+                    `${API_BASE}/api/portal-notifications/read-all`,
                     {
                         method: "PUT",
                         headers: {
@@ -846,7 +842,9 @@
                 }
 
                 this.unreadCount = 0;
+                this.sectionCounts = {};
                 this.updateDot(0);
+                this.renderSidebarDots({}, 0);
 
                 this.cachedNotifications =
                     (this.cachedNotifications || []).map((item) => ({
@@ -875,6 +873,24 @@
                     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.28);
                     flex-shrink: 0;
                 }
+                .sidebar-notif-badge {
+                    margin-left: auto;
+                    min-width: 20px;
+                    height: 20px;
+                    padding: 0 6px;
+                    border-radius: 999px;
+                    background: #ef4444;
+                    color: #ffffff;
+                    font-size: 11px;
+                    font-weight: 700;
+                    line-height: 20px;
+                    text-align: center;
+                    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.28);
+                    flex-shrink: 0;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
             `;
             document.head.appendChild(style);
         },
@@ -882,6 +898,7 @@
         getSidebarItems() {
             const items = [];
             document.querySelectorAll(".sidebar .menu-item").forEach((el) => {
+                const isNotifAttr = el.id === "nav-notifications" || el.getAttribute("data-notif-nav") === "1";
                 let href = "";
                 const onclick = el.getAttribute("onclick") || "";
                 const m = onclick.match(/location(?:\.href)?\s*=\s*['"]([^'"]+)['"]/);
@@ -893,105 +910,63 @@
                     const a = el.querySelector("a[href]");
                     if (a) href = a.getAttribute("href") || "";
                 }
+                if (isNotifAttr && !href) {
+                    href = getNotificationsPageUrl();
+                }
                 if (!href || href.startsWith("#") || href.startsWith("javascript")) return;
                 try {
                     const path = new URL(href, window.location.href).pathname.replace(/\\/g, "/").toLowerCase();
-                    items.push({ el, path });
+                    const isNotifItem = isNotifAttr || path.endsWith("/notifications.html");
+                    items.push({ el, path, isNotifItem });
                 } catch (e) { /* ignore */ }
             });
             return items;
         },
 
-        // Puts a red dot on each sidebar item whose page has unread notifications.
-        // Opening that page marks its notifications as read, which clears the dot.
-        async syncSidebarDots(unreadNow, force) {
-            const userId = getLoggedInUserId();
-            if (!userId || this._dotsBusy) return;
-            if (!force && unreadNow === this._dotsUnread) return;
+        renderSidebarDots(sectionsMap, totalUnread) {
+            this.ensureSidebarDotStyle();
+            const map = sectionsMap || {};
+            const unreadTotal = Math.max(0, Number(totalUnread || 0));
 
-            this._dotsBusy = true;
+            this.getSidebarItems().forEach(({ el, path, isNotifItem }) => {
+                const existingDot = el.querySelector(".sidebar-new-dot");
+                const existingBadge = el.querySelector(".sidebar-notif-badge");
 
-            try {
-                const response = await fetch(
-                    `${API_BASE}/portal-notifications/${encodeURIComponent(userId)}?limit=100`
-                );
-                const data = await response.json();
-                if (!data.success) return;
-
-                this._dotsUnread = Number(data.unread_count || 0);
-                const unread = (data.notifications || []).filter((n) => Number(n.is_read) === 0);
-                const toPath = (url) => {
-                    try {
-                        return new URL(url, window.location.href).pathname.replace(/\\/g, "/").toLowerCase();
-                    } catch (e) {
-                        return "";
-                    }
-                };
-                const here = toPath(window.location.href);
-                const byPage = new Map();
-
-                unread.forEach((n) => {
-                    const p = toPath(getNotificationTargetUrl(n));
-                    if (!p) return;
-                    if (!byPage.has(p)) byPage.set(p, []);
-                    byPage.get(p).push(n);
-                });
-
-                // Visiting a page counts as seeing its notifications, except for Adviser Request
-                // notifications with feedback/comments which should stay unread in the Bell and
-                // Notifications sidebar until explicitly viewed in the Bell or Notifications page.
-                if (!this.isNotificationsFullPage() && byPage.has(here)) {
-                    const itemsOnHere = byPage.get(here) || [];
-                    const autoMarkIds = itemsOnHere
-                        .filter((n) => {
-                            const t = String(n.notification_type || "").toLowerCase();
-                            const ttl = String(n.notification_title || "").toLowerCase();
-                            const msg = String(n.notification_message || "").toLowerCase();
-                            if (t.includes("adviser") || ttl.includes("adviser") || msg.includes("adviser feedback:")) {
-                                return false;
-                            }
-                            return true;
-                        })
-                        .map((n) => n.id);
-
-                    const remaining = itemsOnHere.filter((n) => !autoMarkIds.includes(n.id));
-                    if (remaining.length > 0) {
-                        byPage.set(here, remaining);
-                    } else {
-                        byPage.delete(here);
-                    }
-
-                    if (autoMarkIds.length > 0) {
-                        this._dotsUnread = -1;
-                        for (const id of autoMarkIds) {
-                            await this.markRead(id);
+                if (isNotifItem) {
+                    if (existingDot) existingDot.remove();
+                    if (unreadTotal > 0) {
+                        const label = unreadTotal > 99 ? "99+" : String(unreadTotal);
+                        if (existingBadge) {
+                            existingBadge.textContent = label;
+                            existingBadge.setAttribute("title", `${unreadTotal} unread notification${unreadTotal === 1 ? "" : "s"}`);
+                        } else {
+                            const badge = document.createElement("span");
+                            badge.className = "sidebar-notif-badge";
+                            badge.textContent = label;
+                            badge.setAttribute("title", `${unreadTotal} unread notification${unreadTotal === 1 ? "" : "s"}`);
+                            el.appendChild(badge);
                         }
+                    } else if (existingBadge) {
+                        existingBadge.remove();
                     }
+                    return;
                 }
 
-                this.ensureSidebarDotStyle();
+                if (existingBadge) existingBadge.remove();
+                const sectionCount = Number(map[path] || 0);
+                const shouldShow = sectionCount > 0;
 
-                this.getSidebarItems().forEach(({ el, path }) => {
-                    const isNotifPage = path.endsWith("/notifications.html");
-                    const shouldShow = isNotifPage
-                        ? (unread.length > 0 && path !== here)
-                        : byPage.has(path);
-                    const existing = el.querySelector(".sidebar-new-dot");
-
-                    if (shouldShow && !existing) {
-                        const dot = document.createElement("span");
-                        dot.className = "sidebar-new-dot";
-                        dot.setAttribute("title", "New notification");
-                        el.appendChild(dot);
-                    } else if (!shouldShow && existing) {
-                        existing.remove();
-                    }
-                });
-            } catch (error) {
-                console.log(error);
-            } finally {
-                this._dotsBusy = false;
-            }
+                if (shouldShow && !existingDot) {
+                    const dot = document.createElement("span");
+                    dot.className = "sidebar-new-dot";
+                    dot.setAttribute("title", `${sectionCount} unread update${sectionCount === 1 ? "" : "s"}`);
+                    el.appendChild(dot);
+                } else if (shouldShow && existingDot) {
+                    existingDot.setAttribute("title", `${sectionCount} unread update${sectionCount === 1 ? "" : "s"}`);
+                } else if (!shouldShow && existingDot) {
+                    existingDot.remove();
+                }
+            });
         },
 
         updateDot(count) {
@@ -1064,6 +1039,13 @@
                     const id = node.getAttribute("data-notification-id");
                     const item = (this.cachedNotifications || []).find((n) => String(n.id) === String(id));
                     await this.markRead(id);
+
+                    // Admin and Faculty (Adviser, Panelist, Instructor) go directly to Notifications sidebar view
+                    if (isAdminOrFacultyRole()) {
+                        window.location.href = `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id)}`;
+                        return;
+                    }
+
                     const rawType = String(item?.notification_type || "").toLowerCase();
                     const rawTitle = String(item?.notification_title || "").toLowerCase();
                     const rawMsg = String(item?.notification_message || "").toLowerCase();
@@ -1075,7 +1057,7 @@
                         window.location.href = `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id)}`;
                         return;
                     }
-                    const targetUrl = getNotificationDashboardUrl(item);
+                    const targetUrl = getNotificationTargetUrl(item);
                     if (targetUrl) {
                         window.location.href = targetUrl;
                     }
@@ -1092,7 +1074,7 @@
 
             try {
                 const response = await fetch(
-                    `${API_BASE}/portal-notification-read/${encodeURIComponent(notificationId)}`,
+                    `${API_BASE}/api/portal-notifications/read/${encodeURIComponent(notificationId)}`,
                     {
                         method: "PUT",
                         headers: {
@@ -1108,12 +1090,6 @@
                     return;
                 }
 
-                const wasUnread =
-                    (this.cachedNotifications || []).some((item) =>
-                        String(item.id) === String(notificationId)
-                        && Number(item.is_read) === 0
-                    );
-
                 this.cachedNotifications =
                     (this.cachedNotifications || []).map((item) =>
                         String(item.id) === String(notificationId)
@@ -1121,10 +1097,14 @@
                         : item
                     );
 
-                if (wasUnread) {
+                if (data.unread_count !== undefined) {
+                    this.unreadCount = Math.max(0, Number(data.unread_count || 0));
+                } else {
                     this.unreadCount = Math.max(0, this.unreadCount - 1);
-                    this.updateDot(this.unreadCount);
                 }
+
+                this.updateDot(this.unreadCount);
+                this.renderSidebarDots(this.sectionCounts, this.unreadCount);
 
                 if (this.isDropdownVisible()) {
                     this.renderList(this.cachedNotifications);
@@ -1143,6 +1123,7 @@
 
     PortalNotifications.getNotificationTargetUrl = getNotificationTargetUrl;
     PortalNotifications.getNotificationDashboardUrl = getNotificationDashboardUrl;
+    PortalNotifications.getNotificationsPageUrl = getNotificationsPageUrl;
     window.PortalNotifications = PortalNotifications;
 
 })();

@@ -1,18 +1,18 @@
 :root{
-    --void:#06040f;
-    --deep:#0c0820;
-    --midnight:#14103a;
+    --void:#14151c;
+    --deep:#181a24;
+    --midnight:#1e202c;
     --purple-deep:#2e1065;
-    --purple:#6d28d9;
-    --violet:#8b5cf6;
+    --purple:#6366f1;
+    --violet:#7c3aed;
     --neon:#a78bfa;
     --glow:#c4b5fd;
-    --cyan:#22d3ee;
-    --cyan-soft:rgba(34,211,238,0.35);
-    --glass:rgba(255,255,255,0.06);
-    --glass-border:rgba(255,255,255,0.12);
-    --text:#f8f7ff;
-    --text-muted:rgba(248,247,255,0.55);
+    --cyan:#c4b5fd;
+    --cyan-soft:rgba(167,139,250,0.35);
+    --glass:rgba(20,20,30,0.42);
+    --glass-border:rgba(255,255,255,0.16);
+    --text:#f8fafc;
+    --text-muted:#cbd5e1;
 }
 
 *,*::before,*::after{
@@ -28,9 +28,20 @@ html,body{
 
 body{
     font-family:'Outfit', sans-serif;
-    background:var(--void);
+    background-color:var(--void);
     color:var(--text);
     min-height:100vh;
+    position:relative;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:url('Images/wow.jfif') center / cover no-repeat;
+    filter:grayscale(48%) brightness(0.76) contrast(1.02);
+    transform:scale(1.02);
+    z-index:0;
 }
 
 /* ═══════════════════════════════════════
@@ -38,6 +49,7 @@ body{
    ═══════════════════════════════════════ */
 .scene{
     position:relative;
+    z-index:10;
     min-height:100vh;
     width:100%;
     display:flex;
@@ -47,53 +59,31 @@ body{
     padding:clamp(20px, 4vw, 40px);
 }
 
-/* Atmospheric base */
+/* Greyish atmospheric veil matching Log-in.html */
 .atmosphere{
     position:fixed;
     inset:0;
-    z-index:0;
+    z-index:1;
     background:
-        radial-gradient(ellipse 90% 70% at 10% 60%, rgba(109,40,217,0.35) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 50% at 85% 20%, rgba(34,211,238,0.12) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 40% at 70% 90%, rgba(139,92,246,0.2) 0%, transparent 45%),
-        linear-gradient(145deg, var(--void) 0%, var(--deep) 35%, var(--midnight) 70%, #1a0a3e 100%);
+        linear-gradient(135deg, rgba(28,30,38,0.54) 0%, rgba(46,49,60,0.46) 55%, rgba(22,24,32,0.58) 100%),
+        radial-gradient(circle at 12% 20%, rgba(148,163,184,0.14) 0%, transparent 52%),
+        radial-gradient(circle at 88% 82%, rgba(99,102,241,0.12) 0%, transparent 50%);
 }
 
 .atmosphere::after{
     content:"";
     position:absolute;
     inset:0;
-    background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    opacity:0.5;
+    background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity:0.4;
     pointer-events:none;
 }
 
-/* Grid mesh overlay */
-.grid-mesh{
-    position:fixed;
-    inset:0;
-    z-index:1;
-    background-image:
-        linear-gradient(rgba(167,139,250,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(167,139,250,0.04) 1px, transparent 1px);
-    background-size:64px 64px;
-    mask-image:radial-gradient(circle at center, black 40%, transparent 90%);
-    animation:meshDrift 40s linear infinite;
-    pointer-events:none;
-}
-
-@keyframes meshDrift{
-    to{ background-position:64px 64px; }
-}
-
-/* ═══ LAYERED WAVE COMPOSITION ═══ */
-.wave-stage{
-    position:fixed;
-    inset:0;
-    z-index:2;
-    pointer-events:none;
-    overflow:hidden;
-    opacity:0.75;
+/* Hidden legacy purple overlays so wow.jfif shows cleanly */
+.grid-mesh,
+.wave-stage,
+.light-sweep{
+    display:none;
 }
 
 .wave-stage svg{
@@ -159,24 +149,20 @@ body{
 }
 
 .orb-1{
-    width:480px; height:480px;
-    background:radial-gradient(circle, rgba(124,58,237,0.4), transparent 70%);
-    top:10%; left:10%;
+    width:360px; height:360px;
+    background:radial-gradient(circle, rgba(148,163,184,0.16), transparent 70%);
+    top:8%; right:12%;
 }
 
 .orb-2{
-    width:360px; height:360px;
-    background:radial-gradient(circle, rgba(34,211,238,0.2), transparent 70%);
-    bottom:10%; right:15%;
+    width:300px; height:300px;
+    background:radial-gradient(circle, rgba(99,102,241,0.14), transparent 70%);
+    bottom:8%; left:10%;
     animation-delay:-4s;
 }
 
 .orb-3{
-    width:300px; height:300px;
-    background:radial-gradient(circle, rgba(167,139,250,0.3), transparent 70%);
-    top:40%; left:50%;
-    transform:translateX(-50%);
-    animation-delay:-7s;
+    display:none;
 }
 
 @keyframes orbFloat{
@@ -295,19 +281,18 @@ body{
     color:var(--text-muted);
 }
 
-/* Form — glass embedded panel strip */
+/* Form — frosted semi-transparent glass panel matching Log-in.html */
 .auth-form-wrap{
     position:relative;
     padding:clamp(24px, 4vw, 36px);
-    background:rgba(255,255,255,0.04);
+    background:rgba(20,20,30,0.44);
     border:1px solid var(--glass-border);
-    border-radius:24px;
-    backdrop-filter:blur(24px);
-    -webkit-backdrop-filter:blur(24px);
+    border-radius:20px;
+    -webkit-backdrop-filter:blur(14px);
+    backdrop-filter:blur(14px);
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.1),
-        0 24px 80px rgba(0,0,0,0.35),
-        0 0 0 1px rgba(167,139,250,0.05);
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        0 24px 60px rgba(0,0,0,0.45);
     animation:fadeUp 0.8s 0.25s ease forwards;
     opacity:0;
 }
@@ -359,9 +344,9 @@ body{
 .input-group input{
     width:100%;
     padding:16px 18px 16px 50px;
-    background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.1);
-    border-radius:14px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.16);
+    border-radius:12px;
     color:var(--text);
     font-family:'Outfit', sans-serif;
     font-size:15px;
@@ -372,22 +357,19 @@ body{
 
 .input-group input[readonly]{
     color:var(--text-muted);
-    background:rgba(255,255,255,0.02);
+    background:rgba(255,255,255,0.05);
     cursor:not-allowed;
-    border-color:rgba(255,255,255,0.05);
+    border-color:rgba(255,255,255,0.12);
 }
 
 .input-group input::placeholder{
-    color:rgba(248,247,255,0.3);
+    color:rgba(255,255,255,0.45);
 }
 
 .input-group input:focus:not([readonly]){
-    border-color:rgba(167,139,250,0.5);
-    background:rgba(255,255,255,0.08);
-    box-shadow:
-        0 0 0 3px rgba(124,58,237,0.15),
-        0 0 30px rgba(109,40,217,0.2),
-        inset 0 1px 0 rgba(255,255,255,0.05);
+    border-color:#6366f1;
+    background:rgba(255,255,255,0.12);
+    box-shadow:0 0 15px rgba(99,102,241,0.25);
 }
 
 .input-wrap:focus-within i.field-icon{
@@ -507,16 +489,17 @@ body{
 
 /* Notice Box */
 .notice-box{
-    background:rgba(124,58,237,0.1);
-    border:1px solid rgba(124,58,237,0.25);
-    border-radius:18px;
+    background:rgba(20,20,30,0.42);
+    border:1px solid rgba(255,255,255,0.16);
+    border-radius:16px;
     padding:16px;
     display:flex;
     gap:14px;
     margin-bottom:20px;
     align-items:center;
-    backdrop-filter:blur(10px);
-    -webkit-backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(14px);
+    backdrop-filter:blur(14px);
+    box-shadow:0 12px 32px rgba(0,0,0,0.3);
     animation:fadeUp 0.8s 0.2s ease forwards;
     opacity:0;
 }

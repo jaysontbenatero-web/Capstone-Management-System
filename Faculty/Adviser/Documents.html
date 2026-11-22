@@ -10,7 +10,7 @@
     <title>
         Document Review | CMS</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap"
         rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -180,6 +180,17 @@
                     </span>
                 </div>
 
+                <div class="menu-title">
+                    System
+                </div>
+
+                <div class="menu-item" id="nav-notifications" data-notif-nav="1" onclick="window.location.href='../Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>
+                        Notifications
+                    </span>
+                </div>
+
             </div>
 
         </div>
@@ -321,7 +332,7 @@
                     </p>
                 </div>
 
-                <select id="statusFilter" onchange="renderCurrentTab()">
+                <select id="statusFilter" aria-label="Filter by status" title="Filter by status" onchange="renderCurrentTab()">
                     <option value="All">All Status</option>
                     <option value="Pending Review">Pending Review</option>
                     <option value="Subject to Change">Subject to Change</option>
@@ -528,7 +539,7 @@
                         File name
                     </h3>
 
-                    <a id="reviewFileLink" href="#" target="_blank">
+                    <a id="reviewFileLink" href="#" target="_blank" rel="noopener noreferrer">
                         Open Attached File
                     </a>
                 </div>
@@ -663,7 +674,7 @@
                         </div>
                         <div
                             style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:15px; display:inline-block; min-width:200px; margin-bottom:10px;">
-                            <img id="savedSignaturePreview" src="" alt="Saved Signature"
+                            <img id="savedSignaturePreview" alt="Saved Signature"
                                 style="max-height:80px; max-width:100%; display:block; margin:0 auto;">
                         </div>
                         <button class="esign-place-btn" type="button" onclick="placeSavedSignatureOnDocument()">
@@ -695,7 +706,7 @@
                     <div class="modal-actions esign-action-stack">
                         <button class="save-btn" onclick="submitESignature('Approved')" type="button">
                             <i class="fa-solid fa-check"></i>
-                            Approve & Save
+                            Approve &amp; Save
                         </button>
                         <button class="esign-revision-toggle-btn" onclick="submitESignature('Subject to Change')"
                             type="button">
@@ -1182,7 +1193,7 @@
 
             groups.forEach((group, index) => {
                 const domId = String(group.key).replace(/[^a-zA-Z0-9_-]/g, "_");
-                const isOpen = index === 0;
+                const isOpen = false;
 
                 const bundle = document.createElement("div");
                 bundle.className = "group-bundle-card" + (group.hasNew ? " has-new-submissions" : "");
@@ -2154,7 +2165,7 @@
         }
 
         function isNewDocument(item) {
-            return item.review_status === "Pending Review";
+            return !item.review_status || item.review_status === "Pending Review";
         }
 
         function groupKeyToDomId(key) {
@@ -2301,6 +2312,8 @@
 
                     const matchesStatus =
                         status === "All"
+                        ||
+                        (status === "Pending Review" && (!item.review_status || item.review_status === "Pending Review"))
                         ||
                         item.review_status === status;
 
@@ -2459,10 +2472,10 @@
                             </div>
                             <div class="phase-subcontainer-right">
                                 <span class="phase-count-pill">${count} File${count !== 1 ? "s" : ""}</span>
-                                <i class="fa-solid fa-chevron-down phase-chevron" id="phase-chevron-${phaseDomId}" style="transform:rotate(180deg);"></i>
+                                <i class="fa-solid fa-chevron-down phase-chevron" id="phase-chevron-${phaseDomId}" style="transform:rotate(0deg);"></i>
                             </div>
                         </div>
-                        <div class="phase-subcontainer-body" id="phase-body-${phaseDomId}" style="display:block;">
+                        <div class="phase-subcontainer-body" id="phase-body-${phaseDomId}" style="display:none;">
                             ${phaseDocs.map(buildGroupedDocRowHtml).join("")}
                             ${phaseDms.map(buildAdviserDmRowHtml).join("")}
                         </div>
@@ -2522,7 +2535,7 @@
 
             groups.forEach((group, index) => {
                 const domId = groupKeyToDomId(group.key);
-                const isOpen = index === 0;
+                const isOpen = false;
                 const dmPendingCount = (group.dmItems || []).filter(dm => dm.status === "Pending Adviser Signature").length;
                 const newCount = group.docs.filter(isNewDocument).length + dmPendingCount;
                 const totalCount = group.docs.length + (group.dmItems || []).length;

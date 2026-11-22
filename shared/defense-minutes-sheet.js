@@ -517,7 +517,16 @@
                 if (targetName && elName) return namesMatch(elName, targetName);
                 return false;
             });
-            targets = ownTargets;
+            if (ownTargets.length > 0) {
+                targets = ownTargets;
+            } else {
+                const allGenericPlaceholders = targets.length > 0 && targets.every(el => {
+                    const elPid = Number(el.getAttribute("data-dm-panelist-id") || 0);
+                    const elName = String(el.getAttribute("data-dm-panelist-name") || "").trim();
+                    return !elPid && /^(panel\s*(chairman|chair|member)|panelist)/i.test(elName);
+                });
+                targets = allGenericPlaceholders ? targets : [];
+            }
         }
         const slotSelector = role === "adviser" ? ".dm-adviser-sig-slot" : ".dm-panelist-sig-slot";
         const dateSelector = role === "adviser" ? ".dm-adviser-date" : ".dm-panelist-date";

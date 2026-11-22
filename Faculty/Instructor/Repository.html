@@ -171,6 +171,17 @@
                 </span>
             </div>
 
+            <div class="menu-title">
+                System
+            </div>
+
+            <div class="menu-item" id="nav-notifications" data-notif-nav="1" onclick="window.location.href='../Notifications.html'">
+                <i class="fa-solid fa-bell"></i>
+                <span>
+                    Notifications
+                </span>
+            </div>
+
         </div>
 
     </div>
@@ -220,7 +231,140 @@
                     </div>
                     <div>
                         <h2>Add Approved Title</h2>
-                        <p>Archive a passed capstone project to the repository.</p>
+                        <p>Archive manually or upload a PDF to auto-fill sections.</p>
+                    </div>
+                </div>
+
+                <div class="repo-mode-switcher" role="tablist" aria-label="Entry Mode">
+                    <button type="button" class="repo-mode-btn active" id="modeManualBtn" data-mode="manual">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        Manual Entry
+                    </button>
+                    <button type="button" class="repo-mode-btn" id="modeUploadBtn" data-mode="upload">
+                        <i class="fa-solid fa-file-arrow-up"></i>
+                        Upload File
+                    </button>
+                </div>
+
+                <!-- UPLOAD FILE PANEL -->
+                <div class="repo-upload-panel" id="repositoryUploadPanel" style="display:none;">
+                    <div class="repo-upload-scroll">
+                        <div class="repo-dropzone" id="repoFileDropzone">
+                            <input type="file" id="repoFileInput" accept=".pdf,.txt,application/pdf,text/plain" hidden>
+                            <div class="repo-dropzone-icon">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <h3>Upload Capstone Document</h3>
+                            <p>Drop a <strong>PDF</strong> or <strong>TXT</strong> file here, or <span class="repo-browse-link">browse files</span></p>
+                            <small>Automatically separates Title, Program, Year, Abstract, Research Problem, Objectives, Methodology &amp; Researchers.</small>
+                        </div>
+
+                        <label class="repo-auto-save-toggle" for="repoAutoSaveCheck">
+                            <input type="checkbox" id="repoAutoSaveCheck" checked>
+                            <span>Automatically add to repository once all required sections are read</span>
+                        </label>
+
+                        <div class="repo-upload-status" id="repoUploadStatus" style="display:none;"></div>
+
+                        <div class="repo-upload-preview" id="repoUploadPreview" style="display:none;">
+                            <div class="repo-extracted-header">
+                                <span class="repo-file-pill" id="repoParsedFileName">
+                                    <i class="fa-solid fa-file-lines"></i> document.pdf
+                                </span>
+                                <button type="button" class="repo-clear-file-btn" id="uploadResetBtn">
+                                    <i class="fa-solid fa-rotate-left"></i> Clear
+                                </button>
+                            </div>
+
+                            <div class="repo-extracted-pills" id="repoExtractedPills"></div>
+
+                            <div class="form-section">
+                                <p class="form-section-label">
+                                    <i class="fa-solid fa-graduation-cap"></i>
+                                    Extracted Info
+                                </p>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="uploadProgram">Program <span class="required">*</span></label>
+                                        <select id="uploadProgram" class="select-box">
+                                            <option value="">Select program</option>
+                                            <option value="IT">BSIT</option>
+                                            <option value="IS">BSIS</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="uploadYear">Year</label>
+                                        <select id="uploadYear" class="select-box">
+                                            <option value="">Select year</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="uploadTitle">Capstone Title <span class="required">*</span></label>
+                                    <textarea id="uploadTitle" class="textarea-box" rows="2" style="min-height:62px;" placeholder="Extracted title..."></textarea>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group form-group-last">
+                                        <label for="uploadCategory">Category</label>
+                                        <select id="uploadCategory" class="select-box">
+                                            <option value="">Select category</option>
+                                            <option>Artificial Intelligence</option>
+                                            <option>Web Development</option>
+                                            <option>Web Application</option>
+                                            <option>Mobile Development</option>
+                                            <option>Data Analytics</option>
+                                            <option>IoT</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group form-group-last">
+                                        <label for="uploadAdviser">Adviser</label>
+                                        <input type="text" id="uploadAdviser" class="input-box" placeholder="Optional adviser name">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section form-section-last">
+                                <p class="form-section-label">
+                                    <i class="fa-solid fa-list-check"></i>
+                                    Separated Sections
+                                </p>
+
+                                <div class="form-group">
+                                    <label for="uploadAbstract">Abstract <span class="required">*</span></label>
+                                    <textarea id="uploadAbstract" class="textarea-box textarea-compact" rows="4"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="uploadResearchProblem">Research Problem <small style="font-weight:500;color:#8b7aa8;">(Optional)</small></label>
+                                    <textarea id="uploadResearchProblem" class="textarea-box textarea-compact" rows="3"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="uploadObjectives">Objectives <span class="required">*</span></label>
+                                    <textarea id="uploadObjectives" class="textarea-box textarea-compact" rows="4"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="uploadMethodology">Methodology <span class="required">*</span></label>
+                                    <textarea id="uploadMethodology" class="textarea-box textarea-compact" rows="4"></textarea>
+                                </div>
+
+                                <div class="form-group form-group-last">
+                                    <label for="uploadResearchers">Researchers</label>
+                                    <input type="text" id="uploadResearchers" class="input-box" placeholder="Names separated by commas">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-panel-footer" id="repoUploadFooter" style="display:none;">
+                        <button class="submit-btn" type="button" id="uploadSaveBtn">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            Save Extracted Entry to Repository
+                        </button>
                     </div>
                 </div>
 

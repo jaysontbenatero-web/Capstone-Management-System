@@ -33,6 +33,133 @@
         .admin-portal .sidebar {
             z-index: 100 !important;
         }
+
+        /* Panelist Document Review Filter Bar */
+        .admin-portal .admin-main .panelist-filter-bar {
+            background: #ffffff;
+            border: 1px solid #e9d5ff;
+            border-radius: 18px;
+            padding: 12px 16px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 20px rgba(109, 40, 217, 0.06);
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .search-box {
+            flex: 1 1 320px;
+            width: auto !important;
+            max-width: 100%;
+            height: 44px;
+            padding: 0 16px !important;
+            border-radius: 14px !important;
+            background: #faf8ff !important;
+            border: 1.5px solid #e5d9fb !important;
+            box-shadow: none !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .search-box:hover {
+            border-color: #c4b5fd !important;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .search-box:focus-within {
+            background: #ffffff !important;
+            border-color: #7c3aed !important;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14) !important;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .search-box i {
+            color: #7c3aed;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .search-box input[type="text"] {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none !important;
+            outline: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: #2e1065;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .search-box input[type="text"]::placeholder {
+            color: #9b8fb2;
+            font-weight: 400;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .status-filter-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            min-width: 220px;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .status-filter-wrap .filter-lead-icon {
+            position: absolute;
+            left: 14px;
+            color: #7c3aed;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .status-filter-wrap .filter-caret-icon {
+            position: absolute;
+            right: 14px;
+            color: #6d28d9;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .status-filter-wrap select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            height: 44px;
+            padding: 0 38px 0 38px;
+            border-radius: 14px;
+            background: #faf8ff !important;
+            border: 1.5px solid #e5d9fb !important;
+            color: #2e1065;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .status-filter-wrap select:hover {
+            border-color: #c4b5fd !important;
+            background: #f5f0ff !important;
+        }
+
+        .admin-portal .admin-main .panelist-filter-bar .status-filter-wrap select:focus {
+            background: #ffffff !important;
+            border-color: #7c3aed !important;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14) !important;
+            outline: none;
+        }
+
+        @media (max-width: 640px) {
+            .admin-portal .admin-main .panelist-filter-bar .status-filter-wrap {
+                width: 100%;
+                min-width: 0;
+            }
+        }
     </style>
 </head>
 
@@ -92,6 +219,12 @@
                     <i class="fa-solid fa-file-signature"></i>
                     <span>Document Review</span>
                 </div>
+
+                <div class="menu-title">System</div>
+                <div class="menu-item" id="nav-notifications" data-notif-nav="1" onclick="window.location.href='../Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
             </div>
         </div>
 
@@ -113,19 +246,21 @@
             </div>
         </header>
 
-        <section class="toolbar-card">
+        <section class="filter-card panelist-filter-bar">
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="dmSearchInput" placeholder="Search documents..."
-                    onkeyup="renderPanelistDmList()">
+                <input type="text" id="dmSearchInput" placeholder="Search by group, defense type, or adviser..."
+                    oninput="applyPanelistFilters()">
             </div>
 
-            <div class="tab-buttons">
-                <select id="dmStatusFilter" onchange="renderPanelistDmList()">
+            <div class="status-filter-wrap">
+                <i class="fa-solid fa-filter filter-lead-icon"></i>
+                <select id="dmStatusFilter" onchange="applyPanelistFilters()" aria-label="Filter by status">
                     <option value="All">All Statuses</option>
                     <option value="Pending">Pending Your Signature</option>
                     <option value="Signed">Signed by You</option>
                 </select>
+                <i class="fa-solid fa-chevron-down filter-caret-icon"></i>
             </div>
         </section>
 
@@ -364,6 +499,8 @@
             const currentUid = localStorage.getItem("userId");
             if (currentUid && currentUid !== loggedInUserId) {
                 loggedInUserId = currentUid;
+                panelistDbId = null;
+                savedPanelistSignature = null;
                 panelistFullName = localStorage.getItem("fullname") || "";
                 closePanelistDmModal();
                 closePanPdfModal();
@@ -468,6 +605,11 @@
             chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
         }
 
+        function applyPanelistFilters() {
+            renderPanelistDmList();
+            renderPanelistSigningDocs();
+        }
+
         function renderPanelistDmList() {
             const grid = document.getElementById("panelistDmGrid");
             const q = String(document.getElementById("dmSearchInput").value || "").toLowerCase().trim();
@@ -507,9 +649,9 @@
             grid.innerHTML = "";
             Object.values(grouped).forEach((group, index) => {
                 const domId = String(group.key).replace(/[^a-zA-Z0-9_-]/g, "_");
-                const isOpen = index === 0;
                 const newCount = group.items.filter(r => !hasPanelistSigned(r)).length;
                 const hasNew = newCount > 0;
+                const isOpen = false;
 
                 const rowsHtml = group.items.map(rec => {
                     const mine = getMyPanelistReview(rec);
@@ -581,10 +723,15 @@
             });
         }
 
-        function openPanelistDmSignModal(dmId) {
+        async function openPanelistDmSignModal(dmId) {
+            if (syncLoggedInPanelistSession()) return;
             const rec = (panelistDmRecords || []).find(m => Number(m.id) === Number(dmId));
             if (!rec) return;
             activePanDmRecord = rec;
+
+            if (!savedPanelistSignature) {
+                await loadPanelistSignature();
+            }
 
             let minutesData = {};
             try { minutesData = JSON.parse(rec.minutes_json || "{}"); } catch (_) { }
@@ -637,6 +784,8 @@
                 slotStatusEl.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Click your name/title on the defense minutes sheet to place your e-signature.`;
             }
 
+            let targetScrollEl = viewport.querySelector(`.dm-a4-page[data-dm-page="0"]`);
+
             if (!alreadySigned) {
                 document.getElementById("panDmNotes").value = "";
                 const todayStr = new Date().toLocaleDateString("en-US");
@@ -675,6 +824,17 @@
                             }
                         }
                     });
+                    const mySlotEl = viewport.querySelector(".dm-clickable-sign-slot");
+                    if (mySlotEl) {
+                        const myPageEl = mySlotEl.closest(".dm-a4-page");
+                        const myPageIdx = myPageEl ? Number(myPageEl.getAttribute("data-dm-page") || 0) : 0;
+                        pageSelect.value = String(myPageIdx);
+                        document.getElementById("panDmPageInfo").innerText = `Page ${myPageIdx + 1} of ${renderRes.pageCount}`;
+                        if (slotStatusEl) {
+                            slotStatusEl.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Click your name on <strong>Page ${myPageIdx + 1}</strong> to place your e-signature.`;
+                        }
+                        targetScrollEl = mySlotEl;
+                    }
                 } else {
                     sigPreview.innerHTML = `<span style="font-size:12px; color:#dc2626;">No saved e-signature found in Settings. Please upload your e-signature in Faculty Settings first.</span>`;
                     panDmDragState = null;
@@ -683,8 +843,11 @@
                 panDmDragState = null;
             }
 
-            const firstPageEl = viewport.querySelector(`.dm-a4-page[data-dm-page="0"]`);
-            if (firstPageEl) firstPageEl.scrollIntoView({ behavior: "auto", block: "start" });
+            if (targetScrollEl) {
+                requestAnimationFrame(() => {
+                    targetScrollEl.scrollIntoView({ behavior: "auto", block: targetScrollEl.classList.contains("dm-clickable-sign-slot") ? "center" : "start" });
+                });
+            }
         }
 
         function closePanelistDmModal() {

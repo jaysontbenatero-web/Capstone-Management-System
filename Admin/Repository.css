@@ -1543,3 +1543,268 @@ mark.search-highlight {
     box-shadow: 0 0 0 1px #eab308;
     display: inline;
 }
+
+/* ================= UPLOAD FILE MODE ================= */
+
+.repo-mode-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 18px;
+    background: #faf8ff;
+    border-bottom: 1px solid #ece3ff;
+    flex-shrink: 0;
+}
+
+.repo-mode-btn {
+    border: 1px solid #e4d8ff;
+    background: #ffffff;
+    color: #5b4879;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 9px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.repo-mode-btn:hover {
+    border-color: #7c3aed;
+    color: #5b21b6;
+    background: #f5f0ff;
+}
+
+.repo-mode-btn.active {
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.24);
+}
+
+.repo-upload-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.repo-upload-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 20px 18px;
+    min-height: 0;
+}
+
+.repo-upload-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.repo-upload-scroll::-webkit-scrollbar-thumb {
+    background: #ddd6fe;
+    border-radius: 10px;
+}
+
+.repo-dropzone {
+    border: 2px dashed #c4b5fd;
+    background: linear-gradient(180deg, #faf8ff 0%, #f5f0ff 100%);
+    border-radius: 18px;
+    padding: 24px 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.repo-dropzone:hover,
+.repo-dropzone.is-dragover {
+    border-color: #7c3aed;
+    background: #f3ecff;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.repo-dropzone-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 12px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+}
+
+.repo-dropzone h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2e1065;
+    margin-bottom: 4px;
+}
+
+.repo-dropzone p {
+    font-size: 12.5px;
+    color: #5b4879;
+    margin-bottom: 8px;
+}
+
+.repo-browse-link {
+    color: #7c3aed;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.repo-dropzone small {
+    display: block;
+    font-size: 11px;
+    color: #7c6b96;
+    line-height: 1.45;
+}
+
+.repo-auto-save-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f8f5ff;
+    border: 1px solid #ece3ff;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4b3b67;
+    cursor: pointer;
+}
+
+.repo-auto-save-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #7c3aed;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.repo-upload-status {
+    margin-top: 12px;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.45;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+}
+
+.repo-upload-status.is-loading {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+}
+
+.repo-upload-status.is-success {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+}
+
+.repo-upload-status.is-warning {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.repo-upload-status.is-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.repo-upload-preview {
+    margin-top: 14px;
+}
+
+.repo-extracted-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.repo-file-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4c1d95;
+    background: #f3e8ff;
+    padding: 6px 11px;
+    border-radius: 10px;
+    max-width: 72%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.repo-clear-file-btn {
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #6b7280;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+.repo-clear-file-btn:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+.repo-extracted-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.repo-section-pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.repo-section-pill.found {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.repo-section-pill.missing {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.repo-section-pill.optional {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+}

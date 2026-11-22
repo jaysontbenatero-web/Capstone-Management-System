@@ -14,7 +14,7 @@
         Document Review | CMS</title>
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap"
         rel="stylesheet"
     >
 
@@ -184,6 +184,17 @@
                     </span>
                 </div>
 
+                <div class="menu-title">
+                    System
+                </div>
+
+                <div class="menu-item" id="nav-notifications" data-notif-nav="1" onclick="window.location.href='../Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>
+                        Notifications
+                    </span>
+                </div>
+
             </div>
 
         </div>
@@ -346,6 +357,8 @@
 
                 <select
                     id="statusFilter"
+                    aria-label="Filter by status"
+                    title="Filter by status"
                     onchange="renderCurrentTab()"
                 >
                     <option value="All">
@@ -485,13 +498,13 @@
             </div>
 
             <div class="input-group">
-                <label style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>Select Capstone Groups</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="margin:0;">Select Capstone Groups</label>
                     <label style="font-weight:600; font-size:12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; margin:0;">
                         <input type="checkbox" id="selectAllGroupsToggle" onchange="toggleAllGroupCheckboxes(this.checked)">
                         Select All
                     </label>
-                </label>
+                </div>
 
                 <input
                     type="text"
@@ -627,6 +640,7 @@
                         id="reviewFileLink"
                         href="#"
                         target="_blank"
+                        rel="noopener noreferrer"
                     >
                         Open Attached File
                     </a>
@@ -755,7 +769,7 @@
                             </div>
                         </div>
                         <div style="background:white; border-radius:16px; border:1.5px solid #ddd6fe; padding:15px; display:inline-block; min-width:200px; margin-bottom:10px;">
-                            <img id="savedSignaturePreview" src="" alt="Saved Signature" style="max-height:80px; max-width:100%; display:block; margin:0 auto;">
+                            <img id="savedSignaturePreview" alt="Saved Signature" style="max-height:80px; max-width:100%; display:block; margin:0 auto;">
                         </div>
                         <button class="esign-place-btn" type="button" onclick="placeSavedSignatureOnDocument()">
                             <i class="fa-solid fa-file-signature"></i>
@@ -1152,10 +1166,10 @@
                             </div>
                             <div class="phase-subcontainer-right">
                                 <span class="phase-count-pill">${phaseDocs.length} File${phaseDocs.length !== 1 ? "s" : ""}</span>
-                                <i class="fa-solid fa-chevron-down phase-chevron" id="phase-chevron-${phaseDomId}" style="transform:rotate(180deg);"></i>
+                                <i class="fa-solid fa-chevron-down phase-chevron" id="phase-chevron-${phaseDomId}" style="transform:rotate(0deg);"></i>
                             </div>
                         </div>
-                        <div class="phase-subcontainer-body" id="phase-body-${phaseDomId}" style="display:block;">
+                        <div class="phase-subcontainer-body" id="phase-body-${phaseDomId}" style="display:none;">
                             ${phaseDocs.map(buildGroupedDocRowHtml).join("")}
                         </div>
                     </div>
@@ -1222,7 +1236,7 @@
 
             groups.forEach((group, index) => {
                 const domId = groupKeyToDomId(group.key);
-                const isOpen = index === 0;
+                const isOpen = false;
                 const newCount = group.docs.filter(isNewDocument).length;
 
                 const bundle = document.createElement("div");
@@ -1244,7 +1258,7 @@
                         <div class="group-bundle-badges">
                             ${group.hasNew ? `<span class="group-new-badge"><i class="fa-solid fa-sparkles"></i> ${newCount} New</span>` : ""}
                             <span class="group-count-badge"><i class="fa-solid fa-folder-closed"></i> ${group.docs.length} File${group.docs.length !== 1 ? "s" : ""}</span>
-                            <i class="fa-solid fa-chevron-down chevron-icon" id="received-chevron-${domId}" style="transform:${isOpen ? "rotate(180deg)" : "rotate(0deg);"};"></i>
+                            <i class="fa-solid fa-chevron-down chevron-icon" id="received-chevron-${domId}" style="transform:${isOpen ? "rotate(180deg)" : "rotate(0deg)"};"></i>
                         </div>
                     </div>
                     <div class="group-bundle-body" id="received-group-${domId}" style="display:${isOpen ? "block" : "none"}">
@@ -1311,7 +1325,7 @@
 
             groups.forEach((group, index) => {
                 const domId = String(group.key).replace(/[^a-zA-Z0-9_-]/g, "_");
-                const isOpen = index === 0;
+                const isOpen = false;
 
                 const bundle = document.createElement("div");
                 bundle.className = "group-bundle-card" + (group.hasNew ? " has-new-submissions" : "");

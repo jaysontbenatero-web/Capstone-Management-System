@@ -147,7 +147,7 @@ app.use(express.static(__dirname, {
 app.use((req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") return next();
     const reqPath = decodeURIComponent(req.path || "").replace(/^\/+/, "");
-    if (!reqPath || !/\.(html|css|js|png|jpg|jpeg|svg|gif|webp|ico|pdf)$/i.test(reqPath)) {
+    if (!reqPath || !/\.(html|css|js|png|jpg|jpeg|jfif|svg|gif|webp|ico|pdf)$/i.test(reqPath)) {
         return next();
     }
     const parts = reqPath.split("/").filter(Boolean);
@@ -956,6 +956,48 @@ db.getConnection((err, connection) => {
                     )
                 `, () => { });
             }
+        });
+
+        // Ensure user_notifications table, index, and sidebar_section_seen tracking table exist on startup
+        db.query(`
+            CREATE TABLE IF NOT EXISTS user_notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                notification_title VARCHAR(255) NOT NULL,
+                notification_message TEXT NULL,
+                notification_type VARCHAR(100) DEFAULT 'System',
+                is_read TINYINT(1) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (unErr) => {
+            if (unErr) {
+                console.error("Error verifying user_notifications table:", unErr);
+            } else {
+                db.query(
+                    "SHOW INDEX FROM user_notifications WHERE Key_name = 'idx_user_notifications_user_read'",
+                    (idxErr, idxRows) => {
+                        if (!idxErr && (!idxRows || idxRows.length === 0)) {
+                            db.query(
+                                "CREATE INDEX idx_user_notifications_user_read ON user_notifications (user_id, is_read)",
+                                () => { }
+                            );
+                        }
+                    }
+                );
+            }
+        });
+
+        db.query(`
+            CREATE TABLE IF NOT EXISTS sidebar_section_seen (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                section_path VARCHAR(160) NOT NULL,
+                last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_user_section (user_id, section_path)
+            )
+        `, (sssErr) => {
+            if (sssErr) console.error("Error creating sidebar_section_seen table:", sssErr);
+            else console.log("sidebar_section_seen table verified/created");
         });
 
         db.query(`SHOW COLUMNS FROM defense_schedules LIKE 'time_slot_label'`, (colErr, colRows) => {
@@ -1918,6 +1960,341 @@ app.post("/add-repository", (req, res) => {
         }
     );
 });
+
+/* ================= PARSE REPOSITORY FILE (PDF / TXT) ================= */
+
+const repositoryFileUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }
+});
+
+function inferRepositoryCategory(combinedText) {
+    const t = String(combinedText || "").toLowerCase();
+    if (/\b(iot|internet of things|arduino|esp32|esp8266|raspberry pi|microcontroller|sensor network|smart sensor|rfid)\b/i.test(t)) {
+        return "IoT";
+    }
+    if (/\b(artificial intelligence|machine learning|deep learning|neural network|computer vision|natural language processing|nlp|chatbot|yolo|cnn|lstm|ai-powered|image classification)\b/i.test(t)) {
+        return "Artificial Intelligence";
+    }
+    if (/\b(demand forecasting|linear regression|data analytics|predictive analytics|scatter plot|data mining|business intelligence|decision support|forecasting)\b/i.test(t)) {
+        return "Data Analytics";
+    }
+    if (/\b(mobile application|mobile app|android|ios|flutter|react native)\b/i.test(t) && !/\b(web application|web-based|website|online store)\b/i.test(t)) {
+        return "Mobile Development";
+    }
+    if (/\b(web application|web-based|online .* management system|ordering management system|e-commerce|online store|portal)\b/i.test(t)) {
+        return "Web Application";
+    }
+    if (/\b(website|web development|web platform)\b/i.test(t)) {
+        return "Web Development";
+    }
+    return "";
+}
+
+function normalizeExtractedSectionText(lines, options = {}) {
+    const { preserveLines = false } = options;
+    const cleaned = (lines || []).map((l) => String(l || "").replace(/\s+$/g, ""));
+
+    // Trim leading/trailing empty lines
+    while (cleaned.length && !cleaned[0].trim()) cleaned.shift();
+    while (cleaned.length && !cleaned[cleaned.length - 1].trim()) cleaned.pop();
+    if (!cleaned.length) return "";
+
+    if (preserveLines) {
+        const out = [];
+        for (let i = 0; i < cleaned.length; i++) {
+            const line = cleaned[i].trim();
+            if (!line) {
+                if (out.length && out[out.length - 1] !== "") out.push("");
+                continue;
+            }
+            const isBulletOrNumbered = /^(?:[•●▪■◦\-–—*]|\d+(?:\.\d+)*\.?)\s+/.test(line);
+            const isSubHeading = /^(?:General\s+Objectives?|Specific\s+Objectives?|Software\s+Development\s+Methodology|Record\s+the\s+following|Display\s+the\s+following|Generate\s+reports|Meanwhile,|The\s+project\s+developers|Allow\s+|Authorize\s+|Enable\s+|Provide\s+)/i.test(line);
+            const prev = out.length ? out[out.length - 1] : "";
+
+            if (
+                prev &&
+                prev !== "" &&
+                !isBulletOrNumbered &&
+                !isSubHeading &&
+                !/[:;.?!]$/.test(prev) &&
+                !/^(?:General\s+Objectives?|Specific\s+Objectives?)$/i.test(prev)
+            ) {
+                out[out.length - 1] = `${prev} ${line}`;
+            } else {
+                out.push(line);
+            }
+        }
+        return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    }
+
+    // Paragraph-unwrapping mode (for Abstract, etc.)
+    const paragraphs = [];
+    let current = "";
+    for (let i = 0; i < cleaned.length; i++) {
+        const line = cleaned[i].trim();
+        if (!line) {
+            if (current) {
+                paragraphs.push(current);
+                current = "";
+            }
+            continue;
+        }
+        if (!current) {
+            current = line;
+        } else {
+            // Start a new paragraph if previous line ended cleanly on a sentence and current starts a typical new paragraph transition
+            const endsSentence = /[.?!]$/.test(current);
+            const looksNewParagraph =
+                endsSentence &&
+                /^(?:The\s+system\s+was\s+deployed|Following\s+the|In\s+conclusion|Overall,|Moreover,|Furthermore,|Results\s+showed|Based\s+on\s+the)/i.test(line) &&
+                current.length >= 180;
+            if (looksNewParagraph) {
+                paragraphs.push(current);
+                current = line;
+            } else {
+                current = `${current} ${line}`;
+            }
+        }
+    }
+    if (current) paragraphs.push(current);
+    return paragraphs.join("\n\n").replace(/[ \t]{2,}/g, " ").trim();
+}
+
+function parseRepositoryDocumentText(rawText, fileName = "") {
+    const text = String(rawText || "")
+        .replace(/\u0000/g, "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .replace(/\f/g, "\n");
+
+    const rawLines = text.split("\n");
+    const buffers = {
+        title: [],
+        year_program: [],
+        year: [],
+        program: [],
+        abstract: [],
+        research_problem: [],
+        objectives: [],
+        methodology: [],
+        researchers: [],
+        adviser: [],
+        category: []
+    };
+
+    const headingRules = [
+        { key: "title", re: /^(?:capstone\s+|project\s+|research\s+|study\s+)?title\s*:\s*(.*)$/i },
+        { key: "year_program", re: /^(?:year\s*(?:&|and|\/)\s*program|program\s*(?:&|and|\/)\s*year)\s*:\s*(.*)$/i },
+        { key: "year", re: /^(?:year(?:\s+published|\s+completed)?|academic\s+year|school\s+year)\s*:\s*(.*)$/i },
+        { key: "program", re: /^(?:program|course|degree(?:\s+program)?)\s*:\s*(.*)$/i },
+        { key: "abstract", re: /^(?:abstract|executive\s+summary)\s*(?::\s*(.*)|())$/i },
+        { key: "research_problem", re: /^(?:research\s+problems?|statement\s+of\s+the\s+problem|problem\s+statement)\s*(?::\s*(.*)|())$/i },
+        { key: "objectives", re: /^(?:objectives?|objectives?\s+of\s+the\s+study|project\s+objectives?|research\s+objectives?)\s*(?::\s*(.*)|())$/i },
+        { key: "methodology", re: /^(?:methodology|research\s+methodology|methods?\s+and\s+procedures?)\s*(?::\s*(.*)|())$/i },
+        { key: "researchers", re: /^(?:researchers?|authors?|proponents?|developers?|submitted\s+by)\s*(?::\s*(.*)|())$/i },
+        { key: "adviser", re: /^(?:adviser|advisor|capstone\s+adviser|thesis\s+adviser|faculty\s+adviser)\s*:\s*(.*)$/i },
+        { key: "category", re: /^(?:category|classification|domain|track)\s*:\s*(.*)$/i }
+    ];
+
+    let activeSection = null;
+
+    for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i];
+        const trimmed = line.trim();
+
+        // Skip standalone page numbers like "Page 1" or "1"
+        if (/^(?:page\s*\d+(?:\s*of\s*\d+)?|\d{1,2})$/i.test(trimmed)) {
+            continue;
+        }
+
+        let matchedRule = null;
+        let inlineRemainder = "";
+
+        if (trimmed) {
+            for (const rule of headingRules) {
+                const m = trimmed.match(rule.re);
+                if (m) {
+                    // Do not break out of methodology on sub-label "Software Development Methodology: ..."
+                    if (rule.key === "methodology" && activeSection === "methodology") {
+                        continue;
+                    }
+                    // For standalone heading without colon, make sure it's a pure heading line
+                    matchedRule = rule;
+                    inlineRemainder = (m[1] || "").trim();
+                    break;
+                }
+            }
+        }
+
+        if (matchedRule) {
+            activeSection = matchedRule.key;
+            if (inlineRemainder) {
+                buffers[activeSection].push(inlineRemainder);
+            }
+            continue;
+        }
+
+        if (activeSection) {
+            buffers[activeSection].push(line);
+        }
+    }
+
+    // 1. Title
+    let title = buffers.title
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+    if (!title && fileName) {
+        title = path.basename(fileName, path.extname(fileName)).replace(/[_-]+/g, " ").trim();
+    }
+    if (title.length > 255) {
+        title = title.slice(0, 255).trim();
+    }
+
+    // 2. Year & Program
+    const ypCombined = [
+        ...buffers.year_program,
+        ...buffers.year,
+        ...buffers.program
+    ].join(" ");
+
+    let year = "";
+    const yearMatch = ypCombined.match(/\b((?:19|20)\d{2})\b/) || text.slice(0, 600).match(/\b((?:19|20)\d{2})\b/);
+    if (yearMatch) {
+        year = yearMatch[1];
+    }
+
+    let program = "";
+    const progSource = ypCombined || text.slice(0, 600);
+    if (/\bBSIT\b|Information\s+Technology|\bIT\b/i.test(progSource)) {
+        program = "IT";
+    } else if (/\bBSIS\b|Information\s+Systems?|\bIS\b/i.test(progSource)) {
+        program = "IS";
+    }
+
+    // 3. Long text sections
+    const abstract = normalizeExtractedSectionText(buffers.abstract, { preserveLines: false });
+    const research_problem = normalizeExtractedSectionText(buffers.research_problem, { preserveLines: true });
+    const objectives = normalizeExtractedSectionText(buffers.objectives, { preserveLines: true });
+    const methodology = normalizeExtractedSectionText(buffers.methodology, { preserveLines: true });
+
+    // 4. Researchers (clean comma-separated names)
+    const researchers = buffers.researchers
+        .map((l) => l.replace(/^[•●▪■◦\-–—*\d.)\s]+/, "").trim())
+        .filter(Boolean)
+        .join(", ")
+        .replace(/,\s*,+/g, ", ")
+        .replace(/\s+,/g, ",")
+        .replace(/,\s*$/, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+    // 5. Adviser
+    const adviser = buffers.adviser
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+    // 6. Category (explicit or inferred)
+    let category = buffers.category
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+    const allowedCategories = [
+        "Artificial Intelligence",
+        "Web Development",
+        "Web Application",
+        "Mobile Development",
+        "Data Analytics",
+        "IoT"
+    ];
+    if (category) {
+        const matchedCat = allowedCategories.find((c) => c.toLowerCase() === category.toLowerCase());
+        category = matchedCat || inferRepositoryCategory(`${category} ${title} ${abstract}`);
+    } else {
+        category = inferRepositoryCategory(`${title} ${abstract} ${objectives} ${methodology}`);
+    }
+
+    return {
+        program,
+        title,
+        abstract,
+        research_problem,
+        objectives,
+        methodology,
+        researchers,
+        adviser,
+        category,
+        year
+    };
+}
+
+app.post(
+    "/api/repository/parse-file",
+    repositoryFileUpload.single("repositoryFile"),
+    async (req, res) => {
+        try {
+            if (!req.file || !req.file.buffer) {
+                return res.json({
+                    success: false,
+                    message: "Please select a PDF or TXT file to upload."
+                });
+            }
+
+            const originalName = req.file.originalname || "document";
+            const ext = path.extname(originalName).toLowerCase();
+            let rawText = "";
+
+            if (ext === ".pdf" || req.file.mimetype === "application/pdf") {
+                const parsedPdf = await pdfParse(req.file.buffer);
+                rawText = String(parsedPdf?.text || "");
+            } else if (ext === ".txt" || String(req.file.mimetype || "").startsWith("text/")) {
+                rawText = req.file.buffer.toString("utf8");
+            } else {
+                return res.json({
+                    success: false,
+                    message: "Unsupported file type. Please upload a text-based PDF (.pdf) or plain text (.txt) file."
+                });
+            }
+
+            if (!rawText.trim()) {
+                return res.json({
+                    success: false,
+                    message: "Could not read readable text from this file. Please upload a text-based PDF (not a scanned image) or TXT file."
+                });
+            }
+
+            const extracted = parseRepositoryDocumentText(rawText, originalName);
+            const missingRequired = [];
+            if (!extracted.program) missingRequired.push("Program");
+            if (!extracted.title) missingRequired.push("Title");
+            if (!extracted.abstract) missingRequired.push("Abstract");
+            if (!extracted.objectives) missingRequired.push("Objectives");
+            if (!extracted.methodology) missingRequired.push("Methodology");
+
+            return res.json({
+                success: true,
+                fileName: originalName,
+                extracted,
+                missingRequired
+            });
+        } catch (err) {
+            console.error("Repository file parse error:", err);
+            return res.json({
+                success: false,
+                message: "Failed to read the uploaded file. Please ensure it is a valid text-based PDF or TXT document."
+            });
+        }
+    }
+);
 
 /* ================= UPDATE REPOSITORY ================= */
 
@@ -7573,7 +7950,7 @@ app.post(
                             }
 
                             if (checkResult.length > 0) {
-                                // Update existing document
+                                // Update existing document and clear stale submissions so it starts as Not Sent
                                 const docId = checkResult[0].id;
                                 const updateDocSql = `
                                     UPDATE student_documents
@@ -7583,19 +7960,23 @@ app.post(
                                         file_path = ?,
                                         file_format = 'PDF',
                                         document_status = 'Uploaded',
+                                        signed_file_path = NULL,
                                         is_sent = 0,
                                         uploaded_by = ?,
                                         updated_at = CURRENT_TIMESTAMP
                                     WHERE id = ?
                                     AND document_status != 'Approved'
                                 `;
-                                db.query(updateDocSql, [proposedTitle, req.file.originalname, filePath, uploadedBy, docId], (err3) => {
+                                db.query(updateDocSql, [proposedTitle, req.file.originalname, filePath, uploadedBy, docId], (err3, updRes) => {
                                     if (err3) {
                                         console.log("Error updating document sync:", err3);
                                         return res.json({
                                             success: true,
                                             message: `Title Proposal ${titleNumber} uploaded, but document sync update failed.`
                                         });
+                                    }
+                                    if (updRes && updRes.affectedRows > 0) {
+                                        db.query("DELETE FROM document_submissions WHERE document_id = ?", [docId], () => { });
                                     }
                                     return res.json({
                                         success: true,
@@ -8912,12 +9293,18 @@ app.post("/typed-defense-minutes/send", (req, res) => {
             (exErr, exRows) => {
                 const existing = (!exErr && exRows && exRows[0]) ? exRows[0] : null;
                 if (existing) {
+                    if (String(existing.status || "").trim() === "Completed") {
+                        return res.json({
+                            success: false,
+                            message: "These defense minutes have already been completed and signed by all grading panelists."
+                        });
+                    }
                     let existingAdv = null;
                     try { existingAdv = existing.adviser_signature_json ? JSON.parse(existing.adviser_signature_json) : null; } catch (_) { }
                     const hasAdvSig = Boolean(existingAdv && existingAdv.signatureImage && existingAdv.reviewStatus !== "Subject to Change" && existingAdv.reviewStatus !== "Rejected");
                     let eligible = [];
                     let sigs = [];
-                    try { eligible = JSON.parse(existing.eligible_panelist_ids_json || "[]"); } catch (_) { }
+                    try { eligible = JSON.parse(existing.eligible_panelist_ids_json || "[]").map(Number).filter(Boolean); } catch (_) { }
                     try { sigs = JSON.parse(existing.panelist_signatures_json || "[]"); } catch (_) { }
                     if (!Array.isArray(sigs)) sigs = [];
 
@@ -8925,51 +9312,90 @@ app.post("/typed-defense-minutes/send", (req, res) => {
                     const keptSigs = sigs.filter(s => s && s.signatureImage && s.reviewStatus !== "Subject to Change" && s.reviewStatus !== "Rejected");
                     const nextStatus = hasAdvSig ? "Pending Panelist Signatures" : "Pending Adviser Signature";
                     const nextAdvSigJson = hasAdvSig ? existing.adviser_signature_json : null;
+                    const resolvedScheduleId = scheduleId || existing.schedule_id || null;
 
-                    db.query(
-                        `UPDATE typed_defense_minutes
-                         SET schedule_id = COALESCE(?, schedule_id),
-                             student_user_id = ?,
-                             adviser_id = ?,
-                             minutes_json = ?,
-                             status = ?,
-                             adviser_signature_json = ?,
-                             panelist_signatures_json = ?,
-                             updated_at = NOW()
-                         WHERE id = ?`,
-                        [scheduleId || null, studentUserId, info.adviser_id, JSON.stringify(minutesData), nextStatus, nextAdvSigJson, JSON.stringify(keptSigs), existing.id],
-                        (uErr) => {
-                            if (uErr) {
-                                console.error("Update typed defense minutes error:", uErr);
-                                return res.json({ success: false, message: "Failed to update defense minutes." });
-                            }
-                            if (!hasAdvSig) {
-                                insertUserNotificationsByDbIds(
-                                    [info.adviser_id],
-                                    "Updated Defense Minutes for E-Signature",
-                                    `${info.student_name} (${info.group_name}) updated ${defenseType} minutes for your review and e-signature.`,
-                                    "Defense Minutes"
-                                );
-                            } else {
-                                const keptIds = new Set(keptSigs.map(s => Number(s.panelistId)));
-                                const toNotify = (eligible || []).map(Number).filter(pid => pid && !keptIds.has(pid));
-                                if (toNotify.length > 0) {
+                    const persistUpdatedMinutes = (mergedEligible) => {
+                        db.query(
+                            `UPDATE typed_defense_minutes
+                             SET schedule_id = COALESCE(?, schedule_id),
+                                 student_user_id = ?,
+                                 adviser_id = ?,
+                                 minutes_json = ?,
+                                 status = ?,
+                                 adviser_signature_json = ?,
+                                 eligible_panelist_ids_json = ?,
+                                 panelist_signatures_json = ?,
+                                 updated_at = NOW()
+                             WHERE id = ?`,
+                            [
+                                resolvedScheduleId,
+                                studentUserId,
+                                info.adviser_id,
+                                JSON.stringify(minutesData),
+                                nextStatus,
+                                nextAdvSigJson,
+                                hasAdvSig ? JSON.stringify(mergedEligible) : existing.eligible_panelist_ids_json,
+                                JSON.stringify(keptSigs),
+                                existing.id
+                            ],
+                            (uErr) => {
+                                if (uErr) {
+                                    console.error("Update typed defense minutes error:", uErr);
+                                    return res.json({ success: false, message: "Failed to update defense minutes." });
+                                }
+                                if (!hasAdvSig) {
                                     insertUserNotificationsByDbIds(
-                                        toNotify,
-                                        "Updated Defense Minutes for Review",
+                                        [info.adviser_id],
+                                        "Updated Defense Minutes for E-Signature",
                                         `${info.student_name} (${info.group_name}) updated ${defenseType} minutes for your review and e-signature.`,
                                         "Defense Minutes"
                                     );
+                                } else {
+                                    const keptIds = new Set(keptSigs.map(s => Number(s.panelistId)));
+                                    const toNotify = (mergedEligible || []).map(Number).filter(pid => pid && !keptIds.has(pid));
+                                    if (toNotify.length > 0) {
+                                        insertUserNotificationsByDbIds(
+                                            toNotify,
+                                            "Updated Defense Minutes for Review",
+                                            `${info.student_name} (${info.group_name}) updated ${defenseType} minutes for your review and e-signature.`,
+                                            "Defense Minutes"
+                                        );
+                                    }
                                 }
+                                res.json({
+                                    success: true,
+                                    message: hasAdvSig
+                                        ? "Defense minutes updated! Existing signatures were kept and pending panelists were notified."
+                                        : "Defense minutes sent to your Adviser for review and e-signature."
+                                });
                             }
-                            res.json({
-                                success: true,
-                                message: hasAdvSig
-                                    ? "Defense minutes updated! Existing signatures were kept and pending panelists were notified."
-                                    : "Defense minutes sent to your Adviser for review and e-signature."
-                            });
-                        }
-                    );
+                        );
+                    };
+
+                    if (hasAdvSig && resolvedScheduleId) {
+                        db.query(
+                            `SELECT DISTINCT panelist_id
+                             FROM defense_panel_evaluations
+                             WHERE schedule_id = ?
+                               AND panel_result IS NOT NULL
+                               AND TRIM(panel_result) != ''
+                               AND LOWER(panel_result) NOT LIKE '%did not evaluate%'
+                               AND LOWER(panel_result) NOT LIKE '%archived%'`,
+                            [resolvedScheduleId],
+                            (evErr, evRows) => {
+                                const merged = new Set(eligible);
+                                if (!evErr && Array.isArray(evRows)) {
+                                    evRows.forEach(r => {
+                                        const pid = Number(r.panelist_id);
+                                        if (pid) merged.add(pid);
+                                    });
+                                }
+                                persistUpdatedMinutes(Array.from(merged));
+                            }
+                        );
+                    } else {
+                        persistUpdatedMinutes(eligible);
+                    }
                     return;
                 }
 
@@ -9121,7 +9547,13 @@ app.post("/typed-defense-minutes/adviser-sign", (req, res) => {
 
                 const resolveScheduleAndForward = (resolvedScheduleId) => {
                     const evalSql = resolvedScheduleId
-                        ? `SELECT DISTINCT panelist_id FROM defense_panel_evaluations WHERE schedule_id = ? AND panel_result IS NOT NULL AND TRIM(panel_result) != '' AND panel_result != 'Did Not Evaluate'`
+                        ? `SELECT DISTINCT panelist_id
+                           FROM defense_panel_evaluations
+                           WHERE schedule_id = ?
+                             AND panel_result IS NOT NULL
+                             AND TRIM(panel_result) != ''
+                             AND LOWER(panel_result) NOT LIKE '%did not evaluate%'
+                             AND LOWER(panel_result) NOT LIKE '%archived%'`
                         : null;
 
                     const finalizeAdviserSign = (eligiblePanelistIds) => {
@@ -9140,8 +9572,8 @@ app.post("/typed-defense-minutes/adviser-sign", (req, res) => {
                         const nextStatus = eligiblePanelistIds.length > 0 ? "Pending Panelist Signatures" : "Completed";
 
                         db.query(
-                            `UPDATE typed_defense_minutes SET adviser_signature_json = ?, eligible_panelist_ids_json = ?, status = ?, updated_at = NOW() WHERE id = ?`,
-                            [JSON.stringify(adviserSigObj), JSON.stringify(eligiblePanelistIds), nextStatus, id],
+                            `UPDATE typed_defense_minutes SET schedule_id = COALESCE(schedule_id, ?), adviser_signature_json = ?, eligible_panelist_ids_json = ?, status = ?, updated_at = NOW() WHERE id = ?`,
+                            [resolvedScheduleId || null, JSON.stringify(adviserSigObj), JSON.stringify(eligiblePanelistIds), nextStatus, id],
                             (upErr) => {
                                 if (upErr) {
                                     console.error("Adviser sign defense minutes error:", upErr);
@@ -9196,7 +9628,7 @@ app.post("/typed-defense-minutes/adviser-sign", (req, res) => {
                     resolveScheduleAndForward(record.schedule_id);
                 } else {
                     db.query(
-                        "SELECT id FROM defense_schedules WHERE group_id = ? AND LOWER(TRIM(defense_type)) = LOWER(TRIM(?)) ORDER BY id DESC LIMIT 1",
+                        "SELECT id FROM defense_schedules WHERE group_id = ? AND LOWER(TRIM(defense_type)) = LOWER(TRIM(?)) AND defense_status != 'Cancelled' ORDER BY id DESC LIMIT 1",
                         [record.group_id, record.defense_type],
                         (sErr, sRows) => {
                             const sid = (!sErr && sRows && sRows[0]) ? sRows[0].id : null;
@@ -9208,6 +9640,159 @@ app.post("/typed-defense-minutes/adviser-sign", (req, res) => {
         );
     });
 });
+
+function syncLateGradedPanelistToDefenseMinutes(schedule, panelistDbId, done) {
+    const finish = typeof done === "function" ? done : () => {};
+    if (!schedule || !panelistDbId) return finish(false);
+
+    const findSql = `
+        SELECT tdm.*, cg.group_name
+        FROM typed_defense_minutes tdm
+        JOIN capstone_groups cg ON cg.id = tdm.group_id
+        WHERE tdm.schedule_id = ?
+           OR (tdm.group_id = ? AND LOWER(TRIM(tdm.defense_type)) = LOWER(TRIM(?)))
+        ORDER BY (tdm.schedule_id = ?) DESC, tdm.id DESC
+        LIMIT 1
+    `;
+    db.query(findSql, [schedule.id, schedule.group_id, schedule.defense_type, schedule.id], (err, rows) => {
+        if (err || !rows || rows.length === 0) return finish(false);
+        const rec = rows[0];
+
+        // If the group has already completed signing the defense minutes, do NOT add late/non-grading panelists
+        if (String(rec.status || "").trim() === "Completed") {
+            return finish(false);
+        }
+
+        let advSig = null;
+        try { advSig = rec.adviser_signature_json ? JSON.parse(rec.adviser_signature_json) : null; } catch (_) { }
+        const hasAdvSig = Boolean(advSig && advSig.signatureImage && advSig.reviewStatus !== "Subject to Change" && advSig.reviewStatus !== "Rejected");
+        if (!hasAdvSig) {
+            // Adviser has not signed yet; adviser-sign will query defense_panel_evaluations and automatically include this panelist
+            return finish(false);
+        }
+
+        let eligible = [];
+        try { eligible = JSON.parse(rec.eligible_panelist_ids_json || "[]").map(Number).filter(Boolean); } catch (_) { }
+        const pid = Number(panelistDbId);
+        if (eligible.includes(pid)) {
+            return finish(false);
+        }
+
+        eligible.push(pid);
+        db.query(
+            `UPDATE typed_defense_minutes
+             SET eligible_panelist_ids_json = ?,
+                 schedule_id = COALESCE(schedule_id, ?),
+                 updated_at = NOW()
+             WHERE id = ? AND status != 'Completed'`,
+            [JSON.stringify(eligible), schedule.id, rec.id],
+            (upErr, upRes) => {
+                if (upErr || !upRes || upRes.affectedRows === 0) {
+                    return finish(false);
+                }
+                insertUserNotificationsByDbIds(
+                    [pid],
+                    "Defense Minutes Ready for E-Signature",
+                    `Your ${rec.defense_type} evaluation for ${rec.group_name} was submitted. The adviser-signed defense minutes are now open for your e-signature in Panelist Document Review.`,
+                    "Defense Minutes"
+                );
+                return finish(true);
+            }
+        );
+    });
+}
+
+function hydrateTypedDefenseMinutesRows(rows, done) {
+    const list = Array.isArray(rows) ? rows : [];
+    const needsFix = list.filter(r => {
+        try {
+            const parsed = JSON.parse(r.minutes_json || "{}");
+            const pArr = Array.isArray(parsed.panelists) ? parsed.panelists : [];
+            return pArr.length > 0 && pArr.some(p => !p || !p.panelistId);
+        } catch (_) {
+            return false;
+        }
+    });
+    if (needsFix.length === 0) return done(list);
+
+    let remaining = needsFix.length;
+    const finishOne = () => {
+        remaining -= 1;
+        if (remaining <= 0) done(list);
+    };
+
+    const normPanelName = (s) => String(s || "").toLowerCase().replace(/\b(dr|engr|prof|mr|ms|mrs|sir|maam|phd|mit|msit|mscs|dit)\b\.?/g, " ").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
+    needsFix.forEach(r => {
+        const schedSql = `
+            SELECT ds.id AS schedule_id, ds.defense_date, ds.panelist_id AS chair_id, dsp.panelist_id, u.fullname AS panelist_name
+            FROM defense_schedules ds
+            JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+            JOIN users u ON u.id = dsp.panelist_id
+            WHERE ds.group_id = ?
+              AND LOWER(TRIM(ds.defense_type)) = LOWER(TRIM(?))
+              AND ds.defense_status != 'Cancelled'
+            ORDER BY ds.id DESC, CASE WHEN dsp.panelist_id = ds.panelist_id THEN 0 ELSE 1 END, dsp.id ASC
+        `;
+        db.query(schedSql, [r.group_id, r.defense_type], (sErr, sRows) => {
+            if (sErr || !sRows || sRows.length === 0) return finishOne();
+            const latestSchedId = r.schedule_id || sRows[0].schedule_id;
+            const schedPanelists = (sRows.filter(x => Number(x.schedule_id) === Number(latestSchedId)).length > 0
+                ? sRows.filter(x => Number(x.schedule_id) === Number(latestSchedId))
+                : sRows.filter(x => Number(x.schedule_id) === Number(sRows[0].schedule_id))
+            ).slice(0, 3);
+            try {
+                const parsed = JSON.parse(r.minutes_json || "{}");
+                const oldPanelists = Array.isArray(parsed.panelists) ? parsed.panelists : [];
+                const usedOld = new Set();
+                const hydratedPanelists = schedPanelists.map((sp, idx) => {
+                    const spId = Number(sp.panelist_id);
+                    const spNorm = normPanelName(sp.panelist_name);
+                    let matchIdx = oldPanelists.findIndex((op, i) => !usedOld.has(i) && op && Number(op.panelistId) === spId);
+                    if (matchIdx < 0 && spNorm) {
+                        matchIdx = oldPanelists.findIndex((op, i) => !usedOld.has(i) && op && op.name && normPanelName(op.name) === spNorm);
+                    }
+                    if (matchIdx < 0 && !usedOld.has(idx) && oldPanelists[idx]) {
+                        matchIdx = idx;
+                    }
+                    if (matchIdx >= 0) usedOld.add(matchIdx);
+                    const old = matchIdx >= 0 ? oldPanelists[matchIdx] : {};
+                    return {
+                        ...old,
+                        panelistId: spId,
+                        name: String(sp.panelist_name || `Panelist ${idx + 1}`).trim(),
+                        role: idx === 0 ? "Panel Chairman" : "Panel Member",
+                        rows: Array.isArray(old.rows) && old.rows.length ? old.rows : [{ pageNo: "", comments: "", actions: "" }]
+                    };
+                });
+                parsed.panelists = hydratedPanelists;
+                if (parsed.meta && typeof parsed.meta === "object") {
+                    parsed.meta.panelists = hydratedPanelists.map(p => ({
+                        panelistId: p.panelistId,
+                        name: p.name,
+                        role: p.role
+                    }));
+                    if ((!parsed.meta.defenseDate || parsed.meta.defenseDate === "TBA") && sRows[0].defense_date) {
+                        const d = new Date(sRows[0].defense_date);
+                        if (!Number.isNaN(d.getTime())) {
+                            parsed.meta.defenseDate = d.toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" });
+                        }
+                    }
+                }
+                const newJson = JSON.stringify(parsed);
+                r.minutes_json = newJson;
+                r.schedule_id = r.schedule_id || latestSchedId;
+                db.query(
+                    "UPDATE typed_defense_minutes SET schedule_id = COALESCE(schedule_id, ?), minutes_json = ? WHERE id = ?",
+                    [latestSchedId, newJson, r.id],
+                    () => finishOne()
+                );
+            } catch (_) {
+                finishOne();
+            }
+        });
+    });
+}
 
 app.get("/typed-defense-minutes/panelist/:userId", (req, res) => {
     const userId = req.params.userId;
@@ -9224,7 +9809,22 @@ app.get("/typed-defense-minutes/panelist/:userId", (req, res) => {
                 cg.program,
                 cg.project_title,
                 adv.fullname AS adviser_name,
-                stu.fullname AS sender_name
+                stu.fullname AS sender_name,
+                EXISTS (
+                    SELECT 1
+                    FROM defense_panel_evaluations dpe
+                    JOIN defense_schedules ds_ev ON ds_ev.id = dpe.schedule_id
+                    WHERE dpe.panelist_id = ?
+                      AND ds_ev.defense_status != 'Cancelled'
+                      AND (
+                          (tdm.schedule_id IS NOT NULL AND dpe.schedule_id = tdm.schedule_id)
+                          OR (tdm.schedule_id IS NULL AND ds_ev.group_id = tdm.group_id AND LOWER(TRIM(ds_ev.defense_type)) = LOWER(TRIM(tdm.defense_type)))
+                      )
+                      AND dpe.panel_result IS NOT NULL
+                      AND TRIM(dpe.panel_result) != ''
+                      AND LOWER(dpe.panel_result) NOT LIKE '%did not evaluate%'
+                      AND LOWER(dpe.panel_result) NOT LIKE '%archived%'
+                ) AS panelist_has_valid_grade
             FROM typed_defense_minutes tdm
             JOIN capstone_groups cg ON tdm.group_id = cg.id
             LEFT JOIN users adv ON tdm.adviser_id = adv.id
@@ -9232,17 +9832,41 @@ app.get("/typed-defense-minutes/panelist/:userId", (req, res) => {
             WHERE tdm.status IN ('Pending Panelist Signatures', 'Completed', 'Subject to Change', 'Rejected')
             ORDER BY tdm.updated_at DESC
         `;
-        db.query(sql, (err, rows) => {
+        db.query(sql, [panelistDbId], (err, rows) => {
             if (err) return res.json({ success: false, minutes: [] });
-            const filtered = (rows || []).filter(r => {
+            const filtered = [];
+            (rows || []).forEach(r => {
+                let eligible = [];
                 try {
-                    const eligible = JSON.parse(r.eligible_panelist_ids_json || "[]");
-                    return Array.isArray(eligible) && eligible.map(Number).includes(panelistDbId);
+                    eligible = JSON.parse(r.eligible_panelist_ids_json || "[]").map(Number).filter(Boolean);
                 } catch (_) {
-                    return false;
+                    eligible = [];
+                }
+                const alreadyEligible = eligible.includes(panelistDbId);
+                if (alreadyEligible) {
+                    filtered.push(r);
+                    return;
+                }
+                // If NOT yet Completed and adviser has already signed, and this panelist successfully submitted a grade (even late), grant them signing access
+                if (String(r.status || "").trim() !== "Completed" && Number(r.panelist_has_valid_grade || 0) === 1) {
+                    let advSig = null;
+                    try { advSig = r.adviser_signature_json ? JSON.parse(r.adviser_signature_json) : null; } catch (_) { }
+                    const hasAdvSig = Boolean(advSig && advSig.signatureImage && advSig.reviewStatus !== "Subject to Change" && advSig.reviewStatus !== "Rejected");
+                    if (hasAdvSig) {
+                        eligible.push(panelistDbId);
+                        r.eligible_panelist_ids_json = JSON.stringify(eligible);
+                        db.query(
+                            "UPDATE typed_defense_minutes SET eligible_panelist_ids_json = ? WHERE id = ? AND status != 'Completed'",
+                            [r.eligible_panelist_ids_json, r.id],
+                            () => { }
+                        );
+                        filtered.push(r);
+                    }
                 }
             });
-            res.json({ success: true, panelistDbId, panelistFullName: uRows[0].fullname || "", minutes: filtered });
+            hydrateTypedDefenseMinutesRows(filtered, (hydrated) => {
+                res.json({ success: true, panelistDbId, panelistFullName: uRows[0].fullname || "", minutes: hydrated });
+            });
         });
     });
 });
@@ -9272,9 +9896,12 @@ app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
                 const record = mRows[0];
 
                 let eligible = [];
-                try { eligible = JSON.parse(record.eligible_panelist_ids_json || "[]").map(Number); } catch (_) { }
+                try { eligible = JSON.parse(record.eligible_panelist_ids_json || "[]").map(Number).filter(Boolean); } catch (_) { }
                 if (!eligible.includes(Number(panelist.id))) {
                     return res.json({ success: false, message: "You are not listed as a grading panelist for this defense." });
+                }
+                if (String(record.status || "").trim() === "Completed") {
+                    return res.json({ success: false, message: "These defense minutes are already completed and locked." });
                 }
 
                 let sigs = [];
@@ -9472,6 +10099,8 @@ app.get("/student-documents/:userId", (req, res) => {
             cg.group_name,
             cg.project_title,
             cg.program,
+            cg.stage,
+            cg.progress,
             adviser.id AS adviser_db_id,
             adviser.user_id AS adviser_user_id,
             adviser.fullname AS adviser_name,
@@ -9539,43 +10168,55 @@ app.get("/student-documents/:userId", (req, res) => {
                 uploader.user_id AS uploaded_by_user_id,
                 uploader.fullname AS uploaded_by_name,
 
-                (
-                    SELECT COUNT(*)
-                    FROM document_submissions ds
-                    WHERE ds.document_id = sd.id
-                ) AS submission_count,
+                CASE
+                    WHEN COALESCE(sd.is_sent, 0) = 1 THEN (
+                        SELECT COUNT(*)
+                        FROM document_submissions ds
+                        WHERE ds.document_id = sd.id
+                    )
+                    ELSE 0
+                END AS submission_count,
 
-                (
-                    SELECT ds.review_status
-                    FROM document_submissions ds
-                    WHERE ds.document_id = sd.id
-                    AND ds.review_status IS NOT NULL
-                    AND TRIM(ds.review_status) != ''
-                    AND ds.review_status != 'Pending Review'
-                    ORDER BY ds.reviewed_at DESC, ds.id DESC
-                    LIMIT 1
-                ) AS latest_review_status,
+                CASE
+                    WHEN COALESCE(sd.is_sent, 0) = 1 THEN (
+                        SELECT ds.review_status
+                        FROM document_submissions ds
+                        WHERE ds.document_id = sd.id
+                        AND ds.review_status IS NOT NULL
+                        AND TRIM(ds.review_status) != ''
+                        AND ds.review_status != 'Pending Review'
+                        ORDER BY ds.reviewed_at DESC, ds.id DESC
+                        LIMIT 1
+                    )
+                    ELSE NULL
+                END AS latest_review_status,
 
-                (
-                    SELECT ds.review_comment
-                    FROM document_submissions ds
-                    JOIN users reviewer ON ds.receiver_id = reviewer.id
-                    WHERE ds.document_id = sd.id
-                    AND reviewer.adviser_access = 1
-                    AND ds.review_comment IS NOT NULL
-                    AND TRIM(ds.review_comment) != ''
-                    ORDER BY ds.reviewed_at DESC, ds.id DESC
-                    LIMIT 1
-                ) AS latest_adviser_comment,
+                CASE
+                    WHEN COALESCE(sd.is_sent, 0) = 1 THEN (
+                        SELECT ds.review_comment
+                        FROM document_submissions ds
+                        JOIN users reviewer ON ds.receiver_id = reviewer.id
+                        WHERE ds.document_id = sd.id
+                        AND reviewer.adviser_access = 1
+                        AND ds.review_comment IS NOT NULL
+                        AND TRIM(ds.review_comment) != ''
+                        ORDER BY ds.reviewed_at DESC, ds.id DESC
+                        LIMIT 1
+                    )
+                    ELSE NULL
+                END AS latest_adviser_comment,
 
-                (
-                    SELECT COUNT(*)
-                    FROM document_submissions ds
-                    JOIN users reviewer ON ds.receiver_id = reviewer.id
-                    WHERE ds.document_id = sd.id
-                    AND ds.review_status = 'Approved'
-                    AND reviewer.adviser_access = 1
-                ) AS adviser_approval_count
+                CASE
+                    WHEN COALESCE(sd.is_sent, 0) = 1 THEN (
+                        SELECT COUNT(*)
+                        FROM document_submissions ds
+                        JOIN users reviewer ON ds.receiver_id = reviewer.id
+                        WHERE ds.document_id = sd.id
+                        AND ds.review_status = 'Approved'
+                        AND reviewer.adviser_access = 1
+                    )
+                    ELSE 0
+                END AS adviser_approval_count
 
             FROM student_documents sd
 
@@ -9690,7 +10331,16 @@ app.get("/student-documents/:userId", (req, res) => {
 
                     const checkGradedSchedulesSql = `
                         SELECT ds.id, ds.defense_type, ds.defense_status, ds.score, ds.panel_result,
-                               COUNT(dpe.id) AS eval_count
+                               SUM(
+                                   CASE
+                                       WHEN dpe.id IS NOT NULL
+                                        AND dpe.panel_result IS NOT NULL
+                                        AND TRIM(dpe.panel_result) != ''
+                                        AND LOWER(dpe.panel_result) NOT LIKE '%did not evaluate%'
+                                        AND LOWER(dpe.panel_result) NOT LIKE '%archived%'
+                                       THEN 1 ELSE 0
+                                   END
+                               ) AS eval_count
                         FROM defense_schedules ds
                         LEFT JOIN defense_panel_evaluations dpe ON ds.id = dpe.schedule_id
                         WHERE ds.group_id = ?
@@ -9729,6 +10379,9 @@ app.get("/student-documents/:userId", (req, res) => {
                         }
                         if (progressVal >= 60 || stageStr.includes('stage 4') || stageStr.includes('final') || stageStr.includes('deployment') || stageStr.includes('completed')) {
                             gradedSet.add("Pre-Final Defense");
+                        }
+                        if (progressVal >= 80 || stageStr.includes('deployment') || stageStr.includes('completed')) {
+                            gradedSet.add("Final Defense");
                         }
 
                         const isConceptGraded = gradedSet.has("Concept Presentation") || Array.from(gradedSet).some(t => t.toLowerCase().includes("concept"));
@@ -9943,6 +10596,7 @@ app.post(
                             `;
 
                             db.query("DELETE FROM env_scan_student_signatures WHERE document_id = ?", [existingResult[0].id], () => { });
+                            db.query("DELETE FROM document_submissions WHERE document_id = ?", [existingResult[0].id], () => { });
 
                             return db.query(
                                 updateSql,
@@ -11648,10 +12302,19 @@ app.post("/send-student-document", (req, res) => {
                 const documentRow =
                     documentResult[0];
 
-                if (String(documentRow.document_status || "").trim() === "Approved") {
+                const currentDocStatus = String(documentRow.document_status || "").trim();
+
+                if (currentDocStatus === "Approved") {
                     return res.json({
                         success: false,
                         message: "This document was approved by your adviser and is locked. It cannot be sent again."
+                    });
+                }
+
+                if (["Adviser Signed", "Panelist Signed", "Instructor Signed", "Chairperson Signed"].includes(currentDocStatus)) {
+                    return res.json({
+                        success: false,
+                        message: `This document is already in the signing workflow (${currentDocStatus}) and cannot be re-sent.`
                     });
                 }
 
@@ -11669,27 +12332,30 @@ app.post("/send-student-document", (req, res) => {
 
                     const targetObj = normalizedRecipients[idx];
                     const receiverId = targetObj.receiverId;
-                    const targetRole = targetObj.targetRole;
+                    const targetRole = targetObj.targetRole || "adviser";
 
                     const checkExistSql = `
                         SELECT id FROM document_submissions
-                        WHERE document_id = ? AND receiver_id = ?
+                        WHERE document_id = ?
+                          AND receiver_id = ?
+                          AND (target_role = ? OR (target_role IS NULL AND ? = 'adviser'))
                         ORDER BY id DESC
                         LIMIT 1
                     `;
 
-                    db.query(checkExistSql, [documentId, receiverId], (errExist, existResult) => {
+                    db.query(checkExistSql, [documentId, receiverId, targetRole, targetRole], (errExist, existResult) => {
                         if (errExist) {
                             return callback(errExist);
                         }
 
                         if (existResult && existResult.length > 0) {
-                            // Update existing submission, reset review fields and status to pending review
+                            // Update existing submission, reset review fields and status to Pending Review
                             const updateSubmissionSql = `
                                 UPDATE document_submissions
                                 SET
+                                    sender_id = ?,
                                     submission_message = ?,
-                                    review_status = NULL,
+                                    review_status = 'Pending Review',
                                     review_comment = NULL,
                                     reviewed_by = NULL,
                                     reviewed_at = NULL,
@@ -11698,14 +12364,14 @@ app.post("/send-student-document", (req, res) => {
                                     sent_at = NOW()
                                 WHERE id = ?
                             `;
-                            db.query(updateSubmissionSql, [submissionMessage || "", targetRole, existResult[0].id], (errUpdate) => {
+                            db.query(updateSubmissionSql, [senderId, submissionMessage || "", targetRole, existResult[0].id], (errUpdate) => {
                                 if (errUpdate) {
                                     return callback(errUpdate);
                                 }
                                 processSubmission(idx + 1, callback);
                             });
                         } else {
-                            // Insert a new submission
+                            // Insert a new submission with explicit Pending Review / Sent status
                             const insertSubmissionSql = `
                                 INSERT INTO document_submissions
                                 (
@@ -11713,9 +12379,11 @@ app.post("/send-student-document", (req, res) => {
                                     sender_id,
                                     receiver_id,
                                     submission_message,
+                                    submission_status,
+                                    review_status,
                                     target_role
                                 )
-                                VALUES (?, ?, ?, ?, ?)
+                                VALUES (?, ?, ?, ?, 'Sent', 'Pending Review', ?)
                             `;
                             db.query(
                                 insertSubmissionSql,
@@ -11765,7 +12433,7 @@ app.post("/send-student-document", (req, res) => {
 
                         // Send notification to selected faculty recipients
                         insertUserNotificationsByDbIds(
-                            recipientIds,
+                            normalizedRecipients.map(r => r.receiverId),
                             "New Document Submission",
                             `Student ${documentRow.student_name} from group "${documentRow.group_name || documentRow.group_code}" has submitted a ${documentRow.document_type || "document"} ("${documentRow.document_title}").`,
                             "Document"
@@ -14186,7 +14854,14 @@ app.post("/force-complete-defense-schedule/:scheduleId", (req, res) => {
                 return res.json({ success: false, message: "This defense schedule is already completed." });
             }
 
-            const evalsSql = `SELECT * FROM defense_panel_evaluations WHERE schedule_id = ?`;
+            const evalsSql = `
+                SELECT * FROM defense_panel_evaluations
+                WHERE schedule_id = ?
+                  AND panel_result IS NOT NULL
+                  AND TRIM(panel_result) != ''
+                  AND LOWER(panel_result) NOT LIKE '%did not evaluate%'
+                  AND LOWER(panel_result) NOT LIKE '%archived%'
+            `;
             db.query(evalsSql, [scheduleId], (evalErr, evaluations) => {
                 if (evalErr) {
                     console.log(evalErr);
@@ -16756,6 +17431,561 @@ app.put("/mark-all-student-notifications-read", (req, res) => {
 
 /* ================= SHARED PORTAL NOTIFICATIONS ================= */
 
+function classifyNotificationSectionPath(notif, user) {
+    if (!notif || !user) return "";
+    const role = String(user.role || "").toLowerCase().trim();
+    const position = String(user.position || "").toLowerCase().trim();
+    const hasAdviser = Number(user.adviser_access || 0) === 1;
+    const hasInstructor = Number(user.instructor_access || 0) === 1;
+    const hasPanelist = Number(user.panelist_access || 0) === 1;
+
+    const title = String(notif.notification_title || "").toLowerCase().trim();
+    const message = String(notif.notification_message || "").toLowerCase().trim();
+    const type = String(notif.notification_type || "").toLowerCase().trim();
+    const combined = `${title} ${message} ${type}`;
+
+    // 1. Announcements
+    if (type === "announcement" || title.startsWith("new announcement")) {
+        if (role === "admin") return "/admin/announcements.html";
+        if (role === "student") return "/student/studentdash.html";
+        return "/faculty/announcements.html";
+    }
+
+    // 2. Messages / Chat
+    if (
+        type === "message" ||
+        title.includes("new message") ||
+        title.includes("message") ||
+        combined.includes("sent you a message")
+    ) {
+        if (role === "admin") return "/admin/messages.html";
+        if (role === "student") return "/student/messages.html";
+        return "/faculty/messages.html";
+    }
+
+    // 3. Account / Security / Settings
+    if (
+        title.includes("security update") ||
+        combined.includes("password has been changed") ||
+        combined.includes("profile updated")
+    ) {
+        if (role === "admin") return "/admin/settings.html";
+        if (role === "student") return "/student/settings.html";
+        return "/faculty/settings.html";
+    }
+
+    // 4. Defense Minutes E-Signature Workflow
+    if (type === "defense minutes" || combined.includes("defense minutes")) {
+        if (role === "student") return "/student/documents.html";
+        if (
+            combined.includes("panelist document review") ||
+            title.includes("ready for e-signature") ||
+            title.includes("updated defense minutes for review") ||
+            combined.includes("open for your e-signature")
+        ) {
+            return "/faculty/panelist/document_review.html";
+        }
+        return "/faculty/adviser/documents.html";
+    }
+
+    // 5. Recommendation for Deployment (check Chairperson/Dean BEFORE Panelist!)
+    if (combined.includes("recommendation for deployment")) {
+        if (role === "student") return "/student/documents.html";
+        if (
+            combined.includes("pending your chairperson signature") ||
+            combined.includes("pending your signature") ||
+            combined.includes("pending chairperson") ||
+            combined.includes("pending dean") ||
+            title.includes("chairperson") ||
+            title.includes("dean")
+        ) {
+            return "/admin/document_review.html";
+        }
+        if (
+            combined.includes("pending a panelist e-signature") ||
+            combined.includes("panelist e-signature")
+        ) {
+            return "/faculty/panelist/document_review.html";
+        }
+        if (hasAdviser || role === "faculty") {
+            return "/faculty/adviser/documents.html";
+        }
+        return "/admin/document_review.html";
+    }
+
+    // 6. Adviser Requests / Title Proposals
+    if (
+        type === "adviser request" ||
+        title.includes("adviser request") ||
+        combined.includes("requested you as their adviser") ||
+        combined.includes("adviser assignment")
+    ) {
+        if (role === "student") return "/student/req_adviser.html";
+        return "/faculty/adviser/adviser_request.html";
+    }
+
+    // 7. Consultations
+    if (type === "consultation" || combined.includes("consultation")) {
+        if (role === "student") return "/student/consultation.html";
+        if (combined.includes("instructor") && hasInstructor) {
+            return "/faculty/instructor/consultation.html";
+        }
+        if (hasAdviser) return "/faculty/adviser/consultation.html";
+        if (hasInstructor) return "/faculty/instructor/consultation.html";
+        return "/faculty/adviser/consultation.html";
+    }
+
+    // 8. Defense Evaluation & Defense Schedules
+    if (
+        type === "defense evaluation" ||
+        type === "defense schedule" ||
+        type === "defense" ||
+        title.includes("panel evaluation") ||
+        title.includes("defense schedule") ||
+        title.includes("defense completed") ||
+        title.includes("defense evaluation")
+    ) {
+        if (role === "student") return "/student/defense_schedule.html";
+
+        // Instructor evaluation progress / completion notices
+        if (
+            title.includes("panel evaluation submitted") ||
+            title.includes("panel evaluations complete") ||
+            combined.includes("please create schedule again")
+        ) {
+            return "/faculty/instructor/panel_evaluation.html";
+        }
+
+        // Panelist schedule assignments
+        if (
+            combined.includes("assigned as a panelist") ||
+            combined.includes("panelist") ||
+            title.includes("defense schedule")
+        ) {
+            if (hasPanelist) return "/faculty/panelist/assigned_defenses.html";
+            if (hasAdviser) return "/faculty/adviser/capstone_group.html";
+            if (hasInstructor) return "/faculty/instructor/defense_schedule.html";
+        }
+
+        if (hasInstructor) return "/faculty/instructor/defense_schedule.html";
+        if (hasPanelist) return "/faculty/panelist/assigned_defenses.html";
+        if (hasAdviser) return "/faculty/adviser/capstone_group.html";
+        return "";
+    }
+
+    // 9. Document Review / Signing / Environmental Scanning / Submissions
+    if (
+        type === "document" ||
+        type === "document review" ||
+        combined.includes("document") ||
+        combined.includes("environmental scanning") ||
+        combined.includes("adviser acceptance") ||
+        combined.includes("acceptance for advisory") ||
+        combined.includes("signature") ||
+        combined.includes("recommendation") ||
+        combined.includes("concept paper")
+    ) {
+        if (role === "student") return "/student/documents.html";
+
+        // Admin (Dean / Chairperson) signing & escalation notices
+        if (
+            role === "admin" && (
+                combined.includes("pending your signature") ||
+                combined.includes("pending dean") ||
+                combined.includes("pending chairperson") ||
+                title.includes("adviser acceptance form") ||
+                title.includes("environmental scanning") ||
+                title.includes("declined by organization") ||
+                position.includes("dean") ||
+                position.includes("chairperson")
+            ) && !title.includes("new document submission")
+        ) {
+            return "/admin/document_review.html";
+        }
+
+        // Environmental scanning submitted to Instructor
+        if (combined.includes("environmental scanning")) {
+            if (role === "admin" && (position.includes("dean") || position.includes("chairperson")) && !title.includes("new document submission")) {
+                return "/admin/document_review.html";
+            }
+            if (hasInstructor) return "/faculty/instructor/document_review.html";
+            if (role === "admin") return "/admin/document_review.html";
+        }
+
+        // General student document submission -> Adviser Document Review
+        if (hasAdviser) return "/faculty/adviser/documents.html";
+        if (hasInstructor) return "/faculty/instructor/document_review.html";
+        if (role === "admin") return "/admin/document_review.html";
+        return "/faculty/adviser/documents.html";
+    }
+
+    return "";
+}
+
+function isActionablePendingNotification(notif) {
+    const title = String(notif?.notification_title || "").toLowerCase();
+    const message = String(notif?.notification_message || "").toLowerCase();
+    return (
+        title.includes("new document submission") ||
+        title.includes("new adviser request") ||
+        title.includes("new consultation request") ||
+        title.includes("pending signature") ||
+        title.includes("pending e-signature") ||
+        title.includes("ready for e-signature") ||
+        title.includes("new defense minutes") ||
+        title.includes("updated defense minutes") ||
+        title.includes("adviser acceptance form signed") ||
+        message.includes("pending your signature") ||
+        message.includes("pending your chairperson signature") ||
+        message.includes("pending a panelist e-signature")
+    );
+}
+
+function fetchUserActionQueuePendingCounts(user, callback) {
+    const uid = Number(user.id);
+    const counts = {};
+    const queries = [
+        {
+            path: "/admin/document_review.html",
+            sql: `SELECT COUNT(*) AS cnt FROM document_submissions WHERE receiver_id = ? AND (target_role IS NULL OR LOWER(target_role) NOT IN ('adviser','instructor','panelist')) AND (review_status IS NULL OR TRIM(review_status) = '' OR review_status = 'Pending Review')`,
+            params: [uid]
+        },
+        {
+            path: "/faculty/adviser/adviser_request.html",
+            sql: `SELECT COUNT(*) AS cnt FROM adviser_requests WHERE adviser_id = ? AND request_status = 'Pending'`,
+            params: [uid]
+        },
+        {
+            path: "/faculty/adviser/documents.html",
+            sql: `SELECT (
+                (SELECT COUNT(*) FROM document_submissions WHERE receiver_id = ? AND (target_role = 'adviser' OR target_role IS NULL) AND (review_status IS NULL OR TRIM(review_status) = '' OR review_status = 'Pending Review'))
+                +
+                (SELECT COUNT(*) FROM typed_defense_minutes WHERE adviser_id = ? AND status = 'Pending Adviser Signature')
+            ) AS cnt`,
+            params: [uid, uid]
+        },
+        {
+            path: "/faculty/adviser/consultation.html",
+            sql: `SELECT COUNT(*) AS cnt FROM consultations WHERE assigned_faculty_id = ? AND LOWER(COALESCE(assigned_role, 'adviser')) = 'adviser' AND status = 'Pending'`,
+            params: [uid]
+        },
+        {
+            path: "/faculty/instructor/document_review.html",
+            sql: `SELECT COUNT(*) AS cnt FROM document_submissions WHERE receiver_id = ? AND target_role = 'instructor' AND (review_status IS NULL OR TRIM(review_status) = '' OR review_status = 'Pending Review')`,
+            params: [uid]
+        },
+        {
+            path: "/faculty/instructor/consultation.html",
+            sql: `SELECT COUNT(*) AS cnt FROM consultations WHERE assigned_faculty_id = ? AND LOWER(COALESCE(assigned_role, '')) = 'instructor' AND status = 'Pending'`,
+            params: [uid]
+        },
+        {
+            path: "/faculty/panelist/assigned_defenses.html",
+            sql: `SELECT COUNT(*) AS cnt
+                  FROM defense_schedule_panelists dsp
+                  JOIN defense_schedules ds ON ds.id = dsp.schedule_id
+                  WHERE dsp.panelist_id = ?
+                    AND ds.defense_status != 'Cancelled'
+                    AND NOT EXISTS (
+                        SELECT 1 FROM defense_panel_evaluations dpe
+                        WHERE dpe.schedule_id = ds.id
+                          AND dpe.panelist_id = ?
+                          AND dpe.panel_result IS NOT NULL
+                          AND TRIM(dpe.panel_result) != ''
+                    )`,
+            params: [uid, uid]
+        }
+    ];
+
+    let idx = 0;
+    const runNext = () => {
+        if (idx >= queries.length) {
+            // Also compute panelist Document Review pending (deployment PDFs + unsigned eligible defense minutes)
+            db.query(
+                `SELECT COUNT(*) AS cnt FROM document_submissions WHERE receiver_id = ? AND target_role = 'panelist' AND (review_status IS NULL OR TRIM(review_status) = '' OR review_status = 'Pending Review')`,
+                [uid],
+                (pErr, pRows) => {
+                    const pdfPending = (!pErr && pRows && pRows[0]) ? Number(pRows[0].cnt || 0) : 0;
+                    db.query(
+                        `SELECT eligible_panelist_ids_json, panelist_signatures_json FROM typed_defense_minutes WHERE status IN ('Pending Panelist Signatures', 'Subject to Change', 'Rejected')`,
+                        (dmErr, dmRows) => {
+                            let dmPending = 0;
+                            if (!dmErr && Array.isArray(dmRows)) {
+                                dmRows.forEach((r) => {
+                                    try {
+                                        const elig = JSON.parse(r.eligible_panelist_ids_json || "[]").map(Number);
+                                        if (!elig.includes(uid)) return;
+                                        const sigs = JSON.parse(r.panelist_signatures_json || "[]");
+                                        const mySigned = Array.isArray(sigs) && sigs.some(
+                                            (s) => Number(s.panelistId) === uid && s.signatureImage && s.reviewStatus !== "Subject to Change" && s.reviewStatus !== "Rejected"
+                                        );
+                                        if (!mySigned) dmPending += 1;
+                                    } catch (_) { }
+                                });
+                            }
+                            counts["/faculty/panelist/document_review.html"] = pdfPending + dmPending;
+                            callback(counts);
+                        }
+                    );
+                }
+            );
+            return;
+        }
+        const q = queries[idx++];
+        db.query(q.sql, q.params, (err, rows) => {
+            counts[q.path] = (!err && rows && rows[0]) ? Number(rows[0].cnt || 0) : 0;
+            runNext();
+        });
+    };
+    runNext();
+}
+
+app.get("/api/portal-notifications/summary/:userId", (req, res) => {
+    const userId = req.params.userId;
+    let limit = 20;
+    if (req.query.limit !== undefined) {
+        const parsed = parseInt(req.query.limit, 10);
+        if (!isNaN(parsed)) limit = Math.max(0, Math.min(200, parsed));
+    }
+
+    if (!userId) {
+        return res.json({ success: false, message: "Missing user ID." });
+    }
+
+    const userSql = `
+        SELECT id, role, position, adviser_access, panelist_access, instructor_access
+        FROM users
+        WHERE user_id = ?
+        LIMIT 1
+    `;
+
+    db.query(userSql, [userId], (err, userRows) => {
+        if (err || !userRows || userRows.length === 0) {
+            return res.json({ success: false, message: "Account not found." });
+        }
+
+        const user = userRows[0];
+        const userDbId = Number(user.id);
+        const roleLower = String(user.role || "").toLowerCase().trim();
+
+        const unreadSql = `
+            SELECT id, notification_title, notification_message, notification_type, is_read, created_at
+            FROM user_notifications
+            WHERE user_id = ? AND is_read = 0
+            ORDER BY created_at DESC, id DESC
+        `;
+
+        db.query(unreadSql, [userDbId], (uErr, unreadRows) => {
+            if (uErr) {
+                console.log(uErr);
+                return res.json({ success: false, message: "Failed to load unread notifications." });
+            }
+
+            const finishSummary = (pendingCounts) => {
+                const staleIds = [];
+                const sections = {};
+                const activeUnread = [];
+
+                (unreadRows || []).forEach((n) => {
+                    const secPath = classifyNotificationSectionPath(n, user);
+                    // For Admin/Faculty action-queue pages: if DB shows 0 pending items and the notification
+                    // is purely a stale "New/Pending/Ready for E-Signature" prompt, auto-resolve it so no false red dot appears.
+                    if (
+                        roleLower !== "student" &&
+                        secPath &&
+                        Object.prototype.hasOwnProperty.call(pendingCounts, secPath) &&
+                        Number(pendingCounts[secPath] || 0) === 0 &&
+                        isActionablePendingNotification(n)
+                    ) {
+                        staleIds.push(n.id);
+                        return;
+                    }
+                    activeUnread.push(n);
+                    if (secPath) {
+                        sections[secPath] = (sections[secPath] || 0) + 1;
+                    }
+                });
+
+                const finalizeResponse = () => {
+                    const unreadCount = activeUnread.length;
+                    if (limit <= 0) {
+                        return res.json({
+                            success: true,
+                            unread_count: unreadCount,
+                            sections,
+                            pending_counts: pendingCounts,
+                            notifications: []
+                        });
+                    }
+                    db.query(
+                        `SELECT id, notification_title, notification_message, notification_type, is_read, created_at
+                         FROM user_notifications
+                         WHERE user_id = ?
+                         ORDER BY created_at DESC, id DESC
+                         LIMIT ?`,
+                        [userDbId, limit],
+                        (lErr, listRows) => {
+                            res.json({
+                                success: true,
+                                unread_count: unreadCount,
+                                sections,
+                                pending_counts: pendingCounts,
+                                notifications: (!lErr && listRows) ? listRows : []
+                            });
+                        }
+                    );
+                };
+
+                if (staleIds.length > 0) {
+                    db.query(
+                        "UPDATE user_notifications SET is_read = 1 WHERE user_id = ? AND id IN (?)",
+                        [userDbId, staleIds],
+                        () => finalizeResponse()
+                    );
+                } else {
+                    finalizeResponse();
+                }
+            };
+
+            if (roleLower === "student") {
+                finishSummary({});
+            } else {
+                fetchUserActionQueuePendingCounts(user, finishSummary);
+            }
+        });
+    });
+});
+
+app.put("/api/portal-notifications/mark-section-read", (req, res) => {
+    const { userId, sectionPath } = req.body || {};
+    if (!userId || !sectionPath) {
+        return res.json({ success: false, message: "Missing userId or sectionPath." });
+    }
+
+    const normSection = String(sectionPath || "").replace(/\\/g, "/").toLowerCase().trim();
+    const userSql = `
+        SELECT id, role, position, adviser_access, panelist_access, instructor_access
+        FROM users
+        WHERE user_id = ?
+        LIMIT 1
+    `;
+
+    db.query(userSql, [userId], (err, userRows) => {
+        if (err || !userRows || userRows.length === 0) {
+            return res.json({ success: false, message: "Account not found." });
+        }
+
+        const user = userRows[0];
+        const userDbId = Number(user.id);
+        const isStudent = String(user.role || "").toLowerCase().trim() === "student";
+
+        db.query(
+            `INSERT INTO sidebar_section_seen (user_id, section_path, last_seen_at)
+             VALUES (?, ?, NOW())
+             ON DUPLICATE KEY UPDATE last_seen_at = NOW()`,
+            [userDbId, normSection],
+            () => { }
+        );
+
+        db.query(
+            `SELECT id, notification_title, notification_message, notification_type
+             FROM user_notifications
+             WHERE user_id = ? AND is_read = 0`,
+            [userDbId],
+            (uErr, unreadRows) => {
+                if (uErr) {
+                    return res.json({ success: false, message: "Failed to check unread notifications." });
+                }
+
+                const idsToMark = [];
+                (unreadRows || []).forEach((n) => {
+                    const target = classifyNotificationSectionPath(n, user);
+                    if (target !== normSection) return;
+                    // For students only, keep Adviser feedback notifications unread until viewed in Bell or Notifications page
+                    if (isStudent) {
+                        const t = String(n.notification_type || "").toLowerCase();
+                        const ttl = String(n.notification_title || "").toLowerCase();
+                        const msg = String(n.notification_message || "").toLowerCase();
+                        if (t.includes("adviser") || ttl.includes("adviser") || msg.includes("adviser feedback:")) {
+                            return;
+                        }
+                    }
+                    idsToMark.push(n.id);
+                });
+
+                const sendFreshCount = (markedCount) => {
+                    db.query(
+                        "SELECT COUNT(*) AS unread_count FROM user_notifications WHERE user_id = ? AND is_read = 0",
+                        [userDbId],
+                        (cErr, cRows) => {
+                            res.json({
+                                success: true,
+                                marked_count: markedCount,
+                                unread_count: (!cErr && cRows && cRows[0]) ? Number(cRows[0].unread_count || 0) : 0
+                            });
+                        }
+                    );
+                };
+
+                if (idsToMark.length === 0) {
+                    return sendFreshCount(0);
+                }
+
+                db.query(
+                    "UPDATE user_notifications SET is_read = 1 WHERE user_id = ? AND id IN (?)",
+                    [userDbId, idsToMark],
+                    (upErr) => {
+                        if (upErr) {
+                            return res.json({ success: false, message: "Failed to mark section notifications read." });
+                        }
+                        sendFreshCount(idsToMark.length);
+                    }
+                );
+            }
+        );
+    });
+});
+
+app.put("/api/portal-notifications/read-all", (req, res) => {
+    const { userId } = req.body || {};
+    if (!userId) return res.json({ success: false, message: "Missing user information." });
+    db.query("SELECT id FROM users WHERE user_id = ? LIMIT 1", [userId], (err, rows) => {
+        if (err || !rows || rows.length === 0) return res.json({ success: false, message: "Account not found." });
+        db.query("UPDATE user_notifications SET is_read = 1 WHERE user_id = ?", [rows[0].id], (upErr) => {
+            if (upErr) return res.json({ success: false, message: "Failed to mark notifications as read." });
+            res.json({ success: true, unread_count: 0, message: "All notifications marked as read." });
+        });
+    });
+});
+
+app.put("/api/portal-notifications/read/:notificationId", (req, res) => {
+    const notificationId = req.params.notificationId;
+    const { userId } = req.body || {};
+    if (!notificationId || !userId) return res.json({ success: false, message: "Missing notification or user information." });
+    db.query("SELECT id FROM users WHERE user_id = ? LIMIT 1", [userId], (err, rows) => {
+        if (err || !rows || rows.length === 0) return res.json({ success: false, message: "Account not found." });
+        const userDbId = rows[0].id;
+        db.query(
+            "UPDATE user_notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+            [notificationId, userDbId],
+            (upErr) => {
+                if (upErr) return res.json({ success: false, message: "Failed to mark notification as read." });
+                db.query(
+                    "SELECT COUNT(*) AS unread_count FROM user_notifications WHERE user_id = ? AND is_read = 0",
+                    [userDbId],
+                    (cErr, cRows) => {
+                        res.json({
+                            success: true,
+                            unread_count: (!cErr && cRows && cRows[0]) ? Number(cRows[0].unread_count || 0) : 0,
+                            message: "Notification marked as read."
+                        });
+                    }
+                );
+            }
+        );
+    });
+});
+
 app.get("/portal-notifications/:userId", (req, res) => {
     const userId = req.params.userId;
     let limit = 100;
@@ -18658,6 +19888,10 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
                     dpe.outline_evaluation_details
                 FROM defense_panel_evaluations dpe
                 WHERE dpe.schedule_id = ?
+                  AND dpe.panel_result IS NOT NULL
+                  AND TRIM(dpe.panel_result) != ''
+                  AND LOWER(dpe.panel_result) NOT LIKE '%did not evaluate%'
+                  AND LOWER(dpe.panel_result) NOT LIKE '%archived%'
             `;
 
             db.query(evaluationsSql, [scheduleId], (evalErr, evaluations) => {
@@ -19276,10 +20510,21 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
                                         });
                                     }
 
+                                    // If a panelist submits a valid grade (including while Late) before the group completes defense minutes signing,
+                                    // grant them access to e-sign the defense minutes in Panelist Document Review.
+                                    const resLowerCheck = String(panel_result || "").toLowerCase();
+                                    if (resLowerCheck && !resLowerCheck.includes("did not evaluate") && !resLowerCheck.includes("archived")) {
+                                        syncLateGradedPanelistToDefenseMinutes(schedule, panelistDbId);
+                                    }
+
                                     const countSql = `
                                 SELECT COUNT(*) AS evaluation_count
                                 FROM defense_panel_evaluations
                                 WHERE schedule_id = ?
+                                  AND panel_result IS NOT NULL
+                                  AND TRIM(panel_result) != ''
+                                  AND LOWER(panel_result) NOT LIKE '%did not evaluate%'
+                                  AND LOWER(panel_result) NOT LIKE '%archived%'
                             `;
 
                                     db.query(countSql, [scheduleId], (countErr, countRows) => {
@@ -19442,7 +20687,7 @@ app.get("/instructor-document-review/:userId", (req, res) => {
                 ds.submission_status,
                 ds.sent_at,
 
-                ds.review_status,
+                COALESCE(NULLIF(TRIM(ds.review_status), ''), 'Pending Review') AS review_status,
                 ds.review_comment,
                 ds.reviewed_at,
 
@@ -20341,7 +21586,7 @@ app.get("/adviser-documents/:userId", (req, res) => {
                 ds.submission_status,
                 ds.sent_at,
 
-                ds.review_status,
+                COALESCE(NULLIF(TRIM(ds.review_status), ''), 'Pending Review') AS review_status,
                 ds.review_comment,
                 ds.reviewed_at,
 
@@ -20850,12 +22095,17 @@ function isAdviserAcceptanceDoc(documentType, documentTitle) {
         || docTitle.includes("acceptance for advisory");
 }
 
-/* Recommendation for concept presentation = adviser is the FINAL signer */
+/* Recommendation letters (Concept, Outline, Pre-Final, Final) where adviser is the FINAL signer (excludes Deployment Recommendation) */
 function isAdviserOnlyDoc(documentType, documentTitle) {
     const docType = String(documentType || "").toLowerCase();
     const docTitle = String(documentTitle || "").toLowerCase();
+    if (isDeploymentRecommendationDoc(docType, docTitle)) return false;
     return docType.includes("recommendation for concept")
-        || docTitle.includes("recommendation for concept");
+        || docTitle.includes("recommendation for concept")
+        || docType.includes("recommendation for outline")
+        || docTitle.includes("recommendation for outline")
+        || docType.includes("recommendation letter")
+        || docTitle.includes("recommendation letter");
 }
 
 function decodeSignatureImageData(signatureImage) {
@@ -22528,7 +23778,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                               WHERE ds2.group_id = sd.group_id
                                                 AND ds2.defense_status != 'Cancelled'
                                               ORDER BY
-                                                CASE WHEN LOWER(ds2.defense_type) LIKE '%final%' THEN 0 ELSE 1 END,
+                                                CASE WHEN LOWER(ds2.defense_type) LIKE '%final%' AND LOWER(ds2.defense_type) NOT LIKE '%pre%' THEN 0 ELSE 1 END,
                                                 ds2.id DESC
                                               LIMIT 1
                                           )
@@ -22549,7 +23799,7 @@ app.put("/adviser-apply-document-signature/:submissionId", async (req, res) => {
                                                 `SELECT id FROM document_submissions WHERE document_id = ? AND receiver_id = ? AND target_role = 'panelist' LIMIT 1`,
                                                 [submission.document_id, panelistDbId],
                                                 (errExist, existResult) => {
-                                                    const msg = "Adviser signed. Pending panelist e-signature (any 1 of 3 panelists).";
+                                                    const msg = "Adviser signed. Pending panelist e-signatures (all 3 panelists).";
                                                     if (existResult && existResult.length > 0) {
                                                         db.query(
                                                             `UPDATE document_submissions
@@ -25262,7 +26512,7 @@ app.get("/admin-document-review/:userId", (req, res) => {
                 ds.submission_message,
                 ds.submission_status,
                 ds.sent_at,
-                ds.review_status,
+                COALESCE(NULLIF(TRIM(ds.review_status), ''), 'Pending Review') AS review_status,
                 ds.review_comment,
                 ds.reviewed_at,
                 sd.id AS document_id,

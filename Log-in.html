@@ -11,17 +11,17 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&amp;family=Syne:wght@500;600;700&amp;display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary: #6366f1;
             --primary-hover: #4f46e5;
-            --bg-dark: #090714;
+            --bg-dark: #14151c;
             --card-dark: #120d24;
             --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-glow: rgba(167, 139, 250, 0.15);
+            --text-muted: #cbd5e1;
+            --border-glow: rgba(255, 255, 255, 0.16);
         }
 
         * {
@@ -42,15 +42,25 @@
             overflow: hidden;
         }
 
-        /* Abstract Flowing Background Gradients */
-        .ambient-mesh {
-            position: absolute;
+        body::before {
+            content: '';
+            position: fixed;
             inset: 0;
-            background: 
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 60%);
+            background: url('Images/wow.jfif') center / cover no-repeat;
+            filter: grayscale(48%) brightness(0.76) contrast(1.02);
+            transform: scale(1.02);
             z-index: 0;
+        }
+
+        /* Greyish atmospheric veil over background image */
+        .ambient-mesh {
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(135deg, rgba(28, 30, 38, 0.54) 0%, rgba(46, 49, 60, 0.46) 55%, rgba(22, 24, 32, 0.58) 100%),
+                radial-gradient(circle at 12% 20%, rgba(148, 163, 184, 0.14) 0%, transparent 52%),
+                radial-gradient(circle at 88% 82%, rgba(99, 102, 241, 0.12) 0%, transparent 50%);
+            z-index: 1;
         }
 
         /* Moving decorative glass elements */
@@ -58,26 +68,26 @@
             position: absolute;
             width: 300px;
             height: 300px;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
-            filter: blur(60px);
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.14), rgba(99, 102, 241, 0.14));
+            filter: blur(65px);
             border-radius: 50%;
             top: -50px;
             right: 15%;
             animation: drift 15s ease-in-out infinite alternate;
-            z-index: 1;
+            z-index: 2;
         }
 
         .abstract-glass-blob-2 {
             position: absolute;
             width: 250px;
             height: 250px;
-            background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(99, 102, 241, 0.15));
-            filter: blur(50px);
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.12), rgba(99, 102, 241, 0.12));
+            filter: blur(55px);
             border-radius: 50%;
             bottom: -50px;
             left: 10%;
             animation: drift 12s ease-in-out infinite alternate-reverse;
-            z-index: 1;
+            z-index: 2;
         }
 
         @keyframes drift {
@@ -91,12 +101,12 @@
             width: 1040px;
             max-width: 95%;
             min-height: 620px;
-            background: rgba(18, 13, 36, 0.75);
+            background: rgba(20, 20, 30, 0.42);
             border: 1px solid var(--border-glow);
             border-radius: 20px;
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
             display: grid;
             grid-template-columns: 1.1fr 0.9fr;
             overflow: hidden;
@@ -110,13 +120,13 @@
 
         /* BRAND SIDE (Left) */
         .brand-side {
-            background: linear-gradient(135deg, rgba(15, 10, 30, 0.9) 0%, rgba(30, 20, 60, 0.9) 100%);
+            background: linear-gradient(135deg, rgba(18, 16, 28, 0.46) 0%, rgba(34, 30, 52, 0.40) 100%);
             padding: 48px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             position: relative;
-            border-right: 1px solid rgba(167, 139, 250, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         /* Decorative glowing ring visual on the brand side */
@@ -136,6 +146,7 @@
             border: 2px solid transparent;
             background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3)) border-box;
             -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: destination-out;
             mask-composite: exclude;
         }
@@ -182,6 +193,7 @@
             font-weight: 700;
             background: linear-gradient(90deg, #ffffff, #c084fc);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -226,7 +238,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            background: rgba(10, 6, 22, 0.4);
+            background: rgba(14, 14, 22, 0.30);
         }
 
         .form-header {
@@ -278,8 +290,8 @@
         .input-wrap input {
             width: 100%;
             padding: 12px 14px 12px 42px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
             border-radius: 8px;
             color: #ffffff;
             font-family: inherit;
@@ -289,13 +301,13 @@
         }
 
         .input-wrap input::placeholder {
-            color: rgba(255, 255, 255, 0.25);
+            color: rgba(255, 255, 255, 0.45);
         }
 
         .input-wrap input:focus {
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.07);
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
         }
 
         .input-wrap:focus-within i.field-icon {
@@ -384,8 +396,8 @@
             width: 100vw;
             height: 100vh;
             background: rgba(5, 3, 14, 0.75);
-            backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
             display: flex;
             align-items: center;
             justify-content: center;

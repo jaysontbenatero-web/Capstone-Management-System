@@ -718,9 +718,9 @@ function closeModal() {
 /* ================= EDIT REPOSITORY ================= */
 
 function populateRepositoryYearInputs() {
-    const startYear = 2023;
+    const startYear = 2020;
     const maxYear = Math.max(2026, new Date().getFullYear());
-    ["year", "editYear"].forEach(id => {
+    ["year", "editYear", "uploadYear"].forEach(id => {
         const sel = document.getElementById(id);
         if (!sel) return;
         const prev = sel.value;
@@ -734,6 +734,292 @@ function populateRepositoryYearInputs() {
         if (prev) sel.value = prev;
     });
 }
+
+function ensureSelectOption(selectEl, value) {
+    if (!selectEl || !value) return;
+    const strVal = String(value).trim();
+    if (!strVal) return;
+    const exists = [...selectEl.options].some(o => o.value === strVal);
+    if (!exists) {
+        const opt = document.createElement("option");
+        opt.value = strVal;
+        opt.textContent = strVal;
+        selectEl.appendChild(opt);
+    }
+    selectEl.value = strVal;
+}
+
+/* ================= UPLOAD FILE AUTO-EXTRACT & SAVE ================= */
+
+function setRepositoryEntryMode(mode) {
+    const manualBtn = document.getElementById("modeManualBtn");
+    const uploadBtn = document.getElementById("modeUploadBtn");
+    const manualForm = document.getElementById("repositoryForm");
+    const uploadPanel = document.getElementById("repositoryUploadPanel");
+    if (!manualBtn || !uploadBtn || !manualForm || !uploadPanel) return;
+
+    const isUpload = mode === "upload";
+    manualBtn.classList.toggle("active", !isUpload);
+    uploadBtn.classList.toggle("active", isUpload);
+    manualForm.style.display = isUpload ? "none" : "block";
+    uploadPanel.style.display = isUpload ? "flex" : "none";
+}
+
+function setRepoUploadStatus(type, htmlMessage) {
+    const el = document.getElementById("repoUploadStatus");
+    if (!el) return;
+    if (!type) {
+        el.style.display = "none";
+        el.className = "repo-upload-status";
+        el.innerHTML = "";
+        return;
+    }
+    el.className = `repo-upload-status is-${type}`;
+    el.innerHTML = htmlMessage;
+    el.style.display = "flex";
+}
+
+function renderExtractedSectionPills(extracted) {
+    const container = document.getElementById("repoExtractedPills");
+    if (!container) return;
+    const fields = [
+        { key: "title", label: "Title", req: true },
+        { key: "program", label: "Program", req: true },
+        { key: "year", label: "Year", req: false },
+        { key: "abstract", label: "Abstract", req: true },
+        { key: "research_problem", label: "Research Problem", req: false },
+        { key: "objectives", label: "Objectives", req: true },
+        { key: "methodology", label: "Methodology", req: true },
+        { key: "researchers", label: "Researchers", req: false },
+        { key: "category", label: "Category", req: false }
+    ];
+    container.innerHTML = fields.map((f) => {
+        const hasVal = Boolean(String(extracted?.[f.key] || "").trim());
+        const cls = hasVal ? "found" : (f.req ? "missing" : "optional");
+        const icon = hasVal ? "fa-check" : (f.req ? "fa-triangle-exclamation" : "fa-minus");
+        return `<span class="repo-section-pill ${cls}"><i class="fa-solid ${icon}"></i> ${f.label}</span>`;
+    }).join("");
+}
+
+function resetUploadFilePanel() {
+    const fileInput = document.getElementById("repoFileInput");
+    const preview = document.getElementById("repoUploadPreview");
+    const footer = document.getElementById("repoUploadFooter");
+    if (fileInput) fileInput.value = "";
+    if (preview) preview.style.display = "none";
+    if (footer) footer.style.display = "none";
+    setRepoUploadStatus(null, "");
+    ["uploadProgram", "uploadYear", "uploadTitle", "uploadCategory", "uploadAdviser", "uploadAbstract", "uploadResearchProblem", "uploadObjectives", "uploadMethodology", "uploadResearchers"].forEach((id) => {
+        const node = document.getElementById(id);
+        if (node) node.value = "";
+    });
+}
+
+function fillUploadPreviewFields(extracted, fileName) {
+    populateRepositoryYearInputs();
+    const fileLabel = document.getElementById("repoParsedFileName");
+    if (fileLabel) {
+        fileLabel.innerHTML = `<i class="fa-solid fa-file-lines"></i> ${escapeHtml(fileName || "Uploaded file")}`;
+    }
+
+    const progSel = document.getElementById("uploadProgram");
+    if (progSel) progSel.value = extracted.program || "";
+
+    const yearSel = document.getElementById("uploadYear");
+    if (yearSel) {
+        if (extracted.year) ensureSelectOption(yearSel, extracted.year);
+        else yearSel.value = "";
+    }
+
+    const catSel = document.getElementById("uploadCategory");
+    if (catSel) catSel.value = extracted.category || "";
+
+    const map = {
+        uploadTitle: extracted.title || "",
+        uploadAdviser: extracted.adviser || "",
+        uploadAbstract: extracted.abstract || "",
+        uploadResearchProblem: extracted.research_problem || "",
+        uploadObjectives: extracted.objectives || "",
+        uploadMethodology: extracted.methodology || "",
+        uploadResearchers: extracted.researchers || ""
+    };
+    Object.entries(map).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    });
+
+    renderExtractedSectionPills(extracted);
+    const preview = document.getElementById("repoUploadPreview");
+    const footer = document.getElementById("repoUploadFooter");
+    if (preview) preview.style.display = "block";
+    if (footer) footer.style.display = "block";
+}
+
+async function saveUploadedRepositoryEntry(isAuto = false) {
+    const program = document.getElementById("uploadProgram")?.value?.trim() || "";
+    const title = document.getElementById("uploadTitle")?.value?.trim() || "";
+    const abstract = document.getElementById("uploadAbstract")?.value?.trim() || "";
+    const research_problem = document.getElementById("uploadResearchProblem")?.value?.trim() || "";
+    const objectives = document.getElementById("uploadObjectives")?.value?.trim() || "";
+    const methodology = document.getElementById("uploadMethodology")?.value?.trim() || "";
+    const researchers = document.getElementById("uploadResearchers")?.value?.trim() || "";
+    const adviser = document.getElementById("uploadAdviser")?.value?.trim() || "";
+    const category = document.getElementById("uploadCategory")?.value?.trim() || "";
+    const year = document.getElementById("uploadYear")?.value?.trim() || "";
+
+    if (!program || !title || !abstract || !objectives || !methodology) {
+        const msg = "Please complete required fields (Program, Title, Abstract, Objectives, Methodology) before saving.";
+        setRepoUploadStatus("warning", `<i class="fa-solid fa-triangle-exclamation"></i><span>${msg}</span>`);
+        if (!isAuto) alert(msg);
+        return false;
+    }
+
+    const saveBtn = document.getElementById("uploadSaveBtn");
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving to Repository...`;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/add-repository`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                program,
+                title,
+                abstract,
+                objectives,
+                research_problem,
+                methodology,
+                researchers,
+                adviser,
+                category,
+                year
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            await loadRepository();
+            setRepoUploadStatus(
+                "success",
+                `<i class="fa-solid fa-circle-check"></i><span><strong>Added to Repository!</strong> "${escapeHtml(title)}" has been extracted and saved with separated sections. Upload another file or edit it in the archive.</span>`
+            );
+            const footer = document.getElementById("repoUploadFooter");
+            if (footer) footer.style.display = "none";
+            if (!isAuto) {
+                alert("Repository entry added from uploaded file!");
+            }
+            return true;
+        } else {
+            setRepoUploadStatus("error", `<i class="fa-solid fa-circle-xmark"></i><span>${escapeHtml(data.message || "Failed to save repository entry.")}</span>`);
+            return false;
+        }
+    } catch (error) {
+        console.error("Save uploaded repository entry error:", error);
+        setRepoUploadStatus("error", `<i class="fa-solid fa-circle-xmark"></i><span>Cannot connect to server while saving repository entry.</span>`);
+        return false;
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Save Extracted Entry to Repository`;
+        }
+    }
+}
+
+async function handleRepositoryFileUpload(file) {
+    if (!file) return;
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (!["pdf", "txt"].includes(ext)) {
+        setRepoUploadStatus("error", `<i class="fa-solid fa-circle-xmark"></i><span>Please upload a <strong>.pdf</strong> or <strong>.txt</strong> file.</span>`);
+        return;
+    }
+
+    setRepoUploadStatus("loading", `<i class="fa-solid fa-spinner fa-spin"></i><span>Reading <strong>${escapeHtml(file.name)}</strong> and separating sections...</span>`);
+
+    try {
+        const formData = new FormData();
+        formData.append("repositoryFile", file);
+
+        const response = await fetch(`${API_BASE}/api/repository/parse-file`, {
+            method: "POST",
+            body: formData
+        });
+        const data = await response.json();
+
+        if (!data.success || !data.extracted) {
+            setRepoUploadStatus("error", `<i class="fa-solid fa-circle-xmark"></i><span>${escapeHtml(data.message || "Could not read file contents.")}</span>`);
+            return;
+        }
+
+        fillUploadPreviewFields(data.extracted, data.fileName || file.name);
+
+        const missing = Array.isArray(data.missingRequired) ? data.missingRequired : [];
+        const autoSave = Boolean(document.getElementById("repoAutoSaveCheck")?.checked);
+
+        if (missing.length === 0 && autoSave) {
+            await saveUploadedRepositoryEntry(true);
+        } else if (missing.length > 0) {
+            setRepoUploadStatus(
+                "warning",
+                `<i class="fa-solid fa-triangle-exclamation"></i><span>File read, but missing required section(s): <strong>${escapeHtml(missing.join(", "))}</strong>. Please fill them below and click Save.</span>`
+            );
+        } else {
+            setRepoUploadStatus(
+                "success",
+                `<i class="fa-solid fa-circle-check"></i><span>All sections extracted cleanly! Review or add optional Adviser/Category below, then click <strong>Save Extracted Entry to Repository</strong>.</span>`
+            );
+        }
+    } catch (err) {
+        console.error("Parse repository file error:", err);
+        setRepoUploadStatus("error", `<i class="fa-solid fa-circle-xmark"></i><span>Failed to upload and parse the file. Make sure the server is running.</span>`);
+    }
+}
+
+function initializeUploadFileEvents() {
+    const manualBtn = document.getElementById("modeManualBtn");
+    const uploadBtn = document.getElementById("modeUploadBtn");
+    const dropzone = document.getElementById("repoFileDropzone");
+    const fileInput = document.getElementById("repoFileInput");
+    const saveBtn = document.getElementById("uploadSaveBtn");
+    const resetBtn = document.getElementById("uploadResetBtn");
+
+    if (manualBtn) manualBtn.addEventListener("click", () => setRepositoryEntryMode("manual"));
+    if (uploadBtn) uploadBtn.addEventListener("click", () => setRepositoryEntryMode("upload"));
+
+    if (dropzone && fileInput) {
+        dropzone.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files && fileInput.files[0]) {
+                handleRepositoryFileUpload(fileInput.files[0]);
+            }
+        });
+        ["dragenter", "dragover"].forEach((evName) => {
+            dropzone.addEventListener(evName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add("is-dragover");
+            });
+        });
+        ["dragleave", "drop"].forEach((evName) => {
+            dropzone.addEventListener(evName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove("is-dragover");
+            });
+        });
+        dropzone.addEventListener("drop", (e) => {
+            const file = e.dataTransfer?.files?.[0];
+            if (file) {
+                handleRepositoryFileUpload(file);
+            }
+        });
+    }
+
+    if (saveBtn) saveBtn.addEventListener("click", () => saveUploadedRepositoryEntry(false));
+    if (resetBtn) resetBtn.addEventListener("click", resetUploadFilePanel);
+}
+
+initializeUploadFileEvents();
 
 populateRepositoryYearInputs();
 

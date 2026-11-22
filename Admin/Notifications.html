@@ -253,11 +253,6 @@
                     <span>Register Faculty</span>
                 </div>
 
-                <div class="menu-item" id="nav-student" onclick="window.location.href='STU_Enroll.html'">
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span>Register Student</span>
-                </div>
-
                 <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
                     <i class="fa-solid fa-folder-open"></i>
                     <span>Repository</span>
@@ -310,6 +305,13 @@
             <div class="welcome">
                 <h1>Notifications</h1>
                 <p>System updates, announcements, and account activity.</p>
+            </div>
+
+            <div class="top-actions">
+                <button type="button" class="primary-btn" onclick="markAllPortalNotificationsRead()" style="border:none;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(124,58,237,0.22);">
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>Mark All as Read</span>
+                </button>
             </div>
 
         </div>
@@ -455,14 +457,23 @@
                     const item = filtered[idx];
                     if (item && window.PortalNotifications) {
                         await window.PortalNotifications.markRead(item.id);
+                        item.is_read = 1;
                         const targetUrl = window.PortalNotifications.getNotificationTargetUrl(item);
                         if (targetUrl) {
-                            window.location.href = targetUrl;
+                            const resolved = new URL(targetUrl, window.location.href).pathname.toLowerCase();
+                            if (resolved === window.location.pathname.toLowerCase()) {
+                                renderNotificationsPage();
+                                window.PortalNotifications.refresh(false);
+                            } else {
+                                window.location.href = targetUrl;
+                            }
                         }
                     }
                 });
             });
         }
+
+        let handledInitialNotifId = false;
 
         async function loadPortalNotificationsPage(isSilent = false) {
             const list = document.getElementById("portalNotificationsPageList");
@@ -472,7 +483,8 @@
 
             try {
                 const response = await fetch(
-                    `${API_BASE}/portal-notifications/${encodeURIComponent(loggedInUserId)}`
+                    `${API_BASE}/api/portal-notifications/summary/${encodeURIComponent(loggedInUserId)}?limit=100`,
+                    { cache: "no-store" }
                 );
 
                 const data = await response.json();
@@ -483,9 +495,21 @@
                 }
 
                 allNotifItems = data.notifications || [];
+
+                if (!handledInitialNotifId) {
+                    handledInitialNotifId = true;
+                    const notifIdParam = new URLSearchParams(window.location.search).get("notifId");
+                    if (notifIdParam) {
+                        const matchIdx = allNotifItems.findIndex((n) => String(n.id) === String(notifIdParam));
+                        if (matchIdx !== -1) {
+                            currentPage = Math.floor(matchIdx / itemsPerPage) + 1;
+                        }
+                    }
+                }
+
                 renderNotificationsPage();
 
-                if (window.PortalNotifications) {
+                if (!isSilent && window.PortalNotifications) {
                     window.PortalNotifications.refresh(false);
                 }
             } catch (error) {
@@ -498,7 +522,7 @@
 
         async function markAllPortalNotificationsRead() {
             try {
-                const response = await fetch(`${API_BASE}/portal-notifications-read-all`, {
+                const response = await fetch(`${API_BASE}/api/portal-notifications/read-all`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ userId: loggedInUserId })
@@ -511,7 +535,10 @@
                     return;
                 }
 
-                loadPortalNotificationsPage();
+                await loadPortalNotificationsPage();
+                if (window.PortalNotifications) {
+                    window.PortalNotifications.refresh(true);
+                }
             } catch (error) {
                 console.log(error);
                 alert("Cannot connect to server.");
