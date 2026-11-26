@@ -1490,6 +1490,7 @@
                         || String(schedule.project_title || "").toLowerCase().includes(keyword)
                         || String(schedule.room_name || "").toLowerCase().includes(keyword)
                         || String(schedule.defense_type || "").toLowerCase().includes(keyword)
+                        || getDisplayDefenseType(schedule).toLowerCase().includes(keyword)
                         || String(schedule.defense_status || "").toLowerCase().includes(keyword)
                         || String(schedule.panel_result || "").toLowerCase().includes(keyword)
                         || panelistNames.toLowerCase().includes(keyword)
@@ -1688,6 +1689,29 @@
 
             return "type-default";
 
+        }
+
+        function isFormalDefenseSchedule(schedule){
+            if(!schedule) return false;
+            if(String(schedule.defense_format || "").trim().toLowerCase() === "formal") return true;
+            const notesStr = String(schedule.notes || "").trim();
+            if(/^\[Formal\s+Defense\]/i.test(notesStr)) return true;
+            const dt = String(schedule.defense_type || "").trim();
+            if(/^formal\s*[-–—:]/i.test(dt)) return true;
+            return false;
+        }
+
+        function stripDefenseFormatNotePrefix(notesText){
+            return String(notesText || "").replace(/^\[(Informal|Formal)\s+Defense\]\s*(\r?\n)?/i, "").trim();
+        }
+
+        function getDisplayDefenseType(schedule){
+            const baseType = String((schedule && schedule.defense_type) || "Defense").trim() || "Defense";
+            if(isFormalDefenseSchedule(schedule)){
+                if(/^formal\s*[-–—:]/i.test(baseType)) return baseType;
+                return `Formal - ${baseType}`;
+            }
+            return baseType;
         }
 
         function getOutcomeClass(outcome){
@@ -1922,7 +1946,7 @@
 
                         <div class="defense-type-banner ${typeClass}">
                             <i class="fa-solid fa-tag"></i>
-                            ${schedule.defense_type || "Defense"}
+                            ${getDisplayDefenseType(schedule)}
                         </div>
 
                         <div class="defense-meta">
@@ -1958,7 +1982,7 @@
                             <p><strong>Date:</strong> ${isCondReeval ? "Open (External Re-Evaluation)" : formatDate(schedule.defense_date)}</p>
                             <p><strong>Time:</strong> ${isCondReeval ? "No Time Limit" : `${formatTime(schedule.start_time)} – ${formatTime(schedule.end_time)}`}</p>
                             <p><strong>Room:</strong> ${schedule.room_name || "Not Set"}</p>
-                            <p><strong>Notes:</strong> ${schedule.notes || "No notes provided."}</p>
+                            <p><strong>Notes:</strong> ${stripDefenseFormatNotePrefix(schedule.notes) || "No notes provided."}</p>
                         </div>
 
                         <div class="card-actions">
@@ -2647,7 +2671,7 @@
                     <div class="panel-print-header">
                         <h1>Institute of Computing</h1>
                         <h2>Panel Evaluation Receipts</h2>
-                        <p>${escapeHtml(schedule.group_name)} • ${escapeHtml(schedule.defense_type || "Defense")}</p>
+                        <p>${escapeHtml(schedule.group_name)} • ${escapeHtml(getDisplayDefenseType(schedule))}</p>
                     </div>
                     <div class="panel-print-meta">
                         <p><strong>Schedule:</strong> ${escapeHtml(schedule.schedule_code)}</p>
@@ -2994,7 +3018,7 @@
                 return `
                     <div class="dnsc-concept-sheet is-readonly">
                         ${buildDnscHeaderHtml(schedule, false)}
-                        <div class="dnsc-sheet-title">CONCEPT PROPOSAL EVALUATION SHEET</div>
+                        <div class="dnsc-sheet-title">${isFormalDefenseSchedule(schedule) ? "FORMAL - " : ""}CONCEPT PROPOSAL EVALUATION SHEET</div>
                         <div class="dnsc-date-row"><strong>Date:</strong> <span class="dnsc-underline-date">${escapeHtml(formattedDate)}</span></div>
                         ${presentersGridHtml}
 
@@ -3101,7 +3125,7 @@
                 const indCaps = getSavedIndividualRubricCaps(details, schedule, true);
                 const maxAllowed = Number(details?.max_points?.software) || getMaxAllowedScoreForSchedule(schedule);
                 const savedPresenters = Array.isArray(details.presenters) ? details.presenters : [];
-                const sheetTitle = `${escapeHtml(schedule.defense_type || "Outline Defense").toUpperCase()} EVALUATION SHEET`;
+                const sheetTitle = `${escapeHtml(getDisplayDefenseType(schedule)).toUpperCase()} EVALUATION SHEET`;
 
                 const dispCells = presenterSlots.map((p, idx) => {
                     if (!p) return `<td class="dnsc-score-col dnsc-muted">&mdash;</td>`;
@@ -3280,7 +3304,7 @@
             // Fallback / other defense types
             const maxAllowed = getMaxAllowedScoreForSchedule(schedule);
             const needsTitle = requiresTitleSelection(schedule.defense_type);
-            const sheetTitle = `${escapeHtml(schedule.defense_type || "Defense").toUpperCase()} EVALUATION SHEET`;
+            const sheetTitle = `${escapeHtml(getDisplayDefenseType(schedule)).toUpperCase()} EVALUATION SHEET`;
             const scoreStr = (!isNoGrade && myEval.score !== null && myEval.score !== undefined && String(myEval.score).trim() !== "")
                 ? String(myEval.score).trim()
                 : "";
@@ -3347,7 +3371,7 @@
                 document.getElementById("modalTypePill");
 
             typePill.textContent =
-                schedule.defense_type || "Defense";
+                getDisplayDefenseType(schedule);
 
             typePill.className =
                 `defense-type-pill ${getDefenseTypeClass(schedule.defense_type)}`;
@@ -3401,7 +3425,7 @@
                 schedule.schedule_code || "No Schedule Code";
 
             document.getElementById("modalDefenseType").innerText =
-                schedule.defense_type || "Defense";
+                getDisplayDefenseType(schedule);
 
             document.getElementById("modalStatus").innerText =
                 schedule.defense_status || "Scheduled";
@@ -3422,7 +3446,7 @@
                 schedule.project_title || "Not Set";
 
             document.getElementById("modalNotes").innerText =
-                schedule.notes || "No notes provided.";
+                stripDefenseFormatNotePrefix(schedule.notes) || "No notes provided.";
 
             renderModalPanelists(schedule.panelists || []);
             renderModalMembers(schedule.members || []);
@@ -4453,7 +4477,7 @@
                 host.innerHTML = `
                     <div class="dnsc-concept-sheet">
                         ${buildDnscHeaderHtml(schedule, false)}
-                        <div class="dnsc-sheet-title">CONCEPT PROPOSAL EVALUATION SHEET</div>
+                        <div class="dnsc-sheet-title">${isFormalDefenseSchedule(schedule) ? "FORMAL - " : ""}CONCEPT PROPOSAL EVALUATION SHEET</div>
                         <div class="dnsc-date-row"><strong>Date:</strong> <span class="dnsc-underline-date">${escapeHtml(formattedDate)}</span></div>
                         ${presentersGridHtml}
 
@@ -4563,7 +4587,7 @@
                 `;
             } else if (isOutline) {
                 const indCaps = getIndividualRubricCaps(schedule, true);
-                const sheetTitle = `${escapeHtml(schedule.defense_type || "Outline Defense").toUpperCase()} EVALUATION SHEET`;
+                const sheetTitle = `${escapeHtml(getDisplayDefenseType(schedule)).toUpperCase()} EVALUATION SHEET`;
 
                 const dispCells = presenterSlots.map((p, idx) => {
                     if (!p) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
@@ -4755,7 +4779,7 @@
                 `;
             } else {
                 const needsTitle = requiresTitleSelection(schedule.defense_type);
-                const sheetTitle = `${escapeHtml(schedule.defense_type || "Defense").toUpperCase()} EVALUATION SHEET`;
+                const sheetTitle = `${escapeHtml(getDisplayDefenseType(schedule)).toUpperCase()} EVALUATION SHEET`;
 
                 host.innerHTML = `
                     <div class="dnsc-concept-sheet">
@@ -5045,7 +5069,7 @@
 
             if(groupNameEl) groupNameEl.textContent = schedule.group_name || "Unnamed Group";
             if(codeEl) codeEl.textContent = schedule.schedule_code || "";
-            if(pillEl) pillEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Late: ${schedule.defense_type || "Defense"}`;
+            if(pillEl) pillEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Late: ${getDisplayDefenseType(schedule)}`;
 
             const modal = document.getElementById("archiveDefenseModal");
             if(modal) modal.style.display = "flex";
@@ -5261,7 +5285,7 @@
                 document.getElementById("evalTypePill");
 
             typePill.textContent =
-                schedule.defense_type || "Defense";
+                getDisplayDefenseType(schedule);
 
             typePill.className =
                 `defense-type-pill ${getDefenseTypeClass(schedule.defense_type)}`;
@@ -5270,7 +5294,7 @@
                 `${isMyCondPassReeval ? "Re-Evaluate" : "Evaluate"}: ${schedule.group_name || "Group"}`;
 
             document.getElementById("evalScheduleCode").innerText =
-                `${schedule.schedule_code || "DEF"} • ${schedule.defense_type || "Defense"} • ${formatDate(schedule.defense_date)}`;
+                `${schedule.schedule_code || "DEF"} • ${getDisplayDefenseType(schedule)} • ${formatDate(schedule.defense_date)}`;
 
             const defenseDocumentsSection =
                 document.getElementById("defenseDocumentsSection");
