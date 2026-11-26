@@ -360,13 +360,23 @@ body {
     filter: brightness(0.96);
 }
 
-.tpl-action-btn.btn-view {
+.tpl-action-btn.btn-view,
+.admin-portal .admin-main a.tpl-action-btn.btn-view {
     background: #ede9fe;
     color: #6d28d9;
 }
 
-.tpl-action-btn.btn-download {
+.tpl-action-btn.btn-download,
+.admin-portal .admin-main a.tpl-action-btn.btn-download,
+.admin-portal .admin-main a.tpl-action-btn.btn-download:visited,
+.admin-portal .admin-main a.tpl-action-btn.btn-download:hover,
+.admin-portal .admin-main a.tpl-action-btn.btn-download:focus {
     background: linear-gradient(135deg, #6d28d9, #7c3aed);
+    color: #ffffff;
+}
+
+.tpl-action-btn.btn-download i,
+.admin-portal .admin-main a.tpl-action-btn.btn-download i {
     color: #ffffff;
 }
 
