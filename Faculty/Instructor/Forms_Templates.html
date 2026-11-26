@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forms Templates | CMS</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="Forms_Templates.css">
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole = localStorage.getItem("role");
+        const instructorAccess = localStorage.getItem("instructor_access");
+
+        if (userRole === "admin" && instructorAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Instructor access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href = "../../Admin/AdminDash.html";
+            });
+        } else if (userRole !== "admin" && instructorAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href = "../FacultyDash.html";
+            });
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Instructor Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='InstructorDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Management</div>
+                <div class="menu-item" id="nav-enroll" onclick="window.location.href='STU_Enroll.html'">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Register Students</span>
+                </div>
+                <div class="menu-item" id="nav-adviser" onclick="window.location.href='Manage_Adviser.html'">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Manage Adviser</span>
+                </div>
+                <div class="menu-item" id="nav-groups" onclick="window.location.href='Capstone_Group.html'">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Capstone Groups</span>
+                </div>
+                <div class="menu-item" id="nav-document" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span>Document Review</span>
+                </div>
+                <div class="menu-item" id="nav-defense" onclick="window.location.href='Defense_Schedule.html'">
+                    <i class="fa-solid fa-calendar-alt"></i>
+                    <span>Schedule Defense</span>
+                </div>
+                <div class="menu-item" id="nav-consultation" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+                <div class="menu-item" id="nav-panel-evaluation" onclick="window.location.href='Panel_Evaluation.html'">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span>Panel Evaluation</span>
+                </div>
+                <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Repository</span>
+                </div>
+                <div class="menu-item active" id="nav-forms-templates" onclick="window.location.href='Forms_Templates.html'">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Forms Templates</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Forms Templates</h1>
+                <p>Upload and manage PDF or Word (.doc / .docx) capstone templates organized by phase for students.</p>
+            </div>
+            <div class="top-actions">
+                <button type="button" class="topbar-upload-btn" onclick="openUploadTemplateModal('')">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Upload Template</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="tpl-stats-grid">
+            <div class="tpl-stat-card">
+                <div class="tpl-stat-icon purple"><i class="fa-solid fa-folder-open"></i></div>
+                <div>
+                    <h2 id="statTotalTemplates">0</h2>
+                    <p>Total Templates</p>
+                </div>
+            </div>
+            <div class="tpl-stat-card">
+                <div class="tpl-stat-icon red"><i class="fa-solid fa-file-pdf"></i></div>
+                <div>
+                    <h2 id="statPdfTemplates">0</h2>
+                    <p>PDF Files</p>
+                </div>
+            </div>
+            <div class="tpl-stat-card">
+                <div class="tpl-stat-icon blue"><i class="fa-solid fa-file-word"></i></div>
+                <div>
+                    <h2 id="statWordTemplates">0</h2>
+                    <p>DOC / DOCX Files</p>
+                </div>
+            </div>
+            <div class="tpl-stat-card">
+                <div class="tpl-stat-icon green"><i class="fa-solid fa-layer-group"></i></div>
+                <div>
+                    <h2 id="statCategoriesUsed">0</h2>
+                    <p>Active Categories</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEARCH & CATEGORY FILTER -->
+        <div class="tpl-toolbar-card">
+            <div class="tpl-toolbar-top">
+                <div class="tpl-search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="templateSearchInput" placeholder="Search template title, filename, or description..." oninput="renderTemplateSections()">
+                </div>
+            </div>
+            <div class="tpl-category-pills" id="categoryFilterPills"></div>
+        </div>
+
+        <!-- CATEGORY SECTIONS -->
+        <div class="tpl-sections-wrap" id="templateSectionsHost">
+            <div class="tpl-empty-section">Loading form templates...</div>
+        </div>
+    </main>
+
+    <!-- UPLOAD / EDIT TEMPLATE MODAL -->
+    <div class="tpl-modal-overlay" id="templateModal" onclick="if (event.target === this) closeTemplateModal()">
+        <div class="tpl-modal-box">
+            <div class="tpl-modal-header">
+                <div>
+                    <h2 id="templateModalTitle">
+                        <i class="fa-solid fa-file-arrow-up" style="color:#7c3aed;"></i>
+                        <span>Upload Form Template</span>
+                    </h2>
+                    <p id="templateModalSubtitle">Upload a PDF or Word (.doc / .docx) form template under the matching capstone phase.</p>
+                </div>
+                <button type="button" class="tpl-close-btn" onclick="closeTemplateModal()" aria-label="Close modal" title="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="templateForm" onsubmit="submitTemplateForm(event)">
+                <input type="hidden" id="editingTemplateId" value="">
+
+                <div class="tpl-form-group">
+                    <label for="templateCategory">Category <span class="req">*</span></label>
+                    <select id="templateCategory" required>
+                        <option value="">Select capstone category</option>
+                        <option value="Concept Presentation">Concept Presentation</option>
+                        <option value="Outline Defense">Outline Defense</option>
+                        <option value="Pre-Final Defense">Pre-Final Defense</option>
+                        <option value="Deployment">Deployment</option>
+                        <option value="Final Defense">Final Defense</option>
+                        <option value="General / Others">General / Others</option>
+                    </select>
+                </div>
+
+                <div class="tpl-form-group">
+                    <label for="templateTitle">Template Title <span class="req">*</span></label>
+                    <input type="text" id="templateTitle" placeholder="e.g., Adviser Acceptance Form, Concept Paper Format, Recommendation Letter..." required>
+                </div>
+
+                <div class="tpl-form-group">
+                    <label for="templateDescription">Description / Notes (Optional)</label>
+                    <textarea id="templateDescription" rows="3" placeholder="Brief instructions on how students should fill out or use this template..."></textarea>
+                </div>
+
+                <div class="tpl-form-group">
+                    <label for="templateFileInput" id="templateFileLabel">Template File (PDF, DOC, DOCX) <span class="req">*</span></label>
+                    <div class="tpl-dropzone" id="templateDropzone" onclick="document.getElementById('templateFileInput').click()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <strong>Click to choose file or drag &amp; drop here</strong>
+                        <small>Accepted formats: .pdf, .doc, .docx (max 25 MB)</small>
+                    </div>
+                    <input type="file" id="templateFileInput" accept=".pdf,.doc,.docx" style="display:none;" onchange="handleSelectedTemplateFile(this.files[0])">
+                    <div class="tpl-selected-file" id="selectedFileChip">
+                        <span id="selectedFileNameText"></span>
+                        <button type="button" onclick="clearSelectedTemplateFile()" style="border:none;background:transparent;color:#dc2626;cursor:pointer;font-weight:700;" aria-label="Remove selected file" title="Remove">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tpl-modal-actions">
+                    <button type="button" class="tpl-cancel-btn" onclick="closeTemplateModal()">Cancel</button>
+                    <button type="submit" class="tpl-save-btn" id="saveTemplateBtn">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Upload Template</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const loggedInUserId = localStorage.getItem("userId");
+
+        const TEMPLATE_CATEGORIES = [
+            {
+                key: "Concept Presentation",
+                icon: "fa-lightbulb",
+                iconClass: "cat-concept",
+                description: "Concept paper formats, environmental scanning forms, adviser acceptance, and recommendation forms."
+            },
+            {
+                key: "Outline Defense",
+                icon: "fa-clipboard-check",
+                iconClass: "cat-outline",
+                description: "Chapter 1–2 manuscript templates, outline recommendation forms, and outline defense guides."
+            },
+            {
+                key: "Pre-Final Defense",
+                icon: "fa-person-chalkboard",
+                iconClass: "cat-prefinal",
+                description: "Pre-final manuscript formats, recommendation letters, and system demo checklists."
+            },
+            {
+                key: "Deployment",
+                icon: "fa-rocket",
+                iconClass: "cat-deployment",
+                description: "Recommendation for Deployment forms, Chapter 1–4 deployment formats, and endorsement templates."
+            },
+            {
+                key: "Final Defense",
+                icon: "fa-graduation-cap",
+                iconClass: "cat-final",
+                description: "Final defense recommendation letters, final Chapter 1–4 manuscript formats, and binding templates."
+            },
+            {
+                key: "General / Others",
+                icon: "fa-folder-open",
+                iconClass: "cat-general",
+                description: "General capstone guidelines, rubrics, formatting manuals, and miscellaneous forms."
+            }
+        ];
+
+        let allTemplates = [];
+        let activeCategoryFilter = "All";
+        let selectedUploadFile = null;
+
+        function escapeHtml(val) {
+            return String(val ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatBytes(bytes) {
+            const b = Number(bytes || 0);
+            if (!b) return "";
+            if (b < 1024) return `${b} B`;
+            if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+            return `${(b / (1024 * 1024)).toFixed(2)} MB`;
+        }
+
+        function formatDateShort(val) {
+            if (!val) return "";
+            const d = new Date(val);
+            if (Number.isNaN(d.getTime())) return "";
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        function updateStats() {
+            const total = allTemplates.length;
+            const pdfCount = allTemplates.filter(t => String(t.file_format || "").toUpperCase() === "PDF").length;
+            const wordCount = allTemplates.filter(t => ["DOC", "DOCX"].includes(String(t.file_format || "").toUpperCase())).length;
+            const usedCats = new Set(allTemplates.map(t => t.category).filter(Boolean)).size;
+
+            document.getElementById("statTotalTemplates").textContent = total;
+            document.getElementById("statPdfTemplates").textContent = pdfCount;
+            document.getElementById("statWordTemplates").textContent = wordCount;
+            document.getElementById("statCategoriesUsed").textContent = usedCats;
+        }
+
+        function renderCategoryPills() {
+            const host = document.getElementById("categoryFilterPills");
+            if (!host) return;
+
+            const allBtn = `
+                <button type="button" class="tpl-cat-pill ${activeCategoryFilter === "All" ? "active" : ""}" onclick="setCategoryFilter('All')">
+                    <i class="fa-solid fa-border-all"></i>
+                    <span>All Categories</span>
+                    <span class="pill-count">${allTemplates.length}</span>
+                </button>
+            `;
+
+            const catBtns = TEMPLATE_CATEGORIES.map(cat => {
+                const count = allTemplates.filter(t => t.category === cat.key).length;
+                const safeKey = cat.key.replace(/'/g, "\\'");
+                return `
+                    <button type="button" class="tpl-cat-pill ${activeCategoryFilter === cat.key ? "active" : ""}" onclick="setCategoryFilter('${safeKey}')">
+                        <i class="fa-solid ${cat.icon}"></i>
+                        <span>${escapeHtml(cat.key)}</span>
+                        <span class="pill-count">${count}</span>
+                    </button>
+                `;
+            }).join("");
+
+            host.innerHTML = allBtn + catBtns;
+        }
+
+        function setCategoryFilter(catKey) {
+            activeCategoryFilter = catKey;
+            renderCategoryPills();
+            renderTemplateSections();
+        }
+
+        function buildTemplateCardHtml(tpl) {
+            const fmt = String(tpl.file_format || "FILE").toUpperCase();
+            const isPdf = fmt === "PDF";
+            const badgeClass = isPdf ? "fmt-pdf" : "fmt-doc";
+            const iconClass = isPdf ? "fa-file-pdf" : "fa-file-word";
+            const sizeText = formatBytes(tpl.file_size);
+            const dateText = formatDateShort(tpl.created_at);
+
+            return `
+                <div class="tpl-card">
+                    <div class="tpl-card-top">
+                        <div class="tpl-file-badge ${badgeClass}">
+                            <i class="fa-solid ${iconClass}"></i>
+                            <span>${escapeHtml(fmt)}</span>
+                        </div>
+                        <div class="tpl-card-info">
+                            <div class="tpl-card-title">${escapeHtml(tpl.title)}</div>
+                            <div class="tpl-card-filename" title="${escapeHtml(tpl.file_name)}">${escapeHtml(tpl.file_name)}</div>
+                        </div>
+                    </div>
+                    ${tpl.description ? `<div class="tpl-card-desc">${escapeHtml(tpl.description)}</div>` : ""}
+                    <div class="tpl-card-meta">
+                        <span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(tpl.uploader_name || "Instructor")}</span>
+                        <span>${sizeText ? `${escapeHtml(sizeText)} &bull; ` : ""}${escapeHtml(dateText)}</span>
+                    </div>
+                    <div class="tpl-card-actions">
+                        ${isPdf ? `<a class="tpl-action-btn btn-view" href="${escapeHtml(tpl.file_path)}" target="_blank" rel="noopener"><i class="fa-solid fa-eye"></i> Preview</a>` : ""}
+                        <a class="tpl-action-btn btn-download" href="/api/form-templates/${Number(tpl.id)}/download"><i class="fa-solid fa-download"></i> Download</a>
+                        <button type="button" class="tpl-action-btn btn-edit" onclick="openEditTemplateModal(${Number(tpl.id)})"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button type="button" class="tpl-action-btn btn-delete" onclick="deleteTemplate(${Number(tpl.id)})"><i class="fa-solid fa-trash-can"></i> Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTemplateSections() {
+            const host = document.getElementById("templateSectionsHost");
+            if (!host) return;
+
+            const query = String(document.getElementById("templateSearchInput")?.value || "").trim().toLowerCase();
+            const categoriesToShow = activeCategoryFilter === "All"
+                ? TEMPLATE_CATEGORIES
+                : TEMPLATE_CATEGORIES.filter(c => c.key === activeCategoryFilter);
+
+            const html = categoriesToShow.map(cat => {
+                const items = allTemplates.filter(t => {
+                    if (t.category !== cat.key) return false;
+                    if (!query) return true;
+                    const hay = `${t.title || ""} ${t.file_name || ""} ${t.description || ""} ${t.uploader_name || ""}`.toLowerCase();
+                    return hay.includes(query);
+                });
+
+                const safeKey = cat.key.replace(/'/g, "\\'");
+                const bodyHtml = items.length > 0
+                    ? `<div class="tpl-cards-grid">${items.map(buildTemplateCardHtml).join("")}</div>`
+                    : `<div class="tpl-empty-section">No templates uploaded under <strong>${escapeHtml(cat.key)}</strong>${query ? " matching your search" : " yet"}.</div>`;
+
+                return `
+                    <section class="tpl-category-section">
+                        <div class="tpl-category-head">
+                            <div class="tpl-category-head-left">
+                                <div class="tpl-category-icon ${cat.iconClass}">
+                                    <i class="fa-solid ${cat.icon}"></i>
+                                </div>
+                                <div>
+                                    <h3>${escapeHtml(cat.key)}</h3>
+                                    <p>${escapeHtml(cat.description)}</p>
+                                </div>
+                            </div>
+                            <div class="tpl-category-head-right">
+                                <span class="tpl-section-count">${items.length} ${items.length === 1 ? "template" : "templates"}</span>
+                                <button type="button" class="tpl-quick-add-btn" onclick="openUploadTemplateModal('${safeKey}')">
+                                    <i class="fa-solid fa-plus"></i> Add Here
+                                </button>
+                            </div>
+                        </div>
+                        ${bodyHtml}
+                    </section>
+                `;
+            }).join("");
+
+            host.innerHTML = html;
+        }
+
+        async function loadTemplates() {
+            try {
+                const res = await fetch("/api/form-templates", { cache: "no-store" });
+                const data = await res.json();
+                allTemplates = (data && data.success && Array.isArray(data.templates)) ? data.templates : [];
+                updateStats();
+                renderCategoryPills();
+                renderTemplateSections();
+            } catch (err) {
+                console.error("Failed to load form templates:", err);
+                document.getElementById("templateSectionsHost").innerHTML =
+                    `<div class="tpl-empty-section">Unable to load templates. Make sure the server has been restarted with the latest endpoints.</div>`;
+            }
+        }
+
+        function openUploadTemplateModal(presetCategory = "") {
+            document.getElementById("editingTemplateId").value = "";
+            document.getElementById("templateCategory").value = presetCategory || (activeCategoryFilter !== "All" ? activeCategoryFilter : "");
+            document.getElementById("templateTitle").value = "";
+            document.getElementById("templateDescription").value = "";
+            clearSelectedTemplateFile();
+
+            document.getElementById("templateModalTitle").innerHTML =
+                `<i class="fa-solid fa-file-arrow-up" style="color:#7c3aed;"></i><span>Upload Form Template</span>`;
+            document.getElementById("templateModalSubtitle").textContent =
+                "Upload a PDF or Word (.doc / .docx) form template under the matching capstone phase.";
+            document.getElementById("templateFileLabel").innerHTML =
+                `Template File (PDF, DOC, DOCX) <span class="req">*</span>`;
+            document.getElementById("saveTemplateBtn").innerHTML =
+                `<i class="fa-solid fa-cloud-arrow-up"></i><span>Upload Template</span>`;
+
+            document.getElementById("templateModal").style.display = "flex";
+        }
+
+        function openEditTemplateModal(id) {
+            const tpl = allTemplates.find(t => Number(t.id) === Number(id));
+            if (!tpl) return;
+
+            document.getElementById("editingTemplateId").value = String(tpl.id);
+            document.getElementById("templateCategory").value = tpl.category || "";
+            document.getElementById("templateTitle").value = tpl.title || "";
+            document.getElementById("templateDescription").value = tpl.description || "";
+            clearSelectedTemplateFile();
+
+            document.getElementById("templateModalTitle").innerHTML =
+                `<i class="fa-solid fa-pen-to-square" style="color:#7c3aed;"></i><span>Edit Form Template</span>`;
+            document.getElementById("templateModalSubtitle").textContent =
+                `Current file: ${tpl.file_name}. Choose a new file only if you want to replace it.`;
+            document.getElementById("templateFileLabel").innerHTML =
+                `Replace File (Optional — PDF, DOC, DOCX)`;
+            document.getElementById("saveTemplateBtn").innerHTML =
+                `<i class="fa-solid fa-floppy-disk"></i><span>Save Changes</span>`;
+
+            document.getElementById("templateModal").style.display = "flex";
+        }
+
+        function closeTemplateModal() {
+            document.getElementById("templateModal").style.display = "none";
+        }
+
+        function handleSelectedTemplateFile(file) {
+            if (!file) return;
+            const ext = (file.name.split(".").pop() || "").toLowerCase();
+            if (!["pdf", "doc", "docx"].includes(ext)) {
+                alert("Only PDF, DOC, and DOCX files are allowed.");
+                clearSelectedTemplateFile();
+                return;
+            }
+            selectedUploadFile = file;
+            const chip = document.getElementById("selectedFileChip");
+            const txt = document.getElementById("selectedFileNameText");
+            if (txt) txt.textContent = `${file.name} (${formatBytes(file.size)})`;
+            if (chip) chip.style.display = "flex";
+
+            const titleInput = document.getElementById("templateTitle");
+            if (titleInput && !titleInput.value.trim()) {
+                titleInput.value = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+            }
+        }
+
+        function clearSelectedTemplateFile() {
+            selectedUploadFile = null;
+            const inp = document.getElementById("templateFileInput");
+            if (inp) inp.value = "";
+            const chip = document.getElementById("selectedFileChip");
+            if (chip) chip.style.display = "none";
+        }
+
+        async function submitTemplateForm(event) {
+            event.preventDefault();
+            const editingId = document.getElementById("editingTemplateId").value.trim();
+            const category = document.getElementById("templateCategory").value.trim();
+            const title = document.getElementById("templateTitle").value.trim();
+            const description = document.getElementById("templateDescription").value.trim();
+
+            if (!category || !title) {
+                alert("Please select a category and enter a template title.");
+                return;
+            }
+
+            if (!editingId && !selectedUploadFile) {
+                alert("Please select a PDF, DOC, or DOCX file to upload.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("category", category);
+            formData.append("title", title);
+            formData.append("description", description);
+            formData.append("uploaderUserId", loggedInUserId || "");
+            if (selectedUploadFile) {
+                formData.append("templateFile", selectedUploadFile);
+            }
+
+            const btn = document.getElementById("saveTemplateBtn");
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>`;
+
+            try {
+                const url = editingId ? `/api/form-templates/${encodeURIComponent(editingId)}` : "/api/form-templates";
+                const method = editingId ? "PUT" : "POST";
+                const res = await fetch(url, { method, body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    closeTemplateModal();
+                    await loadTemplates();
+                    alert(data.message || "Saved successfully!");
+                } else {
+                    alert(data.message || "Failed to save template.");
+                }
+            } catch (err) {
+                console.error("Save template error:", err);
+                alert("Unable to connect to server.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+
+        async function deleteTemplate(id) {
+            const tpl = allTemplates.find(t => Number(t.id) === Number(id));
+            const ok = await confirm(`Delete template "${tpl ? tpl.title : "this file"}"? Students will no longer be able to download it.`);
+            if (!ok) return;
+
+            try {
+                const res = await fetch(`/api/form-templates/${encodeURIComponent(id)}?userId=${encodeURIComponent(loggedInUserId || "")}`, {
+                    method: "DELETE"
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await loadTemplates();
+                } else {
+                    alert(data.message || "Failed to delete template.");
+                }
+            } catch (err) {
+                console.error("Delete template error:", err);
+                alert("Unable to connect to server.");
+            }
+        }
+
+        // Drag and drop on dropzone
+        (function initDropzone() {
+            const dz = document.getElementById("templateDropzone");
+            if (!dz) return;
+            ["dragenter", "dragover"].forEach(ev => {
+                dz.addEventListener(ev, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dz.classList.add("is-dragover");
+                });
+            });
+            ["dragleave", "drop"].forEach(ev => {
+                dz.addEventListener(ev, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dz.classList.remove("is-dragover");
+                });
+            });
+            dz.addEventListener("drop", (e) => {
+                const file = e.dataTransfer?.files?.[0];
+                if (file) handleSelectedTemplateFile(file);
+            });
+        })();
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../../Log-in.html";
+        }
+
+        loadTemplates();
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

@@ -124,6 +124,14 @@
                     <i class="fa-solid fa-file-arrow-up"></i>
                     <span>Records Management</span>
                 </div>
+                <div
+                    class="menu-item"
+                    id="nav-form-templates"
+                    onclick="window.location.href='Form_Templates.html'"
+                >
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Form Templates</span>
+                </div>
 
                 <div
                     class="menu-item"
@@ -197,6 +205,19 @@
                 <p id="studentSubtitle">
                     View announcements, system notifications, and defense schedules related to your capstone group.
                 </p>
+            </div>
+
+            <div class="top-actions">
+                <button
+                    type="button"
+                    id="markAllReadBtn"
+                    class="primary-btn"
+                    onclick="markAllAsRead()"
+                    style="border:none;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(124,58,237,0.22);white-space:nowrap;"
+                >
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>Mark All as Read</span>
+                </button>
             </div>
 
         </div>
@@ -1380,11 +1401,10 @@
 
         async function markAllAsRead(){
 
-            const confirmed =
-                await confirm("Mark all system notifications as read?");
-
-            if(!confirmed){
-                return;
+            const btn = document.getElementById("markAllReadBtn");
+            if(btn){
+                btn.disabled = true;
+                btn.style.opacity = "0.7";
             }
 
             try{
@@ -1408,19 +1428,18 @@
                 const data =
                     await response.json();
 
-                alert(
-                    data.message || "Notifications updated."
-                );
+                if(!data.success){
+                    alert(
+                        data.message || "Failed to mark notifications as read."
+                    );
+                    return;
+                }
 
-                if(data.success){
-
-                    (announcements || []).forEach(a => markUpdateViewed("announcement", a.id));
-                    (defenseSchedules || []).forEach(d => markUpdateViewed("defense", d.schedule_id || d.id));
-                    loadStudentNotifications();
-                    if(window.PortalNotifications){
-                        window.PortalNotifications.refresh(false);
-                    }
-
+                (announcements || []).forEach(a => markUpdateViewed("announcement", a.id));
+                (defenseSchedules || []).forEach(d => markUpdateViewed("defense", d.schedule_id || d.id));
+                await loadStudentNotifications(true);
+                if(window.PortalNotifications){
+                    window.PortalNotifications.refresh(true);
                 }
 
             }catch(error){
@@ -1428,6 +1447,13 @@
                 console.log(error);
 
                 alert("Cannot update notifications.");
+
+            }finally{
+
+                if(btn){
+                    btn.disabled = false;
+                    btn.style.opacity = "";
+                }
 
             }
 

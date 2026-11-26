@@ -106,7 +106,17 @@
                 >
                     <i class="fa-solid fa-calendar-check"></i>
                     <span>
-                        Assigned Defenses
+                        Defense Evaluation
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Defense_Schedule.html'"
+                >
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>
+                        Defense Schedule
                     </span>
                 </div>
 
@@ -127,6 +137,16 @@
                     <i class="fa-solid fa-file-signature"></i>
                     <span>
                         Document Review
+                    </span>
+                </div>
+
+                <div
+                    class="menu-item"
+                    onclick="window.location.href='Consultation.html'"
+                >
+                    <i class="fa-solid fa-comments"></i>
+                    <span>
+                        Consultation
                     </span>
                 </div>
 
@@ -170,19 +190,7 @@
                 </p>
             </div>
 
-            <div class="top-actions">
-
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-
-                    <input
-                        type="text"
-                        id="dashboardSearch"
-                        placeholder="Search dashboard..."
-                        onkeyup="renderDashboardLists()"
-                    >
-                </div>
-            </div>
+            <div class="top-actions"></div>
 
         </div>
 
@@ -534,8 +542,8 @@
 
         function renderDashboardLists(){
 
-            const keyword =
-                document.getElementById("dashboardSearch").value.toLowerCase();
+            const searchEl = document.getElementById("dashboardSearch");
+            const keyword = searchEl ? searchEl.value.toLowerCase() : "";
 
             renderDefenseList(keyword);
 

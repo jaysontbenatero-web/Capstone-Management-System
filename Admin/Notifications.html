@@ -308,7 +308,7 @@
             </div>
 
             <div class="top-actions">
-                <button type="button" class="primary-btn" onclick="markAllPortalNotificationsRead()" style="border:none;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(124,58,237,0.22);">
+                <button type="button" id="markAllPortalNotifBtn" class="primary-btn" onclick="markAllPortalNotificationsRead()" style="border:none;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(124,58,237,0.22);white-space:nowrap;">
                     <i class="fa-solid fa-check-double"></i>
                     <span>Mark All as Read</span>
                 </button>
@@ -461,8 +461,15 @@
                     if (item && Number(item.is_read) === 0 && window.PortalNotifications) {
                         await window.PortalNotifications.markRead(item.id);
                         item.is_read = 1;
-                        renderNotificationsPage();
                     }
+                    if (item && window.PortalNotifications && typeof window.PortalNotifications.getNotificationTargetUrl === "function") {
+                        const targetUrl = window.PortalNotifications.getNotificationTargetUrl(item);
+                        if (targetUrl && !targetUrl.toLowerCase().endsWith("notifications.html")) {
+                            window.location.href = targetUrl;
+                            return;
+                        }
+                    }
+                    renderNotificationsPage();
                 });
             });
 
@@ -522,6 +529,11 @@
         }
 
         async function markAllPortalNotificationsRead() {
+            const btn = document.getElementById("markAllPortalNotifBtn");
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = "0.7";
+            }
             try {
                 const response = await fetch(`${API_BASE}/api/portal-notifications/read-all`, {
                     method: "PUT",
@@ -543,6 +555,11 @@
             } catch (error) {
                 console.log(error);
                 alert("Cannot connect to server.");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.opacity = "";
+                }
             }
         }
 

@@ -7,10 +7,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="Consultation.css">
+    <link rel="stylesheet" href="../../shared/consultation-schedule.css">
     <link rel="stylesheet" href="../../Admin/AdminTheme.css">
 
     <link rel="stylesheet" href="../../shared/custom-alerts.css">
     <script src="../../shared/custom-alerts.js"></script>
+    <script src="../../shared/consultation-schedule.js"></script>
 </head>
 <body class="admin-portal">
     <div class="bg1"></div><div class="bg2"></div>
@@ -33,6 +35,14 @@
                 <div class="menu-item" id="nav-repository" onclick="window.location.href='Repository.html'">
                     <i class="fa-solid fa-book-open"></i><span>Repository</span>
                 </div>
+            <div
+                class="menu-item"
+                id="nav-forms-templates"
+                onclick="window.location.href='Forms_Templates.html'"
+            >
+                <i class="fa-solid fa-file-contract"></i>
+                <span>Forms Templates</span>
+            </div>
             </div>
         </div>
         <div class="sidebar-footer"><div class="menu-item logout-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></div></div>
@@ -45,9 +55,10 @@
                 <p>Review student consultation requests assigned to you and schedule sessions.</p>
             </div>
             <div class="top-actions">
-                <button class="availability-toggle-btn" id="availabilityToggleBtn" type="button" onclick="toggleAvailability()">
-                    <span class="avail-dot"></span>
-                    <span id="availabilityLabel">Accepting Consultations: Open</span>
+                <button class="custom-schedule-btn" id="customScheduleBtn" type="button" onclick="openCustomScheduleModal()">
+                    <i class="fa-solid fa-calendar-week"></i>
+                    <span>Custom Schedule</span>
+                    <span class="cs-btn-badge" id="customScheduleCount">0</span>
                 </button>
                 <button class="history-toggle-btn" id="historyToggleBtn" onclick="toggleHistory()">
                     <i class="fa-solid fa-clock-rotate-left"></i>
@@ -55,6 +66,9 @@
                 </button>
             </div>
         </div>
+
+        <!-- CUSTOM CONSULTATION SCHEDULE SUMMARY -->
+        <section class="cs-summary-card" id="facultyScheduleSummaryCard"></section>
 
         <!-- ACTIVE REQUESTS -->
         <section class="card" id="activeSection">
@@ -96,9 +110,13 @@
         let consultations = [];
         let showingHistory = false;
         let currentTab = "Pending";
-        let isConsultationOpen = true;
         let pendingDeclineId = null;
         let selectedDeclineChip = "";
+        let facultyScheduler = null;
+
+        function openCustomScheduleModal(){
+            if(facultyScheduler) facultyScheduler.openModal();
+        }
 
         function logout(){ localStorage.clear(); window.location.href = "../../Log-in.html"; }
         function modeLabel(mode){ return mode === "Online Consultation" ? "Meeting Link" : "Location/Place"; }
@@ -138,41 +156,6 @@
             if(k==="declined")   return "b-declined";
             if(k==="cancelled")  return "b-cancelled";
             return "b-pending";
-        }
-
-        function renderAvailabilityButton(){
-            const btn = document.getElementById("availabilityToggleBtn");
-            const label = document.getElementById("availabilityLabel");
-            if(!btn || !label) return;
-            if(isConsultationOpen){
-                btn.classList.remove("is-unavailable");
-                label.textContent = "Accepting Consultations: Open";
-            } else {
-                btn.classList.add("is-unavailable");
-                label.textContent = "Accepting Consultations: Unavailable";
-            }
-        }
-
-        async function toggleAvailability(){
-            const nextState = !isConsultationOpen;
-            try{
-                const res = await fetch(`${API_BASE}/api/faculty/consultation-availability`, {
-                    method:"PUT",
-                    headers:{ "Content-Type":"application/json" },
-                    body: JSON.stringify({ facultyUserId, available: nextState })
-                });
-                const data = await res.json();
-                if(data.success){
-                    isConsultationOpen = Boolean(data.consultation_available);
-                    renderAvailabilityButton();
-                    alert(data.message);
-                } else {
-                    alert(data.message || "Failed to update availability.");
-                }
-            } catch(err){
-                console.error(err);
-                alert("Cannot update availability right now.");
-            }
         }
 
         function setConsultationTab(tab){
@@ -243,12 +226,23 @@
 
         function toggleModeField(id){
             const mode = document.getElementById(`mode-${id}`).value;
-            document.getElementById(`locLabel-${id}`).innerText = modeLabel(mode);
+            const labelEl = document.getElementById(`locLabel-${id}`);
+            if(labelEl){
+                labelEl.innerHTML = `${modeLabel(mode)} <span style="color:#dc2626;">*</span>`;
+            }
+            const locInput = document.getElementById(`loc-${id}`);
+            if(locInput){
+                locInput.placeholder = mode === "Online Consultation"
+                    ? "Enter meeting link (e.g., Google Meet / Zoom URL)..."
+                    : "Enter consultation location / room...";
+            }
         }
 
         function toggleHistory(){
             showingHistory = !showingHistory;
             document.getElementById("activeSection").style.display  = showingHistory ? "none" : "block";
+            const schedCard = document.getElementById("facultyScheduleSummaryCard");
+            if(schedCard) schedCard.style.display = showingHistory ? "none" : "block";
             document.getElementById("historySection").style.display = showingHistory ? "block" : "none";
             const btn = document.getElementById("historyToggleBtn");
             btn.innerHTML = showingHistory
@@ -267,6 +261,18 @@
 
             if(!scheduledDate){ alert("Please set a date for the consultation."); return; }
             if(!scheduledEndTime){ alert("Please set an end time."); return; }
+            if(!locationOrLink){
+                alert(`Please enter the ${modeLabel(consultationMode)} before approving and saving the schedule.`);
+                const locEl = document.getElementById(`loc-${id}`);
+                if(locEl) locEl.focus();
+                return;
+            }
+            if(!scheduleNotes){
+                alert("Please enter Notes before approving and saving the schedule.");
+                const notesEl = document.getElementById(`notes-${id}`);
+                if(notesEl) notesEl.focus();
+                return;
+            }
 
             const res = await fetch(`${API_BASE}/faculty-consultations/${id}/schedule`, {
                 method:"PUT",
@@ -286,9 +292,19 @@
 
         function buildCard(item, isHistory){
             const status = computeStatus(item);
-            const dateStr  = item.scheduled_date ? String(item.scheduled_date).slice(0,10) : "";
-            const startStr = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : "";
-            const endStr   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : "";
+            const dateStr  = item.scheduled_date ? String(item.scheduled_date).slice(0,10) : (item.requested_date ? String(item.requested_date).slice(0,10) : "");
+            const startStr = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : (item.requested_start_time ? String(item.requested_start_time).slice(0,5) : "");
+            const endStr   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : (item.requested_end_time ? String(item.requested_end_time).slice(0,5) : "");
+
+            const reqSlotText = item.requested_slot_label || (item.requested_date
+                ? `${window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatDatePretty(item.requested_date) : item.requested_date}${item.requested_start_time ? " • " + (window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatTime12(item.requested_start_time) : item.requested_start_time) : ""}${item.requested_end_time ? " – " + (window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatTime12(item.requested_end_time) : item.requested_end_time) : ""}`
+                : "");
+            const reqSlotBlock = reqSlotText ? `
+                <div class="cs-requested-slot-box">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    <div><strong>Requested Schedule:</strong> ${escapeHtml(reqSlotText)}</div>
+                </div>
+            ` : "";
 
             const docBlock = item.file_path ? `
                 <div style="margin:10px 0 12px 0;background:#faf5ff;border:1.5px solid #d8b4fe;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
@@ -359,6 +375,7 @@
                     ${docBlock}
                     <p><strong>Concern:</strong> ${item.concern_message || "N/A"}</p>
                     <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+                    ${reqSlotBlock}
 
                     <div class="schedule-form">
                         <div class="sched-form-title">
@@ -377,11 +394,11 @@
                                 </select>
                             </div>
                             <div class="input-group" style="grid-column:span 2">
-                                <label id="locLabel-${item.id}">${modeLabel(item.consultation_mode)}</label>
-                                <input type="text" id="loc-${item.id}" value="${item.location_or_link || ""}">
+                                <label id="locLabel-${item.id}">${modeLabel(item.consultation_mode)} <span style="color:#dc2626;">*</span></label>
+                                <input type="text" id="loc-${item.id}" value="${escapeHtml(item.location_or_link || "")}" placeholder="${item.consultation_mode==="Online Consultation" ? "Enter meeting link (e.g., Google Meet / Zoom URL)..." : "Enter consultation location / room..."}" required>
                             </div>
                         </div>
-                        <div class="input-group"><label>Notes</label><textarea id="notes-${item.id}">${item.schedule_notes || ""}</textarea></div>
+                        <div class="input-group"><label>Notes <span style="color:#dc2626;">*</span></label><textarea id="notes-${item.id}" placeholder="Enter consultation instructions, reminders, or notes..." required>${escapeHtml(item.schedule_notes || "")}</textarea></div>
                         <div class="schedule-actions-row">
                             <button class="save-btn" onclick="updateConsultation(${item.id})">
                                 <i class="fa-solid fa-check"></i> Approve &amp; Save Schedule
@@ -438,14 +455,19 @@
             const res = await fetch(`${API_BASE}/faculty-consultations?facultyUserId=${encodeURIComponent(facultyUserId)}&assignedRole=Instructor`);
             const data = await res.json();
             consultations = data.success ? (data.consultations || []) : [];
-            if(typeof data.consultationAvailable === "boolean"){
-                isConsultationOpen = data.consultationAvailable;
-                renderAvailabilityButton();
+            if(facultyScheduler && Array.isArray(data.customSchedules)){
+                facultyScheduler.setSchedules(data.customSchedules);
             }
             renderConsultations();
             if(showingHistory) renderHistory();
         }
 
+        if(window.ConsultationScheduleUI){
+            facultyScheduler = window.ConsultationScheduleUI.initFacultyScheduler({
+                apiBase: API_BASE,
+                facultyUserId
+            });
+        }
         loadConsultations();
     </script>
     <script src="../../shared/portal-notifications.js" defer></script>

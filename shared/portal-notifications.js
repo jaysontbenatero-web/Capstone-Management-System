@@ -29,11 +29,7 @@
         return null;
     }
 
-    function isAdminOrFacultyRole() {
-        const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
-        return role === "admin" || role === "faculty";
-    }
-
+    /** @param {string} path */
     function findPortalInPath(path) {
         const normalized = String(path || "").replace(/\\/g, "/");
 
@@ -93,6 +89,7 @@
         return `${targetPortal}/Notifications.html`;
     }
 
+    /** @param {string} targetPath */
     function resolveRelativeUrl(targetPath) {
         const currentPath = (window.location.pathname || "").replace(/\\/g, "/");
         const portalMarker = findPortalInPath(currentPath);
@@ -104,7 +101,8 @@
         return `${ups}${targetPath}`;
     }
 
-    // Strict deterministic notification target resolver (never guesses from activePath or stale localStorage.facultyRole)
+    // Strict deterministic notification target resolver (routes accurately to the exact portal role & page)
+    /** @param {Record<string, any> | null | undefined} item */
     function getNotificationTargetUrl(item) {
         if (!item) {
             return getNotificationsPageUrl();
@@ -117,6 +115,7 @@
 
         const role = String(localStorage.getItem("role") || "").toLowerCase().trim();
         const position = String(localStorage.getItem("position") || "").toLowerCase().trim();
+        const myFullname = String(localStorage.getItem("fullname") || "").toLowerCase().trim();
         const hasPanelistAccess = localStorage.getItem("panelist_access") === "1";
         const hasInstructorAccess = localStorage.getItem("instructor_access") === "1";
         const hasAdviserAccess = localStorage.getItem("adviser_access") === "1";
@@ -128,12 +127,14 @@
             return resolveRelativeUrl("Faculty/Announcements.html");
         }
 
-        // 2. Messages / Chat
+        // 2. Messages / Group Chat
         if (
             type === "message" ||
             title.includes("new message") ||
+            title.includes("group chat") ||
             title.includes("message") ||
-            combined.includes("sent you a message")
+            combined.includes("sent you a message") ||
+            combined.includes("open in messages")
         ) {
             const curPath = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
             if (curPath.includes("/faculty/panelist/")) return resolveRelativeUrl("Faculty/Panelist/Messages.html");
@@ -153,46 +154,67 @@
             return resolveRelativeUrl("Faculty/Settings.html");
         }
 
-        // 4. Defense Minutes E-Signature Workflow
+        // 4. Deployment Complete / Capstone Completed
+        if (title.includes("deployment complete") || title.includes("capstone completed")) {
+            if (role === "student") return resolveRelativeUrl("Student/Documents.html");
+        }
+
+        // 5. Defense Minutes E-Signature Workflow
         if (type === "defense minutes" || combined.includes("defense minutes")) {
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
             if (
                 combined.includes("panelist document review") ||
                 title.includes("ready for e-signature") ||
                 title.includes("updated defense minutes for review") ||
-                combined.includes("open for your e-signature")
+                combined.includes("open for your e-signature") ||
+                (combined.includes("adviser") && combined.includes("signed") && combined.includes("affix your e-signature"))
             ) {
                 return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
             }
+            // Adviser e-sign / draft / photos submitted -> always Adviser side, never Instructor
             return resolveRelativeUrl("Faculty/Adviser/Documents.html");
         }
 
-        // 5. Recommendation for Deployment (check Chairperson/Dean BEFORE Panelist!)
+        // 6. Recommendation for Deployment E-Signature Workflow
+        // Route order: Student -> Adviser -> Panelists -> Program Chair -> Dean
         if (combined.includes("recommendation for deployment")) {
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
+            // Explicit Adviser review / initial submission from student -> Adviser side
             if (
+                title.includes("adviser review") ||
+                combined.includes("for your adviser review") ||
+                title.includes("new document submission") ||
+                combined.includes("has submitted a")
+            ) {
+                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+            }
+            // Chairperson / Dean e-sign step (after Panelists or Chairperson signed) — check BEFORE Panelist!
+            if (
+                combined.includes("panelists have signed") ||
                 combined.includes("pending your chairperson signature") ||
                 combined.includes("pending your signature") ||
                 combined.includes("pending chairperson") ||
                 combined.includes("pending dean") ||
+                (title.includes("pending signature") && !title.includes("pending e-signature")) ||
                 title.includes("chairperson") ||
                 title.includes("dean")
             ) {
                 return resolveRelativeUrl("Admin/Document_Review.html");
             }
+            // Panelist e-sign step (after Adviser signed)
             if (
+                title.includes("pending e-signature") ||
                 combined.includes("pending a panelist e-signature") ||
-                combined.includes("panelist e-signature")
+                combined.includes("panelist e-signature") ||
+                combined.includes("adviser signed recommendation for deployment")
             ) {
                 return resolveRelativeUrl("Faculty/Panelist/Document_Review.html");
             }
-            if (hasAdviserAccess || role === "faculty") {
-                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
-            }
+            if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Documents.html");
             return resolveRelativeUrl("Admin/Document_Review.html");
         }
 
-        // 6. Adviser Requests / Title Proposals
+        // 7. Adviser Requests / Title Proposals
         if (
             type === "adviser request" ||
             title.includes("adviser request") ||
@@ -203,54 +225,100 @@
             return resolveRelativeUrl("Faculty/Adviser/Adviser_Request.html");
         }
 
-        // 7. Consultations
+        // 8. Consultations
         if (type === "consultation" || combined.includes("consultation")) {
             if (role === "student") return resolveRelativeUrl("Student/Consultation.html");
+            if (combined.includes("panelist") && hasPanelistAccess) {
+                return resolveRelativeUrl("Faculty/Panelist/Consultation.html");
+            }
             if (combined.includes("instructor") && hasInstructorAccess) {
                 return resolveRelativeUrl("Faculty/Instructor/Consultation.html");
             }
+            if (combined.includes("adviser") && hasAdviserAccess) {
+                return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
+            }
             if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
             if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Consultation.html");
+            if (hasPanelistAccess) return resolveRelativeUrl("Faculty/Panelist/Consultation.html");
             return resolveRelativeUrl("Faculty/Adviser/Consultation.html");
         }
 
-        // 8. Defense Evaluation & Schedules
+        // 9. Defense Evaluation & Defense Schedules
         if (
             type === "defense evaluation" ||
             type === "defense schedule" ||
             type === "defense" ||
             title.includes("panel evaluation") ||
+            title.includes("re-evaluation ready") ||
+            title.includes("action required: schedule") ||
             title.includes("defense schedule") ||
             title.includes("defense completed") ||
-            title.includes("defense evaluation")
+            title.includes("defense evaluation") ||
+            title.includes("defense panel")
         ) {
-            if (role === "student") return resolveRelativeUrl("Student/Defense_Schedule.html");
+            if (role === "student") {
+                if (combined.includes("defense minutes in records management")) {
+                    return resolveRelativeUrl("Student/Documents.html");
+                }
+                return resolveRelativeUrl("Student/Defense_Schedule.html");
+            }
 
+            // Instructor required to create a new Formal Defense / re-defense schedule -> Schedule Defense
+            if (
+                title.includes("action required: schedule") ||
+                combined.includes("required to create another defense schedule") ||
+                combined.includes("please create schedule again") ||
+                combined.includes("create a new schedule")
+            ) {
+                return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+            }
+
+            // Instructor receiving panelist evaluation submission / completion summary -> Panel Evaluation
             if (
                 title.includes("panel evaluation submitted") ||
-                title.includes("panel evaluations complete") ||
-                combined.includes("please create schedule again")
+                title.includes("panel evaluations complete")
             ) {
                 return resolveRelativeUrl("Faculty/Instructor/Panel_Evaluation.html");
             }
 
+            // Panelist re-evaluation ready -> Panelist Defense Evaluation
             if (
-                combined.includes("assigned as a panelist") ||
-                combined.includes("panelist") ||
-                title.includes("defense schedule")
+                title.includes("re-evaluation ready") ||
+                combined.includes("conditional passed re-evaluation") ||
+                combined.includes("submit your updated evaluation")
             ) {
-                if (hasPanelistAccess) return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
-                if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
-                if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+                return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
             }
 
-            if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+            // Defense Schedule Created / Updated / Cancelled -> distinguish Panelist vs Adviser vs Instructor
+            if (
+                type === "defense schedule" ||
+                title.includes("defense schedule") ||
+                title.includes("new defense panelist assignment") ||
+                title.includes("defense panel assignment") ||
+                combined.includes("defense schedule")
+            ) {
+                if (combined.includes("advisory group") && hasAdviserAccess) {
+                    return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
+                }
+                const panelSectionIdx = message.indexOf("panelist");
+                const panelLineText = panelSectionIdx !== -1 ? message.slice(panelSectionIdx) : "";
+                const namedAsPanelist = Boolean(myFullname && panelLineText.includes(myFullname));
+                if (hasPanelistAccess && (namedAsPanelist || combined.includes("assigned as a panelist") || !hasAdviserAccess)) {
+                    return resolveRelativeUrl("Faculty/Panelist/Defense_Schedule.html");
+                }
+                if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
+                if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
+                if (hasPanelistAccess) return resolveRelativeUrl("Faculty/Panelist/Defense_Schedule.html");
+            }
+
             if (hasPanelistAccess) return resolveRelativeUrl("Faculty/Panelist/Assigned_Defenses.html");
+            if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Defense_Schedule.html");
             if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Capstone_Group.html");
             return getNotificationsPageUrl();
         }
 
-        // 9. Document Review / Signing / Environmental Scanning / Submissions
+        // 10. Document Review / E-Signing / Environmental Scanning / Submissions
         if (
             type === "document" ||
             type === "document review" ||
@@ -259,32 +327,66 @@
             combined.includes("adviser acceptance") ||
             combined.includes("acceptance for advisory") ||
             combined.includes("signature") ||
+            combined.includes("e-sign") ||
             combined.includes("recommendation") ||
-            combined.includes("concept paper")
+            combined.includes("concept paper") ||
+            combined.includes("chapter ")
         ) {
             if (role === "student") return resolveRelativeUrl("Student/Documents.html");
 
+            // Explicit target role tags in title/message (highest accuracy)
+            if (title.includes("adviser review") || title.includes("adviser e-sign") || combined.includes("for your adviser review")) {
+                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+            }
+            if (title.includes("instructor review") || title.includes("instructor e-sign") || combined.includes("for your instructor review")) {
+                return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+            }
+            if (title.includes("admin e-signature") || combined.includes("for your admin signature")) {
+                return resolveRelativeUrl("Admin/Document_Review.html");
+            }
+
+            // Step 1: Student submitted a document directly (New Document Submission)
+            if (title.includes("new document submission") || combined.includes("has submitted a")) {
+                // Environmental Scanning goes to Instructor for initial e-sign
+                if (combined.includes("environmental scanning")) {
+                    return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
+                }
+                // All Adviser e-sign & review docs (Adviser Acceptance, Recommendation letters, Concept Papers, Chapters, etc.)
+                // MUST go to Adviser Documents — NOT Instructor or Admin!
+                return resolveRelativeUrl("Faculty/Adviser/Documents.html");
+            }
+
+            // Step 2: Routed to Program Chairperson / Dean for e-signature (Admin Document Review)
             if (
-                role === "admin" && (
-                    combined.includes("pending your signature") ||
-                    combined.includes("pending dean") ||
-                    combined.includes("pending chairperson") ||
-                    title.includes("adviser acceptance form") ||
-                    title.includes("environmental scanning") ||
-                    title.includes("declined by organization") ||
-                    position.includes("dean") ||
-                    position.includes("chairperson")
-                ) && !title.includes("new document submission")
+                combined.includes("pending your signature") ||
+                combined.includes("pending dean") ||
+                combined.includes("pending chairperson") ||
+                title.includes("adviser acceptance form pending signature") ||
+                title.includes("adviser acceptance form signed") ||
+                title.includes("environmental scanning pending signature") ||
+                title.includes("environmental scanning form signed")
             ) {
                 return resolveRelativeUrl("Admin/Document_Review.html");
             }
 
+            // Step 3: Environmental Scanning status / decline notices
             if (combined.includes("environmental scanning")) {
-                if (role === "admin" && (position.includes("dean") || position.includes("chairperson")) && !title.includes("new document submission")) {
+                if (role === "admin" && (position.includes("dean") || position.includes("chairperson"))) {
                     return resolveRelativeUrl("Admin/Document_Review.html");
                 }
                 if (hasInstructorAccess) return resolveRelativeUrl("Faculty/Instructor/Document_Review.html");
                 if (role === "admin") return resolveRelativeUrl("Admin/Document_Review.html");
+            }
+
+            // Step 4: Adviser Acceptance / Recommendation Letters / Chapters requiring Adviser review or e-sign
+            if (
+                combined.includes("adviser acceptance") ||
+                combined.includes("acceptance for advisory") ||
+                combined.includes("recommendation") ||
+                combined.includes("concept paper") ||
+                combined.includes("chapter ")
+            ) {
+                if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Documents.html");
             }
 
             if (hasAdviserAccess) return resolveRelativeUrl("Faculty/Adviser/Documents.html");
@@ -296,13 +398,12 @@
         return getNotificationsPageUrl();
     }
 
+    /** @param {Record<string, any> | null | undefined} item */
     function getNotificationDashboardUrl(item) {
-        if (isAdminOrFacultyRole()) {
-            return getNotificationsPageUrl();
-        }
         return getNotificationTargetUrl(item);
     }
 
+    /** @param {any} value */
     function formatNotificationTime(value) {
         if (!value) {
             return "";
@@ -315,7 +416,7 @@
         }
 
         const now = new Date();
-        const diffMs = now - date;
+        const diffMs = now.getTime() - date.getTime();
 
         if (diffMs < 60000) {
             return "Just now";
@@ -337,6 +438,7 @@
         });
     }
 
+    /** @param {any} text */
     function escapeHtml(text) {
         return String(text || "")
             .replace(/&/g, "&amp;")
@@ -345,6 +447,7 @@
             .replace(/"/g, "&quot;");
     }
 
+    /** @param {Element} topbar */
     function ensureTopActionsHost(topbar) {
         let actions = topbar.querySelector(".top-actions");
 
@@ -411,11 +514,24 @@
                     title="Notifications"
                 >
                     <i class="fa-solid fa-bell"></i>
-                    <span class="portal-notif-dot" id="portalNotifDot" hidden></span>
+                    <span class="portal-notif-badge" id="portalNotifDot" hidden>0</span>
                 </button>
                 <div class="portal-notif-dropdown" id="portalNotifDropdown">
                     <div class="portal-notif-dropdown-head">
-                        <strong>Notifications</strong>
+                        <div class="portal-notif-head-left">
+                            <strong>Notifications</strong>
+                            <span class="portal-notif-head-count" id="portalNotifHeadCount" style="display:none;">0 unread</span>
+                        </div>
+                        <button
+                            type="button"
+                            class="portal-notif-mark-all-btn"
+                            id="portalNotifMarkAllBtn"
+                            title="Mark all notifications as read"
+                            disabled
+                        >
+                            <i class="fa-solid fa-check-double"></i>
+                            <span>Mark all as read</span>
+                        </button>
                     </div>
                     <div class="portal-notif-dropdown-list" id="portalNotifList"></div>
                     <a class="portal-notif-view-all" id="portalNotifViewAll" href="#">View all</a>
@@ -426,13 +542,19 @@
 
     const PortalNotifications = {
         unreadCount: 0,
+        /** @type {Record<string, number>} */
         sectionCounts: {},
+        /** @type {Array<Record<string, any>>} */
         cachedNotifications: [],
         cachedNotificationsJson: "",
+        /** @type {number | null} */
         pollTimer: null,
         isDropdownOpen: false,
         _refreshBusy: false,
         _markedCurrentSection: false,
+        getNotificationTargetUrl,
+        getNotificationDashboardUrl,
+        getNotificationsPageUrl,
 
         init() {
             const userId = getLoggedInUserId();
@@ -461,7 +583,7 @@
         // and Faculty users to Faculty/Notifications.html
         bindNotificationsSidebarLinks() {
             document.querySelectorAll('.sidebar .menu-item[data-notif-nav="1"], .sidebar .menu-item#nav-notifications').forEach((el) => {
-                if (el.dataset.notifBound === "1") return;
+                if (!(el instanceof HTMLElement) || el.dataset.notifBound === "1") return;
                 el.dataset.notifBound = "1";
                 el.removeAttribute("onclick");
                 el.addEventListener("click", (e) => {
@@ -556,7 +678,7 @@
         },
 
         startPolling() {
-            if (this.pollTimer) {
+            if (this.pollTimer !== null) {
                 window.clearInterval(this.pollTimer);
             }
 
@@ -591,7 +713,7 @@
                 return;
             }
 
-            if (topbar.classList.contains("admin-header")) {
+            if (topbar instanceof HTMLElement && topbar.classList.contains("admin-header")) {
                 topbar.style.display = "flex";
                 topbar.style.justifyContent = "space-between";
                 topbar.style.alignItems = "center";
@@ -606,11 +728,13 @@
             temp.innerHTML = buildBellMarkup().trim();
             const bellNode = temp.firstElementChild;
 
-            actions.insertBefore(bellNode, actions.firstChild);
+            if (bellNode) {
+                actions.insertBefore(bellNode, actions.firstChild);
+            }
 
             const viewAll = document.getElementById("portalNotifViewAll");
 
-            if (viewAll) {
+            if (viewAll instanceof HTMLAnchorElement) {
                 viewAll.href = getNotificationsPageUrl();
             }
         },
@@ -637,6 +761,17 @@
                 }
             });
 
+            const markAllBtn = document.getElementById("portalNotifMarkAllBtn");
+
+            if (markAllBtn) {
+                markAllBtn.addEventListener("click", async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (markAllBtn.hasAttribute("disabled")) return;
+                    await this.markAllUnreadAsChecked(false);
+                });
+            }
+
             const viewAll = document.getElementById("portalNotifViewAll");
 
             if (viewAll) {
@@ -649,10 +784,12 @@
 
             document.addEventListener("click", (event) => {
                 const dropdownEl = document.getElementById("portalNotifDropdown");
+                const targetNode = event.target instanceof Node ? event.target : null;
 
                 if (
-                    !wrap.contains(event.target)
-                    && !(dropdownEl && dropdownEl.contains(event.target))
+                    targetNode
+                    && !wrap.contains(targetNode)
+                    && !(dropdownEl && dropdownEl.contains(targetNode))
                 ) {
                     this.setDropdownOpen(false);
                 }
@@ -668,7 +805,7 @@
             }
 
             const rect = bell.getBoundingClientRect();
-            const panelWidth = Math.min(340, window.innerWidth - 24);
+            const panelWidth = Math.min(360, window.innerWidth - 24);
             let left = rect.right - panelWidth;
 
             left = Math.max(12, Math.min(left, window.innerWidth - panelWidth - 12));
@@ -681,6 +818,7 @@
             dropdown.style.zIndex = "10000";
         },
 
+        /** @param {boolean} open */
         setDropdownOpen(open) {
             const bell = document.getElementById("portalNotifBell");
             const dropdown = document.getElementById("portalNotifDropdown");
@@ -718,11 +856,12 @@
         getCurrentNormalizedPath() {
             try {
                 return new URL(window.location.href).pathname.replace(/\\/g, "/").toLowerCase();
-            } catch (e) {
+            } catch {
                 return "";
             }
         },
 
+        /** @param {boolean} showLoading */
         async refresh(showLoading) {
             const userId = getLoggedInUserId();
 
@@ -765,7 +904,7 @@
                     this.unreadCount = 0;
                     this.sectionCounts = {};
                     this.updateDot(0);
-                    this.renderSidebarDots({}, 0);
+                    this.renderSidebarDots();
                     return;
                 }
 
@@ -779,7 +918,7 @@
                 this.sectionCounts = {};
                 this.cachedNotificationsJson = notificationsStr;
                 this.updateDot(nextUnread);
-                this.renderSidebarDots({}, 0);
+                this.renderSidebarDots();
 
                 if (dropdownOpen) {
                     this.cachedNotifications = notifications;
@@ -789,10 +928,11 @@
                 }
 
                 if (changed && isFullPage) {
-                    if (typeof window.loadPortalNotificationsPage === "function") {
-                        window.loadPortalNotificationsPage(true);
-                    } else if (typeof window.loadStudentNotifications === "function") {
-                        window.loadStudentNotifications(true);
+                    const win = /** @type {any} */ (window);
+                    if (typeof win.loadPortalNotificationsPage === "function") {
+                        win.loadPortalNotificationsPage(true);
+                    } else if (typeof win.loadStudentNotifications === "function") {
+                        win.loadStudentNotifications(true);
                     }
                 }
             } catch (error) {
@@ -808,11 +948,17 @@
 
         async markAllUnreadAsChecked(skipRender = false) {
             const userId = getLoggedInUserId();
+            const markAllBtn = document.getElementById("portalNotifMarkAllBtn");
+            const hasUnreadCached = (this.cachedNotifications || []).some((item) => Number(item.is_read) === 0);
 
-            if (!userId || this.unreadCount <= 0) {
+            if (!userId || (this.unreadCount <= 0 && !hasUnreadCached)) {
                 this.updateDot(0);
-                this.renderSidebarDots({}, 0);
+                this.renderSidebarDots();
                 return;
+            }
+
+            if (markAllBtn instanceof HTMLButtonElement) {
+                markAllBtn.disabled = true;
             }
 
             try {
@@ -830,25 +976,37 @@
                 const data = await response.json();
 
                 if (!data.success) {
+                    this.updateDot(this.unreadCount);
                     return;
                 }
 
                 this.unreadCount = 0;
                 this.sectionCounts = {};
                 this.updateDot(0);
-                this.renderSidebarDots({}, 0);
+                this.renderSidebarDots();
 
                 this.cachedNotifications =
                     (this.cachedNotifications || []).map((item) => ({
                         ...item,
                         is_read: 1
                     }));
+                this.cachedNotificationsJson = JSON.stringify(this.cachedNotifications);
 
                 if (!skipRender && this.isDropdownVisible()) {
                     this.renderList(this.cachedNotifications);
                 }
+
+                if (this.isNotificationsFullPage()) {
+                    const win = /** @type {any} */ (window);
+                    if (typeof win.loadPortalNotificationsPage === "function") {
+                        win.loadPortalNotificationsPage(true);
+                    } else if (typeof win.loadStudentNotifications === "function") {
+                        win.loadStudentNotifications(true);
+                    }
+                }
             } catch (error) {
                 console.log(error);
+                this.updateDot(this.unreadCount);
             }
         },
 
@@ -888,6 +1046,7 @@
         },
 
         getSidebarItems() {
+            /** @type {Array<{el: Element, path: string, isNotifItem: boolean}>} */
             const items = [];
             document.querySelectorAll(".sidebar .menu-item").forEach((el) => {
                 const isNotifAttr = el.id === "nav-notifications" || el.getAttribute("data-notif-nav") === "1";
@@ -910,7 +1069,7 @@
                     const path = new URL(href, window.location.href).pathname.replace(/\\/g, "/").toLowerCase();
                     const isNotifItem = isNotifAttr || path.endsWith("/notifications.html");
                     items.push({ el, path, isNotifItem });
-                } catch (e) { /* ignore */ }
+                } catch { /* ignore */ }
             });
             return items;
         },
@@ -922,24 +1081,51 @@
             });
         },
 
+        /** @param {any} count */
         updateDot(count) {
             const dot = document.getElementById("portalNotifDot");
+            const bell = document.getElementById("portalNotifBell");
+            const headCount = document.getElementById("portalNotifHeadCount");
+            const safeCount = Math.max(0, Number(count || 0));
 
-            if (!dot) {
-                return;
+            if (dot) {
+                if (safeCount > 0) {
+                    dot.hidden = false;
+                    dot.style.display = "inline-flex";
+                    dot.textContent = safeCount > 99 ? "99+" : String(safeCount);
+                    dot.setAttribute("title", `${safeCount} unread notification${safeCount === 1 ? "" : "s"}`);
+                } else {
+                    dot.hidden = true;
+                    dot.style.display = "none";
+                    dot.textContent = "";
+                    dot.removeAttribute("title");
+                }
             }
 
-            if (count > 0) {
-                dot.hidden = false;
-                dot.style.display = "block";
-                dot.setAttribute("title", `${count} unread`);
-            } else {
-                dot.hidden = true;
-                dot.style.display = "none";
-                dot.removeAttribute("title");
+            if (bell) {
+                bell.setAttribute("aria-label", safeCount > 0 ? `Notifications (${safeCount} unread)` : "Notifications");
+                bell.setAttribute("title", safeCount > 0 ? `Notifications (${safeCount} unread)` : "Notifications");
+            }
+
+            if (headCount) {
+                if (safeCount > 0) {
+                    headCount.textContent = `${safeCount} unread`;
+                    headCount.style.display = "inline-block";
+                } else {
+                    headCount.style.display = "none";
+                }
+            }
+
+            const markAllBtn = document.getElementById("portalNotifMarkAllBtn");
+            if (markAllBtn instanceof HTMLButtonElement) {
+                markAllBtn.disabled = safeCount === 0;
+                markAllBtn.title = safeCount > 0
+                    ? "Mark all notifications as read"
+                    : "All notifications are already read";
             }
         },
 
+        /** @param {Array<Record<string, any>>} items */
         renderList(items) {
             const list = document.getElementById("portalNotifList");
 
@@ -961,7 +1147,7 @@
                 const time = formatNotificationTime(item.created_at);
 
                 const noteMatch = rawMsg.match(/\n\n(Adviser Feedback|Adviser Note|Panelist Note(?:\s*\([^)]+\))?|Feedback|Comment):\n([\s\S]*)$/i);
-                const mainMsg = noteMatch ? rawMsg.substring(0, noteMatch.index) : rawMsg;
+                const mainMsg = (noteMatch && typeof noteMatch.index === "number") ? rawMsg.substring(0, noteMatch.index) : rawMsg;
                 const noteLabel = noteMatch ? noteMatch[1] : "";
                 const feedbackMsg = noteMatch ? noteMatch[2].trim() : "";
 
@@ -990,14 +1176,20 @@
             list.querySelectorAll(".portal-notif-item").forEach((node) => {
                 node.addEventListener("click", async () => {
                     const id = node.getAttribute("data-notification-id");
-                    await this.markRead(id);
+                    const clickedItem = (this.cachedNotifications || []).find(
+                        (entry) => String(entry.id) === String(id)
+                    ) || null;
+                    if (id) {
+                        await this.markRead(id);
+                    }
                     this.setDropdownOpen(false);
-                    // Always navigate directly to the user's respective Notifications sidebar page
-                    window.location.href = `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id)}`;
+                    const targetUrl = getNotificationTargetUrl(clickedItem);
+                    window.location.href = targetUrl || `${getNotificationsPageUrl()}?notifId=${encodeURIComponent(id || "")}`;
                 });
             });
         },
 
+        /** @param {string | number} notificationId */
         async markRead(notificationId) {
             const userId = getLoggedInUserId();
 
@@ -1037,7 +1229,7 @@
                 }
 
                 this.updateDot(this.unreadCount);
-                this.renderSidebarDots(this.sectionCounts, this.unreadCount);
+                this.renderSidebarDots();
 
                 if (this.isDropdownVisible()) {
                     this.renderList(this.cachedNotifications);
@@ -1054,9 +1246,6 @@
         PortalNotifications.init();
     }
 
-    PortalNotifications.getNotificationTargetUrl = getNotificationTargetUrl;
-    PortalNotifications.getNotificationDashboardUrl = getNotificationDashboardUrl;
-    PortalNotifications.getNotificationsPageUrl = getNotificationsPageUrl;
-    window.PortalNotifications = PortalNotifications;
+    /** @type {any} */ (window).PortalNotifications = PortalNotifications;
 
 })();

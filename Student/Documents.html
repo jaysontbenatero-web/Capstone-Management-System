@@ -83,6 +83,14 @@
                     <i class="fa-solid fa-file-arrow-up"></i>
                     <span>Records Management</span>
                 </div>
+                <div
+                    class="menu-item"
+                    id="nav-form-templates"
+                    onclick="window.location.href='Form_Templates.html'"
+                >
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Form Templates</span>
+                </div>
 
                 <div class="menu-item" id="nav-consultation" onclick="window.location.href='Consultation.html'">
                     <i class="fa-solid fa-comments"></i>
@@ -257,6 +265,14 @@
                 </div>
             </div>
 
+            <div id="failedProgressBanner" style="display: none; margin-bottom: 18px; padding: 14px 18px; border-radius: 14px; background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; font-size: 13.5px; line-height: 1.55; align-items: flex-start; gap: 12px;">
+                <i class="fa-solid fa-ban" style="font-size: 20px; color: #dc2626; margin-top: 2px;"></i>
+                <div>
+                    <strong style="display: block; font-size: 14.5px; color: #7f1d1d;">Progress Stopped — Failed Defense Verdict</strong>
+                    <span id="failedProgressBannerText">Your group received a Failed verdict and can no longer proceed or add documents in Records Management.</span>
+                </div>
+            </div>
+
             <div class="phase-grid" id="consultationPhaseGrid">
                 <div class="empty-card">
                     Loading consultation requirements...
@@ -302,7 +318,7 @@
 
     <!-- DEFENSE MINUTES LIVE DOCUMENT EDITOR MODAL -->
     <div class="modal-overlay" id="defenseMinutesEditorModal"
-        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:16px;">
+        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:9999; align-items:center; justify-content:center; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); padding:16px;">
         <div class="modal-box dm-editor-modal-box"
             style="width:940px; max-width:97%; max-height:94vh; display:flex; flex-direction:column; background:#f8fafc; border-radius:20px; padding:18px 22px; box-shadow:0 25px 60px rgba(0,0,0,0.28);">
             <div class="modal-header dm-no-print"
@@ -319,11 +335,12 @@
                         </button>
                     </h2>
                     <p id="dmEditorSubtitle" style="margin-top:3px; color:#64748b; font-size:12px;">
-                        Type directly inside Page No., Comments/Suggestions/Recommendations, and Action/s Taken (press
-                        Enter for a new bullet).
+                        Panelist Comments/Suggestions/Recommendations are automatically loaded from their evaluation. Fill in
+                        Page No. and Action/s Taken for each item.
                     </p>
                 </div>
                 <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesEditor()"
+                    aria-label="Close defense minutes editor" title="Close"
                     style="border:none; background:#e2e8f0; color:#475569; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -349,7 +366,7 @@
     <!-- DEFENSE MINUTES HOW-IT-WORKS HELP MODAL -->
     <div class="modal-overlay" id="defenseMinutesHelpModal"
         onclick="if(event.target === this) closeDefenseMinutesHelpModal()"
-        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:10050; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:16px;">
+        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:10050; align-items:center; justify-content:center; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); padding:16px;">
         <div class="modal-box"
             style="width:540px; max-width:96%; background:#ffffff; border-radius:20px; padding:22px 24px; box-shadow:0 25px 60px rgba(0,0,0,0.28);">
             <div class="modal-header"
@@ -359,25 +376,35 @@
                     How does Defense Minutes work?
                 </h2>
                 <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesHelpModal()"
+                    aria-label="Close help modal" title="Close"
                     style="border:none; background:#e2e8f0; color:#475569; border-radius:10px; width:34px; height:34px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <ul class="dm-help-list">
                 <li>
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>When your verdict is <strong>Passed with Revisions</strong> or <strong>Conditional Passed</strong>,
+                        each panelist's <strong>Comments/Suggestions/Recommendations</strong> from Outline, Pre-Final, or
+                        Final Defense are <strong>automatically added</strong> to your Defense Minutes under that panelist's
+                        name. (Comments for Passed, For Formal Defense, or Failed are sent via Notifications.)</span>
+                </li>
+                <li>
                     <i class="fa-solid fa-pen-to-square"></i>
-                    <span>Students should edit the defense minutes based on each panelist's thoughts, comments, and
-                        suggestions during evaluation.</span>
+                    <span>Click <strong>View → Edit Text</strong> to fill in the <strong>Page No.</strong> and
+                        <strong>Action/s Taken</strong> for each panelist item (students cannot add entries or edit
+                        panelist comments), then click <strong>Save Minutes</strong>.</span>
                 </li>
                 <li>
                     <i class="fa-solid fa-paper-plane"></i>
-                    <span>Once finished, when sending it, it goes to your <strong>Adviser</strong> for checking first,
-                        and then it goes to the <strong>Panelists</strong> who have graded your defense.</span>
+                    <span>Once saved, click <strong>Send</strong> to forward your Defense Minutes to your
+                        <strong>Adviser</strong> for checking first, and then to the <strong>Panelists</strong> who
+                        graded your defense.</span>
                 </li>
                 <li>
                     <i class="fa-solid fa-file-signature"></i>
-                    <span>Both your <strong>Adviser</strong> and <strong>Panelists</strong> will e-sign the
-                        document.</span>
+                    <span>Both your <strong>Adviser</strong> and <strong>Panelists</strong> will review and affix their
+                        e-signatures to complete the document.</span>
                 </li>
                 <li class="dm-help-important">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -395,7 +422,7 @@
 
     <!-- DEFENSE MINUTES VIEW MODAL (MATCHES ADVISER & PANELIST VIEW) -->
     <div class="modal-overlay esign-workspace-overlay" id="defenseMinutesPrintModal"
-        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.68); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.68); z-index:10000; align-items:center; justify-content:center; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);">
         <div class="modal-box esign-workspace-modal dm-esign-modal dm-print-modal-box">
             <div class="modal-header dm-no-print"
                 style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
@@ -405,7 +432,7 @@
                         Defense Minutes
                     </h2>
                     <p id="stuDmSubtitle" style="margin:4px 0 0; color:#64748b; font-size:12.5px;">
-                        Review your defense minutes sheet, check status and notes, or click Encode Minutes to edit.
+                        Review your defense minutes sheet with panelist Comments/Suggestions/Recommendations pre-filled, then click Edit Text to add Page No. and Action/s Taken.
                     </p>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
@@ -415,6 +442,7 @@
                         <span>How does defense minutes work?</span>
                     </button>
                     <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesPrintModal()"
+                        aria-label="Close defense minutes preview" title="Close"
                         style="border:none; background:#e2e8f0; color:#475569; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -427,13 +455,14 @@
                         <span id="stuDmPageInfo">Page 1 of 1</span>
                         <div class="esign-page-nav">
                             <button type="button" class="esign-nav-btn" onclick="stepStudentDmPage(-1)"
-                                title="Previous page">
+                                aria-label="Previous page" title="Previous page">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </button>
-                            <select id="stuDmPageSelect" onchange="changeStudentDmPage()"
+                            <select id="stuDmPageSelect" aria-label="Select defense minutes page" title="Select page"
+                                onchange="changeStudentDmPage()"
                                 style="padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px;"></select>
                             <button type="button" class="esign-nav-btn" onclick="stepStudentDmPage(1)"
-                                title="Next page">
+                                aria-label="Next page" title="Next page">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
                         </div>
@@ -467,7 +496,7 @@
                         <button class="save-btn" id="stuDmEncodeBtn" type="button"
                             onclick="openDefenseMinutesEditorFromView()">
                             <i class="fa-solid fa-file-pen"></i>
-                            Encode Minutes
+                            Edit Text
                         </button>
                         <button class="cancel-btn" type="button" onclick="closeDefenseMinutesPrintModal()">
                             Close
@@ -492,37 +521,38 @@
                     </p>
                 </div>
 
-                <button class="close-modal-btn" type="button" onclick="closeOtherUploadModal()">
+                <button class="close-modal-btn" type="button" onclick="closeOtherUploadModal()"
+                    aria-label="Close upload modal" title="Close">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <div class="input-group">
-                <label>
+                <label for="otherCategory">
                     Category
                 </label>
-                <input type="text" id="otherCategory" readonly>
+                <input type="text" id="otherCategory" aria-label="Category" readonly>
             </div>
 
             <div class="input-group">
-                <label>
+                <label for="otherTypeLabel">
                     File type label
                 </label>
                 <input type="text" id="otherTypeLabel" placeholder="e.g., Adviser notes, Forms, Appendix, etc.">
             </div>
 
             <div class="input-group">
-                <label>
+                <label for="otherTitle">
                     Document title (optional)
                 </label>
                 <input type="text" id="otherTitle" placeholder="Leave blank to auto-generate">
             </div>
 
             <div class="input-group">
-                <label>
+                <label for="otherFile">
                     File upload
                 </label>
-                <input type="file" id="otherFile" accept=".pdf,.doc,.docx">
+                <input type="file" id="otherFile" aria-label="File upload" accept=".pdf,.doc,.docx">
             </div>
 
             <div class="modal-actions">
@@ -548,7 +578,8 @@
                     <h2 id="envScanESignTitle">Environmental Scanning — Student Signature</h2>
                     <p id="envScanESignSubtitle">Review the document, place your signature, then apply.</p>
                 </div>
-                <button class="stu-esign-close-btn" onclick="closeEnvScanSignModal()" type="button">
+                <button class="stu-esign-close-btn" onclick="closeEnvScanSignModal()" type="button"
+                    aria-label="Close signature modal" title="Close">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -561,10 +592,12 @@
                     <div class="stu-esign-pdf-toolbar">
                         <span id="envScanPageInfo">Page 1 of 1</span>
                         <div class="stu-esign-page-nav">
-                            <button type="button" class="stu-esign-nav-btn" onclick="envScanChangePage(-1)">
+                            <button type="button" class="stu-esign-nav-btn" onclick="envScanChangePage(-1)"
+                                aria-label="Previous page" title="Previous page">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </button>
-                            <button type="button" class="stu-esign-nav-btn" onclick="envScanChangePage(1)">
+                            <button type="button" class="stu-esign-nav-btn" onclick="envScanChangePage(1)"
+                                aria-label="Next page" title="Next page">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
                         </div>
@@ -615,7 +648,7 @@
                             </div>
                             <div
                                 style="background:#fff;border-radius:12px;border:1.5px solid #ddd6fe;padding:12px;display:inline-block;min-width:180px;margin-bottom:10px;">
-                                <img id="envScanSavedSigPreview" src="" alt="Saved Signature"
+                                <img id="envScanSavedSigPreview" alt="Saved Signature"
                                     style="max-height:70px;max-width:100%;display:block;margin:0 auto;">
                             </div>
                             <button type="button" class="stu-esign-place-btn" onclick="envScanPlaceSavedSig()">
@@ -657,7 +690,7 @@
                             <button id="envScanSignSubmitBtn" type="button" onclick="submitEnvScanStudentSignature()"
                                 style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
                                 <i class="fa-solid fa-check"></i>
-                                Apply & Save Signature
+                                Apply &amp; Save Signature
                             </button>
                         </div>
                     </div>
@@ -669,7 +702,7 @@
     <!-- ENVIRONMENTAL SCANNING DECLINE REASON MODAL -->
 
     <div class="modal-overlay" id="envScanDeclineModal"
-        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px); padding:20px;">
+        style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:9999; align-items:center; justify-content:center; -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); padding:20px;">
         <div class="modal-box"
             style="width:650px; max-width:95%; background:white; border-radius:24px; padding:28px; box-shadow:0 25px 60px rgba(0,0,0,0.18);">
             <div class="modal-header"
@@ -677,13 +710,14 @@
                 <div>
                     <h2 style="color: #ef4444; font-size:22px; margin:0; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-building-circle-xmark"></i>
-                        Environmental Scanning Status & Decline Rationale
+                        Environmental Scanning Status &amp; Decline Rationale
                     </h2>
                     <p style="margin-top: 6px; color: #64748b; font-size: 13px; line-height: 1.5;">
                         "The organization that we presented this declined our proposed system."
                     </p>
                 </div>
                 <button class="close-modal-btn" type="button" onclick="closeEnvScanDeclineModal()"
+                    aria-label="Close decline modal" title="Close"
                     style="border:none; background:#fee2e2; color:#ef4444; border-radius:10px; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -692,17 +726,17 @@
             <input type="hidden" id="envScanDeclineDocId">
 
             <div class="input-group" style="margin-bottom: 16px;">
-                <label style="font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block; color: #334155;">
+                <label for="envScanDeclineDocTitle" style="font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block; color: #334155;">
                     Document Item:
                 </label>
-                <input type="text" id="envScanDeclineDocTitle" readonly
+                <input type="text" id="envScanDeclineDocTitle" aria-label="Document Item" readonly
                     style="width:100%; padding:10px 14px; border-radius:12px; border:1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 600; font-size:13px;">
             </div>
 
             <div class="input-group" style="margin-bottom: 16px;">
-                <label style="font-weight: 700; font-size: 13px; margin-bottom: 10px; display: block; color: #334155;">
+                <span style="font-weight: 700; font-size: 13px; margin-bottom: 10px; display: block; color: #334155;">
                     Please select the reason for decline:
-                </label>
+                </span>
 
                 <div
                     style="display: flex; flex-direction: column; gap: 10px; background:#f8fafc; padding:16px; border-radius:14px; border:1px solid #e2e8f0;">
@@ -730,7 +764,7 @@
             </div>
 
             <div class="input-group" id="envScanOthersGroup" style="margin-bottom: 16px; display: none;">
-                <label style="font-weight: 600; font-size: 13px; color: #475569; margin-bottom:6px; display:block;">
+                <label for="envScanOtherText" style="font-weight: 600; font-size: 13px; color: #475569; margin-bottom:6px; display:block;">
                     Specify Reason:
                 </label>
                 <textarea id="envScanOtherText" rows="3"
@@ -754,14 +788,15 @@
                 <button class="save-btn" type="button" onclick="submitEnvScanDeclineReason()"
                     style="padding:10px 18px; border-radius:12px; border:none; background:#ef4444; color:white; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-paper-plane"></i>
-                    Submit Reason & Notify
+                    Submit Reason &amp; Notify
                 </button>
             </div>
         </div>
     </div>
 
     <!-- HIDDEN QUICK UPLOAD INPUT (for template rows) -->
-    <input type="file" id="templateUploadFile" accept=".pdf,.doc,.docx"
+    <input type="file" id="templateUploadFile" aria-label="Upload document file" title="Upload document file"
+        accept=".pdf,.doc,.docx"
         style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;">
 
     <!-- SEND DOCUMENT MODAL -->
@@ -781,7 +816,8 @@
                     </p>
                 </div>
 
-                <button class="close-modal-btn" onclick="closeSendModal()" type="button">
+                <button class="close-modal-btn" onclick="closeSendModal()" type="button"
+                    aria-label="Close send modal" title="Close">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
 
@@ -807,7 +843,7 @@
             </div>
 
             <div class="input-group">
-                <label>
+                <label for="submissionMessage">
                     Message / Comment
                 </label>
 
@@ -846,6 +882,7 @@
         let pendingDefMinSendLabel = null;
         let titleProposals = [];
         let defenseVerdicts = []; // Latest verdict per defense_type from the server
+        let failedDefensePhaseFromServer = null;
         let conceptPresentationGraded = false; // Flag: whether group is already graded in Concept Presentation
         let gradedDefenseTypes = []; // List of defense types that have been graded
         let recipients = [];
@@ -938,6 +975,9 @@
 
                 defenseVerdicts =
                     data.defense_verdicts || [];
+
+                failedDefensePhaseFromServer =
+                    data.failed_defense_phase || null;
 
                 conceptPresentationGraded =
                     Boolean(data.concept_presentation_graded);
@@ -1079,6 +1119,10 @@
         }
 
         async function uploadStudentDocument() {
+            if (getFailedDefensePhase()) {
+                alert(getFailedProgressBlockMessage());
+                return;
+            }
 
             const documentType =
                 document.getElementById("documentType").value;
@@ -1857,11 +1901,14 @@
 
             const isDefMinutes = docType.includes("defense minutes") || docTitle.includes("defense minutes");
             const isDeploymentChapter14 = docType.includes("deployment") && (docType.includes("chapter 1-4") || docTitle.includes("chapter 1-4"));
+            const isFinalChapter14 = docType.includes("final") && !docType.includes("pre-final") && !docType.includes("prefinal") && (docType.includes("chapter 1-4") || docTitle.includes("chapter 1-4"));
             const summaryText = isDefMinutes
                 ? `You are sending defense minutes photo(s) to your Adviser: <strong>${adviserName}</strong> for physical defense verification and approval. Once approved, the next defense phase will unlock.`
-                : isDeploymentChapter14
-                    ? `You are sending <strong>Chapter 1-4 (Deployment)</strong> to your Adviser: <strong>${adviserName}</strong> in Document Review for approval only.`
-                    : `You are sending this document to your Adviser: <strong>${adviserName}</strong> for consultation review and evaluation. Approved documents unlock defense stage requirements.`;
+                : isFinalChapter14
+                    ? `You are sending <strong>Chapter 1-4 (Final Defense)</strong> to your Adviser: <strong>${adviserName}</strong> in Document Review for approval. Once approved, it will automatically be archived to the Repository.`
+                    : isDeploymentChapter14
+                        ? `You are sending <strong>Chapter 1-4 (Deployment)</strong> to your Adviser: <strong>${adviserName}</strong> in Document Review for approval only (not archived to Repository).`
+                        : `You are sending this document to your Adviser: <strong>${adviserName}</strong> for consultation review and evaluation. Approved documents unlock defense stage requirements.`;
 
             noticeContainer.innerHTML = `
                 <div class="routing-notice-box">
@@ -2118,7 +2165,7 @@
                 category: "Concept Presentation",
                 icon: "fa-lightbulb",
                 iconClass: "purple",
-                description: "Save your 3 titles in Request Adviser and upload each PDF there or here. Each file appears as Proposed concept paper (1–3). Send to adviser and instructor from this page.",
+                description: "Upload your finalized Proposed Concept Paper PDFs (1–3) here — each study title is automatically read from the PDF and reflected in Panel Defense Evaluation. Send to your adviser for approval from this page.",
                 items: [
                     { label: "Proposed concept paper", slots: 3, group: "Adviser Approval" },
                     { label: "Adviser acceptance for advisory", slots: 1, group: "Adviser Approval" },
@@ -2141,20 +2188,9 @@
                 category: "Pre-Final Defense",
                 icon: "fa-person-chalkboard",
                 iconClass: "blue",
-                description: "Upload mid chapters and supporting files. Encode and download your official Defense Minutes in A4 format after the defense presentation.",
+                description: "Upload mid chapters and supporting files. Edit and download your official Defense Minutes in A4 format after the defense presentation.",
                 items: [
                     { label: "Chapter 1-2", slots: 1 },
-                    { label: "Recommendation letter", slots: 1 },
-                    { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
-                ]
-            },
-            {
-                category: "Final Defense",
-                icon: "fa-graduation-cap",
-                iconClass: "purple",
-                description: "Upload final chapters and supporting files. Encode and download your official Defense Minutes in A4 format after the defense presentation.",
-                items: [
-                    { label: "Chapter 1-4", slots: 1 },
                     { label: "Recommendation letter", slots: 1 },
                     { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
                 ]
@@ -2163,10 +2199,21 @@
                 category: "Deployment",
                 icon: "fa-rocket",
                 iconClass: "blue",
-                description: "Upload deployment requirements and complete manuscript chapters.",
+                description: "Upload deployment requirements (Recommendation for Deployment & Chapter 1-4 for Adviser approval) to unlock Final Defense.",
                 items: [
                     { label: "Recommendation for Deployment", slots: 1 },
                     { label: "Chapter 1-4", slots: 1 }
+                ]
+            },
+            {
+                category: "Final Defense",
+                icon: "fa-graduation-cap",
+                iconClass: "purple",
+                description: "Upload Recommendation letter (Adviser e-sign), Chapter 1-4 (archived to Repository upon Adviser approval), and complete Defense Minutes after grading.",
+                items: [
+                    { label: "Recommendation letter", slots: 1 },
+                    { label: "Chapter 1-4", slots: 1 },
+                    { label: "Defense minutes", slots: 1, isDefenseMinutesPicture: true }
                 ]
             }
         ];
@@ -2324,6 +2371,13 @@
         /* Check if the defense presentation for a specific phase has been completed & graded by the panel */
         function isDefenseGradedForPhase(category) {
             const cat = String(category || "").toLowerCase().trim();
+            const latestVerdict = getLatestVerdictForPhase(category);
+            if (latestVerdict && latestVerdict.toLowerCase() === "failed") {
+                return false;
+            }
+            if (getFailedDefensePhase()) {
+                return false;
+            }
 
             // 1. From server's graded_defense_types (strict phase match so "Pre-Final Defense" never matches "Final Defense")
             if (Array.isArray(gradedDefenseTypes) && gradedDefenseTypes.some(t => doesDefenseTypeMatchPhase(t, category))) {
@@ -2350,10 +2404,10 @@
                 if (cat.includes("outline") && (prog >= 40 || stage.includes('stage 3') || stage.includes('pre-final') || stage.includes('stage 4') || stage.includes('final') || stage.includes('deployment') || stage.includes('completed'))) {
                     return true;
                 }
-                if (cat.includes("pre-final") && (prog >= 60 || stage.includes('stage 4') || stage.includes('final') || stage.includes('deployment') || stage.includes('completed'))) {
+                if (cat.includes("pre-final") && (prog >= 60 || stage.includes('stage 4') || stage.includes('deployment') || stage.includes('stage 5') || stage.includes('final') || stage.includes('completed'))) {
                     return true;
                 }
-                if (cat.includes("final") && !cat.includes("pre") && (prog >= 80 || stage.includes('deployment') || stage.includes('completed'))) {
+                if (cat.includes("final") && !cat.includes("pre") && (prog >= 100 || stage.includes('completed'))) {
                     return true;
                 }
             }
@@ -2658,9 +2712,31 @@
          */
         function getLatestVerdictForPhase(category) {
             const match = defenseVerdicts.find(v =>
-                String(v.defense_type || "").trim() === category
+                doesDefenseTypeMatchPhase(v.defense_type, category)
+                || String(v.defense_type || "").trim() === category
             );
             return match ? String(match.latest_result || "").trim() : null;
+        }
+
+        function getFailedDefensePhase() {
+            if (failedDefensePhaseFromServer) return failedDefensePhaseFromServer;
+            for (let i = 0; i < CONSULTATION_CATALOG.length; i++) {
+                const cat = CONSULTATION_CATALOG[i].category;
+                const v = getLatestVerdictForPhase(cat);
+                if (v && v.toLowerCase() === "failed") {
+                    return cat;
+                }
+            }
+            const anyFailed = (defenseVerdicts || []).find(v =>
+                String(v.latest_result || "").trim().toLowerCase() === "failed"
+            );
+            return anyFailed ? String(anyFailed.defense_type || "").trim() : null;
+        }
+
+        function getFailedProgressBlockMessage() {
+            const failedPhase = getFailedDefensePhase();
+            if (!failedPhase) return "";
+            return `Cannot add or upload documents in Records Management. Your group received a "Failed" panel verdict in "${failedPhase}" and progress has stopped at this stage.`;
         }
 
         /**
@@ -2696,6 +2772,16 @@
 
             if (!phase) {
                 return true;
+            }
+
+            // If group failed this phase or an earlier phase, progress is stopped permanently at that stage
+            const failedPhase = getFailedDefensePhase();
+            if (failedPhase) {
+                const failedIdx = getPhaseIndexByCategory(failedPhase);
+                const curIdx = getPhaseIndexByCategory(category);
+                if (failedIdx >= 0 && curIdx >= failedIdx) {
+                    return false;
+                }
             }
 
             // If this phase has Defense Minutes and the typed Defense Minutes are approved & e-signed (Completed),
@@ -2739,6 +2825,13 @@
 
             if (!standardDocsApproved) {
                 return false;
+            }
+
+            // Deployment has no defense presentation schedule — it completes as soon as
+            // both Deployment documents (Recommendation for Deployment + Chapter 1-4) are approved,
+            // unlocking Final Defense.
+            if (String(category || "").trim().toLowerCase() === "deployment") {
+                return true;
             }
 
             // 2. Defense presentation verdict/grading check
@@ -2785,6 +2878,11 @@
         }
 
         function isCatalogPhaseLocked(category, baseLabel) {
+            // If group received a Failed verdict, block all adding/uploading in Records Management
+            if (getFailedDefensePhase()) {
+                return true;
+            }
+
             // Defense minutes (picture) are phase-gated differently — handled separately
             // Plain defense minutes label bypass
             if (isDefenseMinutesLabel(baseLabel) && !isDefenseMinutesPictureLabel(category, baseLabel)) {
@@ -2819,6 +2917,24 @@
         }
 
         function getPhaseStatusLabel(category) {
+            const failedPhase = getFailedDefensePhase();
+            if (failedPhase) {
+                const failedIdx = getPhaseIndexByCategory(failedPhase);
+                const curIdx = getPhaseIndexByCategory(category);
+                if (doesDefenseTypeMatchPhase(failedPhase, category) || category === failedPhase) {
+                    return {
+                        text: "Failed — Progress stopped at this stage",
+                        className: "phase-failed-badge"
+                    };
+                }
+                if (failedIdx >= 0 && curIdx > failedIdx) {
+                    return {
+                        text: `Locked — Cannot proceed (Failed in ${failedPhase})`,
+                        className: "phase-locked"
+                    };
+                }
+            }
+
             if (isCatalogPhaseLocked(category)) {
                 const phaseIndex = getPhaseIndexByCategory(category);
                 const prevCat = phaseIndex > 0 ? CONSULTATION_CATALOG[phaseIndex - 1].category : "";
@@ -2844,7 +2960,7 @@
             if (verdict) {
                 if (verdict === "Conditional Passed" || verdict === "Conditional Pass") {
                     return {
-                        text: "Conditional Passed — re-defense required before next phase",
+                        text: "Conditional Passed — external panel re-evaluation open (no time limit)",
                         className: "phase-active"
                     };
                 }
@@ -2888,6 +3004,20 @@
 
             grid.innerHTML = "";
 
+            const failedPhase = getFailedDefensePhase();
+            const failedBanner = document.getElementById("failedProgressBanner");
+            const failedBannerText = document.getElementById("failedProgressBannerText");
+            if (failedBanner) {
+                if (failedPhase) {
+                    failedBanner.style.display = "flex";
+                    if (failedBannerText) {
+                        failedBannerText.textContent = `Your group received a "Failed" verdict in "${failedPhase}". Progress has stopped at this stage and adding or uploading documents in Records Management is disabled.`;
+                    }
+                } else {
+                    failedBanner.style.display = "none";
+                }
+            }
+
             // Determine the group's program (IT students do not need Environmental Scanning)
             // DB may store "IT" or "BSIT"; normalise to check both
             const groupProgram = (currentGroup && currentGroup.program)
@@ -2895,10 +3025,18 @@
                 : "";
             const isITGroup = groupProgram === "IT" || groupProgram === "BSIT";
 
+            const failedPhaseIdx = failedPhase ? getPhaseIndexByCategory(failedPhase) : -1;
+
             CONSULTATION_CATALOG.forEach(phase => {
 
+                const curPhaseIdx = getPhaseIndexByCategory(phase.category);
+                const isThisPhaseFailed = Boolean(failedPhase && (
+                    doesDefenseTypeMatchPhase(failedPhase, phase.category) || phase.category === failedPhase
+                ));
+                const isAfterFailedPhase = Boolean(failedPhaseIdx >= 0 && curPhaseIdx > failedPhaseIdx);
+
                 const phaseLocked =
-                    getPhaseIndexByCategory(phase.category) > getActivePhaseIndex();
+                    curPhaseIdx > getActivePhaseIndex() || isAfterFailedPhase;
 
                 const phaseStatus =
                     getPhaseStatusLabel(phase.category);
@@ -2908,9 +3046,10 @@
 
                 card.className =
                     "phase-card"
-                    + (phaseLocked ? " phase-locked" : "")
-                    + (phaseStatus.className === "phase-complete" ? " phase-complete" : "")
-                    + (phaseStatus.className === "phase-active" ? " phase-active" : "");
+                    + (isThisPhaseFailed ? " phase-failed" : "")
+                    + (isAfterFailedPhase ? " phase-failed-greyed phase-locked" : (phaseLocked ? " phase-locked" : ""))
+                    + (!isThisPhaseFailed && !isAfterFailedPhase && phaseStatus.className === "phase-complete" ? " phase-complete" : "")
+                    + (!isThisPhaseFailed && !isAfterFailedPhase && phaseStatus.className === "phase-active" ? " phase-active" : "");
 
                 // For IT groups: remove Environmental Scanning from the Concept Presentation phase
                 const visibleItems = isITGroup
@@ -2962,12 +3101,13 @@
                     <button
                         class="doc-row other"
                         type="button"
+                        ${failedPhase ? 'disabled style="opacity:0.45;cursor:not-allowed;" title="Adding files is disabled after a Failed verdict"' : ''}
                         onclick="openOtherUploadModal('${phase.category.replace(/'/g, "\\'")}')"
                     >
                         <span class="doc-name">Other</span>
                         <span class="doc-action">
-                            <i class="fa-solid fa-plus"></i>
-                            Add file type
+                            <i class="fa-solid ${failedPhase ? 'fa-lock' : 'fa-plus'}"></i>
+                            ${failedPhase ? 'Locked (Failed)' : 'Add file type'}
                         </span>
                     </button>
                 `);
@@ -3073,11 +3213,12 @@
             const docStatusForLock = String(documentItem && documentItem.document_status || "").trim();
             const isInSigningRoute = ["Adviser Signed", "Panelist Signed", "Instructor Signed", "Chairperson Signed"].includes(docStatusForLock);
 
+            const isStoppedByFail = Boolean(getFailedDefensePhase());
             const isLocked =
-                isAdviserLocked(documentItem) || isInSigningRoute;
+                isAdviserLocked(documentItem) || isInSigningRoute || isStoppedByFail;
 
             const canDelete =
-                canDeleteConsultationDocument(documentItem);
+                !isStoppedByFail && canDeleteConsultationDocument(documentItem);
 
             const row =
                 document.createElement("div");
@@ -3136,11 +3277,12 @@
             const docStatusForLock = String(documentItem && documentItem.document_status || "").trim();
             const isInSigningRoute = ["Adviser Signed", "Panelist Signed", "Instructor Signed", "Chairperson Signed"].includes(docStatusForLock);
 
+            const isStoppedByFail = Boolean(getFailedDefensePhase());
             const isLocked =
-                isAdviserLocked(documentItem) || isInSigningRoute;
+                isAdviserLocked(documentItem) || isInSigningRoute || isStoppedByFail;
 
             const canDelete =
-                canDeleteConsultationDocument(documentItem);
+                !isStoppedByFail && canDeleteConsultationDocument(documentItem);
 
             const displayLabel =
                 getSlotDisplayLabel(baseLabel, slotIndex, totalSlots, category);
@@ -3160,6 +3302,25 @@
                 ? buildRecommendationSignStatusBadge(documentItem)
                 : "";
 
+            const isProposedConceptPaperSlot =
+                category === "Concept Presentation"
+                && baseLabel === "Proposed concept paper";
+
+            let extractedTitleHtml = "";
+            if (isProposedConceptPaperSlot && documentItem && slotHasFile(documentItem)) {
+                const rawDocTitle = String(documentItem.document_title || "").trim();
+                const isGenericPlaceholder = /^Concept Presentation\s*-\s*Proposed concept paper\s*\(\d\)$/i.test(rawDocTitle);
+                if (rawDocTitle && !isGenericPlaceholder) {
+                    const safeDocTitle = escapeConceptSlotHtml(rawDocTitle);
+                    extractedTitleHtml = `
+                        <div class="slot-extracted-title" title="${safeDocTitle}">
+                            <i class="fa-solid fa-book-open"></i>
+                            <span><strong>Detected Title:</strong> ${safeDocTitle}</span>
+                        </div>
+                    `;
+                }
+            }
+
             return `
                 <div class="${rowClass}">
                     <div class="doc-slot-main">
@@ -3168,6 +3329,7 @@
                             ${statusInfo.text}
                         </span>
                     </div>
+                    ${extractedTitleHtml}
                     <div class="doc-slot-actions">
                         ${buildSlotUploadButton(
                 category,
@@ -3302,7 +3464,7 @@
             const isSaved = hasSavedDefenseMinutes(category);
             const sentRec = getSentTypedDefenseMinutes(category);
 
-            let statusText = "Not encoded yet";
+            let statusText = "Ready — Click View → Edit Text to add Page No. & Actions Taken";
             let statusClass = "not-uploaded";
             if (sentRec) {
                 if (sentRec.status === "Completed") {
@@ -3326,7 +3488,7 @@
                     statusClass = "pending";
                 }
             } else if (isSaved) {
-                statusText = "Encoded & Saved (Ready to send to Adviser)";
+                statusText = "Edited & Saved (Ready to send to Adviser)";
                 statusClass = "not-sent";
             } else if (phaseLocked) {
                 statusText = "Phase locked — complete previous phase first";
@@ -3362,7 +3524,7 @@
                     <i class="fa-solid fa-lock"></i> Phase Locked
                    </button>`
                 : notGradedLocked
-                    ? `<button class="slot-btn disabled" type="button" disabled title="Defense minutes can only be viewed and encoded after the defense presentation has been graded by the panel">
+                    ? `<button class="slot-btn disabled" type="button" disabled title="Defense minutes can only be viewed and edited after the defense presentation has been graded by the panel">
                     <i class="fa-solid fa-lock"></i> Awaiting Defense Grading
                    </button>`
                     : `<button class="slot-btn view" type="button"
@@ -3371,7 +3533,7 @@
                    </button>`;
 
             const sendBtn = isSendDisabled
-                ? `<button class="slot-btn disabled" type="button" disabled title="${isCompleted ? 'All grading panelists have signed' : 'Already sent — click View → Encode Minutes and Save to update'}">
+                ? `<button class="slot-btn disabled" type="button" disabled title="${isCompleted ? 'All grading panelists have signed' : 'Already sent — click View → Edit Text and Save to update'}">
                     <i class="fa-solid fa-check"></i> ${isCompleted ? "Completed" : "Sent"}
                    </button>`
                 : isSaved
@@ -3379,7 +3541,7 @@
                     onclick="sendTypedDefenseMinutesToAdviser('${safeCategory}')">
                     <i class="fa-solid fa-paper-plane"></i> Send
                    </button>`
-                    : `<button class="slot-btn disabled" type="button" disabled title="Click View → Encode Minutes and save your defense minutes first">
+                    : `<button class="slot-btn disabled" type="button" disabled title="Click View → Edit Text to add Page No. and Action/s Taken, then save first">
                     <i class="fa-solid fa-paper-plane"></i> Send
                    </button>`;
 
@@ -3635,6 +3797,7 @@
             let schedules = [];
             let members = [];
             let conceptEvaluations = [];
+            const evaluationsByScheduleId = {};
 
             try {
                 const [schedRes, grpRes] = await Promise.all([
@@ -3654,20 +3817,240 @@
                     }
                 }
 
+                const activeScheds = schedules.filter(s =>
+                    s && s.schedule_id && String(s.defense_status || "").trim().toLowerCase() !== "cancelled"
+                );
+                await Promise.all(activeScheds.map(async (sched) => {
+                    try {
+                        const evalRes = await fetch(`/defense-panel-evaluations/${encodeURIComponent(sched.schedule_id)}`);
+                        const evalData = await evalRes.json();
+                        if (evalData && evalData.success && Array.isArray(evalData.panel_evaluations)) {
+                            evaluationsByScheduleId[String(sched.schedule_id)] = evalData.panel_evaluations;
+                        }
+                    } catch (_) { }
+                }));
+
                 const conceptSched = schedules.find(s => String(s.defense_type || "").trim().toLowerCase() === "concept presentation");
-                if (conceptSched && conceptSched.schedule_id) {
-                    const evalRes = await fetch(`/defense-panel-evaluations/${encodeURIComponent(conceptSched.schedule_id)}`);
-                    const evalData = await evalRes.json();
-                    if (evalData && evalData.success && Array.isArray(evalData.panel_evaluations)) {
-                        conceptEvaluations = evalData.panel_evaluations;
-                    }
+                if (conceptSched && conceptSched.schedule_id && Array.isArray(evaluationsByScheduleId[String(conceptSched.schedule_id)])) {
+                    conceptEvaluations = evaluationsByScheduleId[String(conceptSched.schedule_id)];
                 }
             } catch (e) {
                 console.warn("Could not load defense minutes context:", e);
             }
 
-            dmContextCache = { schedules, members, conceptEvaluations };
+            dmContextCache = { schedules, members, conceptEvaluations, evaluationsByScheduleId };
             return dmContextCache;
+        }
+
+        function normalizeDmPersonName(name) {
+            return String(name || "")
+                .toLowerCase()
+                .replace(/\b(dr|engr|prof|mr|ms|mrs|sir|maam|phd|mit|msit|mscs|dit)\b\.?/g, " ")
+                .replace(/[^a-z0-9\s]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function dmNamesMatch(a, b) {
+            const na = normalizeDmPersonName(a);
+            const nb = normalizeDmPersonName(b);
+            if (!na || !nb) return false;
+            if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+            const ta = na.split(" ").filter(t => t.length > 1);
+            const tb = nb.split(" ").filter(t => t.length > 1);
+            if (ta.length >= 2 && tb.length >= 2) {
+                const shared = ta.filter(t => tb.includes(t));
+                if (shared.length >= 2) return true;
+            }
+            return false;
+        }
+
+        function extractPanelistEvaluationBullets(panelEval) {
+            if (!panelEval) return [];
+            try {
+                let details = panelEval.outline_evaluation_details;
+                if (typeof details === "string" && details.trim()) {
+                    details = JSON.parse(details);
+                }
+                if (details && Array.isArray(details.comments_bullets)) {
+                    const cleaned = details.comments_bullets
+                        .map(item => String(item || "").replace(/^[-•*]\s*/, "").trim())
+                        .filter(Boolean);
+                    if (cleaned.length > 0) return cleaned;
+                }
+            } catch (_) { }
+
+            const out = [];
+            const pushLines = (raw) => {
+                String(raw || "")
+                    .split(/\r?\n/)
+                    .map(line => line.replace(/^[-•*]\s*/, "").trim())
+                    .filter(line => line && line.toLowerCase() !== "none")
+                    .forEach(line => out.push(line));
+            };
+            pushLines(panelEval.comments);
+            pushLines(panelEval.recommendations);
+            return out;
+        }
+
+        function findMatchingPanelEvalForRow(panelMeta, panelEvals) {
+            const list = Array.isArray(panelEvals) ? panelEvals : [];
+            if (!list.length) return null;
+            const targetId = panelMeta && panelMeta.panelistId ? Number(panelMeta.panelistId) : 0;
+            if (targetId) {
+                const byId = list.find(ev =>
+                    (ev.panelist_id && Number(ev.panelist_id) === targetId) ||
+                    (ev.panelist_user_id && Number(ev.panelist_user_id) === targetId)
+                );
+                if (byId) return byId;
+            }
+            const targetName = panelMeta && panelMeta.name ? panelMeta.name : "";
+            return list.find(ev => dmNamesMatch(targetName, ev.panelist_name || "")) || null;
+        }
+
+        function normalizeBulletMatchKey(text) {
+            return String(text || "")
+                .replace(/^[-•*]\s*/, "")
+                .replace(/\s+/g, " ")
+                .trim()
+                .toLowerCase();
+        }
+
+        function isVerdictEligibleForDefenseMinutes(verdict) {
+            const v = String(verdict || "").trim().toLowerCase();
+            return v === "passed with revisions"
+                || v === "passed with revision"
+                || v === "conditional passed"
+                || v === "conditional pass";
+        }
+
+        function buildMergedDefenseMinutesPanelists(category, meta, ctx, sourceSaved) {
+            const schedules = ctx && Array.isArray(ctx.schedules) ? ctx.schedules : [];
+            const catLower = String(category || "").trim().toLowerCase();
+            const matchingScheds = schedules
+                .filter(s =>
+                    String(s.defense_type || "").trim().toLowerCase() === catLower
+                    && String(s.defense_status || "").trim().toLowerCase() !== "cancelled"
+                )
+                .sort((a, b) => Number(a.schedule_id || 0) - Number(b.schedule_id || 0));
+
+            const savedList = sourceSaved && Array.isArray(sourceSaved.panelists) ? sourceSaved.panelists : [];
+
+            return meta.panelists.map((p, idx) => {
+                // Match saved panelist entry by panelistId, then name, then index fallback
+                let savedPanel = null;
+                if (p.panelistId) {
+                    savedPanel = savedList.find(sp => sp && sp.panelistId && Number(sp.panelistId) === Number(p.panelistId)) || null;
+                }
+                if (!savedPanel) {
+                    savedPanel = savedList.find(sp => sp && dmNamesMatch(p.name, sp.name || "")) || savedList[idx] || null;
+                }
+                const savedRows = (savedPanel && Array.isArray(savedPanel.rows)) ? savedPanel.rows : [];
+
+                // ONLY include Comments/Suggestions/Recommendations when panelist verdict is
+                // "Passed with Revisions" or "Conditional Passed" (NOT Passed, For Formal Defense, or Failed).
+                // Preserve EVERY bullet added by the panelist (including 2nd, 3rd, etc. bullets — do NOT drop duplicate text within an evaluation).
+                const panelBullets = [];
+                const seenScheduleIds = new Set();
+                matchingScheds.forEach(sched => {
+                    const schedKey = String(sched.schedule_id || "");
+                    if (schedKey && seenScheduleIds.has(schedKey)) return;
+                    if (schedKey) seenScheduleIds.add(schedKey);
+
+                    const schedEvals = (ctx && ctx.evaluationsByScheduleId && Array.isArray(ctx.evaluationsByScheduleId[schedKey]))
+                        ? ctx.evaluationsByScheduleId[schedKey]
+                        : [];
+                    const panelEval = findMatchingPanelEvalForRow(p, schedEvals);
+                    if (!panelEval) return;
+                    if (!isVerdictEligibleForDefenseMinutes(panelEval.panel_result)) return;
+                    extractPanelistEvaluationBullets(panelEval).forEach(bullet => {
+                        const cleaned = String(bullet || "").trim();
+                        if (cleaned) {
+                            panelBullets.push(cleaned);
+                        }
+                    });
+                });
+
+                let rows = [];
+                if (panelBullets.length > 0) {
+                    const usedSavedIndices = new Set();
+                    rows = panelBullets.map((bullet, bIdx) => {
+                        const targetKey = normalizeBulletMatchKey(bullet);
+                        // 1. Prefer exact index match when the text also matches (keeps repeated bullets mapped 1-to-1)
+                        let matchedIdx = -1;
+                        if (
+                            bIdx < savedRows.length
+                            && !usedSavedIndices.has(bIdx)
+                            && savedRows[bIdx]
+                            && !savedRows[bIdx].addedByPanelistReview
+                            && normalizeBulletMatchKey(savedRows[bIdx].comments) === targetKey
+                        ) {
+                            matchedIdx = bIdx;
+                        }
+                        // 2. Otherwise find the first unused saved row with the same comment text
+                        if (matchedIdx === -1) {
+                            matchedIdx = savedRows.findIndex((sr, srIdx) =>
+                                !usedSavedIndices.has(srIdx) && sr && !sr.addedByPanelistReview && normalizeBulletMatchKey(sr.comments) === targetKey
+                            );
+                        }
+                        // 3. Fallback to same positional fromPanel row if panelist edited wording
+                        if (matchedIdx === -1 && bIdx < savedRows.length && !usedSavedIndices.has(bIdx) && savedRows[bIdx] && savedRows[bIdx].fromPanel && !savedRows[bIdx].addedByPanelistReview) {
+                            matchedIdx = bIdx;
+                        }
+                        let matchedSaved = null;
+                        if (matchedIdx !== -1) {
+                            usedSavedIndices.add(matchedIdx);
+                            matchedSaved = savedRows[matchedIdx];
+                        }
+                        return {
+                            pageNo: matchedSaved ? (matchedSaved.pageNo || "") : "",
+                            comments: bullet,
+                            actions: matchedSaved ? (matchedSaved.actions || "") : "",
+                            fromPanel: true
+                        };
+                    });
+
+                    // Preserve any additional Comments/Suggestions/Recommendations added by this panelist during Document Review (Request Revision / Reject)
+                    savedRows.forEach((sr, srIdx) => {
+                        if (usedSavedIndices.has(srIdx) || !sr || !sr.addedByPanelistReview) return;
+                        const text = String(sr.comments || "").trim();
+                        if (!text) return;
+                        rows.push({
+                            pageNo: sr.pageNo || "",
+                            comments: text,
+                            actions: sr.actions || "",
+                            fromPanel: true,
+                            addedByPanelistReview: true
+                        });
+                    });
+                } else {
+                    const reviewAddedRows = savedRows.filter(sr => sr && sr.addedByPanelistReview && String(sr.comments || "").trim());
+                    if (reviewAddedRows.length > 0) {
+                        rows = reviewAddedRows.map(sr => ({
+                            pageNo: sr.pageNo || "",
+                            comments: String(sr.comments || "").trim(),
+                            actions: sr.actions || "",
+                            fromPanel: true,
+                            addedByPanelistReview: true
+                        }));
+                    } else {
+                        const firstSaved = savedRows[0] || null;
+                        rows = [{
+                            pageNo: firstSaved ? (firstSaved.pageNo || "") : "",
+                            comments: "",
+                            actions: firstSaved ? (firstSaved.actions || "") : "",
+                            fromPanel: true
+                        }];
+                    }
+                }
+
+                return {
+                    panelistId: p.panelistId || null,
+                    name: p.name,
+                    role: p.role,
+                    rows
+                };
+            });
         }
 
         function findActiveScheduleForCategory(schedules, category) {
@@ -3774,23 +4157,7 @@
                 }
             }
 
-            const panelistSections = meta.panelists.map((p, idx) => {
-                const savedPanel = sourceSaved && Array.isArray(sourceSaved.panelists) ? sourceSaved.panelists[idx] : null;
-                const rows = savedPanel && Array.isArray(savedPanel.rows) && savedPanel.rows.length > 0
-                    ? savedPanel.rows.map(r => ({
-                        pageNo: r.pageNo || "",
-                        comments: r.comments || "",
-                        actions: r.actions || ""
-                    }))
-                    : [{ pageNo: "", comments: "", actions: "" }];
-
-                return {
-                    panelistId: p.panelistId || null,
-                    name: p.name,
-                    role: p.role,
-                    rows
-                };
-            });
+            const panelistSections = buildMergedDefenseMinutesPanelists(category, meta, ctx, sourceSaved);
 
             dmEditorState = {
                 category,
@@ -3799,10 +4166,11 @@
             };
 
             document.getElementById("dmEditorTitle").innerHTML =
-                `<i class="fa-solid fa-file-pen" style="color:#7c3aed;"></i> Encode [${meta.phaseTag}] Defense Minutes`;
+                `<i class="fa-solid fa-file-pen" style="color:#7c3aed;"></i> Edit [${meta.phaseTag}] Defense Minutes`;
 
-            renderDefenseMinutesEditorBody();
+            // Show modal BEFORE rendering so autoGrowDmTextarea measures real visible scrollHeight
             document.getElementById("defenseMinutesEditorModal").style.display = "flex";
+            renderDefenseMinutesEditorBody();
         }
 
         function closeDefenseMinutesEditor() {
@@ -3815,31 +4183,11 @@
             dmEditorState.panelists.forEach((p, pIdx) => {
                 p.rows.forEach((r, rIdx) => {
                     const pageEl = document.getElementById(`dm_page_${pIdx}_${rIdx}`);
-                    const commEl = document.getElementById(`dm_comm_${pIdx}_${rIdx}`);
                     const actEl = document.getElementById(`dm_act_${pIdx}_${rIdx}`);
                     if (pageEl) r.pageNo = pageEl.value;
-                    if (commEl) r.comments = commEl.value;
                     if (actEl) r.actions = actEl.value;
                 });
             });
-        }
-
-        function addDefenseMinutesRow(pIdx) {
-            if (!dmEditorState || !dmEditorState.panelists[pIdx]) return;
-            syncDmEditorInputsToState();
-            dmEditorState.panelists[pIdx].rows.push({ pageNo: "", comments: "", actions: "" });
-            renderDefenseMinutesEditorBody();
-        }
-
-        function removeDefenseMinutesRow(pIdx, rIdx) {
-            if (!dmEditorState || !dmEditorState.panelists[pIdx]) return;
-            syncDmEditorInputsToState();
-            if (dmEditorState.panelists[pIdx].rows.length <= 1) {
-                dmEditorState.panelists[pIdx].rows[0] = { pageNo: "", comments: "", actions: "" };
-            } else {
-                dmEditorState.panelists[pIdx].rows.splice(rIdx, 1);
-            }
-            renderDefenseMinutesEditorBody();
         }
 
         function autoGrowDmTextarea(el) {
@@ -4028,8 +4376,7 @@
                         `;
                     }
 
-                    const totalRowsForPanel = it.panel.rows.length;
-                    const isLastRowForPanel = it.rIdx === totalRowsForPanel - 1;
+                    const commentText = String(it.row.comments || "").trim();
                     return `
                         <tr>
                             ${panelistCell}
@@ -4038,18 +4385,16 @@
                                     value="${escapeDmHtml(it.row.pageNo)}" placeholder="Page">
                             </td>
                             <td class="dm-text-cell dm-edit-cell">
-                                <textarea id="dm_comm_${it.pIdx}_${it.rIdx}" class="dm-inline-textarea" rows="2"
-                                    placeholder="Type comment / recommendation..."
-                                    oninput="autoGrowDmTextarea(this)">${escapeDmHtml(it.row.comments)}</textarea>
+                                ${commentText
+                                    ? `<div class="dm-panel-comment-readonly">- ${escapeDmHtml(commentText)}</div>
+                                       <div class="dm-from-panel-tag dm-no-print"><i class="fa-solid fa-user-check"></i> From Panelist</div>`
+                                    : `<div class="dm-panel-comment-empty">No comments/suggestions/recommendations from panelist.</div>`
+                                }
                             </td>
                             <td class="dm-text-cell dm-edit-cell dm-action-edit-cell">
                                 <textarea id="dm_act_${it.pIdx}_${it.rIdx}" class="dm-inline-textarea" rows="2"
                                     placeholder="Type action taken..."
                                     oninput="autoGrowDmTextarea(this)">${escapeDmHtml(it.row.actions)}</textarea>
-                                <div class="dm-row-tools dm-no-print">
-                                    ${isLastRowForPanel ? `<button type="button" class="dm-add-row-btn" onclick="addDefenseMinutesRow(${it.pIdx})" title="Add entry for ${escapeDmHtml(it.panel.name)}"><i class="fa-solid fa-plus"></i> Add Entry</button>` : ""}
-                                    ${totalRowsForPanel > 1 ? `<button type="button" class="dm-del-row-btn" onclick="removeDefenseMinutesRow(${it.pIdx}, ${it.rIdx})" title="Remove entry"><i class="fa-solid fa-trash"></i></button>` : ""}
-                                </div>
                             </td>
                         </tr>
                     `;
@@ -4101,7 +4446,9 @@
                 : "";
 
             document.getElementById("dmEditorBody").innerHTML = pagesHtml + extraAdviserPageHtml;
-            document.querySelectorAll("#dmEditorBody .dm-inline-textarea").forEach(autoGrowDmTextarea);
+            requestAnimationFrame(() => {
+                document.querySelectorAll("#dmEditorBody .dm-inline-textarea").forEach(autoGrowDmTextarea);
+            });
         }
 
         async function saveDefenseMinutesDraft(openPreviewAfter) {
@@ -4204,8 +4551,8 @@
                 return sentRec.status || "Sent to Adviser — Pending Adviser E-Signature";
             }
             return hasSavedDefenseMinutes(category)
-                ? "Encoded & Saved (Ready to send to Adviser)"
-                : "Not encoded yet";
+                ? "Edited & Saved (Ready to send to Adviser)"
+                : "Ready — Click Edit Text to add Page No. & Actions Taken";
         }
 
         async function openDefenseMinutesPrintPreview(category) {
@@ -4238,13 +4585,7 @@
                         sourceSaved = serverMinutes;
                     }
                 }
-                panelists = meta.panelists.map((p, idx) => {
-                    const savedPanel = sourceSaved && Array.isArray(sourceSaved.panelists) ? sourceSaved.panelists[idx] : null;
-                    const rows = savedPanel && Array.isArray(savedPanel.rows) && savedPanel.rows.length > 0
-                        ? savedPanel.rows
-                        : [{ pageNo: "", comments: "", actions: "" }];
-                    return { panelistId: p.panelistId || null, name: p.name, role: p.role, rows };
-                });
+                panelists = buildMergedDefenseMinutesPanelists(category, meta, ctx, sourceSaved);
             }
 
             const placed = [];
@@ -4410,7 +4751,7 @@
             }
             const saved = loadSavedDefenseMinutes(category);
             if (!saved || !hasSavedDefenseMinutes(category)) {
-                alert("Please encode and save your defense minutes first.");
+                alert("Please click View → Edit Text to add Page No. and Action/s Taken, then save your defense minutes first.");
                 return;
             }
             const confirmed = await confirm(`Send ${category} Defense Minutes to your Adviser (${currentGroup.adviser_name || "Adviser"}) for review and e-signature?`);
@@ -4465,6 +4806,11 @@
             totalSlots,
             isOtherLabel
         ) {
+            if (getFailedDefensePhase()) {
+                alert(getFailedProgressBlockMessage());
+                return;
+            }
+
             if (
                 !isOtherLabel
                 && !isDefenseMinutesLabel(baseLabel)
@@ -4504,22 +4850,9 @@
                 return;
             }
 
-            if (
+            const isProposedConceptPaper =
                 category === "Concept Presentation"
-                && baseLabel === "Proposed concept paper"
-            ) {
-                const proposal =
-                    getTitleProposalForSlot(slotIndex);
-
-                if (!proposal || !String(proposal.proposed_title || "").trim()) {
-                    alert(
-                        `Enter proposed title ${slotIndex} in Request Adviser first, then upload the PDF here.`
-                    ).then(() => {
-                        window.location.href = "Req_Adviser.html";
-                    });
-                    return;
-                }
-            }
+                && baseLabel === "Proposed concept paper";
 
             const documentType =
                 isOtherLabel
@@ -4538,28 +4871,269 @@
 
             let documentTitle = `${category} - ${displayLabel}`;
 
-            if (
-                category === "Concept Presentation"
-                && baseLabel === "Proposed concept paper"
-            ) {
-                const proposal =
-                    getTitleProposalForSlot(slotIndex);
-
-                if (proposal && proposal.proposed_title) {
-                    documentTitle = proposal.proposed_title;
-                }
-            }
-
             pendingTemplateUpload = {
                 documentType,
-                documentTitle
+                documentTitle,
+                isProposedConceptPaper,
+                slotIndex
             };
 
             const fileInput =
                 document.getElementById("templateUploadFile");
 
+            fileInput.accept = isProposedConceptPaper ? ".pdf,application/pdf" : ".pdf,.doc,.docx";
             fileInput.value = "";
             fileInput.click();
+        }
+
+        function escapeConceptSlotHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        /* ================= CONCEPT PAPER PDF TITLE READER (Mirrors Request Adviser) ================= */
+        function extractConceptTitleFromRawTextClient(rawText, fallbackName = "") {
+            const lines = String(rawText || "")
+                .split(/\r?\n/)
+                .map(l => l.replace(/\s+/g, " ").trim());
+
+            const STRICT_FOOTER_OR_LETTERHEAD = [
+                /dnsc\.edu\.ph/i,
+                /\.edu\.ph/i,
+                /tel\.?\s*no\.?/i,
+                /telefax/i,
+                /\+63/i,
+                /president@/i,
+                /@officialdnsc/i,
+                /inspiring\s+change/i,
+                /creating\s+futures/i,
+                /bacong\s+pilipinas/i,
+                /^(vision|mission|core\s+values?|stewardship)\s*:?$/i,
+                /^(vision|mission|core\s+values?)\s*:/i,
+                /institution\s+leading\s+in/i,
+                /agri[\-\s]?fisheries/i,
+                /cultural\s+development\s+in\s+the/i,
+                /^asean\s+region\.?$/i,
+                /future[\-\s]?ready\s+workforce/i,
+                /create\s+innovative\s+solutions/i,
+                /empower\s+communities/i,
+                /governance\s+towards\s+sustainable/i,
+                /^adaptability\s+and\s+excellence\.?$/i,
+                /^integrity\s+and\s+innovativeness\.?$/i,
+                /^love\s+of\s+god\s+and\s+country\.?$/i,
+                /iso\s*9001/i,
+                /(?:document|doc\.?)\s*(?:code|control|no\.?)\s*:/i,
+                /effectivity\s*date/i,
+                /revision\s*(?:no\.?|number)/i,
+                /(?:www\.|https?:\/\/)/i,
+                /^[-\u2013]?\s*\d{1,4}\s*[-\u2013]?$/,
+                /^\d+\s+of\s+\d+$/i,
+                /^page\s+\d+(\s+of\s+\d+)?$/i
+            ];
+
+            const HEADER_ONLY_LINES = [
+                ...STRICT_FOOTER_OR_LETTERHEAD,
+                /^(?:republic\s+of\s+the\s+philippines)(?:\s+davao\s+del\s+norte\s+state\s+college)?$/i,
+                /^davao\s+del\s+norte(\s+state\s+college)?$/i,
+                /^state\s+college$/i,
+                /^institute\s+of\s+computing$/i,
+                /^college\s+of\s+[a-z\s&]+$/i,
+                /^department\s+of\s+[a-z\s&]+$/i,
+                /^university\s+of\s+[a-z\s&]+$/i,
+                /^bachelor\s+of\s+science\s+in\s+/i,
+                /^new\s+visayas[,\s]*(?:panabo\s+city)?[,\s\d]*$/i,
+                /^panabo\s+city[,\s]*(?:davao\s+del\s+norte)?[,\s\d]*$/i,
+                /^(?:a\s+)?(concept\s+paper|title\s+proposal|capstone\s+project(\s+proposal)?|thesis\s+proposal)\s*$/i,
+                /^in\s+partial\s+fulfillment/i,
+                /^presented\s+to\s+the\s+faculty/i
+            ];
+
+            const STOP_SECTION = [
+                /^(?:project\s+teams?|proponents?|researchers?|authors?|group\s+members?|members?|team\s+members?)\s*:?$/i,
+                /^(?:project\s+manager|project\s+analyst|project\s+developer|lead|leader|programmer|developer|designer|analyst|documentarian|tester|researchers?|proponents?|authors?|members?|group\s+members?|team\s+members?)\s*:/i,
+                /^(?:year\s*(?:&|and)\s*program|program|year\s+level|section|group\s+name|group|course|subject|school\s+year|academic\s+year)\s*:/i,
+                /^(?:submitted\s+by|prepared\s+by|presented\s+by|submitted\s+to|presented\s+to|adviser|advisor|instructor|professor|date\s+submitted|submission\s+date|date)\s*:/i,
+                /^(?:abstract|background\s+of\s+the\s+study|introduction|rationale|overview|executive\s+summary|objectives?|general\s+objectives?|specific\s+objectives?|statement\s+of\s+the\s+problem|research\s+problem|problem\s+statement|methodology|scope\s+and\s+delimitation|significance\s+of\s+the\s+study|table\s+of\s+contents|chapter\s+1|chapter\s+i)\b/i,
+                /^(?:a\s+capstone\s+project|a\s+thesis|presented\s+to\s+the\s+faculty|in\s+partial\s+fulfillment)/i,
+                /^(?:by\s*:?\s*)$/i,
+                /^[\u2022\-\*]\s+/
+            ];
+
+            const topLines = lines.slice(0, 100);
+
+            for (let i = 0; i < topLines.length; i++) {
+                const line = topLines[i];
+                if (!line) continue;
+                const labelMatch = line.match(/(?:^|\b)(?:proposed\s+title|project\s+title|capstone\s+title|study\s+title|research\s+title|t\s*i\s*t\s*l\s*e|t\s*t\s*i\s*l\s*e)(?:\s*#?\s*\d+)?(?:\s*:\s*(.*)|\s*)$/i);
+                if (labelMatch) {
+                    const isExplicitColon = line.includes(":");
+                    const firstPart = (labelMatch[1] || "").trim();
+                    if (!isExplicitColon && firstPart) continue;
+                    const parts = [];
+                    if (firstPart) parts.push(firstPart);
+                    for (let j = i + 1; j < Math.min(i + 12, topLines.length); j++) {
+                        const next = topLines[j];
+                        if (!next) {
+                            if (parts.length > 0) break;
+                            continue;
+                        }
+                        if (STOP_SECTION.some(re => re.test(next)) || STRICT_FOOTER_OR_LETTERHEAD.some(re => re.test(next))) break;
+                        if (parts.join(" ").length >= 460) break;
+                        parts.push(next);
+                    }
+                    const candidate = parts.join(" ").replace(/\s+/g, " ").trim();
+                    if (candidate.length >= 4) return candidate.slice(0, 480);
+                }
+            }
+
+            const collected = [];
+            for (let i = 0; i < topLines.length; i++) {
+                const line = topLines[i];
+                if (!line) {
+                    if (collected.length > 0 && collected.join(" ").length >= 12) break;
+                    continue;
+                }
+                if (STOP_SECTION.some(re => re.test(line))) {
+                    if (collected.length > 0) break;
+                    continue;
+                }
+                if (collected.length === 0 && HEADER_ONLY_LINES.some(re => re.test(line))) {
+                    continue;
+                }
+                if (collected.length > 0 && STRICT_FOOTER_OR_LETTERHEAD.some(re => re.test(line))) {
+                    break;
+                }
+                if (line.length < 2) continue;
+
+                collected.push(line);
+                if (collected.length >= 8 || collected.join(" ").length >= 460) break;
+            }
+
+            const blockTitle = collected.join(" ").replace(/\s+/g, " ").trim();
+            if (blockTitle.length >= 6) return blockTitle.slice(0, 480);
+
+            const cleanFallback = String(fallbackName || "").replace(/\.pdf$/i, "").replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim();
+            return cleanFallback.slice(0, 480);
+        }
+
+        async function extractConceptTitleWithPdfJs(file) {
+            if (!window.pdfjsLib) return "";
+            try {
+                if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+                }
+                const buf = await file.arrayBuffer();
+                const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+                const pageHeight = viewport.height || 792;
+                const textContent = await page.getTextContent();
+
+                const rawItems = (textContent.items || []).filter(item => {
+                    const str = String(item.str || "");
+                    if (!str.trim()) return false;
+                    const y = item.transform ? item.transform[5] : null;
+                    if (y !== null && y < pageHeight * 0.08) return false;
+                    return true;
+                });
+
+                rawItems.sort((a, b) => {
+                    const ay = a.transform ? a.transform[5] : 0;
+                    const by = b.transform ? b.transform[5] : 0;
+                    if (Math.abs(by - ay) > 4) return by - ay;
+                    const ax = a.transform ? a.transform[4] : 0;
+                    const bx = b.transform ? b.transform[4] : 0;
+                    return ax - bx;
+                });
+
+                const visualLines = [];
+                for (const item of rawItems) {
+                    const str = String(item.str || "");
+                    const x = item.transform ? item.transform[4] : 0;
+                    const y = item.transform ? item.transform[5] : 0;
+                    const w = Number(item.width || 0);
+                    const h = item.height || (item.transform ? Math.abs(item.transform[3] || item.transform[0] || 12) : 12);
+
+                    const prevLine = visualLines.length ? visualLines[visualLines.length - 1] : null;
+                    if (prevLine && Math.abs(y - prevLine.y) <= Math.max(4, prevLine.h * 0.4)) {
+                        const gap = x - prevLine.endX;
+                        if (
+                            gap > Math.max(1.5, prevLine.h * 0.14) &&
+                            !prevLine.text.endsWith(" ") &&
+                            !str.startsWith(" ")
+                        ) {
+                            prevLine.text += " " + str;
+                        } else {
+                            prevLine.text += str;
+                        }
+                        prevLine.endX = Math.max(prevLine.endX, x + w);
+                        prevLine.h = Math.max(prevLine.h, h);
+                    } else {
+                        visualLines.push({ y, endX: x + w, h: Math.max(8, h), text: str });
+                    }
+                }
+
+                const outLines = [];
+                for (let idx = 0; idx < visualLines.length; idx++) {
+                    const cur = visualLines[idx];
+                    if (idx > 0) {
+                        const prev = visualLines[idx - 1];
+                        const verticalGap = prev.y - cur.y;
+                        const normalLineHeight = Math.max(prev.h, cur.h, 11);
+                        if (verticalGap > normalLineHeight * 1.9) {
+                            outLines.push("");
+                        }
+                    }
+                    const cleaned = cur.text.replace(/\s+/g, " ").trim();
+                    if (cleaned) outLines.push(cleaned);
+                }
+
+                return extractConceptTitleFromRawTextClient(outLines.join("\n"), "");
+            } catch (err) {
+                console.warn("pdf.js concept paper title extract warning:", err);
+                return "";
+            }
+        }
+
+        async function extractConceptPaperTitleFromFile(file, slotIndex) {
+            if (!file) return "";
+            // 1. Client-side pdf.js extraction (exact same algorithm as Request Adviser)
+            let extractedTitle = await extractConceptTitleWithPdfJs(file);
+
+            // 2. Fallback to backend /extract-pdf-title endpoint
+            if (!extractedTitle) {
+                try {
+                    const formData = new FormData();
+                    formData.append("proposalFile", file);
+                    const res = await fetch("/extract-pdf-title", {
+                        method: "POST",
+                        body: formData
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.success && data.title) {
+                            extractedTitle = String(data.title).trim();
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Server /extract-pdf-title fallback warning:", err);
+                }
+            }
+
+            // 3. Final fallback to cleaned PDF filename
+            if (!extractedTitle) {
+                extractedTitle = String(file.name || `Proposed Concept Paper ${slotIndex || ""}`)
+                    .replace(/\.pdf$/i, "")
+                    .replace(/[_\-]+/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            }
+
+            return extractedTitle;
         }
 
         document
@@ -4578,21 +5152,43 @@
                     return;
                 }
 
-                await uploadStudentDocumentDirect(
-                    pendingTemplateUpload.documentType,
-                    pendingTemplateUpload.documentTitle,
-                    file
-                );
-
+                const currentUpload = pendingTemplateUpload;
                 pendingTemplateUpload = null;
+
+                let finalTitle = currentUpload.documentTitle;
+
+                if (currentUpload.isProposedConceptPaper) {
+                    const ext = String(file.name || "").split(".").pop().toLowerCase();
+                    if (ext !== "pdf") {
+                        alert("Proposed concept paper (1–3) must be uploaded as a PDF file so its finalized study title can be read accurately.");
+                        return;
+                    }
+                    const readTitle = await extractConceptPaperTitleFromFile(file, currentUpload.slotIndex);
+                    if (readTitle && readTitle.trim()) {
+                        finalTitle = readTitle.trim();
+                    }
+                }
+
+                await uploadStudentDocumentDirect(
+                    currentUpload.documentType,
+                    finalTitle,
+                    file,
+                    currentUpload.isProposedConceptPaper
+                );
 
             });
 
         async function uploadStudentDocumentDirect(
             documentType,
             documentTitle,
-            selectedFile
+            selectedFile,
+            isProposedConceptPaper = false
         ) {
+            if (getFailedDefensePhase()) {
+                alert(getFailedProgressBlockMessage());
+                return;
+            }
+
             const allowedExtensions =
                 ["pdf", "doc", "docx"];
 
@@ -4625,9 +5221,18 @@
                 const data =
                     await response.json();
 
-                alert(
-                    data.message || "Upload processed."
-                );
+                if (data.success && isProposedConceptPaper) {
+                    const detected = String(data.extractedTitle || documentTitle || "").trim();
+                    alert(
+                        detected
+                            ? `${data.message || "Document uploaded successfully."}\n\nDetected Study Title:\n"${detected}"`
+                            : (data.message || "Document uploaded successfully.")
+                    );
+                } else {
+                    alert(
+                        data.message || "Upload processed."
+                    );
+                }
 
                 if (data.success) {
                     loadStudentDocuments();
@@ -4640,6 +5245,11 @@
         }
 
         function openOtherUploadModal(category) {
+            if (getFailedDefensePhase()) {
+                alert(getFailedProgressBlockMessage());
+                return;
+            }
+
             document.getElementById("otherCategory").value =
                 category || "Other";
 

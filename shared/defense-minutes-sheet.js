@@ -261,16 +261,27 @@
         const ADVISER_HEIGHT = 115;
 
         const pages = [{ items: [], usedHeight: 0, budget: PAGE1_BUDGET }];
+        const editCfg = (opts.editablePanelistComments && opts.editablePanelistComments.enabled)
+            ? opts.editablePanelistComments
+            : null;
+        const isEditablePanelSection = (panel) => {
+            if (!editCfg || !panel) return false;
+            const targetId = Number(editCfg.panelistId || 0);
+            const panelId = Number(panel.panelistId || 0);
+            if (targetId && panelId) return targetId === panelId;
+            return namesMatch(panel.name || "", editCfg.panelistName || "");
+        };
+
         panelists.forEach((panel, pIdx) => {
             const rows = Array.isArray(panel.rows) && panel.rows.length ? panel.rows : [{ pageNo: "", comments: "", actions: "" }];
             rows.forEach((row, rIdx) => {
-                const rowH = estimateRowHeight(row);
+                const rowH = estimateRowHeight(row) + (row && row._panelistDraftNew ? 28 : 0);
                 let currPage = pages[pages.length - 1];
                 if (currPage.items.length > 0 && currPage.usedHeight + rowH > currPage.budget) {
                     pages.push({ items: [], usedHeight: 0, budget: PAGEX_BUDGET });
                     currPage = pages[pages.length - 1];
                 }
-                currPage.items.push({ pIdx, rIdx, panel, row, isFirstOfPanelInTotal: rIdx === 0 });
+                currPage.items.push({ pIdx, rIdx, panel, row, isFirstOfPanelInTotal: rIdx === 0, totalRowsForPanel: rows.length });
                 currPage.usedHeight += rowH;
             });
         });
@@ -312,11 +323,56 @@
                         </td>
                     `;
                 }
+
+                const ownEditable = isEditablePanelSection(it.panel);
+                const isLastRowOfPanel = it.rIdx === (it.totalRowsForPanel - 1);
+                const isDraftNewRow = Boolean(it.row && it.row._panelistDraftNew);
+                const addBtnHtml = (ownEditable && isLastRowOfPanel)
+                    ? `<button type="button" class="dm-pan-add-comment-btn" data-dm-pan-add-pidx="${it.pIdx}"><i class="fa-solid fa-plus"></i> Add Comment / Suggestion / Recommendation</button>`
+                    : "";
+
+                let commentCellHtml;
+                if (ownEditable && isDraftNewRow) {
+                    commentCellHtml = `
+                        <td class="dm-text-cell dm-own-panel-editing">
+                            <div class="dm-pan-new-comment-wrap">
+                                <textarea class="dm-pan-inline-textarea"
+                                    data-dm-pan-edit-pidx="${it.pIdx}"
+                                    data-dm-pan-edit-ridx="${it.rIdx}"
+                                    rows="2"
+                                    placeholder="Type additional comment, suggestion, or recommendation...">${esc(it.row.comments || "")}</textarea>
+                                <button type="button" class="dm-pan-remove-comment-btn"
+                                    data-dm-pan-del-pidx="${it.pIdx}"
+                                    data-dm-pan-del-ridx="${it.rIdx}"
+                                    title="Remove added comment" aria-label="Remove added comment">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                            <div class="dm-pan-added-pill"><i class="fa-solid fa-pen-to-square"></i> New (Revision / Reject)</div>
+                            ${addBtnHtml}
+                        </td>
+                    `;
+                } else if (isDraftNewRow) {
+                    commentCellHtml = `
+                        <td class="dm-text-cell dm-own-panel-added-preview">
+                            ${formatBullets(it.row.comments)}
+                            <div class="dm-pan-added-pill"><i class="fa-solid fa-plus-circle"></i> Added for Revision / Reject</div>
+                        </td>
+                    `;
+                } else {
+                    commentCellHtml = `
+                        <td class="dm-text-cell${ownEditable ? " dm-own-panel-editing" : ""}">
+                            ${formatBullets(it.row.comments)}
+                            ${addBtnHtml}
+                        </td>
+                    `;
+                }
+
                 return `
                     <tr>
                         ${panelistCell}
                         <td class="dm-page-cell">${esc(it.row.pageNo || "")}</td>
-                        <td class="dm-text-cell">${formatBullets(it.row.comments)}</td>
+                        ${commentCellHtml}
                         <td class="dm-text-cell">${formatBullets(it.row.actions)}</td>
                     </tr>
                 `;
@@ -368,6 +424,49 @@
         }
 
         containerEl.innerHTML = html;
+
+        if (editCfg) {
+            const autoSizeTa = (ta) => {
+                if (!ta) return;
+                ta.style.height = "auto";
+                ta.style.height = Math.max(38, ta.scrollHeight) + "px";
+            };
+            containerEl.querySelectorAll(".dm-pan-inline-textarea").forEach((ta) => {
+                ta.addEventListener("input", () => {
+                    autoSizeTa(ta);
+                    if (typeof editCfg.onChangeComment === "function") {
+                        editCfg.onChangeComment(
+                            Number(ta.getAttribute("data-dm-pan-edit-pidx")),
+                            Number(ta.getAttribute("data-dm-pan-edit-ridx")),
+                            ta.value
+                        );
+                    }
+                });
+            });
+            containerEl.querySelectorAll(".dm-pan-add-comment-btn").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (typeof editCfg.onAddRow === "function") {
+                        editCfg.onAddRow(Number(btn.getAttribute("data-dm-pan-add-pidx")));
+                    }
+                });
+            });
+            containerEl.querySelectorAll(".dm-pan-remove-comment-btn").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (typeof editCfg.onRemoveRow === "function") {
+                        editCfg.onRemoveRow(
+                            Number(btn.getAttribute("data-dm-pan-del-pidx")),
+                            Number(btn.getAttribute("data-dm-pan-del-ridx"))
+                        );
+                    }
+                });
+            });
+            requestAnimationFrame(() => {
+                containerEl.querySelectorAll(".dm-pan-inline-textarea").forEach(autoSizeTa);
+            });
+        }
+
         observeViewportResize(containerEl);
         requestAnimationFrame(() => fitPagesToViewport(containerEl));
         return {

@@ -11,7 +11,7 @@
     >
 
     <title>
-        Assigned Capstone Groups | CMS</title>
+        Capstone Groups | CMS</title>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -126,7 +126,6 @@
             font-weight: 600;
         }
         .view-dm-sheet-btn {
-            margin-top: 6px;
             border: none;
             background: linear-gradient(135deg, #059669 0%, #10b981 100%);
             color: #ffffff;
@@ -138,151 +137,58 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            white-space: nowrap;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .view-dm-sheet-btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 5px 14px rgba(16, 185, 129, 0.28);
         }
-        .group-card.has-ongoing-defense {
-            border: 2px solid #10b981 !important;
-            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.16) !important;
-        }
-        .ongoing-defense-banner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-            border: 1px solid #6ee7b7;
-            color: #065f46;
-            border-radius: 12px;
-            padding: 8px 12px;
-            margin-bottom: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .ongoing-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #10b981;
-            display: inline-block;
-            flex-shrink: 0;
-            animation: ongoingPulse 1.4s infinite;
-        }
-        @keyframes ongoingPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
-            50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-        }
-        .card-actions-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
-        .card-actions-row .view-group-btn {
-            flex: 1;
-            margin-top: 0 !important;
-        }
-        .minutes-btn {
-            flex: 1;
-            border: none;
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-            color: #fff;
-            padding: 11px 14px;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
+        .status-badge.actual-status-badge {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 7px;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .minutes-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
-        }
-        .panel-minutes-card {
-            background: #faf8ff;
-            border: 1px solid #e9d5ff;
-            border-radius: 16px;
-            padding: 14px 16px;
-            margin-bottom: 14px;
-        }
-        .panel-minutes-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 10px;
-        }
-        .panel-role-badge {
-            background: #7c3aed;
-            color: #fff;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 10px;
+            gap: 5px;
+            padding: 5px 11px;
             border-radius: 999px;
-            letter-spacing: 0.4px;
-        }
-        .bullet-list-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-        .bullet-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .bullet-marker {
-            color: #7c3aed;
-            font-weight: 800;
-            font-size: 16px;
-            line-height: 1;
-        }
-        .bullet-input {
-            flex: 1;
-            padding: 8px 11px;
-            border-radius: 10px;
-            border: 1px solid #ddd6fe;
-            background: #fff;
-            font-size: 13px;
-            color: #1f2937;
-            outline: none;
-        }
-        .bullet-input:focus {
-            border-color: #7c3aed;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
-        }
-        .remove-bullet-btn {
-            border: none;
-            background: #fee2e2;
-            color: #dc2626;
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            cursor: pointer;
+            font-size: 11.5px;
             font-weight: 700;
-        }
-        .add-bullet-row {
-            display: flex;
-            gap: 8px;
-        }
-        .add-bullet-btn {
-            border: none;
-            background: #ede9fe;
-            color: #5b21b6;
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 12.5px;
-            font-weight: 600;
-            cursor: pointer;
+            line-height: 1.3;
             white-space: nowrap;
+        }
+        .status-badge.actual-status-badge.st-passed { background: #dcfce7 !important; color: #15803d !important; }
+        .status-badge.actual-status-badge.st-revision { background: #fef3c7 !important; color: #b45309 !important; }
+        .status-badge.actual-status-badge.st-conditional { background: #f3e8ff !important; color: #6d28d9 !important; }
+        .status-badge.actual-status-badge.st-redefense { background: #ffedd5 !important; color: #c2410c !important; }
+        .status-badge.actual-status-badge.st-failed { background: #fee2e2 !important; color: #dc2626 !important; }
+        .status-badge.actual-status-badge.st-scheduled { background: #dbeafe !important; color: #1d4ed8 !important; }
+        .status-badge.actual-status-badge.st-ongoing { background: #ede9fe !important; color: #5b21b6 !important; }
+        .status-badge.actual-status-badge.st-pending { background: #f1f5f9 !important; color: #475569 !important; }
+        .admin-portal .admin-main .table-wrapper {
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+        }
+        .admin-portal .admin-main .group-table th,
+        .admin-portal .admin-main .group-table td {
+            padding: 14px 12px;
+        }
+        .admin-portal .admin-main .table-controls .search-box {
+            width: 240px;
+            max-width: 100%;
+            padding: 10px 14px;
+            border-radius: 14px;
+        }
+        .admin-portal .admin-main .table-controls .search-box input[type="text"] {
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            width: 100%;
+            min-width: 0;
+        }
+        .admin-portal .admin-main .table-controls .table-filter-select {
+            padding: 10px 12px;
+            border-radius: 14px;
+            font-size: 13px;
         }
     </style>
 </head>
@@ -420,10 +326,10 @@
         <div class="topbar">
 
             <div class="welcome">
-                <h1>Assigned Capstone Groups</h1>
+                <h1>Capstone Groups</h1>
 
                 <p>
-                    View and monitor the capstone groups currently assigned to you as adviser.
+                    Monitor group progress, view members, and review approved documents for your assigned capstone groups.
                 </p>
             </div>
 
@@ -436,7 +342,7 @@
 
             <div class="stat-card">
                 <div class="stat-icon purple">
-                    <i class="fa-solid fa-layer-group"></i>
+                    <i class="fa-solid fa-users-gear"></i>
                 </div>
 
                 <div>
@@ -468,22 +374,6 @@
 
             <div class="stat-card">
                 <div class="stat-icon yellow">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </div>
-
-                <div>
-                    <h2 id="totalProposals">
-                        0
-                    </h2>
-
-                    <p>
-                        Title Proposals
-                    </p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon green">
                     <i class="fa-solid fa-chart-line"></i>
                 </div>
 
@@ -500,72 +390,89 @@
 
         </div>
 
-        <!-- TOOLBAR -->
-        <div class="toolbar">
+        <!-- TABLE CARD -->
+        <section class="table-card">
 
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
+            <div class="table-header">
 
-                <input
-                    type="text"
-                    id="searchGroup"
-                    placeholder="Search assigned group..."
-                    onkeyup="filterGroups()"
-                >
+                <div class="card-title">
+                    <div class="icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+
+                    <div>
+                        <h2>
+                            Group Records
+                        </h2>
+
+                        <p>
+                            View your assigned student capstone groups and monitor defense progress.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="table-controls">
+                    <select id="programFilter" class="table-filter-select" onchange="filterGroups()">
+                        <option value="All">All Programs</option>
+                        <option value="IS">BSIS</option>
+                        <option value="IT">BSIT</option>
+                    </select>
+
+                    <select id="statusFilter" class="table-filter-select" onchange="filterGroups()">
+                        <option value="All">All Status</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Scheduled">Scheduled</option>
+                        <option value="Ongoing">Ongoing</option>
+                        <option value="Passed">Passed</option>
+                        <option value="Passed with Revisions">Passed with Revisions</option>
+                        <option value="Conditional Passed">Conditional Passed</option>
+                        <option value="For Formal Defense">For Formal Defense</option>
+                        <option value="Failed">Failed</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+
+                        <input
+                            type="text"
+                            id="searchGroup"
+                            placeholder="Search group..."
+                            onkeyup="filterGroups()"
+                        >
+                    </div>
+                </div>
+
             </div>
 
-            <select
-                id="programFilter"
-                onchange="filterGroups()"
-            >
-                <option value="All">
-                    All Programs
-                </option>
+            <div class="table-wrapper">
 
-                <option value="IS">
-                    BSIS
-                </option>
+                <table class="group-table">
 
-                <option value="IT">
-                    BSIT
-                </option>
-            </select>
+                    <thead>
+                        <tr>
+                            <th>Group ID</th>
+                            <th>Group Name</th>
+                            <th>Program</th>
+                            <th>Project Manager</th>
+                            <th>Members</th>
+                            <th>Stage</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
-            <select
-                id="statusFilter"
-                onchange="filterGroups()"
-            >
-                <option value="All">
-                    All Status
-                </option>
+                    <tbody id="groupTableBody">
+                        <tr>
+                            <td colspan="9">
+                                Loading assigned capstone groups...
+                            </td>
+                        </tr>
+                    </tbody>
 
-                <option value="Active">
-                    Active
-                </option>
+                </table>
 
-                <option value="Pending">
-                    Pending
-                </option>
-
-                <option value="Completed">
-                    Completed
-                </option>
-
-                <option value="Inactive">
-                    Inactive
-                </option>
-            </select>
-
-        </div>
-
-        <!-- GROUP GRID -->
-        <section
-            class="group-grid"
-            id="groupGrid"
-        >
-
-            <div class="empty-card">
-                Loading assigned groups...
             </div>
 
         </section>
@@ -575,7 +482,7 @@
     <!-- VIEW MODAL -->
     <div
         class="modal-overlay"
-        id="groupModal"
+        id="viewModal"
     >
 
         <div class="modal-box large-modal">
@@ -583,18 +490,18 @@
             <div class="modal-header">
 
                 <div>
-                    <h2 id="modalGroupName">
+                    <h2 id="viewGroupName">
                         Group Details
                     </h2>
 
-                    <p id="modalGroupId">
-                        GRP2026-0000
+                    <p id="viewGroupId">
+                        Group ID
                     </p>
                 </div>
 
                 <button
                     class="close-modal-btn"
-                    onclick="closeGroupModal()"
+                    onclick="closeViewModal()"
                     type="button"
                 >
                     <i class="fa-solid fa-xmark"></i>
@@ -606,113 +513,65 @@
 
                 <div class="detail-card">
                     <span>Project Title</span>
-                    <h3 id="modalProjectTitle">Not Set</h3>
+                    <h3 id="viewProjectTitle">Not Set</h3>
                 </div>
 
                 <div class="detail-card">
                     <span>Program</span>
-                    <h3 id="modalProgram">Not Set</h3>
-                </div>
-
-                <div class="detail-card">
-                    <span>Project Manager</span>
-                    <h3 id="modalProjectManager">Not Set</h3>
-                </div>
-
-                <div class="detail-card">
-                    <span>Status</span>
-                    <h3 id="modalStatus">Active</h3>
+                    <h3 id="viewProgram">Not Set</h3>
                 </div>
 
                 <div class="detail-card">
                     <span>Stage</span>
-                    <h3 id="modalStage">Stage 1</h3>
+                    <h3 id="viewStage">Not Set</h3>
                 </div>
 
                 <div class="detail-card">
                     <span>Progress</span>
-                    <h3 id="modalProgress">0%</h3>
+                    <h3 id="viewProgress">0%</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Status</span>
+                    <h3 id="viewStatus">Not Set</h3>
+                </div>
+
+                <div class="detail-card">
+                    <span>Project Manager</span>
+                    <h3 id="viewProjectManager">Not Set</h3>
                 </div>
 
             </div>
 
             <!-- WORKFLOW TRACKER -->
             <div class="modal-section-tracker" style="margin-top: 25px; margin-bottom: 25px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
-                <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Capstone Stage Progress</h3>
-                <p id="modalRecordsNote" style="color: #6d5f85; font-size: 13px; margin-bottom: 15px;"></p>
+                <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin-bottom: 15px;">Capstone Stage Progress</h3>
                 <div class="workflow-tracker">
-                    <div class="workflow-steps" id="modalWorkflowSteps">
-                        <p style="color:#6d5f85;text-align:center;padding:12px;">Loading stage progress...</p>
+                    <div class="workflow-steps" id="workflowSteps">
+                        <div style="text-align:center;color:#7b6f96;padding:20px 0;width:100%">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size:18px;color:#7c3aed;"></i>
+                            <p style="margin-top:10px;font-size:12px;">Loading progress...</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="section-box">
-
-                <h3>
-                    Group Members
-                </h3>
-
-                <div
-                    class="member-list"
-                    id="modalMembers"
-                >
-                    Loading members...
+            <!-- APPROVED DEFENSE MINUTES -->
+            <div class="document-section" style="margin-top: 25px; margin-bottom: 20px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
+                <div style="margin-bottom: 14px;">
+                    <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin: 0;">Approved Defense Minutes</h3>
+                    <p style="color: #7b6f96; font-size: 12.5px; margin: 4px 0 0;">Fully signed and approved defense minutes from Student Records Management.</p>
                 </div>
-
+                <div id="modalApprovedDefenseMinutesList" style="display: flex; flex-direction: column; gap: 10px;">
+                    Loading approved defense minutes...
+                </div>
             </div>
 
-            <div class="section-box">
-
-                <h3>
-                    Proposed Capstone Titles
-                </h3>
-
-                <p class="section-note">
-                    These are the title proposal PDFs submitted before adviser assignment.
-                </p>
-
-                <div
-                    class="proposal-list"
-                    id="modalProposals"
-                >
-                    Loading title proposals...
-                </div>
-
-            </div>
-
-            <div class="section-box">
-
-                <h3>
-                    Defense Minutes
-                </h3>
-
-                <p class="section-note">
-                    View approved e-signed defense minutes (from Student Records Management) as well as draft or adviser-created notes.
-                </p>
-
-                <div
-                    class="proposal-list"
-                    id="modalDefenseMinutes"
-                >
-                    Loading defense minutes...
-                </div>
-
-            </div>
-
-            <div class="section-box">
-
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
-                    <div>
-                        <h3 style="margin:0;">
-                            Approved Documents
-                        </h3>
-                        <p class="section-note" style="margin:4px 0 0;">
-                            All approved consultation and defense documents submitted by this group.
-                        </p>
-                    </div>
-                    <select id="adviserDocPhaseFilter" onchange="renderAdviserModalApprovedDocs()"
-                        style="padding:7px 12px; border-radius:10px; border:1px solid #d8b4fe; background:white; color:#2e1065; font-size:12.5px; font-weight:600; outline:none; cursor:pointer;">
+            <!-- APPROVED DOCUMENTS -->
+            <div class="document-section" style="margin-top: 25px; margin-bottom: 25px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 12px; flex-wrap: wrap;">
+                    <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin: 0;">Approved Documents</h3>
+                    <select id="docFilter" onchange="filterModalDocuments()" style="padding: 6px 12px; border-radius: 10px; border: 1px solid #ece3ff; background: white; color: #2e1065; font-size: 13px; outline: none; font-weight: 500;">
                         <option value="all">All Phases</option>
                         <option value="Concept Presentation">Concept Presentation</option>
                         <option value="Outline Defense">Outline Defense</option>
@@ -720,65 +579,34 @@
                         <option value="Final Defense">Final Defense</option>
                     </select>
                 </div>
-
-                <div
-                    class="proposal-list"
-                    id="modalApprovedDocs"
-                >
-                    Loading approved documents...
+                <div id="modalDocumentsList" style="display: flex; flex-direction: column; gap: 10px;">
+                    Loading documents...
                 </div>
-
             </div>
 
-            <div class="modal-actions">
+            <!-- PROPOSED CAPSTONE TITLES -->
+            <div class="document-section" style="margin-top: 25px; margin-bottom: 25px; padding: 20px; background: #faf8ff; border-radius: 20px; border: 1px solid #ece3ff;">
+                <div style="margin-bottom: 14px;">
+                    <h3 style="color: #2e1065; font-size: 16px; font-weight: 600; margin: 0;">Proposed Capstone Titles</h3>
+                    <p style="color: #7b6f96; font-size: 12.5px; margin: 4px 0 0;">Title proposal PDFs submitted by this capstone group.</p>
+                </div>
+                <div id="modalProposals" style="display: flex; flex-direction: column; gap: 10px;">
+                    Loading title proposals...
+                </div>
+            </div>
 
-                <button
-                    class="close-action-btn"
-                    onclick="closeGroupModal()"
-                    type="button"
-                >
-                    Close
-                </button>
+            <div class="member-section">
+                <h3>
+                    Group Members
+                </h3>
 
+                <div id="viewMembersList">
+                    Loading members...
+                </div>
             </div>
 
         </div>
 
-    </div>
-
-    <!-- DEFENSE MINUTES MODAL -->
-    <div class="modal-overlay" id="defenseMinutesModal" style="display:none; z-index:9999;">
-        <div class="modal-box large-modal" style="max-width:780px; width:95%;">
-            <div class="modal-header">
-                <div>
-                    <h2 id="minutesModalTitle" style="margin:0 0 2px;">Add Defense Minutes</h2>
-                    <p id="minutesModalSubtitle" style="margin:0; color:#64748b; font-size:13px;">Record bulleted notes per panelist during the on-going defense.</p>
-                </div>
-                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesModal()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div id="minutesPanelCardsContainer" style="max-height:60vh; overflow-y:auto; padding-right:4px;"></div>
-
-                    <div id="minutesReviewControls" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #e2e8f0;">
-                        <label style="display:block; font-size:12.5px; font-weight:700; color:#2e1065; margin-bottom:6px;">Adviser Feedback / Remarks (required if rejecting)</label>
-                        <textarea id="minutesReviewFeedback" rows="2" placeholder="Optional feedback on approval, or reason for rejection..." style="width:100%; padding:9px 12px; border-radius:10px; border:1px solid #ddd6fe; font-family:inherit; font-size:13px;"></textarea>
-                    </div>
-
-                    <div class="modal-actions" style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
-                        <button type="button" class="close-action-btn" onclick="closeDefenseMinutesModal()">Cancel</button>
-                        <button type="button" id="rejectMinutesBtn" onclick="submitStudentMinutesReview('Rejected')" style="display:none; border:none; background:#fee2e2; color:#dc2626; padding:11px 18px; border-radius:12px; font-weight:600; cursor:pointer;">
-                            <i class="fa-solid fa-ban"></i> Reject
-                        </button>
-                        <button type="button" id="approveMinutesBtn" onclick="submitStudentMinutesReview('Approved')" style="display:none; border:none; background:linear-gradient(135deg,#059669,#10b981); color:#fff; padding:11px 20px; border-radius:12px; font-weight:600; cursor:pointer;">
-                            <i class="fa-solid fa-check"></i> Approve Minutes
-                        </button>
-                        <button type="button" id="saveMinutesBtn" onclick="saveDefenseMinutes()" style="border:none; background:linear-gradient(135deg,#059669,#10b981); color:#fff; padding:11px 20px; border-radius:12px; font-weight:600; cursor:pointer;">
-                            <i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes
-                        </button>
-                    </div>
-        </div>
     </div>
 
     <!-- APPROVED DEFENSE MINUTES SHEET VIEWER MODAL -->
@@ -836,7 +664,7 @@
                         <button type="button" onclick="printApprovedDefenseMinutes()" style="border:none; background:linear-gradient(135deg,#7c3aed,#9333ea); color:#fff; padding:11px 16px; border-radius:12px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
                             <i class="fa-solid fa-print"></i> Print / Save as PDF
                         </button>
-                        <button type="button" class="close-action-btn" onclick="closeApprovedDmViewerModal()" style="width:100%;">
+                        <button type="button" class="cancel-btn" onclick="closeApprovedDmViewerModal()" style="width:100%;">
                             Close
                         </button>
                     </div>
@@ -851,8 +679,34 @@
             localStorage.getItem("userId");
 
         let assignedGroups = [];
+        let groupDocuments = [];
+        let activeAdviserApprovedDms = [];
+        let activeViewingGroup = null;
 
-        const CAPSTONE_STAGES = [
+        function formatProgramLabel(prog) {
+            if (!prog) return "Not Set";
+            const p = String(prog).trim();
+            if (p === "IS") return "BSIS";
+            if (p === "IT") return "BSIT";
+            return p;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            if (Number.isNaN(d.getTime())) return String(dateStr);
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        const STAGES = [
             {
                 key: "Concept Presentation",
                 label: "Concept Presentation",
@@ -891,7 +745,7 @@
             }
         ];
 
-        function stageToCompletedIndex(stage){
+        function stageToCompletedIndex(stage) {
             const map = {
                 "Stage 1": 0,
                 "Stage 2": 1,
@@ -902,17 +756,16 @@
                 "Final": 4,
                 "Completed": 6
             };
-
             return map[stage] ?? 0;
         }
 
-        function isAllDefenseCompleted(group, defenses){
+        function isAllDefenseCompleted(group, defenses) {
             if (!group) return false;
             const stageStr = String(group.stage || "").trim().toLowerCase();
             return stageStr === "completed";
         }
 
-        function getCompletedStageCount(group, defenses){
+        function getCompletedStageCount(group, defenses) {
             if (!group) return 0;
             if (isAllDefenseCompleted(group, defenses)) return 6;
             let count = stageToCompletedIndex(group.stage || "Stage 1");
@@ -928,13 +781,13 @@
             return count;
         }
 
-        function getStageProgressPercent(group, defenses){
+        function getStageProgressPercent(group, defenses) {
             if (!group) return 0;
             if (isAllDefenseCompleted(group, defenses)) return 100;
             return Math.min(getCompletedStageCount(group, defenses) * 20, 80);
         }
 
-        function getActiveStageLabel(stage, group){
+        function getActiveStageLabel(stage, group) {
             if (isAllDefenseCompleted(group) || stage === "Completed") {
                 return "Completed";
             }
@@ -946,123 +799,349 @@
                 "Deployment",
                 "Completed"
             ];
-
-            const index =
-                group ? getCompletedStageCount(group, group.defenses) : stageToCompletedIndex(stage || "Stage 1");
-
+            const index = group ? getCompletedStageCount(group, group.defenses) : stageToCompletedIndex(stage || "Stage 1");
             if (index >= 5) return "Completed";
-
             return labels[index] || "Concept Presentation";
         }
 
-        function formatTrackerDate(dateStr){
-            if(!dateStr){
-                return "";
+        function getGroupActualStatus(group) {
+            if (!group) return { label: "In Progress", cls: "st-pending" };
+            const stageStr = String(group.stage || "").trim().toLowerCase();
+            if (stageStr === "completed" || String(group.status || "").trim().toLowerCase() === "completed") {
+                return { label: "Completed", cls: "st-passed" };
             }
 
-            return new Date(dateStr).toLocaleDateString(
-                "en-US",
-                {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric"
+            const defs = (Array.isArray(group.defenses) ? group.defenses : [])
+                .filter(d => String(d.defense_status || "").trim().toLowerCase() !== "cancelled")
+                .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+
+            if (defs.length > 0) {
+                const latest = defs[0];
+                const dType = String(latest.defense_type || "Defense").trim();
+                const dStat = String(latest.defense_status || "").trim();
+                const dStatLower = dStat.toLowerCase();
+                const result = String(latest.panel_result || "").trim();
+                const resLower = result.toLowerCase();
+
+                if (dStatLower === "completed" && result) {
+                    let cls = "st-passed";
+                    if (resLower === "failed" || resLower === "disapproved") cls = "st-failed";
+                    else if (resLower.includes("formal") || resLower.includes("re-defense") || resLower.includes("redefense")) cls = "st-redefense";
+                    else if (resLower.includes("conditional")) cls = "st-conditional";
+                    else if (resLower.includes("revision")) cls = "st-revision";
+                    return { label: `${dType} - ${result}`, cls };
                 }
-            );
+
+                let isHappening = dStatLower === "ongoing";
+                if (!isHappening && latest.defense_date && latest.start_time && latest.end_time) {
+                    const ds = String(latest.defense_date).slice(0, 10);
+                    const sDt = new Date(`${ds}T${String(latest.start_time).slice(0, 5)}:00`);
+                    const eDt = new Date(`${ds}T${String(latest.end_time).slice(0, 5)}:00`);
+                    const now = new Date();
+                    if (!isNaN(sDt.getTime()) && !isNaN(eDt.getTime()) && now >= sDt && now <= eDt) {
+                        isHappening = true;
+                    }
+                }
+                if (isHappening) {
+                    return { label: `${dType} - Ongoing`, cls: "st-ongoing" };
+                }
+                if (dStatLower === "scheduled") {
+                    return { label: `${dType} - Scheduled`, cls: "st-scheduled" };
+                }
+                return { label: `${dType} - ${dStat || "Evaluated"}`, cls: "st-passed" };
+            }
+
+            const stageMap = {
+                "stage 1": "Concept Presentation",
+                "stage 2": "Outline Defense",
+                "stage 3": "Pre-Final Defense",
+                "stage 4": "Final Defense",
+                "stage 5": "Deployment",
+                "deployment": "Deployment",
+                "final": "Final Defense"
+            };
+            const phaseLabel = stageMap[stageStr] || "Concept Presentation";
+            return { label: `${phaseLabel} - In Progress`, cls: "st-pending" };
         }
 
-        function buildDefenseMap(defenses){
-            const defenseMap = {};
+        function syncProgramFilterOptions() {
+            const select = document.getElementById("programFilter");
+            if (!select) return;
+            const prev = select.value || "All";
+            const seen = new Set(["IS", "IT"]);
+            const extras = [];
+            assignedGroups.forEach(g => {
+                const raw = String(g.program || "").trim();
+                if (raw && !seen.has(raw)) {
+                    seen.add(raw);
+                    extras.push(raw);
+                }
+            });
+            select.innerHTML = `
+                <option value="All">All Programs</option>
+                <option value="IS">BSIS</option>
+                <option value="IT">BSIT</option>
+                ${extras.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("")}
+            `;
+            select.value = Array.from(select.options).some(o => o.value === prev) ? prev : "All";
+        }
 
-            (defenses || []).forEach(defense => {
-                defenseMap[defense.defense_type] = defense;
+        async function loadAssignedGroups() {
+            if (!loggedInUserId) {
+                renderGroups([]);
+                return;
+            }
+            try {
+                const [response, schedRes] = await Promise.all([
+                    fetch(`/adviser-capstone-groups/${encodeURIComponent(loggedInUserId)}`),
+                    fetch("/defense-schedules").catch(() => null)
+                ]);
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    renderGroups([]);
+                    alert(data.message || "Failed to load assigned groups.");
+                    return;
+                }
+
+                let allScheds = [];
+                try {
+                    if (schedRes && schedRes.ok) {
+                        const schedData = await schedRes.json();
+                        if (schedData && schedData.success && Array.isArray(schedData.schedules)) {
+                            allScheds = schedData.schedules;
+                        }
+                    }
+                } catch (_) { }
+
+                assignedGroups = (data.groups || []).map(g => {
+                    const gid = g.group_db_id || g.id;
+                    const gDefenses = Array.isArray(g.defenses) && g.defenses.length > 0
+                        ? g.defenses
+                        : allScheds.filter(s =>
+                            Number(s.group_db_id || s.group_id) === Number(gid)
+                            || (g.group_id && String(s.group_id) === String(g.group_id))
+                        );
+                    return { ...g, defenses: gDefenses };
+                });
+
+                syncProgramFilterOptions();
+                updateStats();
+                filterGroups();
+            } catch (error) {
+                console.log(error);
+                alert("Cannot connect to server.");
+            }
+        }
+
+        function updateStats() {
+            const total = assignedGroups.length;
+            const totalMembers = assignedGroups.reduce(
+                (sum, group) => sum + (Array.isArray(group.members) ? group.members.length : 0),
+                0
+            );
+            const averageProgress = total === 0
+                ? 0
+                : Math.round(
+                    assignedGroups.reduce(
+                        (sum, group) => sum + getStageProgressPercent(group, group.defenses),
+                        0
+                    ) / total
+                );
+
+            document.getElementById("totalGroups").innerText = total;
+            document.getElementById("totalMembers").innerText = totalMembers;
+            document.getElementById("averageProgress").innerText = `${averageProgress}%`;
+        }
+
+        function renderGroups(list) {
+            const table = document.getElementById("groupTableBody");
+            table.innerHTML = "";
+
+            if (list.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            No assigned capstone groups found.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            list.forEach(group => {
+                const programText = formatProgramLabel(group.program);
+                const actualStatus = getGroupActualStatus(group);
+                const isFinished = isAllDefenseCompleted(group, group.defenses);
+                const activeStage = isFinished ? "Completed" : getActiveStageLabel(group.stage, group);
+                const ongoing = group.ongoing_defense || null;
+                const safeGroupId = escapeHtml(group.group_id).replace(/'/g, "\\'");
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${escapeHtml(group.group_id)}</td>
+
+                    <td>
+                        <strong>${escapeHtml(group.group_name || "Not Set")}</strong>
+                        <small>${escapeHtml(group.project_title || "No project title")}</small>
+                        ${ongoing ? `
+                            <div class="ongoing-inline-pill">
+                                <span class="ongoing-dot"></span>
+                                On-Going: ${escapeHtml(ongoing.defense_type || "Defense")}
+                            </div>
+                        ` : ""}
+                    </td>
+
+                    <td>
+                        <span class="program-badge">
+                            ${escapeHtml(programText)}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(group.project_manager_name || "Not Set")}
+                        <small>${escapeHtml(group.project_manager_user_id || "")}</small>
+                    </td>
+
+                    <td>
+                        ${Array.isArray(group.members) ? group.members.length : 0}
+                    </td>
+
+                    <td>
+                        <span class="stage-pill">
+                            ${escapeHtml(activeStage)}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${getStageProgressPercent(group, group.defenses)}%
+                    </td>
+
+                    <td>
+                        <span class="status-badge actual-status-badge ${actualStatus.cls}">
+                            ${escapeHtml(actualStatus.label)}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="action-buttons">
+                            <button
+                                class="view-btn"
+                                onclick="openViewModal('${safeGroupId}')"
+                                title="View group details"
+                                type="button"
+                            >
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                table.appendChild(row);
+            });
+        }
+
+        function filterGroups() {
+            const keyword = (document.getElementById("searchGroup").value || "").toLowerCase();
+            const program = document.getElementById("programFilter").value;
+            const status = document.getElementById("statusFilter").value;
+
+            const filtered = assignedGroups.filter(group => {
+                const actualStatusLabel = getGroupActualStatus(group).label;
+
+                const matchesKeyword =
+                    String(group.group_id || "").toLowerCase().includes(keyword)
+                    || String(group.group_name || "").toLowerCase().includes(keyword)
+                    || String(group.project_title || "").toLowerCase().includes(keyword)
+                    || String(group.program || "").toLowerCase().includes(keyword)
+                    || formatProgramLabel(group.program).toLowerCase().includes(keyword)
+                    || String(group.project_manager_name || "").toLowerCase().includes(keyword)
+                    || actualStatusLabel.toLowerCase().includes(keyword);
+
+                const matchesProgram =
+                    program === "All"
+                    || String(group.program || "").trim() === program;
+
+                const matchesStatus =
+                    status === "All"
+                    || actualStatusLabel.toLowerCase().includes(status.toLowerCase())
+                    || String(group.status || "").toLowerCase() === status.toLowerCase();
+
+                return matchesKeyword && matchesProgram && matchesStatus;
             });
 
-            return defenseMap;
+            renderGroups(filtered);
         }
 
-        function buildTrackerStepHtml(stageObj, state, defenseRecord, isLast, allDefensesMap){
+        function buildStepHtml(stageObj, state, defenseRecord, isLast, allDefensesMap) {
             let badgeClass = "not-started";
             let badgeLabel = "Not Started";
             let remark = stageObj.pendingRemark;
 
-            if(stageObj.key === "Completed"){
-                if(state === "completed" || state === "active"){
+            if (stageObj.key === "Completed") {
+                if (state === "completed" || state === "active") {
                     badgeClass = "approved";
                     badgeLabel = "Completed";
                     const finalDef = allDefensesMap ? allDefensesMap["Final Defense"] : null;
                     remark = finalDef?.defense_date
-                        ? `All defense stages completed • Finished ${formatTrackerDate(finalDef.defense_date)}`
+                        ? `All defense stages completed • Finished ${formatDate(finalDef.defense_date)}`
                         : "All defense stages completed successfully";
-                }else{
+                } else {
                     badgeClass = "not-started";
                     badgeLabel = "Pending";
                     remark = "Pending Deployment completion";
                 }
-            }else if(stageObj.key === "Deployment" && state === "active"){
-                badgeClass = "for-adviser";
+            } else if (stageObj.key === "Deployment" && state === "active") {
+                badgeClass = "scheduled";
                 badgeLabel = "In Progress";
                 remark = "Upload deployment requirements in Records Management";
-            }else if(state === "completed"){
+            } else if (state === "completed") {
                 const result = defenseRecord?.panel_result || "";
-
-                if(result === "Passed"){
-                    badgeClass = "approved";
-                    badgeLabel = "Passed";
-                }else if(result === "Passed with Revisions"){
-                    badgeClass = "for-adviser";
-                    badgeLabel = "Passed w/ Revisions";
-                }else{
-                    badgeClass = "approved";
-                    badgeLabel = "Completed";
+                if (result === "Passed") {
+                    badgeClass = "approved"; badgeLabel = "Passed";
+                } else if (result === "Passed with Revisions") {
+                    badgeClass = "approved"; badgeLabel = "Passed w/ Revisions";
+                } else {
+                    badgeClass = "approved"; badgeLabel = "Completed";
                 }
-
                 remark = defenseRecord?.defense_date
-                    ? `Completed on ${formatTrackerDate(defenseRecord.defense_date)}`
+                    ? `Completed on ${formatDate(defenseRecord.defense_date)}`
                     : "Completed";
-
-            }else if(state === "active"){
-
-                if(defenseRecord){
-
-                    if(defenseRecord.defense_status === "Completed"){
+            } else if (state === "active") {
+                if (defenseRecord) {
+                    if (defenseRecord.defense_status === "Completed") {
                         const result = defenseRecord.panel_result || "";
-
-                        if(result === "Failed" || result === "Disapproved"){
-                            badgeClass = "for-revision";
-                            badgeLabel = "For Revision";
-                            remark = `Result: ${result} — ${formatTrackerDate(defenseRecord.defense_date)}`;
-                        }else{
-                            badgeClass = "approved";
-                            badgeLabel = "Evaluated";
-                            remark = `Evaluated on ${formatTrackerDate(defenseRecord.defense_date)}`;
+                        if (result === "Failed" || result === "Disapproved") {
+                            badgeClass = "for-revision"; badgeLabel = "For Revision";
+                            remark = `Result: ${result} — ${formatDate(defenseRecord.defense_date)}`;
+                        } else if (result === "Conditional Passed" || result === "Conditional Pass") {
+                            badgeClass = "for-revision"; badgeLabel = "Conditional Passed";
+                            remark = `Result: Conditional Passed — ${formatDate(defenseRecord.defense_date)}`;
+                        } else if (result === "For Re-Defense" || result === "For Formal Defense") {
+                            badgeClass = "for-revision"; badgeLabel = "For Formal Defense";
+                            remark = `Result: For Formal Defense — ${formatDate(defenseRecord.defense_date)}`;
+                        } else {
+                            badgeClass = "approved"; badgeLabel = "Evaluated";
+                            remark = `Evaluated on ${formatDate(defenseRecord.defense_date)}`;
                         }
-
-                    }else{
-                        badgeClass = "scheduled";
-                        badgeLabel = "Scheduled";
-                        remark = `Scheduled for ${formatTrackerDate(defenseRecord.defense_date)}`;
+                    } else {
+                        badgeClass = "scheduled"; badgeLabel = "Scheduled";
+                        remark = `Scheduled for ${formatDate(defenseRecord.defense_date)}`;
                     }
-
-                }else{
-                    badgeClass = "for-adviser";
-                    badgeLabel = "In Progress";
+                } else {
+                    badgeClass = "scheduled"; badgeLabel = "In Progress";
                     remark = "Awaiting schedule from instructor";
                 }
-
             }
 
-            const lineHtml =
-                !isLast
-                ? `<div class="step-line"></div>`
-                : "";
+            const lineHtml = !isLast ? `<div class="step-line"></div>` : "";
 
             return `
                 <div class="step ${state}">
                     <div class="step-icon-wrap">
                         ${lineHtml}
-                        <div class="step-icon">
-                            <i class="fa-solid ${stageObj.icon}"></i>
-                        </div>
+                        <div class="step-icon"><i class="fa-solid ${stageObj.icon}"></i></div>
                     </div>
                     <div class="step-content">
                         <h4>${stageObj.label}</h4>
@@ -1073,794 +1152,289 @@
             `;
         }
 
-        function renderWorkflowTracker(group){
-            const stepsEl =
-                document.getElementById("modalWorkflowSteps");
+        function renderStageTracker(group, defenses) {
+            const defenseMap = {};
+            (defenses || []).forEach(defense => {
+                defenseMap[defense.defense_type] = defense;
+            });
 
-            const recordsNote =
-                document.getElementById("modalRecordsNote");
-
-            if(!stepsEl){
-                return;
-            }
-
-            const docProgress =
-                Number(group.document_progress || 0);
-
-            const uploaded =
-                Number(group.documents_uploaded || 0);
-
-            const required =
-                Number(group.documents_required || 0);
-
-            if(recordsNote){
-                recordsNote.innerText = "";
-            }
-
-            const defenseMap =
-                buildDefenseMap(group.defenses);
-
-            const completedCount = getCompletedStageCount(group, group.defenses);
-
+            const completedCount = getCompletedStageCount(group, defenses);
             let stepsHtml = "";
 
-            CAPSTONE_STAGES.forEach((stageObj, idx) => {
+            STAGES.forEach((stageObj, idx) => {
                 let state = "pending";
-
-                if(idx < completedCount){
+                if (idx < completedCount) {
                     state = "completed";
-                }else if(idx === completedCount){
+                } else if (idx === completedCount) {
                     state = "active";
                 }
-
-                const defenseRecord =
-                    defenseMap[stageObj.key] || null;
-
-                const isLast =
-                    idx === CAPSTONE_STAGES.length - 1;
-
-                stepsHtml +=
-                    buildTrackerStepHtml(
-                        stageObj,
-                        state,
-                        defenseRecord,
-                        isLast,
-                        defenseMap
-                    );
+                const defRec = defenseMap[stageObj.key] || null;
+                const isLast = (idx === STAGES.length - 1);
+                stepsHtml += buildStepHtml(stageObj, state, defRec, isLast, defenseMap);
             });
 
-            stepsEl.innerHTML = stepsHtml;
+            document.getElementById("workflowSteps").innerHTML = stepsHtml;
         }
 
-        async function loadAssignedGroups(){
+        async function loadGroupProgressAndDocs(group) {
+            const groupDbId = group.group_db_id || group.id;
+            try {
+                const defResponse = await fetch(`/group-defense-history/${encodeURIComponent(groupDbId)}`);
+                const defData = await defResponse.json();
+                const defenses = defData.success ? defData.defenses : (group.defenses || []);
+                renderStageTracker(group, defenses);
 
-            try{
-
-                const response =
-                    await fetch(
-                        `/adviser-capstone-groups/${loggedInUserId}`
-                    );
-
-                const data =
-                    await response.json();
-
-                if(!data.success){
-
-                    alert(
-                        data.message || "Failed to load assigned groups."
-                    );
-
-                    renderGroups([]);
-
-                    return;
-
+                if (isAllDefenseCompleted(group, defenses)) {
+                    document.getElementById("viewStage").innerText = "Completed";
+                    document.getElementById("viewProgress").innerText = "100%";
+                } else {
+                    const count = getCompletedStageCount(group, defenses);
+                    document.getElementById("viewStage").innerText = count === 4 ? "Deployment" : (group.stage || "Stage 1");
+                    document.getElementById("viewProgress").innerText = `${getStageProgressPercent(group, defenses)}%`;
                 }
 
-                assignedGroups =
-                    data.groups;
-
-                updateStats();
-
-                filterGroups();
-
-            }catch(error){
-
-                console.log(error);
-
-                alert("Cannot connect to server.");
-
+                const docResponse = await fetch(`/group-documents/${encodeURIComponent(groupDbId)}`);
+                const docData = await docResponse.json();
+                activeAdviserApprovedDms = (docData && docData.success && Array.isArray(docData.approved_defense_minutes))
+                    ? docData.approved_defense_minutes
+                    : [];
+                groupDocuments = docData.success ? (docData.documents || []).filter(d => {
+                    const st = String(d.document_status || "").trim().toLowerCase();
+                    const rev = String(d.latest_review_status || "").trim().toLowerCase();
+                    return (
+                        d.is_typed_defense_minutes ||
+                        st === "approved" ||
+                        st === "adviser signed" ||
+                        st === "signed" ||
+                        rev === "approved" ||
+                        !!d.signed_file_path
+                    );
+                }) : [];
+                renderModalApprovedDefenseMinutes();
+                renderModalDocuments();
+            } catch (err) {
+                console.error("Error loading group progress or documents:", err);
+                renderStageTracker(group, group.defenses || []);
+                renderModalApprovedDefenseMinutes();
+                renderModalDocuments();
             }
-
         }
 
-        function updateStats(){
+        function renderModalApprovedDefenseMinutes() {
+            const container = document.getElementById("modalApprovedDefenseMinutesList");
+            if (!container) return;
 
-            const totalGroups =
-                assignedGroups.length;
+            const approvedTyped = Array.isArray(activeAdviserApprovedDms) ? activeAdviserApprovedDms : [];
+            const approvedUploadedDm = (groupDocuments || []).filter(d =>
+                !d.is_typed_defense_minutes &&
+                `${d.document_type || ""} ${d.document_title || ""}`.toLowerCase().includes("defense minutes")
+            );
 
-            const totalMembers =
-                assignedGroups.reduce(
-                    (sum, group) => sum + group.members.length,
-                    0
-                );
-
-            const totalProposals =
-                assignedGroups.reduce(
-                    (sum, group) => sum + group.proposals.length,
-                    0
-                );
-
-            const averageProgress =
-                totalGroups === 0
-                ? 0
-                : Math.round(
-                    assignedGroups.reduce(
-                        (sum, group) =>
-                            sum + getStageProgressPercent(group, group.defenses),
-                        0
-                    ) / totalGroups
-                );
-
-            document.getElementById("totalGroups").innerText =
-                totalGroups;
-
-            document.getElementById("totalMembers").innerText =
-                totalMembers;
-
-            document.getElementById("totalProposals").innerText =
-                totalProposals;
-
-            document.getElementById("averageProgress").innerText =
-                `${averageProgress}%`;
-
-        }
-
-        function renderGroups(list){
-
-            const grid =
-                document.getElementById("groupGrid");
-
-            grid.innerHTML = "";
-
-            if(list.length === 0){
-
-                grid.innerHTML = `
-                    <div class="empty-card">
-                        No assigned capstone groups found.
-                    </div>
-                `;
-
-                return;
-
-            }
-
-            list.forEach(group => {
-
-                const programText =
-                    group.program === "IS"
-                    ? "BSIS"
-                    : group.program === "IT"
-                    ? "BSIT"
-                    : "Not Set";
-
-                const isFinished = isAllDefenseCompleted(group, group.defenses);
-
-                const capstoneProgress =
-                    getStageProgressPercent(group, group.defenses);
-
-                const documentProgress =
-                    Number(group.document_progress || 0);
-
-                const activeStage =
-                    isFinished ? "Completed" : getActiveStageLabel(group.stage, group);
-
-                const card =
-                    document.createElement("div");
-
-                const ongoing = group.ongoing_defense || null;
-                card.className = ongoing ? "group-card has-ongoing-defense" : "group-card";
-                const ongoingBannerHtml = ongoing ? `
-                    <div class="ongoing-defense-banner">
-                        <span style="display:inline-flex; align-items:center; gap:7px;">
-                            <span class="ongoing-dot"></span>
-                            On-Going Defense: ${ongoing.defense_type || "Defense"}
-                        </span>
-                        <span>${ongoing.start_time || ""} • ${ongoing.room || "TBA"}</span>
-                    </div>
-                ` : "";
-
-                card.innerHTML = `
-                    ${ongoingBannerHtml}
-                    <div class="group-top">
-
-                        <div class="group-icon">
-                            <i class="fa-solid fa-users"></i>
-                        </div>
-
-                        <div>
-                            <h3>
-                                ${group.group_name || "Unnamed Group"}
-                            </h3>
-
-                            <p>
-                                ${group.group_id}
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div class="group-meta">
-
-                        <span>
-                            ${programText}
-                        </span>
-
-                        <span>
-                            ${group.status || "Active"}
-                        </span>
-
-                        <span class="stage-pill">
-                            ${activeStage}
-                        </span>
-
-                    </div>
-
-                    <div class="group-info">
-
-                        <p>
-                            <strong>Project Title:</strong>
-                            ${group.project_title || "Not Set"}
-                        </p>
-
-                        <p>
-                            <strong>Project Manager:</strong>
-                            ${group.project_manager_name || "Not Set"}
-                        </p>
-
-                        <p>
-                            <strong>Members:</strong>
-                            ${group.members.length}
-                        </p>
-
-                    </div>
-
-                    <div class="progress-wrap">
-
-                        <div class="progress-info">
-                            <span>
-                                Capstone Stage
-                            </span>
-
-                            <span>
-                                ${capstoneProgress}%
-                            </span>
-                        </div>
-
-                        <div class="progress-bar">
-                            <div
-                                class="progress-fill"
-                                style="width:${capstoneProgress}%"
-                            ></div>
-                        </div>
-
-                    </div>
-
-                    <div class="card-actions-row">
-                        <button
-                            class="view-group-btn"
-                            onclick="openGroupModal('${group.group_id}')"
-                            type="button"
-                        >
-                            <i class="fa-solid fa-eye"></i>
-                            View Group
-                        </button>
-                        ${ongoing ? `
-                        <button
-                            class="minutes-btn"
-                            onclick="openDefenseMinutesModal('${group.group_id}')"
-                            type="button"
-                        >
-                            <i class="fa-solid fa-clipboard-list"></i>
-                            Add Defense Minutes
-                        </button>
-                        ` : ""}
-                        ${group.latest_minutes && group.latest_minutes.submitted_by_role === "student" ? `
-                        <button
-                            type="button"
-                            onclick="openReviewStudentMinutesModal('${group.group_id}')"
-                            style="flex:1 1 100%; border:none; padding:10px 14px; border-radius:12px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px; ${group.latest_minutes.minutes_status === 'Approved' ? 'background:#dcfce7; color:#15803d;' : (group.latest_minutes.minutes_status === 'Rejected' ? 'background:#fee2e2; color:#dc2626;' : 'background:#fef3c7; color:#b45309; border:1px solid #fde68a;')}"
-                        >
-                            <i class="fa-solid fa-clipboard-check"></i>
-                            Review Student Created Defense Minutes (${group.latest_minutes.minutes_status})
-                        </button>
-                        ` : ""}
-                    </div>
-                `;
-
-                grid.appendChild(card);
-
-            });
-
-        }
-
-        function filterGroups(){
-
-            const keyword =
-                document.getElementById("searchGroup")
-                .value
-                .toLowerCase();
-
-            const program =
-                document.getElementById("programFilter")
-                .value;
-
-            const status =
-                document.getElementById("statusFilter")
-                .value;
-
-            const filtered =
-                assignedGroups.filter(group => {
-
-                    const matchesKeyword =
-                        String(group.group_id || "").toLowerCase().includes(keyword)
-                        ||
-                        String(group.group_name || "").toLowerCase().includes(keyword)
-                        ||
-                        String(group.project_title || "").toLowerCase().includes(keyword)
-                        ||
-                        String(group.project_manager_name || "").toLowerCase().includes(keyword);
-
-                    const matchesProgram =
-                        program === "All"
-                        ||
-                        group.program === program;
-
-                    const matchesStatus =
-                        status === "All"
-                        ||
-                        group.status === status;
-
-                    return matchesKeyword && matchesProgram && matchesStatus;
-
-                });
-
-            renderGroups(filtered);
-
-        }
-
-        function openGroupModal(groupId){
-
-            const group =
-                assignedGroups.find(item =>
-                    item.group_id === groupId
-                );
-
-            if(!group){
+            if (approvedTyped.length === 0 && approvedUploadedDm.length === 0) {
+                container.innerHTML = `<p style="color: #7b6f96; font-size: 13px; text-align: center; padding: 10px 0;">No approved defense minutes yet.</p>`;
                 return;
             }
 
-            const programText =
-                group.program === "IS"
-                ? "BSIS"
-                : group.program === "IT"
-                ? "BSIT"
-                : "Not Set";
-
-            document.getElementById("modalGroupName").innerText =
-                group.group_name || "Group Details";
-
-            document.getElementById("modalGroupId").innerText =
-                group.group_id;
-
-            document.getElementById("modalProjectTitle").innerText =
-                group.project_title || "Not Set";
-
-            document.getElementById("modalProgram").innerText =
-                programText;
-
-            document.getElementById("modalProjectManager").innerText =
-                group.project_manager_name
-                ? `${group.project_manager_name} (${group.project_manager_user_id})`
-                : "Not Set";
-
-            document.getElementById("modalStatus").innerText =
-                group.status || "Active";
-
-            const isFinished = isAllDefenseCompleted(group, group.defenses);
-
-            document.getElementById("modalStage").innerText =
-                isFinished ? "Completed" : `${group.stage || "Stage 1"} — ${getActiveStageLabel(group.stage, group)}`;
-
-            document.getElementById("modalProgress").innerText =
-                `${getStageProgressPercent(group, group.defenses)}%`;
-
-            renderWorkflowTracker(group);
-
-            const members =
-                document.getElementById("modalMembers");
-
-            members.innerHTML = "";
-
-            if(group.members.length === 0){
-
-                members.innerHTML = `
-                    <p class="empty-text">
-                        No members found.
-                    </p>
-                `;
-
-            }else{
-
-                group.members.forEach(member => {
-
-                    members.innerHTML += `
-                        <div class="member-row">
-
-                            <div class="member-avatar">
-                                ${member.profile_image ? `<img src="${member.profile_image}" alt="Profile">` : member.fullname.charAt(0).toUpperCase()}
-                            </div>
-
-                            <div>
-                                <h4>
-                                    ${member.fullname}
-                                </h4>
-
-                                <p>
-                                    ${member.user_id} • ${member.member_position}
-                                </p>
-
-                                <small>
-                                    ${member.program || "No Program"} • ${member.year_level || "No Year Level"}
-                                </small>
-                            </div>
-
-                        </div>
-                    `;
-
-                });
-
-            }
-
-            const proposals =
-                document.getElementById("modalProposals");
-
-            proposals.innerHTML = "";
-
-            if(group.proposals.length === 0){
-
-                proposals.innerHTML = `
-                    <p class="empty-text">
-                        No title proposals uploaded.
-                    </p>
-                `;
-
-            }else{
-
-                group.proposals.forEach(proposal => {
-
-                    proposals.innerHTML += `
-                        <div class="proposal-row">
-
-                            <div class="proposal-icon">
-                                <i class="fa-solid fa-file-pdf"></i>
-                            </div>
-
-                            <div>
-                                <h4>
-                                    Proposal ${proposal.title_number}: ${proposal.proposed_title}
-                                </h4>
-
-                                <p>
-                                    Status: ${proposal.status}
-                                </p>
-
-                                <a
-                                    href="${proposal.file_path}"
-                                    target="_blank"
-                                >
-                                    View PDF
-                                </a>
-                            </div>
-
-                        </div>
-                    `;
-
-                });
-
-            }
-
-            activeGroupForModal = group;
-            activeAdviserApprovedTypedDms = [];
-            renderAdviserModalDefenseMinutes(group);
-
-            document.getElementById("groupModal").style.display =
-                "flex";
-
-            loadAdviserModalApprovedDocs(group.group_db_id || group.id);
-
-        }
-
-        function escapeMinutesHtml(str){
-            return String(str ?? "")
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;");
-        }
-
-        function buildMinutesEntriesFromRecord(minRec){
-            if(Array.isArray(minRec.entries) && minRec.entries.length){
-                return minRec.entries.map((e, idx) => ({
-                    roleLabel: e.roleLabel || (idx === 0 ? "Panel Chair" : `Panel ${idx}`),
-                    panelistId: e.panelistId || null,
-                    panelistName: e.panelistName || e.roleLabel || (idx === 0 ? "Panel Chair" : `Panel ${idx}`),
-                    bullets: Array.isArray(e.bullets) ? e.bullets.slice() : []
-                }));
-            }
-            const parseText = (txt) => String(txt || "")
-                .split(/\r?\n/)
-                .map(line => line.replace(/^[•\-\*]\s*/, "").trim())
-                .filter(Boolean);
-            return [
-                { roleLabel: "Panel Chair", panelistId: null, panelistName: "Panel Chair", bullets: parseText(minRec.panel_chair_notes) },
-                { roleLabel: "Panel 1", panelistId: null, panelistName: "Panel 1", bullets: parseText(minRec.panel_1_notes) },
-                { roleLabel: "Panel 2", panelistId: null, panelistName: "Panel 2", bullets: parseText(minRec.panel_2_notes) }
-            ];
-        }
-
-        let activeGroupForModal = null;
-        let activeAdviserApprovedTypedDms = [];
-
-        function renderAdviserModalDefenseMinutes(group){
-            const container = document.getElementById("modalDefenseMinutes");
-            if(!container) return;
-
-            const approvedTypedList = Array.isArray(activeAdviserApprovedTypedDms) ? activeAdviserApprovedTypedDms : [];
-            const draftList = Array.isArray(group.defense_minutes) && group.defense_minutes.length
-                ? group.defense_minutes
-                : (group.latest_minutes ? [group.latest_minutes] : []);
-
-            if(approvedTypedList.length === 0 && draftList.length === 0){
-                container.innerHTML = `<p class="empty-text">No defense minutes recorded yet.</p>`;
-                return;
-            }
-
-            const approvedHtml = approvedTypedList.map(dm => {
+            const typedHtml = approvedTyped.map(dm => {
                 const dateStr = (dm.updated_at || dm.created_at)
                     ? new Date(dm.updated_at || dm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                     : "N/A";
                 return `
-                    <div class="proposal-row" style="border-left:4px solid #10b981;">
-                        <div class="proposal-icon" style="background:#dcfce7; color:#15803d;">
-                            <i class="fa-solid fa-file-signature"></i>
-                        </div>
-                        <div style="flex:1; min-width:0;">
-                            <h4 style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
-                                <span>${escapeMinutesHtml(dm.defense_type || "Defense")} — Defense Minutes</span>
-                                <span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;"><i class="fa-solid fa-circle-check"></i> Approved &amp; E-Signed</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid #d1fae5; border-left: 4px solid #10b981;">
+                        <div style="text-align: left;">
+                            <h4 style="color: #2e1065; font-size: 14px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0;">
+                                <span><i class="fa-solid fa-file-signature" style="color:#059669; margin-right:6px;"></i>${escapeHtml(dm.defense_type || "Defense")} — Defense Minutes</span>
+                                <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-circle-check"></i> Approved &amp; E-Signed</span>
                             </h4>
-                            <p>Approved in Records Management &bull; ${dateStr}</p>
-                            <button type="button" class="view-dm-sheet-btn" onclick="openApprovedDefenseMinutesSheet(${Number(dm.id)})">
-                                <i class="fa-solid fa-eye"></i> View Defense Minutes
-                            </button>
+                            <p style="color: #7b6f96; font-size: 12px; margin: 4px 0 0;">Approved in Student Records Management • ${dateStr}</p>
                         </div>
+                        <button type="button" class="view-dm-sheet-btn" onclick="openApprovedDefenseMinutesSheet(${Number(dm.id)})">
+                            <i class="fa-solid fa-eye"></i> View Defense Minutes
+                        </button>
                     </div>
                 `;
             }).join("");
 
-            const draftHtml = draftList.map(minRec => {
-                const isStudent = String(minRec.submitted_by_role || "").toLowerCase() === "student";
-                const status = String(minRec.minutes_status || "Approved");
-                const statusLower = status.toLowerCase();
-
-                let statusBg = "#dcfce7", statusColor = "#15803d";
-                if(statusLower === "draft" || statusLower === "pending review"){
-                    statusBg = "#fef3c7"; statusColor = "#b45309";
-                }else if(statusLower === "rejected"){
-                    statusBg = "#fee2e2"; statusColor = "#dc2626";
-                }
-
-                const roleBadge = isStudent
-                    ? `<span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">Student Created</span>`
-                    : `<span style="background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">Adviser Created</span>`;
-
-                const statusBadge = `<span style="background:${statusBg};color:${statusColor};padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">${escapeMinutesHtml(status)}</span>`;
-
-                const entries = buildMinutesEntriesFromRecord(minRec);
-                const totalBullets = entries.reduce((sum, e) => sum + (e.bullets ? e.bullets.length : 0), 0);
-
-                const dateStr = minRec.defense_date
-                    ? new Date(minRec.defense_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                    : (minRec.updated_at ? new Date(minRec.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A");
-
-                const feedbackHtml = minRec.adviser_feedback
-                    ? `<p style="font-size:12px;color:#6d28d9;margin:4px 0 6px;"><strong>Feedback:</strong> ${escapeMinutesHtml(minRec.adviser_feedback)}</p>`
-                    : "";
-
-                const btnLabel = isStudent ? "View / Review Minutes" : "View / Edit Minutes";
-                const safeGroupId = escapeMinutesHtml(group.group_id).replace(/'/g, "\\'");
-
+            const uploadedHtml = approvedUploadedDm.map(doc => {
+                const dateStr = doc.created_at ? new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A";
+                const filePath = doc.signed_file_path || doc.file_path || "";
                 return `
-                    <div class="proposal-row">
-                        <div class="proposal-icon">
-                            <i class="fa-solid ${isStudent ? 'fa-file-pen' : 'fa-clipboard-list'}"></i>
-                        </div>
-                        <div style="flex:1; min-width:0;">
-                            <h4 style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
-                                <span>${escapeMinutesHtml(minRec.defense_type || "Defense Minutes")}${minRec.schedule_code ? ` (${escapeMinutesHtml(minRec.schedule_code)})` : ""}</span>
-                                ${roleBadge}
-                                ${statusBadge}
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid #ece3ff;">
+                        <div style="text-align: left;">
+                            <h4 style="color: #2e1065; font-size: 14px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0;">
+                                <span>${escapeHtml(doc.document_title || doc.file_name || "Defense Minutes")}</span>
+                                <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;">Approved</span>
                             </h4>
-                            <p>${dateStr} &bull; ${totalBullets} note(s) recorded</p>
-                            ${feedbackHtml}
-                            <button
-                                type="button"
-                                onclick="openMinutesRecordFromGroupModal('${safeGroupId}', ${Number(minRec.schedule_id)})"
-                                style="margin-top:4px; border:none; background:#ede9fe; color:#5b21b6; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"
-                            >
-                                <i class="fa-solid fa-eye"></i> ${btnLabel}
-                            </button>
+                            <p style="color: #7b6f96; font-size: 12px; margin: 4px 0 0;">${escapeHtml(doc.document_type || "Defense Minutes")} • Approved on ${dateStr}</p>
                         </div>
+                        ${filePath ? `<a href="${escapeHtml(filePath)}" target="_blank" rel="noopener noreferrer" class="view-dm-sheet-btn" style="text-decoration:none;"><i class="fa-solid fa-eye"></i> View File</a>` : ""}
                     </div>
                 `;
             }).join("");
 
-            container.innerHTML = approvedHtml + draftHtml;
+            container.innerHTML = typedHtml + uploadedHtml;
         }
 
-        function openMinutesRecordFromGroupModal(groupId, scheduleId){
-            const group = assignedGroups.find(g => g.group_id === groupId);
-            if(!group) return;
-            const list = Array.isArray(group.defense_minutes) && group.defense_minutes.length
-                ? group.defense_minutes
-                : (group.latest_minutes ? [group.latest_minutes] : []);
-            const minRec = list.find(m => Number(m.schedule_id) === Number(scheduleId));
-            if(!minRec) return;
+        function renderModalDocuments() {
+            const filterValue = document.getElementById("docFilter").value;
+            const container = document.getElementById("modalDocumentsList");
+            container.innerHTML = "";
 
-            activeMinutesGroup = group;
-            activeMinutesScheduleId = minRec.schedule_id;
-
-            const isStudent = String(minRec.submitted_by_role || "").toLowerCase() === "student";
-            setMinutesModalMode(isStudent);
-
-            document.getElementById("minutesModalTitle").innerText = isStudent
-                ? `Review Student Defense Minutes — ${group.group_name || "Group"}`
-                : `Adviser Defense Minutes — ${group.group_name || "Group"}`;
-            document.getElementById("minutesModalSubtitle").innerText =
-                `${minRec.defense_type || "Defense"}${minRec.schedule_code ? ` (${minRec.schedule_code})` : ""} • Status: ${minRec.minutes_status || "Approved"}`;
-
-            if(isStudent){
-                document.getElementById("minutesReviewFeedback").value = minRec.adviser_feedback || "";
+            let filteredDocs = groupDocuments;
+            if (filterValue !== "all") {
+                filteredDocs = groupDocuments.filter(doc => {
+                    const combined = `${doc.document_type || ""} ${doc.document_title || ""}`.toLowerCase();
+                    if (filterValue === "Concept Presentation") {
+                        return combined.includes("concept") || combined.includes("adviser acceptance") || combined.includes("environmental scanning");
+                    } else if (filterValue === "Outline Defense") {
+                        return combined.includes("outline") || combined.includes("chapter 1 and 2") || combined.includes("chapter 1-2");
+                    } else if (filterValue === "Pre-Final Defense") {
+                        return combined.includes("pre-final") || combined.includes("prefinal") || combined.includes("chapter 3-4");
+                    } else if (filterValue === "Final Defense") {
+                        return (combined.includes("final") && !combined.includes("pre-final") && !combined.includes("prefinal")) || combined.includes("chapter 1-4");
+                    }
+                    return false;
+                });
             }
 
-            activeMinutesEntries = buildMinutesEntriesFromRecord(minRec);
-            renderMinutesPanelCards();
-            document.getElementById("defenseMinutesModal").style.display = "flex";
-        }
-
-        let activeAdviserModalDocs = [];
-
-        function isApprovedGroupDoc(doc){
-            const st = String(doc.document_status || "").trim().toLowerCase();
-            const rev = String(doc.latest_review_status || "").trim().toLowerCase();
-            return (
-                doc.is_typed_defense_minutes ||
-                st === "approved" ||
-                st === "adviser signed" ||
-                st === "signed" ||
-                rev === "approved" ||
-                !!doc.signed_file_path
-            );
-        }
-
-        function matchesDocPhaseFilter(doc, filterValue){
-            if(filterValue === "all") return true;
-            const combined = `${doc.document_type || ""} ${doc.document_title || ""}`.toLowerCase();
-            if(filterValue === "Concept Presentation"){
-                return combined.includes("concept") || combined.includes("adviser acceptance") || combined.includes("environmental scanning");
-            }
-            if(filterValue === "Outline Defense"){
-                return combined.includes("outline") || combined.includes("chapter 1 and 2") || combined.includes("chapter 1-2");
-            }
-            if(filterValue === "Pre-Final Defense"){
-                return combined.includes("pre-final") || combined.includes("prefinal") || combined.includes("chapter 3-4");
-            }
-            if(filterValue === "Final Defense"){
-                return (combined.includes("final") && !combined.includes("pre-final") && !combined.includes("prefinal")) || combined.includes("chapter 1-4");
-            }
-            return true;
-        }
-
-        async function loadAdviserModalApprovedDocs(groupDbId){
-            const container = document.getElementById("modalApprovedDocs");
-            const filterEl = document.getElementById("adviserDocPhaseFilter");
-            if(filterEl) filterEl.value = "all";
-            activeAdviserModalDocs = [];
-            if(!container) return;
-
-            if(!groupDbId){
-                container.innerHTML = `<p class="empty-text">No approved documents found.</p>`;
+            if (filteredDocs.length === 0) {
+                container.innerHTML = `<p style="color: #7b6f96; font-size: 13px; text-align: center; padding: 10px 0;">No approved documents found for this phase.</p>`;
                 return;
             }
 
-            container.innerHTML = `<p class="empty-text">Loading approved documents...</p>`;
-            try{
-                const res = await fetch(`/group-documents/${encodeURIComponent(groupDbId)}`);
-                const data = await res.json();
-                const allDocs = (data && data.success && Array.isArray(data.documents)) ? data.documents : [];
-                activeAdviserModalDocs = allDocs.filter(isApprovedGroupDoc);
-                activeAdviserApprovedTypedDms = (data && data.success && Array.isArray(data.approved_defense_minutes))
-                    ? data.approved_defense_minutes
-                    : [];
-                if (activeGroupForModal) {
-                    renderAdviserModalDefenseMinutes(activeGroupForModal);
-                }
-                renderAdviserModalApprovedDocs();
-            }catch(err){
-                console.error("Failed to load approved group documents:", err);
-                container.innerHTML = `<p class="empty-text">Unable to load approved documents.</p>`;
-            }
-        }
-
-        function renderAdviserModalApprovedDocs(){
-            const container = document.getElementById("modalApprovedDocs");
-            const filterEl = document.getElementById("adviserDocPhaseFilter");
-            if(!container) return;
-            const filterValue = filterEl ? filterEl.value : "all";
-            const list = activeAdviserModalDocs.filter(doc => matchesDocPhaseFilter(doc, filterValue));
-
-            if(list.length === 0){
-                container.innerHTML = `<p class="empty-text">No approved documents found for this phase.</p>`;
-                return;
-            }
-
-            container.innerHTML = list.map(doc => {
-                const dateStr = doc.created_at
-                    ? new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                    : "N/A";
+            filteredDocs.forEach(doc => {
+                const dateStr = doc.created_at ? new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A";
                 const isSigned = !!doc.signed_file_path || !!doc.is_typed_defense_minutes || String(doc.document_status || "").toLowerCase().includes("signed");
-                const fileUrl = doc.signed_file_path || doc.file_path || "";
-                const signedBadge = isSigned
-                    ? `<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fa-solid fa-signature"></i> E-Signed</span>`
-                    : `<span style="background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:6px;">Approved</span>`;
-                const actionLink = doc.is_typed_defense_minutes && doc.typed_dm_id
-                    ? `<button type="button" class="view-dm-sheet-btn" onclick="openApprovedDefenseMinutesSheet(${Number(doc.typed_dm_id)})"><i class="fa-solid fa-eye"></i> View Defense Minutes</button>`
-                    : fileUrl
-                        ? `<a href="${fileUrl}" target="_blank">View / Download PDF</a>`
-                        : `<span style="font-size:12px;color:#15803d;font-weight:600;">Completed in Document Review</span>`;
+                const filePath = doc.signed_file_path || doc.file_path || "";
+                const signatureBadge = isSigned
+                    ? `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 8px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-signature"></i> Signed</span>`
+                    : `<span style="background: #ede9fe; color: #6d28d9; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 8px;">Approved</span>`;
+                const actionHtml = doc.is_typed_defense_minutes && doc.typed_dm_id
+                    ? `<button type="button" class="view-dm-sheet-btn" onclick="openApprovedDefenseMinutesSheet(${Number(doc.typed_dm_id)})">
+                            <i class="fa-solid fa-eye"></i> View Minutes
+                        </button>`
+                    : filePath
+                        ? `<a href="${escapeHtml(filePath)}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; font-size: 16px; padding: 8px; background: #f3e8ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none;" title="${isSigned ? 'Download / View Signed File' : 'Download / View File'}">
+                                <i class="fa-solid fa-download"></i>
+                            </a>`
+                        : `<span style="font-size: 11px; color: #15803d; font-weight: 700; background: #dcfce7; padding: 5px 10px; border-radius: 8px;">Completed</span>`;
 
-                return `
-                    <div class="proposal-row">
-                        <div class="proposal-icon">
-                            <i class="fa-solid ${doc.is_typed_defense_minutes ? 'fa-file-signature' : 'fa-file-circle-check'}"></i>
-                        </div>
-                        <div style="flex:1; min-width:0;">
-                            <h4 style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
-                                <span>${doc.document_title || doc.file_name || "Approved Document"}</span>
-                                ${signedBadge}
+                container.innerHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid #ece3ff;">
+                        <div style="text-align: left;">
+                            <h4 style="color: #2e1065; font-size: 14px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; margin: 0;">
+                                ${escapeHtml(doc.document_title || doc.file_name || "Approved Document")}
+                                ${signatureBadge}
                             </h4>
-                            <p>${doc.document_type || "Document"} &bull; Approved ${dateStr}</p>
-                            ${actionLink}
+                            <p style="color: #7b6f96; font-size: 12px; margin-top: 4px;">${escapeHtml(doc.document_type || "Document")} • Approved on ${dateStr}</p>
                         </div>
+                        ${actionHtml}
                     </div>
                 `;
-            }).join("");
+            });
         }
 
-        function closeGroupModal(){
-
-            document.getElementById("groupModal").style.display =
-                "none";
-
+        function filterModalDocuments() {
+            renderModalDocuments();
         }
 
-        function openApprovedDefenseMinutesSheet(dmId){
-            const dm = (activeAdviserApprovedTypedDms || []).find(item => Number(item.id) === Number(dmId));
-            if(!dm){
+        function openViewModal(groupId) {
+            const group = assignedGroups.find(item => item.group_id === groupId);
+            if (!group) return;
+
+            const programText = formatProgramLabel(group.program);
+            const isFinished = isAllDefenseCompleted(group, group.defenses);
+            const stageCount = getCompletedStageCount(group, group.defenses);
+
+            document.getElementById("viewGroupName").innerText = group.group_name || "Group Details";
+            document.getElementById("viewGroupId").innerText = group.group_id;
+            document.getElementById("viewProjectTitle").innerText = group.project_title || "Not Set";
+            document.getElementById("viewProgram").innerText = programText;
+            document.getElementById("viewStage").innerText =
+                isFinished ? "Completed" : (stageCount === 4 ? "Deployment" : (group.stage || "Stage 1"));
+            document.getElementById("viewProgress").innerText =
+                `${getStageProgressPercent(group, group.defenses)}%`;
+            document.getElementById("viewStatus").innerText =
+                getGroupActualStatus(group).label;
+            document.getElementById("viewProjectManager").innerText =
+                group.project_manager_name
+                ? `${group.project_manager_name} (${group.project_manager_user_id || ""})`
+                : "Not Set";
+
+            // Members
+            const membersList = document.getElementById("viewMembersList");
+            membersList.innerHTML = "";
+            if (!Array.isArray(group.members) || group.members.length === 0) {
+                membersList.innerHTML = `<p class="empty-text">No members found.</p>`;
+            } else {
+                group.members.forEach(member => {
+                    membersList.innerHTML += `
+                        <div class="member-row">
+                            <div class="member-avatar">
+                                ${member.profile_image ? `<img src="${escapeHtml(member.profile_image)}" alt="Profile">` : escapeHtml((member.fullname || "S").charAt(0).toUpperCase())}
+                            </div>
+                            <div>
+                                <h4>${escapeHtml(member.fullname)}</h4>
+                                <p>${escapeHtml(member.user_id || "")} • ${escapeHtml(member.member_position || "Member")}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Proposed Capstone Titles
+            const proposalsEl = document.getElementById("modalProposals");
+            proposalsEl.innerHTML = "";
+            if (!Array.isArray(group.proposals) || group.proposals.length === 0) {
+                proposalsEl.innerHTML = `<p style="color: #7b6f96; font-size: 13px; text-align: center; padding: 10px 0;">No title proposals uploaded.</p>`;
+            } else {
+                group.proposals.forEach(proposal => {
+                    proposalsEl.innerHTML += `
+                        <div class="proposal-row">
+                            <div class="proposal-row-left">
+                                <div class="proposal-icon">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                </div>
+                                <div>
+                                    <h4>Proposal ${escapeHtml(proposal.title_number)}: ${escapeHtml(proposal.proposed_title)}</h4>
+                                    <p>Status: ${escapeHtml(proposal.status || "Pending")}</p>
+                                </div>
+                            </div>
+                            ${proposal.file_path ? `<a href="${escapeHtml(proposal.file_path)}" target="_blank" rel="noopener noreferrer" style="color: #7c3aed; font-size: 13px; font-weight: 600; padding: 7px 12px; background: #f3e8ff; border-radius: 10px; text-decoration: none; white-space: nowrap;"><i class="fa-solid fa-file-pdf"></i> View PDF</a>` : ""}
+                        </div>
+                    `;
+                });
+            }
+
+            activeViewingGroup = group;
+            activeAdviserApprovedDms = [];
+            groupDocuments = [];
+            document.getElementById("docFilter").value = "all";
+            document.getElementById("modalDocumentsList").innerHTML = "Loading documents...";
+            const dmListEl = document.getElementById("modalApprovedDefenseMinutesList");
+            if (dmListEl) dmListEl.innerHTML = "Loading approved defense minutes...";
+            document.getElementById("workflowSteps").innerHTML = `
+                <div style="text-align:center;color:#7b6f96;padding:20px 0;width:100%">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:18px;color:#7c3aed;"></i>
+                    <p style="margin-top:10px;font-size:12px;">Loading progress...</p>
+                </div>
+            `;
+
+            loadGroupProgressAndDocs(group);
+            document.getElementById("viewModal").style.display = "flex";
+        }
+
+        function closeViewModal() {
+            document.getElementById("viewModal").style.display = "none";
+        }
+
+        function openApprovedDefenseMinutesSheet(dmId) {
+            const dm = (activeAdviserApprovedDms || []).find(item => Number(item.id) === Number(dmId));
+            if (!dm) {
                 alert("Approved defense minutes record could not be loaded.");
                 return;
             }
-            if(!window.DefenseMinutesSheet){
+            if (!window.DefenseMinutesSheet) {
                 alert("Defense minutes viewer failed to load. Please refresh the page.");
                 return;
             }
@@ -1886,8 +1460,8 @@
                 }
             } catch (_) { }
 
-            const groupName = (activeGroupForModal && activeGroupForModal.group_name) ? activeGroupForModal.group_name : "Capstone Group";
-            const adviserName = dm.adviser_name || (minutesData.meta && minutesData.meta.adviserName) || "Adviser";
+            const groupName = (activeViewingGroup && activeViewingGroup.group_name) ? activeViewingGroup.group_name : "Capstone Group";
+            const adviserName = dm.adviser_name || localStorage.getItem("fullname") || (minutesData.meta && minutesData.meta.adviserName) || "Adviser";
 
             document.getElementById("approvedDmTitle").innerText = `${dm.defense_type || "Defense"} — Approved Defense Minutes`;
             document.getElementById("approvedDmSubtitle").innerText = `${groupName} • Approved & fully signed in Student Records Management`;
@@ -1931,7 +1505,7 @@
             if (firstPage) firstPage.scrollIntoView({ behavior: "auto", block: "start" });
         }
 
-        function stepApprovedDmPage(delta){
+        function stepApprovedDmPage(delta) {
             const sel = document.getElementById("approvedDmPageSelect");
             if (!sel || !sel.options.length) return;
             const nextIdx = Math.max(0, Math.min(sel.options.length - 1, Number(sel.value || 0) + delta));
@@ -1939,7 +1513,7 @@
             changeApprovedDmPage();
         }
 
-        function changeApprovedDmPage(){
+        function changeApprovedDmPage() {
             const sel = document.getElementById("approvedDmPageSelect");
             if (!sel) return;
             const idx = Number(sel.value || 0);
@@ -1950,7 +1524,7 @@
             if (pageEl) pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
-        function printApprovedDefenseMinutes(){
+        function printApprovedDefenseMinutes() {
             const viewport = document.getElementById("approvedDmSheetViewport");
             if (!viewport) return;
             const pages = Array.from(viewport.querySelectorAll(".dm-a4-page"));
@@ -1972,257 +1546,13 @@
             printWin.document.close();
         }
 
-        function closeApprovedDmViewerModal(){
+        function closeApprovedDmViewerModal() {
             document.getElementById("approvedDmViewerModal").style.display = "none";
         }
 
-        let activeMinutesGroup = null;
-        let activeMinutesEntries = [];
-        let activeMinutesScheduleId = null;
-
-        function setMinutesModalMode(isReviewMode){
-            document.getElementById("minutesReviewControls").style.display = isReviewMode ? "block" : "none";
-            document.getElementById("rejectMinutesBtn").style.display = isReviewMode ? "inline-flex" : "none";
-            document.getElementById("approveMinutesBtn").style.display = isReviewMode ? "inline-flex" : "none";
-            document.getElementById("saveMinutesBtn").style.display = isReviewMode ? "none" : "inline-flex";
-        }
-
-        function openDefenseMinutesModal(groupId){
-            const group = assignedGroups.find(g => g.group_id === groupId);
-            if(!group || !group.ongoing_defense) return;
-            activeMinutesGroup = group;
-            activeMinutesScheduleId = group.ongoing_defense.schedule_id;
-            setMinutesModalMode(false);
-
-            const ongoing = group.ongoing_defense;
-            document.getElementById("minutesModalTitle").innerText = `Defense Minutes — ${group.group_name || "Group"}`;
-            document.getElementById("minutesModalSubtitle").innerText =
-                `${ongoing.defense_type || "Defense"} (${ongoing.schedule_code || ""}) • ${ongoing.start_time || ""} - ${ongoing.end_time || ""} • ${ongoing.room || "TBA"}`;
-
-            const basePanelists = Array.isArray(ongoing.panelists) && ongoing.panelists.length
-                ? ongoing.panelists
-                : [
-                    { roleLabel: "Panel Chair", panelistName: "Panel Chair" },
-                    { roleLabel: "Panel 1", panelistName: "Panel 1" },
-                    { roleLabel: "Panel 2", panelistName: "Panel 2" }
-                ];
-
-            const saved = Array.isArray(ongoing.saved_minutes) ? ongoing.saved_minutes : [];
-            activeMinutesEntries = basePanelists.map((p, idx) => {
-                const matchSaved = saved[idx] || {};
-                const bullets = Array.isArray(matchSaved.bullets) ? matchSaved.bullets.slice() : [];
-                return {
-                    roleLabel: p.roleLabel || `Panel ${idx + 1}`,
-                    panelistId: p.panelistId || null,
-                    panelistName: p.panelistName || p.roleLabel || `Panel ${idx + 1}`,
-                    bullets
-                };
-            });
-
-            renderMinutesPanelCards();
-            document.getElementById("defenseMinutesModal").style.display = "flex";
-        }
-
-        function openReviewStudentMinutesModal(groupId){
-            const group = assignedGroups.find(g => g.group_id === groupId);
-            if(!group || !group.latest_minutes) return;
-            activeMinutesGroup = group;
-            activeMinutesScheduleId = group.latest_minutes.schedule_id;
-            setMinutesModalMode(true);
-
-            const lm = group.latest_minutes;
-            document.getElementById("minutesModalTitle").innerText = `Review Student Defense Minutes — ${group.group_name || "Group"}`;
-            document.getElementById("minutesModalSubtitle").innerText =
-                `${lm.defense_type || "Defense"} (${lm.schedule_code || ""}) • Status: ${lm.minutes_status || "Draft"}`;
-            document.getElementById("minutesReviewFeedback").value = lm.adviser_feedback || "";
-
-            activeMinutesEntries = Array.isArray(lm.entries) && lm.entries.length
-                ? lm.entries.map(e => ({
-                    roleLabel: e.roleLabel || "Panel",
-                    panelistId: e.panelistId || null,
-                    panelistName: e.panelistName || e.roleLabel || "Panel",
-                    bullets: Array.isArray(e.bullets) ? e.bullets.slice() : []
-                }))
-                : [
-                    { roleLabel: "Panel Chair", panelistName: "Panel Chair", bullets: [] },
-                    { roleLabel: "Panel 1", panelistName: "Panel 1", bullets: [] },
-                    { roleLabel: "Panel 2", panelistName: "Panel 2", bullets: [] }
-                ];
-
-            renderMinutesPanelCards();
-            document.getElementById("defenseMinutesModal").style.display = "flex";
-        }
-
-        async function submitStudentMinutesReview(decision){
-            if(!activeMinutesGroup || !activeMinutesScheduleId) return;
-            const feedback = document.getElementById("minutesReviewFeedback").value.trim();
-            if(decision === "Rejected" && !feedback){
-                alert("Please enter feedback explaining why the student defense minutes are rejected.");
-                return;
-            }
-
-            activeMinutesEntries.forEach((entry, idx) => {
-                const input = document.getElementById(`newBulletInput_${idx}`);
-                if(input && input.value.trim()){
-                    const text = input.value.replace(/^[•\-\*]\s*/, "").trim();
-                    if(text) entry.bullets.push(text);
-                }
-                entry.bullets = entry.bullets.map(b => String(b || "").trim()).filter(Boolean);
-            });
-
-            try{
-                const res = await fetch("/review-student-defense-minutes", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        adviserUserId: loggedInUserId,
-                        scheduleId: activeMinutesScheduleId,
-                        groupId: activeMinutesGroup.group_db_id,
-                        decision,
-                        adviserFeedback: feedback,
-                        panelEntries: activeMinutesEntries
-                    })
-                });
-                const data = await res.json();
-                if(data.success){
-                    const refreshGroupId = activeMinutesGroup.group_id;
-                    alert(data.message || `Defense minutes ${decision}.`);
-                    closeDefenseMinutesModal();
-                    await loadAssignedGroups();
-                    if(document.getElementById("groupModal").style.display === "flex"){
-                        const updated = assignedGroups.find(g => g.group_id === refreshGroupId);
-                        if(updated) renderAdviserModalDefenseMinutes(updated);
-                    }
-                }else{
-                    alert(data.message || "Failed to submit review.");
-                }
-            }catch(err){
-                console.log(err);
-                alert("Cannot connect to server.");
-            }
-        }
-
-        function closeDefenseMinutesModal(){
-            document.getElementById("defenseMinutesModal").style.display = "none";
-            activeMinutesGroup = null;
-            activeMinutesEntries = [];
-        }
-
-        function renderMinutesPanelCards(){
-            const container = document.getElementById("minutesPanelCardsContainer");
-            if(!container) return;
-
-            container.innerHTML = activeMinutesEntries.map((entry, pIdx) => {
-                const bulletsHtml = entry.bullets.length
-                    ? entry.bullets.map((b, bIdx) => `
-                        <div class="bullet-row" style="align-items:flex-start;">
-                            <span class="bullet-marker" style="margin-top:8px;">&bull;</span>
-                            <textarea rows="2" class="bullet-input" oninput="updateMinutesBullet(${pIdx}, ${bIdx}, this.value)" placeholder="Bullet point..." style="resize:vertical; font-family:inherit;">${String(b || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
-                            <button type="button" class="remove-bullet-btn" onclick="removeMinutesBullet(${pIdx}, ${bIdx})" title="Remove bullet" style="margin-top:4px;">&times;</button>
-                        </div>
-                    `).join("")
-                    : `<div style="font-size:12px; color:#94a3b8; font-style:italic; margin-bottom:4px;">No bullet points added yet.</div>`;
-
-                return `
-                    <div class="panel-minutes-card">
-                        <div class="panel-minutes-head">
-                            <div>
-                                <span class="panel-role-badge">${entry.roleLabel}</span>
-                                <strong style="margin-left:8px; font-size:14px; color:#2e1065;">${entry.panelistName}</strong>
-                            </div>
-                            <span style="font-size:12px; color:#64748b;">${entry.bullets.length} bullet(s)</span>
-                        </div>
-                        <div class="bullet-list-wrap">${bulletsHtml}</div>
-                        <div class="add-bullet-row" style="align-items:flex-start;">
-                            <textarea rows="2" id="newBulletInput_${pIdx}" class="bullet-input" placeholder="Type a comment or recommendation, then click + Add Bullet..." style="resize:vertical; font-family:inherit;"></textarea>
-                            <button type="button" class="add-bullet-btn" onclick="addMinutesBullet(${pIdx})">
-                                <i class="fa-solid fa-plus"></i> Add Bullet
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-        }
-
-        function updateMinutesBullet(panelIdx, bulletIdx, val){
-            if(activeMinutesEntries[panelIdx]){
-                activeMinutesEntries[panelIdx].bullets[bulletIdx] = val;
-            }
-        }
-
-        function addMinutesBullet(panelIdx){
-            const input = document.getElementById(`newBulletInput_${panelIdx}`);
-            if(!input || !activeMinutesEntries[panelIdx]) return;
-            const text = String(input.value || "").replace(/^[•\-\*]\s*/, "").trim();
-            if(!text) return;
-            activeMinutesEntries[panelIdx].bullets.push(text);
-            input.value = "";
-            renderMinutesPanelCards();
-            const nextInput = document.getElementById(`newBulletInput_${panelIdx}`);
-            if(nextInput) nextInput.focus();
-        }
-
-        function removeMinutesBullet(panelIdx, bulletIdx){
-            if(!activeMinutesEntries[panelIdx]) return;
-            activeMinutesEntries[panelIdx].bullets.splice(bulletIdx, 1);
-            renderMinutesPanelCards();
-        }
-
-        async function saveDefenseMinutes(){
-            const targetScheduleId = activeMinutesScheduleId || (activeMinutesGroup && activeMinutesGroup.ongoing_defense ? activeMinutesGroup.ongoing_defense.schedule_id : null);
-            if(!activeMinutesGroup || !targetScheduleId) return;
-
-            // Include any un-submitted text typed in the "new bullet" inputs as a single bullet
-            activeMinutesEntries.forEach((entry, idx) => {
-                const input = document.getElementById(`newBulletInput_${idx}`);
-                if(input && input.value.trim()){
-                    const text = input.value.replace(/^[•\-\*]\s*/, "").trim();
-                    if(text) entry.bullets.push(text);
-                }
-                entry.bullets = entry.bullets.map(b => String(b || "").trim()).filter(Boolean);
-            });
-
-            const btn = document.getElementById("saveMinutesBtn");
-            if(btn){ btn.disabled = true; btn.innerText = "Saving..."; }
-
-            try{
-                const res = await fetch("/save-defense-minutes", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        adviserUserId: loggedInUserId,
-                        scheduleId: targetScheduleId,
-                        groupId: activeMinutesGroup.group_db_id,
-                        panelEntries: activeMinutesEntries
-                    })
-                });
-                const data = await res.json();
-                if(data.success){
-                    const refreshGroupId = activeMinutesGroup.group_id;
-                    alert(data.message || "Defense minutes saved.");
-                    closeDefenseMinutesModal();
-                    await loadAssignedGroups();
-                    if(document.getElementById("groupModal").style.display === "flex"){
-                        const updated = assignedGroups.find(g => g.group_id === refreshGroupId);
-                        if(updated) renderAdviserModalDefenseMinutes(updated);
-                    }
-                }else{
-                    alert(data.message || "Failed to save defense minutes.");
-                }
-            }catch(err){
-                console.log(err);
-                alert("Cannot connect to server.");
-            }finally{
-                if(btn){ btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes`; }
-            }
-        }
-
-        function logout(){
-
+        function logout() {
             localStorage.clear();
-            window.location.href =
-                "../../Log-in.html";
-
+            window.location.href = "../../Log-in.html";
         }
 
         loadAssignedGroups();

@@ -360,6 +360,14 @@
                     <i class="fa-solid fa-file-arrow-up"></i>
                     <span>Records Management</span>
                 </div>
+                <div
+                    class="menu-item"
+                    id="nav-form-templates"
+                    onclick="window.location.href='Form_Templates.html'"
+                >
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Form Templates</span>
+                </div>
                 <div class="menu-item" id="nav-consultation" onclick="window.location.href='Consultation.html'">
                     <i class="fa-solid fa-comments"></i>
                     <span>Consultation</span>
@@ -399,7 +407,7 @@
         <div class="topbar">
             <div class="welcome">
                 <h1>Defense Schedules</h1>
-                <p id="studentGroupSubtitle">View your group's scheduled defenses and record bulleted defense minutes.
+                <p id="studentGroupSubtitle">View your group's scheduled defenses, panel feedback, and defense minutes.
                 </p>
             </div>
         </div>
@@ -429,39 +437,10 @@
         </div>
     </div>
 
-    <!-- DEFENSE MINUTES MODAL -->
-    <div class="modal-overlay" id="defenseMinutesModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <div>
-                    <h2 id="minutesModalTitle" style="margin:0 0 2px; color:#2e1065;">Add Defense Minutes</h2>
-                    <p id="minutesModalSubtitle" style="margin:0; color:#64748b; font-size:13px;">Record bulleted notes
-                        per panelist.</p>
-                </div>
-                <button class="close-modal-btn" type="button" onclick="closeDefenseMinutesModal()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div id="minutesPanelCardsContainer" style="max-height:60vh; overflow-y:auto; padding-right:4px;"></div>
-
-            <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px;">
-                <button type="button" onclick="closeDefenseMinutesModal()"
-                    style="border:none; background:#f1f5f9; color:#334155; padding:11px 18px; border-radius:12px; font-weight:600; cursor:pointer;">Cancel</button>
-                <button type="button" id="saveMinutesBtn" onclick="saveDefenseMinutes()"
-                    style="border:none; background:linear-gradient(135deg,#059669,#10b981); color:#fff; padding:11px 20px; border-radius:12px; font-weight:600; cursor:pointer;">
-                    <i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const loggedInUserId = localStorage.getItem("userId");
         let studentGroup = null;
         let defenseSchedules = [];
-        let activeSchedule = null;
-        let activeMinutesEntries = [];
 
         function logout() {
             localStorage.clear();
@@ -503,7 +482,7 @@
                 }
 
                 document.getElementById("studentGroupSubtitle").innerText =
-                    `${studentGroup.group_name || "Group"} • ${studentGroup.program || "Program"} — View your defense schedules and record minutes.`;
+                    `${studentGroup.group_name || "Group"} • ${studentGroup.program || "Program"} — View your defense schedules and panel feedback.`;
 
                 if (defenseSchedules.length === 0) {
                     grid.innerHTML = `<div class="empty-state">No defense schedules have been assigned to your group yet.</div>`;
@@ -534,14 +513,6 @@
                     const isMinApproved = minStatus === "Approved";
                     const isAdviserCreated = s.submitted_by_role === "adviser";
                     const isMinRejected = minStatus === "Rejected";
-                    const isMinDraft = minStatus === "Draft";
-
-                    const isAddMinutesDisabled = isCancelled || isAdviserCreated || isMinApproved || isRedefense;
-                    const disabledReason = (isAdviserCreated || isMinApproved)
-                        ? "Adviser already recorded/approved minutes — click View to read"
-                        : (isRedefense
-                            ? "Disabled: Verdict is for re-defense"
-                            : "");
 
                     let verdictPillHtml = "";
                     if (verdict && verdict !== "Pending") {
@@ -597,8 +568,6 @@
                         `;
                     }
 
-                    const minutesBtnLabel = isMinDraft || isMinRejected ? "Edit Minutes Draft" : "Add Defense Minutes";
-
                     return `
                         <div class="defense-card ${isOngoing ? "has-ongoing" : ""}">
                             ${isOngoing ? `
@@ -638,14 +607,7 @@
                                 <button type="button" onclick="openViewDefenseModal(${s.schedule_id})" style="flex:1; border:none; background:#ede9fe; color:#5b21b6; padding:11px 14px; border-radius:14px; font-weight:600; font-size:13.5px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px;">
                                     <i class="fa-solid fa-eye"></i> View
                                 </button>
-                                ${!isCancelled ? `
-                                <button type="button" class="minutes-btn" ${isAddMinutesDisabled ? "disabled" : ""} onclick="${isAddMinutesDisabled ? "" : `openDefenseMinutesModal(${s.schedule_id})`}" title="${escapeHtml(disabledReason)}" style="flex:1; ${isAddMinutesDisabled ? "opacity:0.48; cursor:not-allowed; background:#94a3b8; box-shadow:none; transform:none;" : ""}">
-                                    <i class="fa-solid fa-clipboard-list"></i>
-                                    ${minutesBtnLabel}
-                                </button>
-                                ` : ""}
                             </div>
-                            ${disabledReason ? `<div style="font-size:11.5px; color:#64748b; text-align:right;">${escapeHtml(disabledReason)}</div>` : ""}
                         </div>
                     `;
                 }).join("");
@@ -771,162 +733,6 @@
 
         function closeViewDefenseModal() {
             document.getElementById("viewDefenseModal").style.display = "none";
-        }
-
-        function openDefenseMinutesModal(scheduleId) {
-            const sched = defenseSchedules.find(s => Number(s.schedule_id) === Number(scheduleId));
-            if (!sched) return;
-            activeSchedule = sched;
-
-            document.getElementById("minutesModalTitle").innerText = `Defense Minutes — ${sched.defense_type || "Defense"}`;
-            document.getElementById("minutesModalSubtitle").innerText =
-                `${sched.schedule_code || ""} • ${formatDateText(sched.defense_date)} • ${sched.start_time || ""} - ${sched.end_time || ""} • ${sched.room || "TBA"}`;
-
-            const basePanelists = Array.isArray(sched.panelists) && sched.panelists.length
-                ? sched.panelists
-                : [
-                    { roleLabel: "Panel Chair", panelistName: "Panel Chair" },
-                    { roleLabel: "Panel 1", panelistName: "Panel 1" },
-                    { roleLabel: "Panel 2", panelistName: "Panel 2" }
-                ];
-
-            const saved = Array.isArray(sched.saved_minutes) ? sched.saved_minutes : [];
-            activeMinutesEntries = basePanelists.map((p, idx) => {
-                const matchSaved = saved[idx] || {};
-                const bullets = Array.isArray(matchSaved.bullets) ? matchSaved.bullets.slice() : [];
-                return {
-                    roleLabel: p.roleLabel || `Panel ${idx + 1}`,
-                    panelistId: p.panelistId || null,
-                    panelistName: p.panelistName || p.roleLabel || `Panel ${idx + 1}`,
-                    bullets
-                };
-            });
-
-            renderMinutesPanelCards();
-
-            const isApprovedLock = sched.minutes_status === "Approved";
-            const saveBtn = document.getElementById("saveMinutesBtn");
-            if (saveBtn) {
-                saveBtn.style.display = isApprovedLock ? "none" : "inline-flex";
-                saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes Draft`;
-            }
-
-            document.getElementById("defenseMinutesModal").style.display = "flex";
-        }
-
-        function closeDefenseMinutesModal() {
-            document.getElementById("defenseMinutesModal").style.display = "none";
-            activeSchedule = null;
-            activeMinutesEntries = [];
-        }
-
-        function renderMinutesPanelCards() {
-            const container = document.getElementById("minutesPanelCardsContainer");
-            if (!container) return;
-
-            const isLocked = activeSchedule && activeSchedule.minutes_status === "Approved";
-            const lockNotice = isLocked
-                ? `<div style="background:#dcfce7; border:1px solid #bbf7d0; color:#15803d; border-radius:12px; padding:10px 14px; font-size:13px; font-weight:600; margin-bottom:14px;">These defense minutes have been approved by your adviser (View Only).</div>`
-                : `<div style="background:#fef3c7; border:1px solid #fde68a; color:#92400e; border-radius:12px; padding:10px 14px; font-size:12.5px; font-weight:500; margin-bottom:14px;">Student defense minutes are saved as a <strong>Draft</strong> and require your adviser's approval.</div>`;
-
-            container.innerHTML = lockNotice + activeMinutesEntries.map((entry, pIdx) => {
-                const bulletsHtml = entry.bullets.length
-                    ? entry.bullets.map((b, bIdx) => `
-                        <div class="bullet-row" style="align-items:flex-start;">
-                            <span class="bullet-marker" style="margin-top:8px;">&bull;</span>
-                            <textarea rows="2" class="bullet-input" ${isLocked ? "readonly" : ""} oninput="updateMinutesBullet(${pIdx}, ${bIdx}, this.value)" placeholder="Bullet point..." style="resize:vertical; font-family:inherit; ${isLocked ? "background:#f8fafc;" : ""}">${escapeHtml(b)}</textarea>
-                            ${!isLocked ? `<button type="button" class="remove-bullet-btn" onclick="removeMinutesBullet(${pIdx}, ${bIdx})" title="Remove bullet" style="margin-top:4px;">&times;</button>` : ""}
-                        </div>
-                    `).join("")
-                    : `<div style="font-size:12px; color:#94a3b8; font-style:italic; margin-bottom:4px;">No bullet points added yet.</div>`;
-
-                return `
-                    <div class="panel-minutes-card">
-                        <div class="panel-minutes-head">
-                            <div>
-                                <span class="panel-role-badge">${escapeHtml(entry.roleLabel)}</span>
-                                <strong style="margin-left:8px; font-size:14px; color:#2e1065;">${escapeHtml(entry.panelistName)}</strong>
-                            </div>
-                            <span style="font-size:12px; color:#64748b;">${entry.bullets.length} bullet(s)</span>
-                        </div>
-                        <div class="bullet-list-wrap">${bulletsHtml}</div>
-                        ${!isLocked ? `
-                        <div class="add-bullet-row" style="align-items:flex-start;">
-                            <textarea rows="2" id="newBulletInput_${pIdx}" class="bullet-input" placeholder="Type a comment or recommendation, then click + Add Bullet..." style="resize:vertical; font-family:inherit;"></textarea>
-                            <button type="button" class="add-bullet-btn" onclick="addMinutesBullet(${pIdx})">
-                                <i class="fa-solid fa-plus"></i> Add Bullet
-                            </button>
-                        </div>
-                        ` : ""}
-                    </div>
-                `;
-            }).join("");
-        }
-
-        function updateMinutesBullet(panelIdx, bulletIdx, val) {
-            if (activeMinutesEntries[panelIdx]) {
-                activeMinutesEntries[panelIdx].bullets[bulletIdx] = val;
-            }
-        }
-
-        function addMinutesBullet(panelIdx) {
-            const input = document.getElementById(`newBulletInput_${panelIdx}`);
-            if (!input || !activeMinutesEntries[panelIdx]) return;
-            const text = String(input.value || "").replace(/^[•\-\*]\s*/, "").trim();
-            if (!text) return;
-            activeMinutesEntries[panelIdx].bullets.push(text);
-            input.value = "";
-            renderMinutesPanelCards();
-            const nextInput = document.getElementById(`newBulletInput_${panelIdx}`);
-            if (nextInput) nextInput.focus();
-        }
-
-        function removeMinutesBullet(panelIdx, bulletIdx) {
-            if (!activeMinutesEntries[panelIdx]) return;
-            activeMinutesEntries[panelIdx].bullets.splice(bulletIdx, 1);
-            renderMinutesPanelCards();
-        }
-
-        async function saveDefenseMinutes() {
-            if (!activeSchedule || !studentGroup) return;
-
-            activeMinutesEntries.forEach((entry, idx) => {
-                const input = document.getElementById(`newBulletInput_${idx}`);
-                if (input && input.value.trim()) {
-                    const text = input.value.replace(/^[•\-\*]\s*/, "").trim();
-                    if (text) entry.bullets.push(text);
-                }
-                entry.bullets = entry.bullets.map(b => String(b || "").trim()).filter(Boolean);
-            });
-
-            const btn = document.getElementById("saveMinutesBtn");
-            if (btn) { btn.disabled = true; btn.innerText = "Saving..."; }
-
-            try {
-                const res = await fetch("/student-save-defense-minutes", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        studentUserId: loggedInUserId,
-                        scheduleId: activeSchedule.schedule_id,
-                        groupId: studentGroup.group_db_id,
-                        panelEntries: activeMinutesEntries
-                    })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert(data.message || "Defense minutes saved.");
-                    closeDefenseMinutesModal();
-                    loadStudentDefenses();
-                } else {
-                    alert(data.message || "Failed to save defense minutes.");
-                }
-            } catch (err) {
-                console.log(err);
-                alert("Cannot connect to server.");
-            } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Defense Minutes`; }
-            }
         }
 
         loadStudentDefenses();

@@ -89,6 +89,14 @@
                     <i class="fa-solid fa-book-open"></i>
                     <span>Repository</span>
                 </div>
+            <div
+                class="menu-item"
+                id="nav-forms-templates"
+                onclick="window.location.href='Forms_Templates.html'"
+            >
+                <i class="fa-solid fa-file-contract"></i>
+                <span>Forms Templates</span>
+            </div>
             </div>
         </div>
 
@@ -585,8 +593,44 @@
             }
         }
 
+        function isDirectPointsOutlineDetails(details) {
+            if (!details) return true;
+            if (details.scoring_mode === "direct_points") return true;
+            const presenters = Array.isArray(details.presenters) ? details.presenters : [];
+            if (presenters.length === 0) return true;
+            return presenters.every(p => {
+                const d = Number(p.disposition_score);
+                const del = Number(p.delivery_score);
+                return (isNaN(d) || d <= 30) && (isNaN(del) || del <= 70);
+            });
+        }
+
+        function isDirectPointsConceptDetails(details) {
+            if (!details) return true;
+            if (details.scoring_mode === "direct_points") return true;
+            const presenters = Array.isArray(details.presenters) ? details.presenters : [];
+            if (presenters.length === 0) return true;
+            return presenters.every(p => {
+                const d = Number(p.disposition_score);
+                const del = Number(p.delivery_score);
+                return (isNaN(d) || d <= 30) && (isNaN(del) || del <= 80);
+            });
+        }
+
+        function formatPtsScore(num) {
+            const n = Number(num);
+            if (isNaN(n)) return "—";
+            return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, "");
+        }
+
         function buildOutlinePanelSheetHtml(details, defenseType) {
             const sheetLabel = getSystemDocSheetShortLabel(defenseType);
+            const isDirect = isDirectPointsOutlineDetails(details);
+            const dispMax = Number(details?.max_points?.disposition) || 30;
+            const delivMax = Number(details?.max_points?.delivery) || 70;
+            const indTotalMax = Number(details?.max_points?.individual) || Number((dispMax + delivMax).toFixed(2));
+            const swMax = Number(details?.max_points?.software) || 100;
+            const docMax = Number(details?.max_points?.documentation) || swMax;
 
             const presentersHtml = (details.presenters || []).map((p, pIdx) => {
                 const isNotGraded = p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED';
@@ -598,20 +642,21 @@
                         </p>
                     `;
                 }
-                const indWeighted = (Number(p.disposition_score) * 0.20 + Number(p.delivery_score) * 0.80).toFixed(1);
-                const indGpa = convert100ToGpa(indWeighted);
+                const indTotal = isDirect
+                    ? formatPtsScore(Number(p.disposition_score) + Number(p.delivery_score))
+                    : formatPtsScore(Number(p.disposition_score) * 0.20 + Number(p.delivery_score) * 0.80);
                 return `
                     <p style="font-size:12px;color:#6d5f85;margin-bottom:4px;">
                         Student ${pIdx + 1} (${escapeHtml(p.fullname)}):
-                        Disposition <strong>${escapeHtml(p.disposition_score)}</strong>,
-                        Delivery <strong>${escapeHtml(p.delivery_score)}</strong>
-                        &mdash; Individual Weighted: <strong style="color:#7c3aed;">${indWeighted} (GPA: ${indGpa})</strong>
+                        Disposition <strong>${escapeHtml(p.disposition_score)}${isDirect ? `%/${formatPtsScore(dispMax)}%` : "%"}</strong>,
+                        Delivery <strong>${escapeHtml(p.delivery_score)}${isDirect ? `%/${formatPtsScore(delivMax)}%` : "%"}</strong>
+                        &mdash; Individual Total: <strong style="color:#7c3aed;">${indTotal}% / ${formatPtsScore(indTotalMax)}%</strong>
                     </p>
                 `;
             }).join("");
 
-            const groupTotal = ((Number(details.system_score) + Number(details.documentation_score)) / 2).toFixed(1);
-            const groupGpa = convert100ToGpa(groupTotal);
+            const swScore = details.software_score ?? details.system_score;
+            const docScore = details.documentation_score;
 
             return `
                 <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd6fe;">
@@ -622,27 +667,11 @@
                     <p style="font-size:12px;font-weight:600;color:#6d5f85;margin-bottom:4px;">Individual Grades:</p>
                     ${presentersHtml}
                     <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e5e7eb;font-size:12px;color:#6d5f85;">
-                        <p style="margin-bottom:2px;">System (50%): <strong>${escapeHtml(String(details.system_score))}</strong></p>
-                        <p style="margin-bottom:2px;">Documentation (50%): <strong>${escapeHtml(String(details.documentation_score))}</strong></p>
-                        <p style="margin-bottom:0;">Group Total: <strong style="color:#7c3aed;">${groupTotal} (GPA: ${groupGpa})</strong></p>
+                        <p style="margin-bottom:2px;">System Score (${formatPtsScore(swMax)}%): <strong>${swScore !== null && swScore !== undefined ? `${escapeHtml(String(swScore))}% / ${formatPtsScore(swMax)}%` : "—"}</strong></p>
+                        <p style="margin-bottom:0;">Document Score (${formatPtsScore(docMax)}%): <strong>${docScore !== null && docScore !== undefined ? `${escapeHtml(String(docScore))}% / ${formatPtsScore(docMax)}%` : "—"}</strong></p>
                     </div>
                 </div>
             `;
-        }
-
-        function convert100ToGpa(score) {
-            score = parseFloat(score);
-            if (isNaN(score) || score < 0) return "--";
-            if (score >= 97) return "1.00";
-            if (score >= 94) return "1.25";
-            if (score >= 91) return "1.50";
-            if (score >= 88) return "1.75";
-            if (score >= 85) return "2.00";
-            if (score >= 82) return "2.25";
-            if (score >= 79) return "2.50";
-            if (score >= 76) return "2.75";
-            if (score === 75) return "3.00";
-            return "5.00";
         }
 
         async function selectEvaluation(id) {
@@ -894,8 +923,14 @@
                     `;
                 }
 
+                const cFirstMp = (conceptData.find(({ d }) => d && d.max_points)?.d?.max_points) || {};
+                const cDispHead = Number(cFirstMp.disposition) || 30;
+                const cDelivHead = Number(cFirstMp.delivery) || 70;
+                const cIndHead = Number(cFirstMp.individual) || Number((cDispHead + cDelivHead).toFixed(2));
+                const cGrpHead = Number(cFirstMp.group) || 100;
+
                 html += `
-                    <div class="receipt-section-title">Individual Grade (Disposition 20%, Delivery &amp; Presentation 80%)</div>
+                    <div class="receipt-section-title">Individual Grade (Disposition ${formatPtsScore(cDispHead)}%, Delivery &amp; Presentation ${formatPtsScore(cDelivHead)}%)</div>
                     <table class="receipt-table compiled-eval-table">
                         <thead>
                             <tr>
@@ -908,13 +943,17 @@
 
                 conceptData.forEach(({ pe, d }, pIdx) => {
                     const pList = d.presenters || [];
+                    const isDirect = isDirectPointsConceptDetails(d);
+                    const dm = Number(d?.max_points?.disposition) || 30;
+                    const dlm = Number(d?.max_points?.delivery) || 70;
+                    const im = Number(d?.max_points?.individual) || Number((dm + dlm).toFixed(2));
 
                     const dispositionCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
                         if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                             return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
                         }
-                        return `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>`;
+                        return `<td class="score-col">${escapeHtml(String(p.disposition_score))}${isDirect ? `%/${formatPtsScore(dm)}%` : "%"}</td>`;
                     }).join("");
 
                     const deliveryCells = allPresenters.map((_, sIdx) => {
@@ -922,7 +961,7 @@
                         if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                             return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
                         }
-                        return `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>`;
+                        return `<td class="score-col">${escapeHtml(String(p.delivery_score))}${isDirect ? `%/${formatPtsScore(dlm)}%` : "%"}</td>`;
                     }).join("");
 
                     const weightedCells = allPresenters.map((_, sIdx) => {
@@ -930,8 +969,10 @@
                         if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                             return `<td class="score-col" style="color:#9ca3af;font-size:0.75rem;">—</td>`;
                         }
-                        const w = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
-                        return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${w}<br><small>(${convert100ToGpa(w)})</small></td>`;
+                        const w = isDirect
+                            ? formatPtsScore(Number(p.disposition_score) + Number(p.delivery_score))
+                            : formatPtsScore(Number(p.disposition_score) * 0.3 + Number(p.delivery_score) * 0.7);
+                        return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${w}% / ${formatPtsScore(im)}%</td>`;
                     }).join("");
 
                     html += `
@@ -943,7 +984,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <strong>I. Disposition (20%)</strong>
+                                <strong>I. Disposition (${formatPtsScore(dm)}%)</strong>
                                 <div class="criteria-desc">a. Generally neat in appearance</div>
                                 <div class="criteria-desc">b. Projects an aura of confidence</div>
                                 <div class="criteria-desc">c. Preparedness and teamwork</div>
@@ -952,7 +993,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <strong>II. Delivery and Presentation (80%)</strong>
+                                <strong>II. Delivery and Presentation (${formatPtsScore(dlm)}%)</strong>
                                 <div class="criteria-desc">a. Organization of Content</div>
                                 <div class="criteria-desc">b. Manner of Presentation</div>
                                 <div class="criteria-desc">c. Ability to Defend Ideas</div>
@@ -960,7 +1001,7 @@
                             ${deliveryCells}
                         </tr>
                         <tr style="background:#faf8ff;">
-                            <td><strong>Individual Weighted Average (GPA)</strong></td>
+                            <td><strong>Total Individual Score (${formatPtsScore(im)}%)</strong></td>
                             ${weightedCells}
                         </tr>
                     `;
@@ -970,44 +1011,42 @@
 
                 // ── Group Grade ──────────────────────────────────────────────
                 const panHeaderCells = conceptData.map((_, i) => `<th class="score-col">Panelist ${i + 1}</th>`).join("");
-                const avgGroupScore = (conceptData.reduce((s, { d }) => s + Number(d.group_score || 0), 0) / conceptData.length).toFixed(1);
 
                 html += `
-                    <div class="receipt-section-title">Group Grade (Concept Papers 100%)</div>
+                    <div class="receipt-section-title">Group Grade (Concept Papers ${formatPtsScore(cGrpHead)}%)</div>
                     <table class="receipt-table">
                         <thead>
                             <tr>
-                                <th>Criteria and Weight</th>
+                                <th>Criteria</th>
                                 ${panHeaderCells}
-                                <th class="score-col">Average</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                    <strong>Concept Papers (100%)</strong>
+                                    <strong>Concept Papers (${formatPtsScore(cGrpHead)}%)</strong>
                                     <div class="criteria-desc">• Mechanics, completeness, and content</div>
                                 </td>
-                                ${conceptData.map(({ d }) => `<td class="score-col">${escapeHtml(String(d.group_score))}</td>`).join("")}
-                                <td class="score-col"><strong>${avgGroupScore}</strong></td>
-                            </tr>
-                            <tr style="font-weight:700;background:#f3f4f6;">
-                                <td>Total Group Grade (GPA Equivalent)</td>
-                                ${conceptData.map(({ d }) => `<td class="score-col" style="color:#7c3aed;">${convert100ToGpa(d.group_score)}</td>`).join("")}
-                                <td class="score-col" style="color:#7c3aed;">${convert100ToGpa(avgGroupScore)}</td>
+                                ${conceptData.map(({ d }) => {
+                                    const gm = Number(d?.max_points?.group) || 100;
+                                    return `<td class="score-col"><strong>${escapeHtml(String(d.group_score))}% / ${formatPtsScore(gm)}%</strong></td>`;
+                                }).join("")}
                             </tr>
                         </tbody>
                     </table>
                 `;
-
-                html += `</tbody></table>`;
             // ── OUTLINE / PRE-FINAL / FINAL evaluation layout ────────────────
             } else if (outlineData.length) {
                 const numS = allPresenters.length;
                 const studentHeaderCells = allPresenters.map((_, i) => `<th class="score-col">${i + 1}</th>`).join("");
+                const oFirstMp = (outlineData.find(({ d }) => d && d.max_points)?.d?.max_points) || {};
+                const oDispHead = Number(oFirstMp.disposition) || 30;
+                const oDelivHead = Number(oFirstMp.delivery) || 70;
+                const oSwHead = Number(oFirstMp.software) || 100;
+                const oDocHead = Number(oFirstMp.documentation) || oSwHead;
 
                 html += `
-                    <div class="receipt-section-title">Individual Grade (Disposition 20%, Delivery &amp; Presentation 80%)</div>
+                    <div class="receipt-section-title">Individual Grade (Disposition ${formatPtsScore(oDispHead)}%, Delivery &amp; Presentation ${formatPtsScore(oDelivHead)}%)</div>
                     <table class="receipt-table compiled-eval-table">
                         <thead>
                             <tr>
@@ -1020,13 +1059,17 @@
 
                 outlineData.forEach(({ pe, d }, pIdx) => {
                     const pList = d.presenters || [];
+                    const isDirect = isDirectPointsOutlineDetails(d);
+                    const dm = Number(d?.max_points?.disposition) || 30;
+                    const dlm = Number(d?.max_points?.delivery) || 70;
+                    const im = Number(d?.max_points?.individual) || Number((dm + dlm).toFixed(2));
 
                     const dispositionCells = allPresenters.map((_, sIdx) => {
                         const p = pList[sIdx];
                         if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                             return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
                         }
-                        return `<td class="score-col">${escapeHtml(String(p.disposition_score))}</td>`;
+                        return `<td class="score-col">${escapeHtml(String(p.disposition_score))}${isDirect ? `%/${formatPtsScore(dm)}%` : "%"}</td>`;
                     }).join("");
 
                     const deliveryCells = allPresenters.map((_, sIdx) => {
@@ -1034,7 +1077,7 @@
                         if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                             return `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
                         }
-                        return `<td class="score-col">${escapeHtml(String(p.delivery_score))}</td>`;
+                        return `<td class="score-col">${escapeHtml(String(p.delivery_score))}${isDirect ? `%/${formatPtsScore(dlm)}%` : "%"}</td>`;
                     }).join("");
 
                     const weightedCells = allPresenters.map((_, sIdx) => {
@@ -1042,8 +1085,10 @@
                         if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                             return `<td class="score-col" style="color:#9ca3af;font-size:0.75rem;">—</td>`;
                         }
-                        const w = (Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8).toFixed(1);
-                        return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${w}<br><small>(${convert100ToGpa(w)})</small></td>`;
+                        const total = isDirect
+                            ? formatPtsScore(Number(p.disposition_score) + Number(p.delivery_score))
+                            : formatPtsScore(Number(p.disposition_score) * 0.3 + Number(p.delivery_score) * 0.7);
+                        return `<td class="score-col" style="font-weight:700;color:#7c3aed;">${total}% / ${formatPtsScore(im)}%</td>`;
                     }).join("");
 
                     html += `
@@ -1055,7 +1100,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <strong>I. Disposition (20%)</strong>
+                                <strong>I. Disposition (${formatPtsScore(dm)}%)</strong>
                                 <div class="criteria-desc">a. Generally neat in appearance</div>
                                 <div class="criteria-desc">b. Projects an aura of confidence</div>
                                 <div class="criteria-desc">c. Preparedness and teamwork</div>
@@ -1064,7 +1109,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <strong>II. Delivery and Presentation (80%)</strong>
+                                <strong>II. Delivery and Presentation (${formatPtsScore(dlm)}%)</strong>
                                 <div class="criteria-desc">a. Organization of Content</div>
                                 <div class="criteria-desc">b. Manner of Presentation</div>
                                 <div class="criteria-desc">c. Ability to Defend Ideas</div>
@@ -1072,7 +1117,7 @@
                             ${deliveryCells}
                         </tr>
                         <tr style="background:#faf8ff;">
-                            <td><strong>Individual Weighted Average (GPA)</strong></td>
+                            <td><strong>Total Individual Score (${formatPtsScore(im)}%)</strong></td>
                             ${weightedCells}
                         </tr>
                     `;
@@ -1080,46 +1125,38 @@
 
                 html += `</tbody></table>`;
 
-                // ── Group Grade (System + Documentation) ─────────────────────
+                // ── System Score & Document Score ─────────────────────
                 const panHeaderCells = outlineData.map((_, i) => `<th class="score-col">Panelist ${i + 1}</th>`).join("");
-                const avgSys  = (outlineData.reduce((s, { d }) => s + Number(d.system_score || 0), 0) / outlineData.length).toFixed(1);
-                const avgDoc  = (outlineData.reduce((s, { d }) => s + Number(d.documentation_score || 0), 0) / outlineData.length).toFixed(1);
-                const avgGrp  = ((Number(avgSys) + Number(avgDoc)) / 2).toFixed(1);
 
                 html += `
-                    <div class="receipt-section-title">Group Grade</div>
+                    <div class="receipt-section-title">System Score &amp; Document Score</div>
                     <table class="receipt-table">
                         <thead>
                             <tr>
                                 <th>Criteria and Weight</th>
                                 ${panHeaderCells}
-                                <th class="score-col">Average</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>System (50%)</strong></td>
-                                ${outlineData.map(({ d }) => `<td class="score-col">${escapeHtml(String(d.system_score))}</td>`).join("")}
-                                <td class="score-col"><strong>${avgSys}</strong></td>
+                                <td><strong>System Score (${formatPtsScore(oSwHead)}%)</strong></td>
+                                ${outlineData.map(({ d }) => {
+                                    const v = d.software_score ?? d.system_score;
+                                    const sm = Number(d?.max_points?.software) || 100;
+                                    return `<td class="score-col">${v !== null && v !== undefined ? `${escapeHtml(String(v))}% / ${formatPtsScore(sm)}%` : "—"}</td>`;
+                                }).join("")}
                             </tr>
                             <tr>
-                                <td><strong>Documentation (50%)</strong></td>
-                                ${outlineData.map(({ d }) => `<td class="score-col">${escapeHtml(String(d.documentation_score))}</td>`).join("")}
-                                <td class="score-col"><strong>${avgDoc}</strong></td>
-                            </tr>
-                            <tr style="font-weight:700;background:#f3f4f6;">
-                                <td>Group Average (GPA Equivalent)</td>
+                                <td><strong>Document Score (${formatPtsScore(oDocHead)}%)</strong></td>
                                 ${outlineData.map(({ d }) => {
-                                    const a = ((Number(d.system_score || 0) + Number(d.documentation_score || 0)) / 2).toFixed(1);
-                                    return `<td class="score-col" style="color:#7c3aed;">${convert100ToGpa(a)}</td>`;
+                                    const v = d.documentation_score;
+                                    const dm = Number(d?.max_points?.documentation) || Number(d?.max_points?.software) || 100;
+                                    return `<td class="score-col">${v !== null && v !== undefined ? `${escapeHtml(String(v))}% / ${formatPtsScore(dm)}%` : "—"}</td>`;
                                 }).join("")}
-                                <td class="score-col" style="color:#7c3aed;">${convert100ToGpa(avgGrp)}</td>
                             </tr>
                         </tbody>
                     </table>
                 `;
-
-                html += `</tbody></table>`;
             } else {
                 // Fallback: no detailed sheets but evaluations submitted
                 html += `
@@ -1217,6 +1254,11 @@
 
             // Individual Grade cells across all panelists (1-3 panelists)
             const presenterNumberHeaders = presenterSlots.map((_, idx) => `<th class="dnsc-score-col">${idx + 1}</th>`).join("");
+            const conceptFirstMp = (conceptData.find(({ d }) => d && d.max_points)?.d?.max_points) || {};
+            const conceptDispMaxHead = Number(conceptFirstMp.disposition) || 30;
+            const conceptDelivMaxHead = Number(conceptFirstMp.delivery) || 70;
+            const conceptIndMaxHead = Number(conceptFirstMp.individual) || Number((conceptDispMaxHead + conceptDelivMaxHead).toFixed(2));
+            const conceptGrpMaxHead = Number(conceptFirstMp.group) || 100;
 
             const dispositionScoreCells = presenterSlots.map((slotP, sIdx) => {
                 if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
@@ -1225,7 +1267,9 @@
                     if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                         return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
                     }
-                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.disposition_score))}</strong></div>`;
+                    const isDirect = isDirectPointsConceptDetails(d);
+                    const dm = Number(d?.max_points?.disposition) || 30;
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.disposition_score))}${isDirect ? `%/${formatPtsScore(dm)}%` : "%"}</strong></div>`;
                 }).join("");
                 return `<td class="dnsc-score-col">${lines}</td>`;
             }).join("");
@@ -1237,32 +1281,39 @@
                     if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                         return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
                     }
-                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.delivery_score))}</strong></div>`;
+                    const isDirect = isDirectPointsConceptDetails(d);
+                    const dlm = Number(d?.max_points?.delivery) || 70;
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.delivery_score))}${isDirect ? `%/${formatPtsScore(dlm)}%` : "%"}</strong></div>`;
                 }).join("");
                 return `<td class="dnsc-score-col">${lines}</td>`;
             }).join("");
 
             const individualAvgCells = presenterSlots.map((slotP, sIdx) => {
                 if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
-                const validWeighted = [];
-                conceptData.forEach(({ d }) => {
+                const lines = conceptData.map(({ d }, pIdx) => {
                     const p = (d.presenters || [])[sIdx];
-                    if (p && p.status !== 'NOT_GRADED' && p.disposition_score !== null && p.delivery_score !== null && p.student_status !== 'INACTIVE' && p.student_status !== 'DROPPED') {
-                        validWeighted.push(Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8);
+                    if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                        return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
                     }
-                });
-                if (!validWeighted.length) {
-                    return `<td class="dnsc-score-col dnsc-p-ng">Not Graded</td>`;
-                }
-                const avgW = (validWeighted.reduce((a, b) => a + b, 0) / validWeighted.length).toFixed(1);
-                return `<td class="dnsc-score-col dnsc-avg-cell"><strong>${avgW}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(avgW)})</div></td>`;
+                    const isDirect = isDirectPointsConceptDetails(d);
+                    const dm = Number(d?.max_points?.disposition) || 30;
+                    const dlm = Number(d?.max_points?.delivery) || 70;
+                    const im = Number(d?.max_points?.individual) || Number((dm + dlm).toFixed(2));
+                    const scoreVal = isDirect
+                        ? (Number(p.disposition_score) + Number(p.delivery_score))
+                        : (Number(p.disposition_score) * 0.3 + Number(p.delivery_score) * 0.7);
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${formatPtsScore(scoreVal)}%/${formatPtsScore(im)}%</strong></div>`;
+                }).join("");
+                return `<td class="dnsc-score-col">${lines}</td>`;
             }).join("");
 
             // Group Grade
             const groupPanelHeaders = conceptData.map((_, i) => `<th class="dnsc-score-col">Panel ${i + 1}</th>`).join("");
-            const groupRawScores = conceptData.map(({ d }) => `<td class="dnsc-score-col"><strong>${escapeHtml(String(d.group_score ?? "—"))}</strong></td>`).join("");
-            const avgGroupScore = (conceptData.reduce((s, { d }) => s + Number(d.group_score || 0), 0) / conceptData.length).toFixed(1);
-            const groupGpaCells = conceptData.map(({ d }) => `<td class="dnsc-score-col"><strong>${convert100ToGpa(d.group_score)}</strong></td>`).join("");
+            const groupRawScores = conceptData.map(({ d }) => `<td class="dnsc-score-col"><strong>${d.group_score !== null && d.group_score !== undefined ? `${escapeHtml(String(d.group_score))}%` : "—"}</strong></td>`).join("");
+            const groupTotalCells = conceptData.map(({ d }) => {
+                const gm = Number(d?.max_points?.group) || 100;
+                return `<td class="dnsc-score-col"><strong>${d.group_score !== null && d.group_score !== undefined ? `${escapeHtml(String(d.group_score))}% / ${formatPtsScore(gm)}%` : "—"}</strong></td>`;
+            }).join("");
 
             // Verdict checkboxes
             const outcomeRaw = sched.evaluations_complete ? String(sched.panel_result || "").trim() : "";
@@ -1361,7 +1412,7 @@
                     <table class="dnsc-table dnsc-individual-table">
                         <thead>
                             <tr>
-                                <th rowspan="2" class="dnsc-criteria-col">Criteria and Weight</th>
+                                <th rowspan="2" class="dnsc-criteria-col">Criteria and Max Points</th>
                                 <th colspan="${numPresenters}" class="dnsc-score-header">Score</th>
                             </tr>
                             <tr>
@@ -1371,7 +1422,7 @@
                         <tbody>
                             <tr>
                                 <td>
-                                    <div class="dnsc-crit-main">Disposition (20%)</div>
+                                    <div class="dnsc-crit-main">Disposition (${formatPtsScore(conceptDispMaxHead)}%)</div>
                                     <ul class="dnsc-crit-list">
                                         <li>Generally neat in appearance</li>
                                         <li>Projects an aura of confidence</li>
@@ -1382,7 +1433,7 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <div class="dnsc-crit-main">Delivery and Presentation (80%)</div>
+                                    <div class="dnsc-crit-main">Delivery and Presentation (${formatPtsScore(conceptDelivMaxHead)}%)</div>
                                     <div class="dnsc-crit-subhead">Organization of Content</div>
                                     <ul class="dnsc-crit-list">
                                         <li>Sense of segmentation</li>
@@ -1410,7 +1461,7 @@
                                 ${deliveryScoreCells}
                             </tr>
                             <tr class="dnsc-total-row">
-                                <td><strong>Weighted Average (GPA Equivalent)</strong></td>
+                                <td><strong>Individual Total Score (${formatPtsScore(conceptIndMaxHead)}%)</strong></td>
                                 ${individualAvgCells}
                             </tr>
                         </tbody>
@@ -1423,13 +1474,12 @@
                             <tr>
                                 <th class="dnsc-criteria-col">Criteria and Weight</th>
                                 ${groupPanelHeaders}
-                                <th class="dnsc-score-col">Average</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                    <div class="dnsc-crit-main">Concept Papers (100%)</div>
+                                    <div class="dnsc-crit-main">Concept Papers (${formatPtsScore(conceptGrpMaxHead)}%)</div>
                                     <ul class="dnsc-crit-list">
                                         <li>Mechanics – Spelling/Punctuation/Grammar/Structure</li>
                                         <li>Completeness</li>
@@ -1437,12 +1487,10 @@
                                     </ul>
                                 </td>
                                 ${groupRawScores}
-                                <td class="dnsc-score-col"><strong>${avgGroupScore}</strong></td>
                             </tr>
                             <tr class="dnsc-total-row">
                                 <td><strong>Total</strong></td>
-                                ${groupGpaCells}
-                                <td class="dnsc-score-col"><strong>${convert100ToGpa(avgGroupScore)}</strong></td>
+                                ${groupTotalCells}
                             </tr>
                         </tbody>
                     </table>
@@ -1518,6 +1566,12 @@
             }).join("");
 
             const presenterNumberHeaders = presenterSlots.map((_, idx) => `<th class="dnsc-score-col">${idx + 1}</th>`).join("");
+            const outlineFirstMp = (outlineData.find(({ d }) => d && d.max_points)?.d?.max_points) || {};
+            const outlineDispMaxHead = Number(outlineFirstMp.disposition) || 30;
+            const outlineDelivMaxHead = Number(outlineFirstMp.delivery) || 70;
+            const outlineIndMaxHead = Number(outlineFirstMp.individual) || Number((outlineDispMaxHead + outlineDelivMaxHead).toFixed(2));
+            const outlineSwMaxHead = Number(outlineFirstMp.software) || 100;
+            const outlineDocMaxHead = Number(outlineFirstMp.documentation) || outlineSwMaxHead;
 
             const dispositionScoreCells = presenterSlots.map((slotP, sIdx) => {
                 if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
@@ -1526,7 +1580,9 @@
                     if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                         return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
                     }
-                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.disposition_score))}</strong></div>`;
+                    const isDirect = isDirectPointsOutlineDetails(d);
+                    const dm = Number(d?.max_points?.disposition) || 30;
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.disposition_score))}${isDirect ? `%/${formatPtsScore(dm)}%` : "%"}</strong></div>`;
                 }).join("");
                 return `<td class="dnsc-score-col">${lines}</td>`;
             }).join("");
@@ -1538,38 +1594,42 @@
                     if (!p || p.status === 'NOT_GRADED' || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
                         return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
                     }
-                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.delivery_score))}</strong></div>`;
+                    const isDirect = isDirectPointsOutlineDetails(d);
+                    const dlm = Number(d?.max_points?.delivery) || 70;
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${escapeHtml(String(p.delivery_score))}${isDirect ? `%/${formatPtsScore(dlm)}%` : "%"}</strong></div>`;
                 }).join("");
                 return `<td class="dnsc-score-col">${lines}</td>`;
             }).join("");
 
             const individualAvgCells = presenterSlots.map((slotP, sIdx) => {
                 if (!slotP) return `<td class="dnsc-score-col dnsc-muted">—</td>`;
-                const validWeighted = [];
-                outlineData.forEach(({ d }) => {
+                const lines = outlineData.map(({ d }, pIdx) => {
                     const p = (d.presenters || [])[sIdx];
-                    if (p && p.status !== 'NOT_GRADED' && p.disposition_score !== null && p.delivery_score !== null && p.student_status !== 'INACTIVE' && p.student_status !== 'DROPPED') {
-                        validWeighted.push(Number(p.disposition_score) * 0.2 + Number(p.delivery_score) * 0.8);
+                    if (!p || p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED') {
+                        return `<div class="dnsc-p-score dnsc-p-ng">P${pIdx + 1}: N/G</div>`;
                     }
-                });
-                if (!validWeighted.length) {
-                    return `<td class="dnsc-score-col dnsc-p-ng">Not Graded</td>`;
-                }
-                const avgW = (validWeighted.reduce((a, b) => a + b, 0) / validWeighted.length).toFixed(1);
-                return `<td class="dnsc-score-col dnsc-avg-cell"><strong>${avgW}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(avgW)})</div></td>`;
+                    const isDirect = isDirectPointsOutlineDetails(d);
+                    const dm = Number(d?.max_points?.disposition) || 30;
+                    const dlm = Number(d?.max_points?.delivery) || 70;
+                    const im = Number(d?.max_points?.individual) || Number((dm + dlm).toFixed(2));
+                    const scoreVal = isDirect
+                        ? (Number(p.disposition_score) + Number(p.delivery_score))
+                        : (Number(p.disposition_score) * 0.3 + Number(p.delivery_score) * 0.7);
+                    return `<div class="dnsc-p-score"><span>P${pIdx + 1}:</span> <strong>${formatPtsScore(scoreVal)}%/${formatPtsScore(im)}%</strong></div>`;
+                }).join("");
+                return `<td class="dnsc-score-col">${lines}</td>`;
             }).join("");
 
-            // Group Grade (System 50% + Documentation 50%)
+            // System Score & Document Score kept separate
             const groupPanelHeaders = outlineData.map((_, i) => `<th class="dnsc-score-col">Panel ${i + 1}</th>`).join("");
-            const sysCells = outlineData.map(({ d }) => `<td class="dnsc-score-col"><strong>${escapeHtml(String(d.system_score ?? "—"))}</strong></td>`).join("");
-            const docCells = outlineData.map(({ d }) => `<td class="dnsc-score-col"><strong>${escapeHtml(String(d.documentation_score ?? "—"))}</strong></td>`).join("");
-            const avgSys = (outlineData.reduce((s, { d }) => s + Number(d.system_score || 0), 0) / outlineData.length).toFixed(1);
-            const avgDoc = (outlineData.reduce((s, { d }) => s + Number(d.documentation_score || 0), 0) / outlineData.length).toFixed(1);
-            const avgGrp = ((Number(avgSys) + Number(avgDoc)) / 2).toFixed(1);
-
-            const groupTotalCells = outlineData.map(({ d }) => {
-                const a = ((Number(d.system_score || 0) + Number(d.documentation_score || 0)) / 2).toFixed(1);
-                return `<td class="dnsc-score-col"><strong>${a}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(a)})</div></td>`;
+            const swCells = outlineData.map(({ d }) => {
+                const v = d.software_score ?? d.system_score;
+                const sm = Number(d?.max_points?.software) || 100;
+                return `<td class="dnsc-score-col"><strong>${v !== null && v !== undefined ? `${escapeHtml(String(v))}% / ${formatPtsScore(sm)}%` : "—"}</strong></td>`;
+            }).join("");
+            const docCells = outlineData.map(({ d }) => {
+                const dm = Number(d?.max_points?.documentation) || Number(d?.max_points?.software) || 100;
+                return `<td class="dnsc-score-col"><strong>${d.documentation_score !== null && d.documentation_score !== undefined ? `${escapeHtml(String(d.documentation_score))}% / ${formatPtsScore(dm)}%` : "—"}</strong></td>`;
             }).join("");
 
             // Verdict checkboxes (Outline / Pre-Final / Final DOCX format)
@@ -1646,7 +1706,7 @@
                     <table class="dnsc-table dnsc-individual-table">
                         <thead>
                             <tr>
-                                <th rowspan="2" class="dnsc-criteria-col">Criteria and Weight</th>
+                                <th rowspan="2" class="dnsc-criteria-col">Criteria and Max Points</th>
                                 <th colspan="${numPresenters}" class="dnsc-score-header">Score</th>
                             </tr>
                             <tr>
@@ -1656,7 +1716,7 @@
                         <tbody>
                             <tr>
                                 <td>
-                                    <div class="dnsc-crit-main">Disposition (20%)</div>
+                                    <div class="dnsc-crit-main">Disposition (${formatPtsScore(outlineDispMaxHead)}%)</div>
                                     <ul class="dnsc-crit-list">
                                         <li>Generally neat in appearance</li>
                                         <li>Projects an aura of confidence</li>
@@ -1667,7 +1727,7 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <div class="dnsc-crit-main">Delivery and Presentation (80%)</div>
+                                    <div class="dnsc-crit-main">Delivery and Presentation (${formatPtsScore(outlineDelivMaxHead)}%)</div>
                                     <div class="dnsc-crit-subhead">Organization of Content</div>
                                     <ul class="dnsc-crit-list">
                                         <li>Sense of segmentation</li>
@@ -1695,39 +1755,37 @@
                                 ${deliveryScoreCells}
                             </tr>
                             <tr class="dnsc-total-row">
-                                <td><strong>Weighted Average (GPA Equivalent)</strong></td>
+                                <td><strong>Total Individual Score (${formatPtsScore(outlineIndMaxHead)}%)</strong></td>
                                 ${individualAvgCells}
                             </tr>
                         </tbody>
                     </table>
 
-                    <!-- Group Grade -->
-                    <div class="dnsc-section-label">Group Grade</div>
+                    <!-- System Score & Document Score -->
+                    <div class="dnsc-section-label">System Score &amp; Document Score</div>
                     <table class="dnsc-table dnsc-group-table">
                         <thead>
                             <tr>
                                 <th class="dnsc-criteria-col">Criteria and Weight</th>
                                 ${groupPanelHeaders}
-                                <th class="dnsc-score-col">Average</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                    <div class="dnsc-crit-main">System (50%)</div>
+                                    <div class="dnsc-crit-main">System Score (${formatPtsScore(outlineSwMaxHead)}%)</div>
                                     <ul class="dnsc-crit-list">
-                                        <li>The design of the system is based on the objectives.</li>
+                                        <li>The design of the software is based on the objectives.</li>
                                         <li>Technical output as a reliable proof of concept of the study.</li>
                                         <li>Degree of impact on the panelist.</li>
                                         <li>Exhibits ease of use and user-friendliness.</li>
                                     </ul>
                                 </td>
-                                ${sysCells}
-                                <td class="dnsc-score-col"><strong>${avgSys}</strong></td>
+                                ${swCells}
                             </tr>
                             <tr>
                                 <td>
-                                    <div class="dnsc-crit-main">Documentation (50%)</div>
+                                    <div class="dnsc-crit-main">Document Score (${formatPtsScore(outlineDocMaxHead)}%)</div>
                                     <ul class="dnsc-crit-list">
                                         <li>Mechanics – Spelling/Punctuation/Grammar/Structure</li>
                                         <li>Completeness</li>
@@ -1735,12 +1793,6 @@
                                     </ul>
                                 </td>
                                 ${docCells}
-                                <td class="dnsc-score-col"><strong>${avgDoc}</strong></td>
-                            </tr>
-                            <tr class="dnsc-total-row">
-                                <td><strong>Total</strong></td>
-                                ${groupTotalCells}
-                                <td class="dnsc-score-col"><strong>${avgGrp}</strong><div class="dnsc-gpa-sub">(${convert100ToGpa(avgGrp)})</div></td>
                             </tr>
                         </tbody>
                     </table>
@@ -1795,6 +1847,11 @@
             let deliveryCells = "";
             let studentTotals = "";
 
+            const rcDispMax = Number(details?.max_points?.disposition) || 30;
+            const rcDelivMax = Number(details?.max_points?.delivery) || 70;
+            const rcIndMax = Number(details?.max_points?.individual) || Number((rcDispMax + rcDelivMax).toFixed(2));
+            const rcGrpMax = Number(details?.max_points?.group) || 100;
+
             (details.presenters || []).forEach((p, idx) => {
                 const isNotGraded = p.status === 'NOT_GRADED' || p.disposition_score === null || p.delivery_score === null || p.student_status === 'INACTIVE' || p.student_status === 'DROPPED';
                 const badge = isNotGraded ? ` <span style="font-size:0.72rem;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:4px;">Not Graded</span>` : '';
@@ -1805,11 +1862,13 @@
                     deliveryCells += `<td class="score-col" style="color:#ef4444;font-size:0.75rem;font-weight:600;">Not Graded</td>`;
                     studentTotals += `<td class="score-col" style="background:#f9fafb;color:#9ca3af;font-size:0.75rem;">—</td>`;
                 } else {
-                    dispositionCells += `<td class="score-col">${escapeHtml(p.disposition_score)}</td>`;
-                    deliveryCells += `<td class="score-col">${escapeHtml(p.delivery_score)}</td>`;
-                    const individualWeighted = p.disposition_score * 0.20 + p.delivery_score * 0.80;
-                    const individualGpa = convert100ToGpa(individualWeighted);
-                    studentTotals += `<td class="score-col" style="background:#f9fafb;font-weight:bold;color:#7c3aed;">${individualWeighted.toFixed(1)} (${individualGpa})</td>`;
+                    const isDirect = isDirectPointsConceptDetails(details);
+                    dispositionCells += `<td class="score-col">${escapeHtml(p.disposition_score)}${isDirect ? `%/${formatPtsScore(rcDispMax)}%` : "%"}</td>`;
+                    deliveryCells += `<td class="score-col">${escapeHtml(p.delivery_score)}${isDirect ? `%/${formatPtsScore(rcDelivMax)}%` : "%"}</td>`;
+                    const individualTotal = isDirect
+                        ? (Number(p.disposition_score) + Number(p.delivery_score))
+                        : (Number(p.disposition_score) * 0.30 + Number(p.delivery_score) * 0.70);
+                    studentTotals += `<td class="score-col" style="background:#f9fafb;font-weight:bold;color:#7c3aed;">${formatPtsScore(individualTotal)}% / ${formatPtsScore(rcIndMax)}%</td>`;
                 }
             });
 
@@ -1820,7 +1879,6 @@
                 studentTotals += `<td class="score-col">—</td>`;
             }
 
-            const groupGpa = convert100ToGpa(details.group_score);
             const formattedDate = formatDefenseDate(sched.defense_date);
 
             viewport.innerHTML = `
@@ -1859,7 +1917,7 @@
                         <tbody>
                             <tr>
                                 <td>
-                                    <strong>I. Disposition (20%)</strong>
+                                    <strong>I. Disposition (${formatPtsScore(rcDispMax)}%)</strong>
                                     <div class="criteria-desc">a. Generally neat in appearance</div>
                                     <div class="criteria-desc">b. Projects an aura of confidence</div>
                                     <div class="criteria-desc">c. Preparedness and teamwork</div>
@@ -1868,7 +1926,7 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <strong>II. Delivery and Presentation (80%)</strong>
+                                    <strong>II. Delivery and Presentation (${formatPtsScore(rcDelivMax)}%)</strong>
                                     <div class="criteria-desc">a. Organization of Content</div>
                                     <div class="criteria-desc">b. Manner of Presentation</div>
                                     <div class="criteria-desc">c. Ability to Defend Ideas</div>
@@ -1876,7 +1934,7 @@
                                 ${deliveryCells}
                             </tr>
                             <tr style="font-weight:bold;background:#f3f4f6;">
-                                <td>Individual Weighted Average (GPA)</td>
+                                <td>Individual Total Score (${formatPtsScore(rcIndMax)}%)</td>
                                 ${studentTotals}
                             </tr>
                         </tbody>
@@ -1886,30 +1944,22 @@
                     <table class="receipt-table">
                         <thead>
                             <tr>
-                                <th>Criteria and Weight</th>
+                                <th>Criteria</th>
                                 <th class="score-col">Score</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                    <strong>Concept Papers (100%)</strong>
+                                    <strong>Concept Papers (${formatPtsScore(rcGrpMax)}%)</strong>
                                     <div class="criteria-desc">• Mechanics, completeness, and content</div>
                                 </td>
-                                <td class="score-col">${escapeHtml(details.group_score)}</td>
-                            </tr>
-                            <tr style="font-weight:bold;background:#f3f4f6;">
-                                <td>Total Group Grade (GPA Equivalent)</td>
-                                <td class="score-col" style="color:#7c3aed;">${groupGpa}</td>
+                                <td class="score-col">${escapeHtml(details.group_score)}% / ${formatPtsScore(rcGrpMax)}%</td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <div class="signature-area">
-                        <div>
-                            <p><strong>Overall Calculated Team Grade</strong></p>
-                            <span class="grade-highlight">${escapeHtml(sched.evaluation.score)} (GPA)</span>
-                        </div>
+                    <div class="signature-area" style="justify-content:flex-end;">
                         <div class="sig-block">
                             ${renderPanelistSignatureHtml(details)}
                             <div class="sig-line">Signature over Printed Name of Panelist</div>

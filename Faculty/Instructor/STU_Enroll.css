@@ -974,3 +974,49 @@ body{
     }
 
 }
+
+/* ================= ADD CUSTOM PROGRAM INPUT ================= */
+
+.custom-program-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:10px;
+}
+
+.custom-program-wrap input{
+    flex:1;
+    min-width:0;
+    padding:13px 16px;
+    border-radius:14px;
+    border:1.5px solid #c4b5fd;
+    background:#ffffff;
+    color:#2e1065;
+    font-size:14px;
+}
+
+.custom-program-wrap input:focus{
+    border-color:#7c3aed;
+    box-shadow:0 0 0 3px rgba(124, 58, 237, 0.14);
+}
+
+.add-program-confirm-btn{
+    flex-shrink:0;
+    border:none;
+    padding:13px 18px;
+    border-radius:14px;
+    background:linear-gradient(135deg, #6d28d9, #9333ea);
+    color:#ffffff;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:all 0.2s ease;
+}
+
+.add-program-confirm-btn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 6px 16px rgba(109, 40, 217, 0.28);
+}

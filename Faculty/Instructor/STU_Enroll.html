@@ -181,6 +181,14 @@
                     Repository
                 </span>
             </div>
+            <div
+                class="menu-item"
+                id="nav-forms-templates"
+                onclick="window.location.href='Forms_Templates.html'"
+            >
+                <i class="fa-solid fa-file-contract"></i>
+                <span>Forms Templates</span>
+            </div>
 
         </div>
 
@@ -239,12 +247,25 @@
 
                 <!-- PROGRAM -->
                 <div class="input-group">
-                    <label>Program</label>
-                    <select id="studentProgram">
+                    <label for="studentProgram">Program</label>
+                    <select id="studentProgram" onchange="handleProgramSelectChange('student')">
                         <option value="">Select Program</option>
-                        <option>BSIT</option>
-                        <option>BSIS</option>
+                        <option value="BSIT">BSIT</option>
+                        <option value="BSIS">BSIS</option>
+                        <option value="__ADD_PROGRAM__">+ Add Program</option>
                     </select>
+                    <div id="studentCustomProgramWrap" class="custom-program-wrap" style="display:none;">
+                        <input
+                            type="text"
+                            id="studentCustomProgramInput"
+                            placeholder="Enter new program (e.g., BSCS, BSEMC)..."
+                            maxlength="100"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();confirmAddProgram('student');}"
+                        >
+                        <button type="button" class="add-program-confirm-btn" onclick="confirmAddProgram('student')">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                    </div>
                 </div>
 
                 <!-- YEAR -->
@@ -329,7 +350,7 @@
                                 <tr>
                                     <th>FullName <span class="col-tag req">Required</span></th>
                                     <th>Email <span class="col-tag req">For Mail</span></th>
-                                    <th>Program <span class="col-tag req">BSIT / BSIS</span></th>
+                                    <th>Program <span class="col-tag req">BSIT / BSIS / Custom</span></th>
                                     <th>Year Level <span class="col-tag req">3rd / 4th Year</span></th>
                                     <th>Student Position <span class="col-tag opt">Optional</span></th>
                                 </tr>
@@ -490,11 +511,24 @@
             <div id="editGroupRestrictedFields">
                 <!-- PROGRAM -->
                 <div class="input-group">
-                    <label>Program</label>
-                    <select id="editProgram">
-                        <option>BSIT</option>
-                        <option>BSIS</option>
+                    <label for="editProgram">Program</label>
+                    <select id="editProgram" onchange="handleProgramSelectChange('edit')">
+                        <option value="BSIT">BSIT</option>
+                        <option value="BSIS">BSIS</option>
+                        <option value="__ADD_PROGRAM__">+ Add Program</option>
                     </select>
+                    <div id="editCustomProgramWrap" class="custom-program-wrap" style="display:none;">
+                        <input
+                            type="text"
+                            id="editCustomProgramInput"
+                            placeholder="Enter new program (e.g., BSCS, BSEMC)..."
+                            maxlength="100"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();confirmAddProgram('edit');}"
+                        >
+                        <button type="button" class="add-program-confirm-btn" onclick="confirmAddProgram('edit')">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                    </div>
                 </div>
 
                 <!-- YEAR -->
@@ -611,11 +645,144 @@
     <script>
         let selectedStudentId = null;
         let lastLoadedStudents = [];
+        const ADD_PROGRAM_VALUE = "__ADD_PROGRAM__";
+        let academicPrograms = ["BSIT", "BSIS"];
+
+        function mergeProgramIntoList(prog) {
+            const clean = String(prog || "").trim();
+            if (!clean || clean === ADD_PROGRAM_VALUE) return;
+            const exists = academicPrograms.some(p => p.toLowerCase() === clean.toLowerCase());
+            if (!exists) {
+                academicPrograms.push(clean);
+            }
+        }
+
+        function populateProgramSelect(selectId, includeEmptyPlaceholder, preserveValue) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            const currentVal = preserveValue !== undefined ? preserveValue : select.value;
+            select.innerHTML = "";
+            if (includeEmptyPlaceholder) {
+                const emptyOpt = document.createElement("option");
+                emptyOpt.value = "";
+                emptyOpt.textContent = "Select Program";
+                select.appendChild(emptyOpt);
+            }
+            academicPrograms.forEach(prog => {
+                const opt = document.createElement("option");
+                opt.value = prog;
+                opt.textContent = prog;
+                select.appendChild(opt);
+            });
+            const addOpt = document.createElement("option");
+            addOpt.value = ADD_PROGRAM_VALUE;
+            addOpt.textContent = "+ Add Program";
+            select.appendChild(addOpt);
+
+            if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
+        function refreshAllProgramDropdowns(preferredStudentVal, preferredEditVal) {
+            populateProgramSelect("studentProgram", true, preferredStudentVal);
+            populateProgramSelect("editProgram", false, preferredEditVal);
+        }
+
+        async function loadAcademicPrograms() {
+            try {
+                const res = await fetch("/api/academic-programs");
+                const data = await res.json();
+                if (data.success && Array.isArray(data.programs)) {
+                    data.programs.forEach(mergeProgramIntoList);
+                }
+            } catch (err) {
+                console.warn("Could not fetch academic programs:", err);
+            }
+            refreshAllProgramDropdowns();
+        }
+
+        function handleProgramSelectChange(context) {
+            const selectId = context === "edit" ? "editProgram" : "studentProgram";
+            const wrapId = context === "edit" ? "editCustomProgramWrap" : "studentCustomProgramWrap";
+            const inputId = context === "edit" ? "editCustomProgramInput" : "studentCustomProgramInput";
+            const select = document.getElementById(selectId);
+            const wrap = document.getElementById(wrapId);
+            const input = document.getElementById(inputId);
+            if (!select || !wrap) return;
+
+            if (select.value === ADD_PROGRAM_VALUE) {
+                wrap.style.display = "flex";
+                if (input) {
+                    input.value = "";
+                    input.focus();
+                }
+            } else {
+                wrap.style.display = "none";
+                if (input) input.value = "";
+            }
+        }
+
+        async function confirmAddProgram(context) {
+            const wrapId = context === "edit" ? "editCustomProgramWrap" : "studentCustomProgramWrap";
+            const inputId = context === "edit" ? "editCustomProgramInput" : "studentCustomProgramInput";
+            const input = document.getElementById(inputId);
+            const wrap = document.getElementById(wrapId);
+            const raw = input ? input.value.trim() : "";
+
+            if (!raw) {
+                alert("Please type the new program name first.");
+                if (input) input.focus();
+                return null;
+            }
+
+            try {
+                const res = await fetch("/api/academic-programs", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        programName: raw,
+                        createdByUserId: localStorage.getItem("userId") || ""
+                    })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    alert(data.message || "Failed to add program.");
+                    return null;
+                }
+            } catch (err) {
+                console.warn("Could not persist program immediately, will still save on enroll:", err);
+            }
+
+            mergeProgramIntoList(raw);
+            const canonical = academicPrograms.find(p => p.toLowerCase() === raw.toLowerCase()) || raw;
+
+            if (context === "edit") {
+                refreshAllProgramDropdowns(undefined, canonical);
+            } else {
+                refreshAllProgramDropdowns(canonical, undefined);
+            }
+
+            if (wrap) wrap.style.display = "none";
+            if (input) input.value = "";
+            return canonical;
+        }
+
+        async function resolveProgramValue(context) {
+            const selectId = context === "edit" ? "editProgram" : "studentProgram";
+            const select = document.getElementById(selectId);
+            if (!select) return "";
+            if (select.value === ADD_PROGRAM_VALUE) {
+                const added = await confirmAddProgram(context);
+                return added || "";
+            }
+            return String(select.value || "").trim();
+        }
 
         /* ================= ENROLL ================= */
         async function enrollStudent() {
-            const fullname = document.getElementById("studentName").value;
-            const program = document.getElementById("studentProgram").value;
+            const fullname = document.getElementById("studentName").value.trim();
+            const program = await resolveProgramValue("student");
             const year_level = document.getElementById("studentYear").value;
             const student_position = document.getElementById("studentPosition").value;
             const email = document.getElementById("studentEmail") ? document.getElementById("studentEmail").value.trim() : "";
@@ -789,6 +956,8 @@
                 const data = await response.json();
 
                 lastLoadedStudents = (data.success && Array.isArray(data.students)) ? data.students : [];
+                lastLoadedStudents.forEach(s => mergeProgramIntoList(s.program));
+                refreshAllProgramDropdowns();
                 renderStudentsTable();
             } catch (error) {
                 console.log(error);
@@ -870,7 +1039,11 @@
                 if (restrictedFields) restrictedFields.style.display = "block";
                 if (lockNotice) lockNotice.style.display = "none";
 
-                document.getElementById("editProgram").value = student.program || "BSIT";
+                const currentProg = student.program || "BSIT";
+                mergeProgramIntoList(currentProg);
+                populateProgramSelect("editProgram", false, currentProg);
+                const editWrap = document.getElementById("editCustomProgramWrap");
+                if (editWrap) editWrap.style.display = "none";
                 document.getElementById("editYear").value = student.year_level || "3rd Year";
                 document.getElementById("editPosition").value = student.student_position || "Not Assigned";
             }
@@ -921,7 +1094,7 @@
                     return;
                 }
             } else {
-                program = document.getElementById("editProgram").value;
+                program = await resolveProgramValue("edit");
                 year_level = document.getElementById("editYear").value;
                 student_position = document.getElementById("editPosition").value;
 
@@ -1022,6 +1195,7 @@
         }
 
         /* ================= INITIAL ================= */
+        loadAcademicPrograms();
         loadStudents();
 
         /* ================= BULK ENROLL (CSV) ================= */

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation | Panelist Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="Consultation.css">
+    <link rel="stylesheet" href="../../shared/consultation-schedule.css">
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
+    <script src="../../shared/consultation-schedule.js"></script>
+</head>
+<body class="admin-portal">
+    <script>
+        const userRole = localStorage.getItem("role");
+        const panelistAccess = localStorage.getItem("panelist_access");
+
+        if (userRole === "admin" && panelistAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Panelist access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href = "../../Admin/AdminDash.html";
+            });
+        } else if (userRole !== "admin" && panelistAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href = "../FacultyDash.html";
+            });
+        }
+    </script>
+
+    <div class="bg1"></div><div class="bg2"></div>
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark"><img src="../../Images/CapstoneXicon.png" alt="CMS"></div>
+                <div><h1>CMS</h1><p>Panelist Portal</p></div>
+            </div>
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" onclick="window.location.href='PanelistDash.html'">
+                    <i class="fa-solid fa-house"></i><span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Panelist Tasks</div>
+                <div class="menu-item" onclick="window.location.href='Assigned_Defenses.html'">
+                    <i class="fa-solid fa-calendar-check"></i><span>Defense Evaluation</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Defense_Schedule.html'">
+                    <i class="fa-solid fa-calendar-days"></i><span>Defense Schedule</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Defense_Document.html'">
+                    <i class="fa-solid fa-file-lines"></i><span>Defense Documents</span>
+                </div>
+                <div class="menu-item" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-signature"></i><span>Document Review</span>
+                </div>
+                <div class="menu-item active" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i><span>Consultation</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i><span>Messages</span>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main admin-main">
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Consultation Requests</h1>
+                <p>Review student consultation requests sent to you as their defense panelist and schedule sessions.</p>
+            </div>
+            <div class="top-actions">
+                <button class="custom-schedule-btn" id="customScheduleBtn" type="button" onclick="openCustomScheduleModal()">
+                    <i class="fa-solid fa-calendar-week"></i>
+                    <span>Custom Schedule</span>
+                    <span class="cs-btn-badge" id="customScheduleCount">0</span>
+                </button>
+                <button class="history-toggle-btn" id="historyToggleBtn" type="button" onclick="toggleHistory()">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    History
+                </button>
+            </div>
+        </div>
+
+        <!-- CUSTOM CONSULTATION SCHEDULE SUMMARY -->
+        <section class="cs-summary-card" id="facultyScheduleSummaryCard"></section>
+
+        <!-- ACTIVE REQUESTS -->
+        <section class="card" id="activeSection">
+            <div class="section-head">
+                <h2><i class="fa-solid fa-inbox" style="color:#7c3aed;margin-right:8px;"></i>Consultation Requests</h2>
+                <p>Schedule pending requests, review approved sessions, or decline requests you cannot accommodate.</p>
+            </div>
+            <div class="consult-filter-tabs">
+                <button type="button" class="consult-tab-btn active" data-tab="Pending" onclick="setConsultationTab('Pending')">
+                    <i class="fa-solid fa-hourglass-half"></i> Pending <span class="consult-tab-count" id="tabCountPending">0</span>
+                </button>
+                <button type="button" class="consult-tab-btn" data-tab="Approved" onclick="setConsultationTab('Approved')">
+                    <i class="fa-solid fa-calendar-check"></i> Approved <span class="consult-tab-count" id="tabCountApproved">0</span>
+                </button>
+                <button type="button" class="consult-tab-btn" data-tab="Declined" onclick="setConsultationTab('Declined')">
+                    <i class="fa-solid fa-circle-xmark"></i> Declined <span class="consult-tab-count" id="tabCountDeclined">0</span>
+                </button>
+            </div>
+            <div class="consultation-grid" id="consultationGrid">
+                <div class="consultation-card"><p>Loading consultation requests...</p></div>
+            </div>
+        </section>
+
+        <!-- HISTORY -->
+        <section class="card" id="historySection" style="display:none;">
+            <div class="section-head">
+                <h2><i class="fa-solid fa-clock-rotate-left" style="color:#059669;margin-right:8px;"></i>Consultation History</h2>
+                <p>All completed consultation sessions with students.</p>
+            </div>
+            <div class="consultation-grid" id="historyGrid">
+                <div class="consultation-card"><p>Loading history...</p></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE = "";
+        const facultyUserId = localStorage.getItem("userId");
+        let consultations = [];
+        let showingHistory = false;
+        let currentTab = "Pending";
+        let pendingDeclineId = null;
+        let selectedDeclineChip = "";
+        let facultyScheduler = null;
+
+        function openCustomScheduleModal(){
+            if(facultyScheduler) facultyScheduler.openModal();
+        }
+
+        function logout(){ localStorage.clear(); window.location.href = "../../Log-in.html"; }
+        function modeLabel(mode){ return mode === "Online Consultation" ? "Meeting Link" : "Location/Place"; }
+
+        function escapeHtml(value){
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        /* ── Compute status from schedule fields (mirrors server logic) ── */
+        function computeStatus(item) {
+            const rawStatus = String(item.status || "").trim();
+            if (rawStatus.toLowerCase() === "declined") return "Declined";
+            if (rawStatus.toLowerCase() === "cancelled") return "Cancelled";
+            if (!item.scheduled_date) return "Pending";
+            const endTime   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : null;
+            const startTime = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : null;
+            const dateStr   = String(item.scheduled_date).slice(0,10);
+            const now       = new Date();
+            if (endTime) {
+                const endDt   = new Date(`${dateStr}T${endTime}`);
+                const startDt = startTime ? new Date(`${dateStr}T${startTime}`) : endDt;
+                if (now >= startDt && now <= endDt) return "Ongoing";
+                if (now > endDt) return "Completed";
+            }
+            return "Scheduled";
+        }
+
+        function sClass(status){
+            const k = String(status||"").toLowerCase();
+            if(k==="scheduled" || k==="approved")  return "b-scheduled";
+            if(k==="ongoing")    return "b-ongoing";
+            if(k==="completed")  return "b-completed";
+            if(k==="declined")   return "b-declined";
+            if(k==="cancelled")  return "b-cancelled";
+            return "b-pending";
+        }
+
+        function setConsultationTab(tab){
+            currentTab = tab;
+            document.querySelectorAll(".consult-tab-btn").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.tab === tab);
+            });
+            renderConsultations();
+        }
+
+        function openDeclineModal(id){
+            pendingDeclineId = id;
+            selectedDeclineChip = "";
+            document.querySelectorAll("#declineReasonChips .reason-chip").forEach(c => c.classList.remove("active"));
+            document.getElementById("declineCustomNote").value = "";
+            document.getElementById("declineModal").classList.add("is-open");
+        }
+
+        function closeDeclineModal(){
+            pendingDeclineId = null;
+            document.getElementById("declineModal").classList.remove("is-open");
+        }
+
+        function selectDeclineChip(el, text){
+            const already = el.classList.contains("active");
+            document.querySelectorAll("#declineReasonChips .reason-chip").forEach(c => c.classList.remove("active"));
+            if(already){
+                selectedDeclineChip = "";
+            } else {
+                el.classList.add("active");
+                selectedDeclineChip = text;
+            }
+        }
+
+        async function submitDecline(){
+            if(!pendingDeclineId) return;
+            const customNote = document.getElementById("declineCustomNote").value.trim();
+            if(!selectedDeclineChip && !customNote){
+                alert("Please select a quick reason or enter a custom note.");
+                return;
+            }
+            const btn = document.getElementById("confirmDeclineBtn");
+            btn.disabled = true;
+            try{
+                const res = await fetch(`${API_BASE}/api/consultations/${pendingDeclineId}/decline`, {
+                    method:"PUT",
+                    headers:{ "Content-Type":"application/json" },
+                    body: JSON.stringify({
+                        facultyUserId,
+                        reason: selectedDeclineChip,
+                        customNote
+                    })
+                });
+                const data = await res.json();
+                closeDeclineModal();
+                alert(data.message || "Consultation declined.");
+                if(data.success){
+                    await loadConsultations();
+                    if(window.PortalNotifications){ window.PortalNotifications.refresh(false); }
+                }
+            } catch(err){
+                console.error(err);
+                alert("Failed to decline consultation request.");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function toggleModeField(id){
+            const mode = document.getElementById(`mode-${id}`).value;
+            const labelEl = document.getElementById(`locLabel-${id}`);
+            if(labelEl){
+                labelEl.innerHTML = `${modeLabel(mode)} <span style="color:#dc2626;">*</span>`;
+            }
+            const locInput = document.getElementById(`loc-${id}`);
+            if(locInput){
+                locInput.placeholder = mode === "Online Consultation"
+                    ? "Enter meeting link (e.g., Google Meet / Zoom URL)..."
+                    : "Enter consultation location / room...";
+            }
+        }
+
+        function toggleHistory(){
+            showingHistory = !showingHistory;
+            document.getElementById("activeSection").style.display  = showingHistory ? "none" : "block";
+            const schedCard = document.getElementById("facultyScheduleSummaryCard");
+            if(schedCard) schedCard.style.display = showingHistory ? "none" : "block";
+            document.getElementById("historySection").style.display = showingHistory ? "block" : "none";
+            const btn = document.getElementById("historyToggleBtn");
+            btn.innerHTML = showingHistory
+                ? '<i class="fa-solid fa-list"></i> Active Requests'
+                : '<i class="fa-solid fa-clock-rotate-left"></i> History';
+            if(showingHistory) renderHistory();
+        }
+
+        async function updateConsultation(id){
+            const scheduledDate      = document.getElementById(`date-${id}`).value;
+            const scheduledStartTime = document.getElementById(`start-${id}`).value;
+            const scheduledEndTime   = document.getElementById(`end-${id}`).value;
+            const consultationMode   = document.getElementById(`mode-${id}`).value;
+            const locationOrLink     = document.getElementById(`loc-${id}`).value.trim();
+            const scheduleNotes      = document.getElementById(`notes-${id}`).value.trim();
+
+            if(!scheduledDate){ alert("Please set a date for the consultation."); return; }
+            if(!scheduledEndTime){ alert("Please set an end time."); return; }
+            if(!locationOrLink){
+                alert(`Please enter the ${modeLabel(consultationMode)} before approving and saving the schedule.`);
+                const locEl = document.getElementById(`loc-${id}`);
+                if(locEl) locEl.focus();
+                return;
+            }
+            if(!scheduleNotes){
+                alert("Please enter Notes before approving and saving the schedule.");
+                const notesEl = document.getElementById(`notes-${id}`);
+                if(notesEl) notesEl.focus();
+                return;
+            }
+
+            const res = await fetch(`${API_BASE}/faculty-consultations/${id}/schedule`, {
+                method:"PUT",
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify({
+                    facultyUserId, scheduledDate, scheduledStartTime, scheduledEndTime,
+                    consultationMode, locationOrLink, scheduleNotes
+                })
+            });
+            const data = await res.json();
+            alert(data.message || "Update processed.");
+            if(data.success){
+                loadConsultations();
+                if(window.PortalNotifications){ window.PortalNotifications.refresh(false); }
+            }
+        }
+
+        function buildCard(item, isHistory){
+            const status = computeStatus(item);
+            const dateStr = item.scheduled_date ? String(item.scheduled_date).slice(0,10) : (item.requested_date ? String(item.requested_date).slice(0,10) : "");
+            const startStr = item.scheduled_start_time ? String(item.scheduled_start_time).slice(0,5) : (item.requested_start_time ? String(item.requested_start_time).slice(0,5) : "");
+            const endStr   = item.scheduled_end_time   ? String(item.scheduled_end_time).slice(0,5)   : (item.requested_end_time ? String(item.requested_end_time).slice(0,5) : "");
+
+            const reqSlotText = item.requested_slot_label || (item.requested_date
+                ? `${window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatDatePretty(item.requested_date) : item.requested_date}${item.requested_start_time ? " • " + (window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatTime12(item.requested_start_time) : item.requested_start_time) : ""}${item.requested_end_time ? " – " + (window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatTime12(item.requested_end_time) : item.requested_end_time) : ""}`
+                : "");
+            const reqSlotBlock = reqSlotText ? `
+                <div class="cs-requested-slot-box">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    <div><strong>Requested Schedule:</strong> ${escapeHtml(reqSlotText)}</div>
+                </div>
+            ` : "";
+
+            const docBlock = item.file_path ? `
+                <div style="margin:10px 0 12px 0;background:#faf5ff;border:1.5px solid #d8b4fe;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <i class="fa-solid fa-file-pdf" style="color:#ef4444;font-size:22px;flex-shrink:0;"></i>
+                        <div style="min-width:0;">
+                            <div style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px;">Attached Document</div>
+                            <div style="font-size:13px;font-weight:600;color:#2e1065;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(item.file_name || 'Document.pdf')}">${escapeHtml(item.file_name || 'Document.pdf')}</div>
+                        </div>
+                    </div>
+                    <a href="${API_BASE}${encodeURI(item.file_path)}" target="_blank" rel="noopener" style="flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border-radius:10px;text-decoration:none;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(124,58,237,0.25);">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open PDF
+                    </a>
+                </div>
+            ` : "";
+
+            if(isHistory){
+                return `
+                    <article class="consultation-card history-card">
+                        <span class="badge b-completed"><i class="fa-solid fa-circle-check"></i> Completed</span>
+                        <h3>${escapeHtml(item.consultation_code)}</h3>
+                        <p><strong>Student:</strong> ${escapeHtml(item.student_name)} (${escapeHtml(item.student_user_id)})</p>
+                        <p><strong>Type:</strong> ${escapeHtml(item.consultation_type)}</p>
+                        ${item.file_name ? `<p><strong>Document:</strong> ${escapeHtml(item.file_name)}</p>` : (item.topic ? `<p><strong>Topic:</strong> ${escapeHtml(item.topic)}</p>` : "")}
+                        ${docBlock}
+                        <p><strong>Concern:</strong> ${escapeHtml(item.concern_message || "N/A")}</p>
+                        <div class="sched-summary">
+                            <i class="fa-solid fa-calendar-check"></i>
+                            <span>${escapeHtml(dateStr)} &nbsp;${escapeHtml(startStr)}${endStr ? " – " + escapeHtml(endStr) : ""}</span>
+                            <span class="mode-pill">${escapeHtml(item.consultation_mode || "N/A")}</span>
+                        </div>
+                        ${item.location_or_link ? `<p><strong>Location/Link:</strong> ${escapeHtml(item.location_or_link)}</p>` : ""}
+                        ${item.schedule_notes ? `<p><strong>Notes:</strong> ${escapeHtml(item.schedule_notes)}</p>` : ""}
+                    </article>
+                `;
+            }
+
+            if(status === "Declined"){
+                return `
+                    <article class="consultation-card">
+                        <div class="card-status-row">
+                            <span class="badge b-declined"><i class="fa-solid fa-circle-xmark"></i> Declined</span>
+                            <span class="consult-code">${escapeHtml(item.consultation_code)}</span>
+                        </div>
+                        <p><strong>Student:</strong> ${escapeHtml(item.student_name)} (${escapeHtml(item.student_user_id)})</p>
+                        <p><strong>Type:</strong> ${escapeHtml(item.consultation_type)}</p>
+                        ${item.file_name ? `<p><strong>Document:</strong> ${escapeHtml(item.file_name)}</p>` : (item.topic ? `<p><strong>Topic:</strong> ${escapeHtml(item.topic)}</p>` : "")}
+                        ${docBlock}
+                        <p><strong>Concern:</strong> ${escapeHtml(item.concern_message || "N/A")}</p>
+                        <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+                        <div class="declined-reason-box">
+                            <strong>Decline Reason / Remarks</strong>
+                            ${escapeHtml(item.decline_reason || "No reason specified.")}
+                        </div>
+                    </article>
+                `;
+            }
+
+            return `
+                <article class="consultation-card">
+                    <div class="card-status-row">
+                        <span class="badge ${sClass(status)}">${escapeHtml(status)}</span>
+                        <span class="consult-code">${escapeHtml(item.consultation_code)}</span>
+                    </div>
+                    <p><strong>Student:</strong> ${escapeHtml(item.student_name)} (${escapeHtml(item.student_user_id)})</p>
+                    <p><strong>Type:</strong> ${escapeHtml(item.consultation_type)}</p>
+                    ${item.file_name ? `<p><strong>Document:</strong> ${escapeHtml(item.file_name)}</p>` : (item.topic ? `<p><strong>Topic:</strong> ${escapeHtml(item.topic)}</p>` : "")}
+                    ${docBlock}
+                    <p><strong>Concern:</strong> ${escapeHtml(item.concern_message || "N/A")}</p>
+                    <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+                    ${reqSlotBlock}
+
+                    <div class="schedule-form">
+                        <div class="sched-form-title">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                            Set Schedule
+                            <span class="auto-status-note">Status is set automatically from date &amp; time</span>
+                        </div>
+                        <div class="form-grid">
+                            <div class="input-group"><label for="date-${item.id}">Date</label><input type="date" id="date-${item.id}" value="${escapeHtml(dateStr)}"></div>
+                            <div class="input-group"><label for="start-${item.id}">Start Time</label><input type="time" id="start-${item.id}" value="${escapeHtml(startStr)}"></div>
+                            <div class="input-group"><label for="end-${item.id}">End Time</label><input type="time" id="end-${item.id}" value="${escapeHtml(endStr)}"></div>
+                            <div class="input-group"><label for="mode-${item.id}">Mode</label>
+                                <select id="mode-${item.id}" onchange="toggleModeField(${item.id})">
+                                    <option value="Personal Consultation" ${item.consultation_mode==="Personal Consultation"?"selected":""}>Personal Consultation</option>
+                                    <option value="Online Consultation" ${item.consultation_mode==="Online Consultation"?"selected":""}>Online Consultation</option>
+                                </select>
+                            </div>
+                            <div class="input-group" style="grid-column:span 2">
+                                <label id="locLabel-${item.id}" for="loc-${item.id}">${modeLabel(item.consultation_mode)} <span style="color:#dc2626;">*</span></label>
+                                <input type="text" id="loc-${item.id}" value="${escapeHtml(item.location_or_link || "")}" placeholder="${item.consultation_mode==="Online Consultation" ? "Enter meeting link (e.g., Google Meet / Zoom URL)..." : "Enter consultation location / room..."}" required>
+                            </div>
+                        </div>
+                        <div class="input-group"><label for="notes-${item.id}">Notes <span style="color:#dc2626;">*</span></label><textarea id="notes-${item.id}" placeholder="Enter consultation instructions, reminders, or notes..." required>${escapeHtml(item.schedule_notes || "")}</textarea></div>
+                        <div class="schedule-actions-row">
+                            <button type="button" class="save-btn" onclick="updateConsultation(${item.id})">
+                                <i class="fa-solid fa-check"></i> Approve &amp; Save Schedule
+                            </button>
+                            ${status === "Pending" ? `
+                            <button class="decline-btn" type="button" onclick="openDeclineModal(${item.id})">
+                                <i class="fa-solid fa-ban"></i> Decline
+                            </button>
+                            ` : ""}
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
+
+        function renderConsultations(){
+            const grid = document.getElementById("consultationGrid");
+            const pendingList  = consultations.filter(c => computeStatus(c) === "Pending");
+            const approvedList = consultations.filter(c => {
+                const s = computeStatus(c);
+                return s === "Scheduled" || s === "Ongoing" || s === "Approved";
+            });
+            const declinedList = consultations.filter(c => computeStatus(c) === "Declined");
+
+            const cPending = document.getElementById("tabCountPending");
+            const cApproved = document.getElementById("tabCountApproved");
+            const cDeclined = document.getElementById("tabCountDeclined");
+            if(cPending) cPending.textContent = pendingList.length;
+            if(cApproved) cApproved.textContent = approvedList.length;
+            if(cDeclined) cDeclined.textContent = declinedList.length;
+
+            let list = pendingList;
+            if(currentTab === "Approved") list = approvedList;
+            else if(currentTab === "Declined") list = declinedList;
+
+            if(!list.length){
+                grid.innerHTML = `<div class="consultation-card"><p>No ${currentTab.toLowerCase()} consultation requests.</p></div>`;
+                return;
+            }
+            grid.innerHTML = list.map(item => buildCard(item, false)).join("");
+        }
+
+        function renderHistory(){
+            const grid = document.getElementById("historyGrid");
+            const done = consultations.filter(c => computeStatus(c) === "Completed");
+            if(!done.length){
+                grid.innerHTML = `<div class="consultation-card"><p>No completed consultations yet.</p></div>`;
+                return;
+            }
+            grid.innerHTML = done.map(item => buildCard(item, true)).join("");
+        }
+
+        async function loadConsultations(){
+            try {
+                const res = await fetch(`${API_BASE}/faculty-consultations?facultyUserId=${encodeURIComponent(facultyUserId)}&assignedRole=Panelist`);
+                const data = await res.json();
+                consultations = data.success ? (data.consultations || []) : [];
+                if(facultyScheduler && Array.isArray(data.customSchedules)){
+                    facultyScheduler.setSchedules(data.customSchedules);
+                }
+                renderConsultations();
+                if(showingHistory) renderHistory();
+            } catch(err) {
+                console.error("Failed to load panelist consultations:", err);
+                const grid = document.getElementById("consultationGrid");
+                if(grid) grid.innerHTML = `<div class="consultation-card"><p>Unable to load consultation requests right now.</p></div>`;
+            }
+        }
+
+        if(window.ConsultationScheduleUI){
+            facultyScheduler = window.ConsultationScheduleUI.initFacultyScheduler({
+                apiBase: API_BASE,
+                facultyUserId
+            });
+        }
+        loadConsultations();
+    </script>
+    <script src="../../shared/portal-notifications.js" defer></script>
+
+    <!-- DECLINE MODAL -->
+    <div class="decline-modal-overlay" id="declineModal">
+        <div class="decline-modal-box">
+            <div class="decline-modal-header">
+                <h3><i class="fa-solid fa-ban" style="color:#dc2626;"></i> Decline Consultation Request</h3>
+                <button type="button" class="decline-close-btn" aria-label="Close decline modal" title="Close" onclick="closeDeclineModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p style="font-size:13px;color:#6d5f85;margin-bottom:6px;">Select a quick reason or add a custom note for the student:</p>
+            <div class="reason-chips" id="declineReasonChips">
+                <button type="button" class="reason-chip" onclick="selectDeclineChip(this, 'Schedule conflict')">Schedule conflict</button>
+                <button type="button" class="reason-chip" onclick="selectDeclineChip(this, 'Currently unavailable')">Currently unavailable</button>
+                <button type="button" class="reason-chip" onclick="selectDeclineChip(this, 'Please revise manuscript first')">Please revise manuscript first</button>
+            </div>
+            <div class="input-group">
+                <label for="declineCustomNote">Additional Note / Custom Reason (Optional)</label>
+                <textarea id="declineCustomNote" placeholder="Write an optional explanation or suggested next step..."></textarea>
+            </div>
+            <div class="decline-modal-actions">
+                <button type="button" class="cancel-decline-btn" onclick="closeDeclineModal()">Cancel</button>
+                <button type="button" class="confirm-decline-btn" id="confirmDeclineBtn" onclick="submitDecline()">
+                    <i class="fa-solid fa-paper-plane"></i> Confirm Decline
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

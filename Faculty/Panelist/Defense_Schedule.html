@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Defense Schedule | Panelist Portal</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="../../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="Defense_Schedule.css">
+
+    <link rel="stylesheet" href="../../shared/custom-alerts.css">
+    <script src="../../shared/custom-alerts.js"></script>
+</head>
+
+<body class="admin-portal">
+
+    <script>
+        const userRole = localStorage.getItem("role");
+        const panelistAccess = localStorage.getItem("panelist_access");
+
+        if (userRole === "admin" && panelistAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("Your Panelist access is disabled. Enable it in Admin Settings first.").then(() => {
+                window.location.href = "../../Admin/AdminDash.html";
+            });
+        } else if (userRole !== "admin" && panelistAccess !== "1") {
+            document.documentElement.classList.add("capx-auth-blocked");
+            alert("You do not have permission to access this role.").then(() => {
+                window.location.href = "../FacultyDash.html";
+            });
+        }
+    </script>
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Panelist Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div class="menu-title">Main</div>
+
+                <div class="menu-item" onclick="window.location.href='PanelistDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Panelist Tasks</div>
+
+                <div class="menu-item" onclick="window.location.href='Assigned_Defenses.html'">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Defense Evaluation</span>
+                </div>
+
+                <div class="menu-item active" onclick="window.location.href='Defense_Schedule.html'">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Defense Schedule</span>
+                </div>
+
+                <div class="menu-item" onclick="window.location.href='Defense_Document.html'">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>Defense Documents</span>
+                </div>
+
+                <div class="menu-item" onclick="window.location.href='Document_Review.html'">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Document Review</span>
+                </div>
+
+                <div class="menu-item" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+
+                <div class="menu-item" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Defense Schedule</h1>
+                <p id="panelistScheduleSubtitle">
+                    Visualize all capstone defense presentations assigned to you on an interactive calendar and tabular sheet.
+                </p>
+            </div>
+
+            <div class="top-actions">
+                <button type="button" class="primary-btn" onclick="window.location.href='Assigned_Defenses.html'">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    Go to Evaluations
+                </button>
+            </div>
+        </div>
+
+        <!-- SUMMARY STATS -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+                <div>
+                    <h2 id="statTotalDefenses">0</h2>
+                    <p>Total Assigned</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div>
+                    <h2 id="statUpcomingDefenses">0</h2>
+                    <p>Upcoming / Scheduled</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <div>
+                    <h2 id="statPendingEval">0</h2>
+                    <p>Pending Your Verdict</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <h2 id="statCompletedDefenses">0</h2>
+                    <p>Completed</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FILTER BAR -->
+        <section class="filter-card">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchSchedule" placeholder="Search group, project title, room, co-panelist, or student..."
+                    oninput="onFilterChange()">
+            </div>
+
+            <select id="typeFilter" onchange="onTypeFilterChange()">
+                <option value="All">All Defense Types</option>
+                <option value="Concept Presentation">Concept Presentation</option>
+                <option value="Outline Defense">Outline Defense</option>
+                <option value="Pre-Final Defense">Pre-Final Defense</option>
+                <option value="Final Defense">Final Defense</option>
+            </select>
+
+            <select id="statusFilter" onchange="onFilterChange()">
+                <option value="All">All Status</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Ongoing">Ongoing</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </section>
+
+        <!-- SCHEDULE VISUALIZATION CARD -->
+        <section class="content-card">
+
+            <div class="section-header schedule-section-header">
+                <div>
+                    <h2>My Defense Schedule</h2>
+                    <p>
+                        Explore your assigned defense dates, rooms, time slots, and fellow panel members.
+                    </p>
+                </div>
+
+                <div class="schedule-view-toolbar">
+                    <div class="view-switcher" role="tablist" aria-label="Schedule display view">
+                        <button type="button" class="view-switch-btn active" id="viewBtnCalendar"
+                            onclick="setViewMode('calendar')" role="tab" aria-selected="true">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            <span>Calendar View</span>
+                        </button>
+                        <button type="button" class="view-switch-btn" id="viewBtnSheet"
+                            onclick="setViewMode('sheet')" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-table"></i>
+                            <span>Sheet View</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERACTIVE CALENDAR VIEW (DEFAULT) -->
+            <div id="calendarViewContainer" class="calendar-view-container">
+                <div class="calendar-workspace">
+                    <!-- LEFT: MONTH CALENDAR GRID -->
+                    <div class="calendar-panel">
+                        <div class="calendar-toolbar">
+                            <div class="calendar-nav-group">
+                                <button type="button" class="cal-nav-btn" onclick="changeCalendarMonth(-1)"
+                                    title="Previous month">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <h3 class="calendar-month-title" id="calendarMonthTitle">Month Year</h3>
+                                <button type="button" class="cal-nav-btn" onclick="changeCalendarMonth(1)"
+                                    title="Next month">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                                <button type="button" class="cal-today-btn" onclick="goToCalendarToday()">
+                                    Today
+                                </button>
+                            </div>
+
+                            <div class="calendar-legend">
+                                <span class="cal-legend-item"><i class="cal-dot dot-scheduled"></i> Scheduled</span>
+                                <span class="cal-legend-item"><i class="cal-dot dot-ongoing"></i> Ongoing</span>
+                                <span class="cal-legend-item"><i class="cal-dot dot-completed"></i> Completed</span>
+                                <span class="cal-legend-item"><i class="cal-dot dot-cancelled"></i> Cancelled</span>
+                            </div>
+                        </div>
+
+                        <div id="calendarQuickJumpBar" class="calendar-quick-jump" style="display: none;"></div>
+
+                        <div class="calendar-weekdays">
+                            <div>Sun</div>
+                            <div>Mon</div>
+                            <div>Tue</div>
+                            <div>Wed</div>
+                            <div>Thu</div>
+                            <div>Fri</div>
+                            <div>Sat</div>
+                        </div>
+
+                        <div class="calendar-days-grid" id="calendarDaysGrid">
+                            <div class="calendar-loading-state">Loading your defense calendar...</div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: SELECTED DAY TIMELINE & DETAILS PANEL -->
+                    <aside class="day-slots-panel" id="daySlotsPanel">
+                        <div class="day-slots-header">
+                            <div>
+                                <span class="day-slots-eyebrow">Selected Date</span>
+                                <h3 id="selectedDayTitle">Select a date</h3>
+                                <p id="selectedDaySummary">Click any calendar date to inspect your defense schedule for that day.</p>
+                            </div>
+                        </div>
+
+                        <div class="day-slots-body" id="daySlotsList"></div>
+                    </aside>
+                </div>
+            </div>
+
+            <!-- EXCEL-STYLE TABULAR SHEET VIEW -->
+            <div id="sheetViewContainer" class="sheet-view-container" style="display: none;">
+                <div class="excel-sheet-frame">
+                    <div class="excel-topbar">
+                        <div class="excel-sheet-pill">
+                            <i class="fa-solid fa-table-cells"></i>
+                            <span id="excelActiveSheetLabel">All Defenses</span>
+                            <span class="excel-pill-count" id="excelActiveSheetCount">0</span>
+                        </div>
+                        <div class="excel-topbar-meta">
+                            <span class="excel-meta-hint">
+                                <i class="fa-regular fa-lightbulb"></i>
+                                Click any date to view it on the calendar or click View for full details
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="excel-table-scroll">
+                        <table class="excel-schedule-table" id="panelistExcelTable">
+                            <thead>
+                                <tr>
+                                    <th class="col-row-num">#</th>
+                                    <th class="col-project-title">Project Title / Group</th>
+                                    <th class="col-type">Defense Type</th>
+                                    <th class="col-datetime">Date &amp; Time</th>
+                                    <th class="col-room">Room</th>
+                                    <th class="col-panel">Panel Chairman</th>
+                                    <th class="col-panel">Panel Member 1</th>
+                                    <th class="col-panel">Panel Member 2</th>
+                                    <th class="col-members">Group Members</th>
+                                    <th class="col-verdict">Your Verdict</th>
+                                    <th class="col-status">Status</th>
+                                    <th class="col-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleTableBody">
+                                <tr>
+                                    <td colspan="12" class="empty-table-row">Loading schedules...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- EXCEL WORKBOOK SHEET TABS BAR -->
+                    <div class="excel-tabs-bar" id="excelSheetTabs">
+                        <button type="button" class="excel-sheet-tab active" data-type="All"
+                            onclick="selectSheetTab('All')">
+                            All Defenses <span class="tab-count" id="tabCountAll">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Concept Presentation"
+                            onclick="selectSheetTab('Concept Presentation')">
+                            Concept <span class="tab-count" id="tabCountConcept">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Outline Defense"
+                            onclick="selectSheetTab('Outline Defense')">
+                            Outline <span class="tab-count" id="tabCountOutline">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Pre-Final Defense"
+                            onclick="selectSheetTab('Pre-Final Defense')">
+                            Pre-Final <span class="tab-count" id="tabCountPreFinal">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Final Defense"
+                            onclick="selectSheetTab('Final Defense')">
+                            Final <span class="tab-count" id="tabCountFinal">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- SCHEDULE DETAILS MODAL -->
+    <div class="modal-overlay" id="viewScheduleModal" style="display: none;">
+        <div class="modal-box view-modal">
+            <div class="modal-header">
+                <div>
+                    <h2 id="viewGroupName">Defense Details</h2>
+                    <p id="viewProjectTitle">Project Title</p>
+                </div>
+                <button type="button" class="close-modal-btn" onclick="closeViewModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-card">
+                    <span>Date</span>
+                    <h3 id="viewDate">N/A</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Time</span>
+                    <h3 id="viewTime">N/A</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Room / Venue</span>
+                    <h3 id="viewRoom">N/A</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Defense Type</span>
+                    <h3 id="viewType">N/A</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Schedule Status</span>
+                    <h3 id="viewStatus">N/A</h3>
+                </div>
+                <div class="detail-card">
+                    <span>Your Evaluation</span>
+                    <h3 id="viewMyVerdict">Pending</h3>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h3><i class="fa-solid fa-users-gear"></i> Panel Members</h3>
+                <div class="member-list" id="viewPanelists">No panelists.</div>
+            </div>
+
+            <div class="section-box">
+                <h3><i class="fa-solid fa-user-graduate"></i> Group Members</h3>
+                <div class="member-list" id="viewMembers">No members.</div>
+            </div>
+
+            <div class="section-box" id="viewDocsSection" style="display: none;">
+                <h3><i class="fa-solid fa-file-pdf"></i> Approved Defense Documents</h3>
+                <div class="member-list" id="viewDocuments"></div>
+            </div>
+
+            <div class="section-box">
+                <h3><i class="fa-regular fa-note-sticky"></i> Coordinator &amp; Notes</h3>
+                <p id="viewCoordinator" style="font-weight: 600; color: #2e1065; margin-bottom: 4px;"></p>
+                <p id="viewNotes">No notes.</p>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeViewModal()">Close</button>
+                <button type="button" class="primary-btn" onclick="window.location.href='Assigned_Defenses.html'">
+                    <i class="fa-solid fa-clipboard-check"></i> Open in Defense Evaluation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loggedInUserId = localStorage.getItem("userId") || "";
+
+        let allSchedules = [];
+        let lastFilteredSchedules = [];
+        let currentTypeFilter = "All";
+        let currentViewMode = localStorage.getItem("panelistDefenseViewMode") === "sheet" ? "sheet" : "calendar";
+
+        let serverTimeSlots = [
+            { id: 1, slot_label: "08:00 AM - 10:00 AM", start_time: "08:00", end_time: "10:00", period: "Morning" },
+            { id: 2, slot_label: "10:00 AM - 12:00 PM", start_time: "10:00", end_time: "12:00", period: "Morning" },
+            { id: 3, slot_label: "01:00 PM - 03:00 PM", start_time: "13:00", end_time: "15:00", period: "Afternoon" },
+            { id: 4, slot_label: "03:00 PM - 05:00 PM", start_time: "15:00", end_time: "17:00", period: "Afternoon" }
+        ];
+
+        const nowInit = new Date();
+        let calendarYear = nowInit.getFullYear();
+        let calendarMonth = nowInit.getMonth();
+        let selectedCalendarDate = getTodayLocalISO();
+        let hasAutoFocusedInitialDate = false;
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function getTodayLocalISO() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        }
+
+        function normalizeScheduleDate(value) {
+            if (!value) return "";
+            if (typeof value === "string") {
+                const trimmed = value.trim();
+                if (/^\d{4}-\d{2}-\d{2}/.test(trimmed) && !trimmed.includes("T")) {
+                    return trimmed.slice(0, 10);
+                }
+                const d = new Date(trimmed);
+                if (!isNaN(d.getTime())) {
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                }
+                return trimmed.slice(0, 10);
+            }
+            const d = new Date(value);
+            if (!isNaN(d.getTime())) {
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            }
+            return String(value).slice(0, 10);
+        }
+
+        function normalizeScheduleTime(value) {
+            const raw = String(value || "").trim();
+            return raw.length >= 5 ? raw.slice(0, 5) : raw;
+        }
+
+        function timesOverlap(startA, endA, startB, endB) {
+            const sA = normalizeScheduleTime(startA);
+            const eA = normalizeScheduleTime(endA);
+            const sB = normalizeScheduleTime(startB);
+            const eB = normalizeScheduleTime(endB);
+            if (!sA || !eA || !sB || !eB) return false;
+            return sA < eB && eA > sB;
+        }
+
+        function formatDate(dateValue) {
+            const iso = normalizeScheduleDate(dateValue);
+            if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "N/A";
+            const [y, m, d] = iso.split("-").map(Number);
+            const dt = new Date(y, m - 1, d);
+            return dt.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            });
+        }
+
+        function formatIsoDateLong(isoDate) {
+            if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return "Select a date";
+            const [y, m, d] = isoDate.split("-").map(Number);
+            const dt = new Date(y, m - 1, d);
+            return dt.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            });
+        }
+
+        function formatTime12Hr(timeValue) {
+            const raw = String(timeValue || "").trim();
+            if (!raw) return "N/A";
+            const parts = raw.split(":");
+            const h24 = parseInt(parts[0], 10);
+            const m = parseInt(parts[1] || "0", 10);
+            if (!Number.isFinite(h24) || !Number.isFinite(m)) return raw.slice(0, 5);
+            const ampm = h24 >= 12 ? "PM" : "AM";
+            const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+            return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+        }
+
+        function isDefenseHappening(defenseDate, startTime, endTime) {
+            const dateStr = normalizeScheduleDate(defenseDate);
+            const startStr = normalizeScheduleTime(startTime);
+            const endStr = normalizeScheduleTime(endTime);
+            if (!dateStr || !startStr || !endStr) return false;
+            const startDt = new Date(`${dateStr}T${startStr}:00`);
+            const endDt = new Date(`${dateStr}T${endStr}:00`);
+            const now = new Date();
+            return now >= startDt && now <= endDt;
+        }
+
+        function isConditionalReeval(item) {
+            if (!item) return false;
+            return Boolean(
+                item.is_conditional_reeval
+                || String(item.schedule_code || "").startsWith("REEVAL-")
+                || String(item.room_name || "").toLowerCase().includes("external re-evaluation")
+                || String(item.notes || "").toLowerCase().includes("no time limit")
+            );
+        }
+
+        function getDisplayStatus(item) {
+            const rawStatus = String(item.defense_status || "Scheduled").trim();
+            if (isConditionalReeval(item) && rawStatus !== "Completed" && rawStatus !== "Cancelled") {
+                return "Ongoing";
+            }
+            if (rawStatus === "Scheduled" && isDefenseHappening(item.defense_date, item.start_time, item.end_time)) {
+                return "Ongoing";
+            }
+            return rawStatus;
+        }
+
+        function resolveProjectTitle(item) {
+            if (!item) return "";
+            if (item.project_title && String(item.project_title).trim()) {
+                return String(item.project_title).trim();
+            }
+            const tryParseTitle = (raw) => {
+                if (!raw) return "";
+                try {
+                    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+                    return parsed && parsed.selected_title_text ? String(parsed.selected_title_text).trim() : "";
+                } catch (_) {
+                    return "";
+                }
+            };
+            const fromSelf = tryParseTitle(item.my_evaluation?.concept_evaluation_details)
+                || tryParseTitle(item.evaluation?.concept_evaluation_details);
+            if (fromSelf) return fromSelf;
+
+            const sameGroup = (allSchedules || []).find(s =>
+                Number(s.group_db_id) === Number(item.group_db_id)
+                && (s.project_title || s.my_evaluation?.concept_evaluation_details || s.evaluation?.concept_evaluation_details)
+            );
+            if (sameGroup) {
+                if (sameGroup.project_title) return String(sameGroup.project_title).trim();
+                const fromGroupConcept = tryParseTitle(sameGroup.my_evaluation?.concept_evaluation_details)
+                    || tryParseTitle(sameGroup.evaluation?.concept_evaluation_details);
+                if (fromGroupConcept) return fromGroupConcept;
+            }
+            return "";
+        }
+
+        function getMyVerdictInfo(item) {
+            const ev = item.my_evaluation || item.evaluation;
+            if (!ev || !ev.panel_result) {
+                return { text: "Pending", cls: "verdict-pending", icon: "fa-clock" };
+            }
+            const v = String(ev.panel_result).trim();
+            const vl = v.toLowerCase();
+            if (vl === "passed") return { text: v, cls: "verdict-passed", icon: "fa-circle-check" };
+            if (vl.includes("revision")) return { text: v, cls: "verdict-revision", icon: "fa-pen-to-square" };
+            if (vl.includes("conditional")) return { text: v, cls: "verdict-conditional", icon: "fa-circle-exclamation" };
+            if (vl.includes("formal") || vl.includes("re-defense") || vl.includes("redefense")) {
+                return { text: v, cls: "verdict-redefense", icon: "fa-rotate-left" };
+            }
+            if (vl === "failed") return { text: v, cls: "verdict-failed", icon: "fa-circle-xmark" };
+            return { text: v, cls: "verdict-muted", icon: "fa-check" };
+        }
+
+        function getOrderedPanelists(item) {
+            const list = Array.isArray(item.panelists) ? [...item.panelists] : [];
+            if (list.length <= 1 || !item.panelist_id) return list;
+            // Ensure panel chair (panelist_id) is first if present
+            const chairIdx = list.findIndex(p => Number(p.id) === Number(item.panelist_id));
+            if (chairIdx > 0) {
+                const [chair] = list.splice(chairIdx, 1);
+                list.unshift(chair);
+            }
+            return list;
+        }
+
+        async function loadPredefinedTimeSlots() {
+            try {
+                const res = await fetch("/api/defense-time-slots");
+                const data = await res.json();
+                if (data && data.success && Array.isArray(data.slots) && data.slots.length > 0) {
+                    serverTimeSlots = data.slots.map(s => ({
+                        id: s.id,
+                        slot_label: s.slot_label,
+                        start_time: String(s.start_time || "").slice(0, 5),
+                        end_time: String(s.end_time || "").slice(0, 5),
+                        period: s.period || (Number(String(s.start_time || "08").slice(0, 2)) < 12 ? "Morning" : "Afternoon")
+                    }));
+                }
+            } catch (err) {
+                console.warn("Using default defense time slots:", err);
+            }
+        }
+
+        async function loadPanelistSchedules() {
+            const grid = document.getElementById("calendarDaysGrid");
+            const tbody = document.getElementById("scheduleTableBody");
+
+            if (!loggedInUserId) {
+                if (grid) grid.innerHTML = `<div class="calendar-loading-state">Please log in to view your defense schedule.</div>`;
+                return;
+            }
+
+            try {
+                const res = await fetch(`/panelist-assigned-defenses/${encodeURIComponent(loggedInUserId)}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    allSchedules = [];
+                    if (grid) grid.innerHTML = `<div class="calendar-loading-state">${escapeHtml(data.message || "Unable to load defense schedules.")}</div>`;
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="12" class="empty-table-row">${escapeHtml(data.message || "Unable to load defense schedules.")}</td></tr>`;
+                    updateSummaryStats([]);
+                    return;
+                }
+
+                if (data.panelist && data.panelist.fullname) {
+                    const sub = document.getElementById("panelistScheduleSubtitle");
+                    if (sub) {
+                        sub.textContent = `Schedule overview for ${data.panelist.fullname} — visualize all defense presentations assigned to your panel.`;
+                    }
+                }
+
+                allSchedules = Array.isArray(data.schedules) ? data.schedules : [];
+                updateSummaryStats(allSchedules);
+
+                // On first load, if today has no defenses but there is an upcoming (or latest) scheduled date in this month/nearest month, highlight it cleanly
+                if (!hasAutoFocusedInitialDate && allSchedules.length > 0) {
+                    hasAutoFocusedInitialDate = true;
+                    const todayIso = getTodayLocalISO();
+                    const hasToday = allSchedules.some(s => normalizeScheduleDate(s.defense_date) === todayIso);
+                    if (!hasToday) {
+                        const dates = [...new Set(allSchedules.map(s => normalizeScheduleDate(s.defense_date)).filter(Boolean))].sort();
+                        const targetDate = dates.find(d => d >= todayIso) || dates[dates.length - 1];
+                        if (targetDate) {
+                            selectedCalendarDate = targetDate;
+                            const [y, m] = targetDate.split("-").map(Number);
+                            if (Number.isFinite(y) && Number.isFinite(m)) {
+                                calendarYear = y;
+                                calendarMonth = m - 1;
+                            }
+                        }
+                    }
+                }
+
+                renderAllViews();
+            } catch (err) {
+                console.error("Error loading panelist defense schedules:", err);
+                if (grid) grid.innerHTML = `<div class="calendar-loading-state">Cannot connect to the server. Please try again.</div>`;
+                if (tbody) tbody.innerHTML = `<tr><td colspan="12" class="empty-table-row">Cannot connect to the server.</td></tr>`;
+            }
+        }
+
+        function updateSummaryStats(list) {
+            const items = Array.isArray(list) ? list : [];
+            const total = items.length;
+            const upcoming = items.filter(s => {
+                const st = getDisplayStatus(s).toLowerCase();
+                return st === "scheduled" || st === "ongoing";
+            }).length;
+            const completed = items.filter(s => getDisplayStatus(s).toLowerCase() === "completed").length;
+            const pendingVerdict = items.filter(s => {
+                const st = getDisplayStatus(s).toLowerCase();
+                if (st === "cancelled") return false;
+                const ev = s.my_evaluation || s.evaluation;
+                return !ev || !ev.panel_result;
+            }).length;
+
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = String(val);
+            };
+            setVal("statTotalDefenses", total);
+            setVal("statUpcomingDefenses", upcoming);
+            setVal("statPendingEval", pendingVerdict);
+            setVal("statCompletedDefenses", completed);
+        }
+
+        function getFilteredSchedules(ignoreTypeFilter = false) {
+            const keyword = (document.getElementById("searchSchedule")?.value || "").toLowerCase().trim();
+            const statusVal = document.getElementById("statusFilter")?.value || "All";
+            const typeVal = ignoreTypeFilter ? "All" : (document.getElementById("typeFilter")?.value || currentTypeFilter || "All");
+
+            return (allSchedules || []).filter(item => {
+                if (typeVal !== "All") {
+                    if (String(item.defense_type || "").trim().toLowerCase() !== typeVal.trim().toLowerCase()) {
+                        return false;
+                    }
+                }
+
+                if (statusVal !== "All") {
+                    const dispStatus = getDisplayStatus(item);
+                    if (dispStatus.toLowerCase() !== statusVal.toLowerCase()) {
+                        return false;
+                    }
+                }
+
+                if (keyword) {
+                    const title = resolveProjectTitle(item);
+                    const pNames = Array.isArray(item.panelists) ? item.panelists.map(p => p.fullname || "").join(" ") : "";
+                    const mNames = Array.isArray(item.members) ? item.members.map(m => m.fullname || "").join(" ") : "";
+                    const haystack = [
+                        item.schedule_code,
+                        item.group_id,
+                        item.group_name,
+                        title,
+                        item.group_program,
+                        item.defense_type,
+                        item.room_name,
+                        item.defense_status,
+                        item.created_by_name,
+                        pNames,
+                        mNames
+                    ].filter(Boolean).join(" ").toLowerCase();
+
+                    if (!haystack.includes(keyword)) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function onFilterChange() {
+            renderAllViews();
+        }
+
+        function onTypeFilterChange() {
+            currentTypeFilter = document.getElementById("typeFilter")?.value || "All";
+            syncSheetTabsActiveState();
+            renderAllViews();
+        }
+
+        function selectSheetTab(typeVal) {
+            currentTypeFilter = typeVal || "All";
+            const sel = document.getElementById("typeFilter");
+            if (sel) sel.value = currentTypeFilter;
+            syncSheetTabsActiveState();
+            renderAllViews();
+        }
+
+        function syncSheetTabsActiveState() {
+            document.querySelectorAll("#excelSheetTabs .excel-sheet-tab").forEach(btn => {
+                btn.classList.toggle("active", (btn.getAttribute("data-type") || "All") === currentTypeFilter);
+            });
+            const labelEl = document.getElementById("excelActiveSheetLabel");
+            if (labelEl) {
+                labelEl.textContent = currentTypeFilter === "All" ? "All Defenses" : currentTypeFilter;
+            }
+        }
+
+        function updateSheetTabCounts(baseList) {
+            const counts = {
+                All: baseList.length,
+                "Concept Presentation": 0,
+                "Outline Defense": 0,
+                "Pre-Final Defense": 0,
+                "Final Defense": 0
+            };
+            baseList.forEach(item => {
+                const t = String(item.defense_type || "").trim().toLowerCase();
+                if (t === "concept presentation") counts["Concept Presentation"]++;
+                else if (t === "outline defense") counts["Outline Defense"]++;
+                else if (t === "pre-final defense") counts["Pre-Final Defense"]++;
+                else if (t === "final defense") counts["Final Defense"]++;
+            });
+
+            const setText = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = String(val);
+            };
+            setText("tabCountAll", counts.All);
+            setText("tabCountConcept", counts["Concept Presentation"]);
+            setText("tabCountOutline", counts["Outline Defense"]);
+            setText("tabCountPreFinal", counts["Pre-Final Defense"]);
+            setText("tabCountFinal", counts["Final Defense"]);
+        }
+
+        function setViewMode(mode) {
+            currentViewMode = mode === "sheet" ? "sheet" : "calendar";
+            try {
+                localStorage.setItem("panelistDefenseViewMode", currentViewMode);
+            } catch (_) { }
+
+            const calEl = document.getElementById("calendarViewContainer");
+            const sheetEl = document.getElementById("sheetViewContainer");
+            const btnCal = document.getElementById("viewBtnCalendar");
+            const btnSheet = document.getElementById("viewBtnSheet");
+
+            if (calEl) calEl.style.display = currentViewMode === "calendar" ? "block" : "none";
+            if (sheetEl) sheetEl.style.display = currentViewMode === "sheet" ? "block" : "none";
+
+            if (btnCal) {
+                btnCal.classList.toggle("active", currentViewMode === "calendar");
+                btnCal.setAttribute("aria-selected", currentViewMode === "calendar" ? "true" : "false");
+            }
+            if (btnSheet) {
+                btnSheet.classList.toggle("active", currentViewMode === "sheet");
+                btnSheet.setAttribute("aria-selected", currentViewMode === "sheet" ? "true" : "false");
+            }
+
+            if (currentViewMode === "calendar") {
+                renderCalendarView(lastFilteredSchedules);
+            } else {
+                renderSheetTable(lastFilteredSchedules);
+            }
+        }
+
+        function renderAllViews() {
+            const baseList = getFilteredSchedules(true);
+            updateSheetTabCounts(baseList);
+
+            const filtered = getFilteredSchedules(false);
+            lastFilteredSchedules = filtered;
+
+            const countEl = document.getElementById("excelActiveSheetCount");
+            if (countEl) countEl.textContent = String(filtered.length);
+            syncSheetTabsActiveState();
+
+            renderCalendarView(filtered);
+            renderSheetTable(filtered);
+        }
+
+        /* ================= CALENDAR VISUALIZATION ================= */
+
+        function changeCalendarMonth(delta) {
+            calendarMonth += delta;
+            if (calendarMonth < 0) {
+                calendarMonth = 11;
+                calendarYear--;
+            } else if (calendarMonth > 11) {
+                calendarMonth = 0;
+                calendarYear++;
+            }
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function goToCalendarToday() {
+            const now = new Date();
+            calendarYear = now.getFullYear();
+            calendarMonth = now.getMonth();
+            selectedCalendarDate = getTodayLocalISO();
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function selectCalendarDate(isoDate) {
+            if (!isoDate) return;
+            selectedCalendarDate = isoDate;
+            const [y, m] = isoDate.split("-").map(Number);
+            if (Number.isFinite(y) && Number.isFinite(m)) {
+                calendarYear = y;
+                calendarMonth = m - 1;
+            }
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function jumpToDateInCalendar(isoDate) {
+            if (isoDate && /^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+                selectedCalendarDate = isoDate;
+                const [y, m] = isoDate.split("-").map(Number);
+                calendarYear = y;
+                calendarMonth = m - 1;
+            }
+            setViewMode("calendar");
+        }
+
+        function renderCalendarView(filteredList) {
+            const grid = document.getElementById("calendarDaysGrid");
+            const monthTitle = document.getElementById("calendarMonthTitle");
+            const quickJumpBar = document.getElementById("calendarQuickJumpBar");
+            if (!grid || !monthTitle) return;
+
+            const monthDate = new Date(calendarYear, calendarMonth, 1);
+            monthTitle.textContent = monthDate.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric"
+            });
+
+            const byDate = {};
+            (filteredList || []).forEach(item => {
+                const iso = normalizeScheduleDate(item.defense_date);
+                if (!iso) return;
+                if (!byDate[iso]) byDate[iso] = [];
+                byDate[iso].push(item);
+            });
+
+            Object.keys(byDate).forEach(iso => {
+                byDate[iso].sort((a, b) =>
+                    normalizeScheduleTime(a.start_time).localeCompare(normalizeScheduleTime(b.start_time))
+                );
+            });
+
+            const todayIso = getTodayLocalISO();
+            const firstWeekday = new Date(calendarYear, calendarMonth, 1).getDay();
+            const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+            const daysInPrevMonth = new Date(calendarYear, calendarMonth, 0).getDate();
+            const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+
+            let monthEventCount = 0;
+            const cellsHtml = [];
+
+            for (let i = 0; i < totalCells; i++) {
+                let cellYear = calendarYear;
+                let cellMonth = calendarMonth;
+                let dayNum = 0;
+                let isOtherMonth = false;
+
+                if (i < firstWeekday) {
+                    isOtherMonth = true;
+                    dayNum = daysInPrevMonth - firstWeekday + i + 1;
+                    cellMonth--;
+                    if (cellMonth < 0) { cellMonth = 11; cellYear--; }
+                } else if (i >= firstWeekday + daysInMonth) {
+                    isOtherMonth = true;
+                    dayNum = i - (firstWeekday + daysInMonth) + 1;
+                    cellMonth++;
+                    if (cellMonth > 11) { cellMonth = 0; cellYear++; }
+                } else {
+                    dayNum = i - firstWeekday + 1;
+                }
+
+                const iso = `${cellYear}-${String(cellMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                const dayEvents = byDate[iso] || [];
+                if (!isOtherMonth) monthEventCount += dayEvents.length;
+
+                const isToday = iso === todayIso;
+                const isSelected = iso === selectedCalendarDate;
+
+                const maxVisibleChips = 2;
+                const chipsHtml = dayEvents.slice(0, maxVisibleChips).map(ev => {
+                    const dispStatus = getDisplayStatus(ev);
+                    const stClass = dispStatus.toLowerCase();
+                    const shortTime = formatTime12Hr(ev.start_time).replace(/:00\s/g, " ");
+                    const titleTip = `${ev.group_name || "Group"} — ${ev.defense_type} (${formatTime12Hr(ev.start_time)} - ${formatTime12Hr(ev.end_time)}, ${ev.room_name})`;
+                    return `
+                        <button type="button"
+                            class="cal-event-chip status-${stClass}"
+                            onclick="event.stopPropagation(); openViewModal(${ev.id})"
+                            title="${escapeHtml(titleTip)}">
+                            <span class="cal-event-time">${escapeHtml(shortTime)}</span>
+                            <span class="cal-event-name">${escapeHtml(ev.group_name || "Group")}</span>
+                        </button>
+                    `;
+                }).join("");
+
+                const moreHtml = dayEvents.length > maxVisibleChips
+                    ? `<div class="cal-more-badge">+${dayEvents.length - maxVisibleChips} more</div>`
+                    : "";
+
+                const countDot = (!isOtherMonth && dayEvents.length > 0)
+                    ? `<span class="cal-day-count-pill">${dayEvents.length}</span>`
+                    : "";
+
+                cellsHtml.push(`
+                    <div class="cal-day-cell ${isOtherMonth ? "other-month" : ""} ${isToday ? "is-today" : ""} ${isSelected ? "is-selected" : ""} ${dayEvents.length > 0 ? "has-events" : ""}"
+                        onclick="selectCalendarDate('${iso}')">
+                        <div class="cal-day-top">
+                            <span class="cal-day-num">${dayNum}</span>
+                            ${countDot}
+                        </div>
+                        <div class="cal-day-events">
+                            ${chipsHtml}
+                            ${moreHtml}
+                        </div>
+                    </div>
+                `);
+            }
+
+            grid.innerHTML = cellsHtml.join("");
+
+            if (quickJumpBar) {
+                const allDates = Object.keys(byDate).sort();
+                if (monthEventCount === 0 && allDates.length > 0) {
+                    const quickPills = allDates.slice(0, 6).map(d => `
+                        <button type="button" class="cal-jump-pill" onclick="selectCalendarDate('${d}')">
+                            <i class="fa-regular fa-calendar"></i> ${formatDate(d)} (${byDate[d].length})
+                        </button>
+                    `).join("");
+                    quickJumpBar.style.display = "flex";
+                    quickJumpBar.innerHTML = `
+                        <span class="cal-jump-label"><i class="fa-solid fa-compass"></i> No assigned defenses in ${escapeHtml(monthTitle.textContent)}. Jump to your scheduled dates:</span>
+                        <div class="cal-jump-pills">${quickPills}</div>
+                    `;
+                } else {
+                    quickJumpBar.style.display = "none";
+                    quickJumpBar.innerHTML = "";
+                }
+            }
+
+            renderSelectedDayPanel(byDate[selectedCalendarDate] || []);
+        }
+
+        function renderSelectedDayPanel(dayEvents) {
+            const titleEl = document.getElementById("selectedDayTitle");
+            const summaryEl = document.getElementById("selectedDaySummary");
+            const listEl = document.getElementById("daySlotsList");
+            if (!titleEl || !summaryEl || !listEl) return;
+
+            const iso = selectedCalendarDate || getTodayLocalISO();
+            const events = Array.isArray(dayEvents) ? dayEvents : [];
+            titleEl.textContent = formatIsoDateLong(iso);
+
+            if (events.length === 0) {
+                summaryEl.textContent = "No defenses assigned on this date — Free day";
+            } else {
+                summaryEl.textContent = `${events.length} assigned defense${events.length > 1 ? "s" : ""} on this date`;
+            }
+
+            const matchedIds = new Set();
+
+            const slotBlocksHtml = serverTimeSlots.map(slot => {
+                const matching = events.filter(ev =>
+                    timesOverlap(slot.start_time, slot.end_time, ev.start_time, ev.end_time)
+                );
+                matching.forEach(ev => matchedIds.add(ev.id));
+
+                if (matching.length === 0) {
+                    return `
+                        <div class="day-slot-card day-slot-free">
+                            <div class="day-slot-head">
+                                <span class="day-slot-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(slot.slot_label)}</span>
+                                <span class="day-slot-pill pill-free">Free</span>
+                            </div>
+                            <div class="day-slot-empty-msg">No defense assigned in this ${escapeHtml((slot.period || "").toLowerCase())} slot.</div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="day-slot-card day-slot-booked">
+                        <div class="day-slot-head">
+                            <span class="day-slot-time"><i class="fa-solid fa-clock"></i> ${escapeHtml(slot.slot_label)}</span>
+                            <span class="day-slot-pill pill-booked">${matching.length} Assigned</span>
+                        </div>
+                        <div class="day-slot-events-stack">
+                            ${matching.map(ev => renderDayScheduleMiniCard(ev)).join("")}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            const customEvents = events.filter(ev => !matchedIds.has(ev.id));
+            const customSectionHtml = customEvents.length > 0
+                ? `
+                    <div class="day-custom-events-block">
+                        <div class="day-section-divider">
+                            <i class="fa-solid fa-sliders"></i> Other / Custom Time Defenses (${customEvents.length})
+                        </div>
+                        <div class="day-slot-events-stack">
+                            ${customEvents.map(ev => renderDayScheduleMiniCard(ev, true)).join("")}
+                        </div>
+                    </div>
+                `
+                : "";
+
+            listEl.innerHTML = `
+                <div class="day-section-divider">
+                    <i class="fa-regular fa-clock"></i> Daily Schedule Timeline
+                </div>
+                ${slotBlocksHtml}
+                ${customSectionHtml}
+            `;
+        }
+
+        function renderDayScheduleMiniCard(ev, showExactTime = false) {
+            const dispStatus = getDisplayStatus(ev);
+            const stClass = dispStatus.toLowerCase();
+            const verdict = getMyVerdictInfo(ev);
+            const timeText = `${formatTime12Hr(ev.start_time)} - ${formatTime12Hr(ev.end_time)}`;
+            const orderedPanelists = getOrderedPanelists(ev);
+            const isChair = orderedPanelists[0] && String(orderedPanelists[0].user_id) === String(loggedInUserId);
+            const roleLabel = isChair ? "Panel Chairman" : "Panel Member";
+            const roomHtml = /^Online:/i.test(String(ev.room_name || ""))
+                ? `<a class="inline-online-link" href="${escapeHtml(String(ev.room_name).replace(/^Online:\s*/i, ""))}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-video"></i> Online Meeting</a>`
+                : `<i class="fa-solid fa-door-open"></i> ${escapeHtml(ev.room_name || "N/A")}`;
+
+            return `
+                <div class="day-mini-card status-border-${stClass}">
+                    <div class="day-mini-top">
+                        <div>
+                            <div class="day-mini-group">${escapeHtml(ev.group_name || "Unnamed Group")}</div>
+                            <div class="day-mini-type">${escapeHtml(ev.defense_type || "")}${showExactTime ? ` • ${escapeHtml(timeText)}` : ""}</div>
+                        </div>
+                        <span class="status-badge ${stClass}">${escapeHtml(dispStatus)}</span>
+                    </div>
+
+                    <div class="day-mini-meta">
+                        <span>${roomHtml}</span>
+                        <span><i class="fa-solid fa-user-tag"></i> ${escapeHtml(roleLabel)}</span>
+                    </div>
+
+                    <div class="day-mini-verdict-row">
+                        <span class="verdict-pill ${verdict.cls}">
+                            <i class="fa-solid ${verdict.icon}"></i> Your Verdict: ${escapeHtml(verdict.text)}
+                        </span>
+                    </div>
+
+                    <div class="day-mini-actions">
+                        <button type="button" class="day-mini-btn btn-view" onclick="openViewModal(${ev.id})">
+                            <i class="fa-solid fa-eye"></i> View Details
+                        </button>
+                        <button type="button" class="day-mini-btn btn-eval" onclick="window.location.href='Assigned_Defenses.html'">
+                            <i class="fa-solid fa-clipboard-check"></i> Evaluate
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ================= EXCEL-STYLE SHEET VIEW ================= */
+
+        function renderSheetTable(list) {
+            const tbody = document.getElementById("scheduleTableBody");
+            if (!tbody) return;
+
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="12" class="empty-table-row">
+                            <i class="fa-solid fa-calendar-xmark" style="font-size: 26px; color: #c4b5fd; display: block; margin-bottom: 8px;"></i>
+                            No assigned defense schedules match your filter criteria.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = list.map((item, idx) => {
+                const title = resolveProjectTitle(item);
+                const orderedPanelists = getOrderedPanelists(item);
+                const chair = orderedPanelists[0]?.fullname || "—";
+                const m1 = orderedPanelists[1]?.fullname || "—";
+                const m2 = orderedPanelists[2]?.fullname || "—";
+
+                const members = Array.isArray(item.members) ? item.members : [];
+                const memberFull = members.map(m => m.fullname).filter(Boolean).join(", ");
+                const memberShort = members.length > 0
+                    ? members.map(m => {
+                        const parts = String(m.fullname || "").trim().split(/\s+/);
+                        return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                    }).filter(Boolean).join(", ")
+                    : "—";
+
+                const dispStatus = getDisplayStatus(item);
+                const stClass = dispStatus.toLowerCase();
+                const verdict = getMyVerdictInfo(item);
+                const dateIso = normalizeScheduleDate(item.defense_date);
+                const isReeval = isConditionalReeval(item);
+                const timeRange = isReeval
+                    ? "No Time Limit"
+                    : `${formatTime12Hr(item.start_time)} - ${formatTime12Hr(item.end_time)}`;
+
+                const roomHtml = /^Online:/i.test(String(item.room_name || ""))
+                    ? `<a class="excel-online-link" href="${escapeHtml(String(item.room_name).replace(/^Online:\s*/i, ""))}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-video"></i> Online</a>`
+                    : escapeHtml(item.room_name || "—");
+
+                return `
+                    <tr class="excel-row">
+                        <td class="excel-cell-num">${idx + 1}</td>
+                        <td class="excel-cell-title">
+                            <div class="excel-project-title" title="${escapeHtml(title || item.group_name || "")}">
+                                ${escapeHtml(title || item.group_name || "Untitled Project")}
+                            </div>
+                            <div class="excel-group-sub">
+                                <span class="excel-group-name">${escapeHtml(item.group_name || "Unnamed Group")}</span>
+                                <span class="excel-program-chip">${escapeHtml(item.group_program || "N/A")}</span>
+                            </div>
+                        </td>
+                        <td class="excel-cell-type">
+                            <span class="excel-type-tag">${escapeHtml(item.defense_type || "—")}</span>
+                        </td>
+                        <td class="excel-cell-datetime">
+                            <button type="button" class="excel-date-jump" onclick="jumpToDateInCalendar('${escapeHtml(dateIso)}')" title="Jump to this date in Calendar View">
+                                <i class="fa-regular fa-calendar-days"></i> ${formatDate(item.defense_date)}
+                            </button>
+                            <div class="excel-time-sub">${escapeHtml(timeRange)}</div>
+                        </td>
+                        <td class="excel-cell-room">${roomHtml}</td>
+                        <td class="excel-cell-person">${escapeHtml(chair)}</td>
+                        <td class="excel-cell-person">${escapeHtml(m1)}</td>
+                        <td class="excel-cell-person">${escapeHtml(m2)}</td>
+                        <td class="excel-cell-members" title="${escapeHtml(memberFull || "No members")}">
+                            ${escapeHtml(memberShort)}
+                        </td>
+                        <td class="excel-cell-verdict">
+                            <span class="verdict-pill ${verdict.cls}">
+                                <i class="fa-solid ${verdict.icon}"></i> ${escapeHtml(verdict.text)}
+                            </span>
+                        </td>
+                        <td class="excel-cell-status status-fill-${stClass}">
+                            <div class="excel-status-main">${escapeHtml(dispStatus)}</div>
+                        </td>
+                        <td class="excel-cell-actions">
+                            <button type="button" class="view-btn-sm" title="View defense details" onclick="openViewModal(${item.id})">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function exportPanelistCsv() {
+            const list = getFilteredSchedules(false);
+            if (!list || list.length === 0) {
+                alert("There are no schedules in the current view to export.");
+                return;
+            }
+            const csvCell = (val) => `"${String(val ?? "").replace(/\r?\n/g, " ").replace(/"/g, '""')}"`;
+            const headers = [
+                "#", "Project Title", "Group Name", "Program", "Defense Type",
+                "Date", "Time", "Room", "Panel Chairman", "Panel Member 1",
+                "Panel Member 2", "Group Members", "Your Verdict", "Status"
+            ];
+            const rows = list.map((item, idx) => {
+                const p = getOrderedPanelists(item);
+                const m = Array.isArray(item.members) ? item.members.map(x => x.fullname).filter(Boolean).join(", ") : "";
+                const verdict = getMyVerdictInfo(item);
+                return [
+                    idx + 1,
+                    resolveProjectTitle(item) || item.group_name || "",
+                    item.group_name || "",
+                    item.group_program || "",
+                    item.defense_type || "",
+                    formatDate(item.defense_date),
+                    `${formatTime12Hr(item.start_time)} - ${formatTime12Hr(item.end_time)}`,
+                    item.room_name || "",
+                    p[0]?.fullname || "",
+                    p[1]?.fullname || "",
+                    p[2]?.fullname || "",
+                    m,
+                    verdict.text,
+                    getDisplayStatus(item)
+                ].map(csvCell).join(",");
+            });
+
+            const csvContent = "\uFEFF" + [headers.map(csvCell).join(","), ...rows].join("\r\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `My_Panelist_Defense_Schedule_${getTodayLocalISO()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /* ================= DETAILS MODAL ================= */
+
+        function openViewModal(scheduleId) {
+            const item = allSchedules.find(s => Number(s.id) === Number(scheduleId));
+            if (!item) return;
+
+            const title = resolveProjectTitle(item);
+            const dispStatus = getDisplayStatus(item);
+            const verdict = getMyVerdictInfo(item);
+
+            document.getElementById("viewGroupName").textContent = `${item.group_name || "Unnamed Group"} (${item.group_program || "N/A"})`;
+            document.getElementById("viewProjectTitle").textContent = title || "Capstone Defense Presentation";
+            document.getElementById("viewDate").textContent = formatDate(item.defense_date);
+            document.getElementById("viewTime").textContent = `${formatTime12Hr(item.start_time)} - ${formatTime12Hr(item.end_time)}`;
+
+            const roomEl = document.getElementById("viewRoom");
+            if (/^Online:/i.test(String(item.room_name || ""))) {
+                const link = String(item.room_name).replace(/^Online:\s*/i, "");
+                roomEl.innerHTML = `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;"><i class="fa-solid fa-video"></i> Join Online Meeting</a>`;
+            } else {
+                roomEl.textContent = item.room_name || "N/A";
+            }
+
+            document.getElementById("viewType").textContent = item.defense_type || "N/A";
+            document.getElementById("viewStatus").textContent = dispStatus;
+            document.getElementById("viewMyVerdict").innerHTML = `<span class="verdict-pill ${verdict.cls}"><i class="fa-solid ${verdict.icon}"></i> ${escapeHtml(verdict.text)}</span>`;
+            document.getElementById("viewCoordinator").textContent = item.created_by_name ? `Scheduled by: ${item.created_by_name}` : "";
+            document.getElementById("viewNotes").textContent = item.notes || "No additional notes.";
+
+            // Panelists
+            const pContainer = document.getElementById("viewPanelists");
+            const orderedPanelists = getOrderedPanelists(item);
+            if (orderedPanelists.length === 0) {
+                pContainer.innerHTML = `<p class="empty-text">No panelists listed.</p>`;
+            } else {
+                pContainer.innerHTML = orderedPanelists.map((p, idx) => {
+                    const roleLabel = idx === 0 ? "Panel Chairman" : `Panel Member ${idx}`;
+                    const isMe = String(p.user_id) === String(loggedInUserId);
+                    return `
+                        <div class="member-row ${isMe ? "is-me-row" : ""}">
+                            <div class="member-avatar">${escapeHtml((p.fullname || "P").charAt(0).toUpperCase())}</div>
+                            <div style="flex:1;">
+                                <h4>${escapeHtml(p.fullname || "Panelist")} ${isMe ? `<span class="you-badge">You</span>` : ""}</h4>
+                                <p>${escapeHtml(roleLabel)} • ${escapeHtml(p.position || p.role || "Panelist")}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            // Members
+            const mContainer = document.getElementById("viewMembers");
+            const members = Array.isArray(item.members) ? item.members : [];
+            if (members.length === 0) {
+                mContainer.innerHTML = `<p class="empty-text">No student members listed.</p>`;
+            } else {
+                mContainer.innerHTML = members.map(m => `
+                    <div class="member-row">
+                        <div class="member-avatar student-avatar">${escapeHtml((m.fullname || "S").charAt(0).toUpperCase())}</div>
+                        <div>
+                            <h4>${escapeHtml(m.fullname || "Student")}</h4>
+                            <p>${escapeHtml(m.user_id || "")} • ${escapeHtml(m.member_position || "Member")}</p>
+                        </div>
+                    </div>
+                `).join("");
+            }
+
+            // Approved documents
+            const docsSec = document.getElementById("viewDocsSection");
+            const docsEl = document.getElementById("viewDocuments");
+            const docs = Array.isArray(item.documents) ? item.documents : [];
+            if (docs.length > 0 && docsSec && docsEl) {
+                docsSec.style.display = "block";
+                docsEl.innerHTML = docs.map(d => `
+                    <div class="member-row" style="justify-content: space-between;">
+                        <div>
+                            <h4>${escapeHtml(d.document_title || d.label || d.file_name || "Document")}</h4>
+                            <p>${escapeHtml(d.document_type || d.document_status || "")}</p>
+                        </div>
+                        <a href="${escapeHtml(d.file_path || "#")}" target="_blank" rel="noopener noreferrer" class="doc-open-link">
+                            <i class="fa-solid fa-up-right-from-square"></i> Open
+                        </a>
+                    </div>
+                `).join("");
+            } else if (docsSec) {
+                docsSec.style.display = "none";
+            }
+
+            document.getElementById("viewScheduleModal").style.display = "flex";
+        }
+
+        function closeViewModal() {
+            const modal = document.getElementById("viewScheduleModal");
+            if (modal) modal.style.display = "none";
+        }
+
+        document.addEventListener("click", (e) => {
+            const modal = document.getElementById("viewScheduleModal");
+            if (modal && e.target === modal) {
+                closeViewModal();
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../../Log-in.html";
+        }
+
+        async function initPage() {
+            setViewMode(currentViewMode);
+            await Promise.allSettled([
+                loadPredefinedTimeSlots(),
+                loadPanelistSchedules()
+            ]);
+            renderAllViews();
+        }
+
+        initPage();
+    </script>
+
+    <script src="../../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

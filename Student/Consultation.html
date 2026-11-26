@@ -7,11 +7,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="Consultation.css">
+    <link rel="stylesheet" href="../shared/consultation-schedule.css">
     <link rel="stylesheet" href="../Admin/AdminTheme.css">
     <link rel="stylesheet" href="student-portal.css">
 
     <link rel="stylesheet" href="../shared/custom-alerts.css">
     <script src="../shared/custom-alerts.js"></script>
+    <script src="../shared/consultation-schedule.js"></script>
 </head>
 <body class="admin-portal">
     <div class="bg1"></div><div class="bg2"></div>
@@ -38,6 +40,14 @@
                 </div>
                 <div class="menu-item" id="nav-documents" onclick="window.location.href='Documents.html'">
                     <i class="fa-solid fa-file-arrow-up"></i><span>Records Management</span>
+                </div>
+                <div
+                    class="menu-item"
+                    id="nav-form-templates"
+                    onclick="window.location.href='Form_Templates.html'"
+                >
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Form Templates</span>
                 </div>
                 <div class="menu-item active" id="nav-consultation" onclick="window.location.href='Consultation.html'">
                     <i class="fa-solid fa-comments"></i><span>Consultation</span>
@@ -66,7 +76,7 @@
         <div class="topbar">
             <div class="welcome">
                 <h1>Consultation Requests</h1>
-                <p>Submit and track your consultation requests with your assigned adviser or instructor.</p>
+                <p>Submit and track your consultation requests with your assigned adviser, instructor, or defense panelists.</p>
             </div>
             <div class="top-actions">
                 <button class="history-toggle-btn" id="historyToggleBtn" onclick="toggleHistory()">
@@ -93,9 +103,18 @@
                     </select>
                 </div>
             </div>
-            <div class="availability-warning-banner" id="facultyAvailabilityNotice" style="display:none;">
-                <i class="fa-solid fa-circle-pause"></i>
-                <span id="facultyAvailabilityText">This faculty member is currently unavailable for new consultations.</span>
+            <div class="stu-schedule-panel" id="receiverSchedulePanel">
+                <div class="stu-schedule-panel-head">
+                    <h3><i class="fa-solid fa-calendar-check"></i> <span id="receiverScheduleHeading">Receiver's Consultation Schedule</span></h3>
+                    <span style="font-size:12px;color:#6d5f85;">Select one available slot below</span>
+                </div>
+                <div id="receiverScheduleBody">
+                    <p style="font-size:13px;color:#6d5f85;">Select a faculty recipient above to view their available consultation schedule.</p>
+                </div>
+                <div class="stu-selected-slot-banner" id="selectedSlotBanner" style="display:none;">
+                    <span id="selectedSlotText"></span>
+                    <button type="button" onclick="clearSelectedSlot()" style="border:none;background:transparent;color:#065f46;font-weight:700;cursor:pointer;font-size:12px;">Change</button>
+                </div>
             </div>
             <div class="input-group" id="docUploadGroup">
                 <label><i class="fa-solid fa-file-pdf" style="color:#ef4444;margin-right:6px;"></i>Upload Document (PDF only) <span style="color:#ef4444;">*</span></label>
@@ -165,6 +184,9 @@
         function logout(){ localStorage.clear(); window.location.href = "../Log-in.html"; }
 
         let availableFacultyList = [];
+        let currentReceiverSlots = [];
+        let selectedSlot = null;
+        let receiverScheduleReqSeq = 0;
 
         function escapeHtml(value){
             return String(value ?? "")
@@ -203,21 +225,151 @@
             return "b-pending";
         }
 
-        function updateSelectedFacultyAvailability(){
-            const select = document.getElementById("facultySelect");
-            const notice = document.getElementById("facultyAvailabilityNotice");
-            const textEl = document.getElementById("facultyAvailabilityText");
-            const submitBtn = document.querySelector("#formSection .submit-btn");
-            if(!select || !notice || !textEl) return;
+        function clearSelectedSlot(){
+            selectedSlot = null;
+            document.querySelectorAll("#receiverScheduleBody .stu-slot-btn.is-selected").forEach(btn => {
+                btn.classList.remove("is-selected");
+            });
+            const banner = document.getElementById("selectedSlotBanner");
+            if(banner) banner.style.display = "none";
+        }
 
-            const chosen = availableFacultyList.find(f => String(f.faculty_id) === String(select.value));
-            if(chosen && Number(chosen.consultation_available) === 0){
-                notice.style.display = "flex";
-                textEl.textContent = `${chosen.faculty_name} (${chosen.assigned_role}) is currently marked as Unavailable and is not accepting new consultation requests.`;
+        function selectReceiverSlot(slotKey){
+            const found = currentReceiverSlots.find(s => s.key === slotKey);
+            if(!found || found.isBooked) return;
+            selectedSlot = found;
+            document.querySelectorAll("#receiverScheduleBody .stu-slot-btn").forEach(btn => {
+                btn.classList.toggle("is-selected", btn.dataset.slotKey === slotKey);
+            });
+            const banner = document.getElementById("selectedSlotBanner");
+            const textEl = document.getElementById("selectedSlotText");
+            if(banner && textEl){
+                banner.style.display = "flex";
+                textEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Selected Slot: ${escapeHtml(found.label)}${found.consultation_mode ? ` (${escapeHtml(found.consultation_mode)})` : ""}`;
+            }
+        }
+
+        async function updateSelectedFacultyAvailability(){
+            const select = document.getElementById("facultySelect");
+            const headingEl = document.getElementById("receiverScheduleHeading");
+            const bodyEl = document.getElementById("receiverScheduleBody");
+            const submitBtn = document.querySelector("#formSection .submit-btn");
+            clearSelectedSlot();
+            currentReceiverSlots = [];
+
+            if(!select || !bodyEl) return;
+
+            const [selFacultyId, selRole] = String(select.value || "").split("::");
+            if(!selFacultyId){
+                if(headingEl) headingEl.textContent = "Receiver's Consultation Schedule";
+                bodyEl.innerHTML = `<p style="font-size:13px;color:#6d5f85;">No recipient selected.</p>`;
                 if(submitBtn) submitBtn.disabled = true;
-            } else {
-                notice.style.display = "none";
+                return;
+            }
+
+            const chosen = availableFacultyList.find(f =>
+                String(f.faculty_id) === String(selFacultyId) &&
+                (!selRole || String(f.assigned_role) === String(selRole))
+            );
+            const recName = chosen ? `${chosen.faculty_name} (${chosen.assigned_role})` : "Selected Faculty";
+            if(headingEl) headingEl.textContent = `${recName} — Consultation Schedule`;
+
+            const reqSeq = ++receiverScheduleReqSeq;
+            bodyEl.innerHTML = `<p style="font-size:13px;color:#6d5f85;"><i class="fa-solid fa-spinner fa-spin"></i> Loading ${escapeHtml(recName)}'s schedule...</p>`;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/consultation-schedule?facultyId=${encodeURIComponent(selFacultyId)}`);
+                const data = await res.json();
+                if(reqSeq !== receiverScheduleReqSeq) return;
+
+                const schedules = (data.success && Array.isArray(data.schedules)) ? data.schedules : [];
+                const bookedSlots = (data.success && Array.isArray(data.bookedSlots)) ? data.bookedSlots : [];
+                const ui = window.ConsultationScheduleUI;
+                const computed = ui ? ui.computeSelectableSlots(schedules, bookedSlots, 14) : { days: [], availableRules: [], unavailableRules: [] };
+
+                const overviewPills = [];
+                computed.availableRules.forEach(r => {
+                    overviewPills.push(`<span class="stu-rule-pill"><i class="fa-solid fa-check"></i> ${escapeHtml(ui.describeScope(r))}: ${escapeHtml(ui.describeTime(r))}</span>`);
+                });
+                computed.unavailableRules.forEach(r => {
+                    overviewPills.push(`<span class="stu-rule-pill is-unavail"><i class="fa-solid fa-ban"></i> Unavailable — ${escapeHtml(ui.describeScope(r))}: ${escapeHtml(ui.describeTime(r))}</span>`);
+                });
+                const overviewHtml = overviewPills.length
+                    ? `<div class="stu-schedule-rules-overview">${overviewPills.join("")}</div>`
+                    : "";
+
+                if(computed.availableRules.length === 0){
+                    bodyEl.innerHTML = `
+                        ${overviewHtml}
+                        <div class="stu-no-schedule-box">
+                            <i class="fa-solid fa-calendar-xmark" style="font-size:18px;flex-shrink:0;"></i>
+                            <span><strong>No Custom Schedule Set Yet:</strong> ${escapeHtml(recName)} has not configured their custom consultation hours yet. Please check back later or send them a message.</span>
+                        </div>
+                    `;
+                    if(submitBtn) submitBtn.disabled = true;
+                    return;
+                }
+
+                const flatSlots = [];
+                computed.days.forEach(d => d.slots.forEach(s => flatSlots.push(s)));
+                currentReceiverSlots = flatSlots;
+
+                const openCount = flatSlots.filter(s => !s.isBooked).length;
+                if(computed.days.length === 0 || openCount === 0){
+                    bodyEl.innerHTML = `
+                        ${overviewHtml}
+                        <div class="stu-no-schedule-box">
+                            <i class="fa-solid fa-clock" style="font-size:18px;flex-shrink:0;"></i>
+                            <span><strong>No Open Slots Available:</strong> All upcoming slots for ${escapeHtml(recName)} in the next 14 days are either blocked or already booked.</span>
+                        </div>
+                    `;
+                    if(submitBtn) submitBtn.disabled = true;
+                    return;
+                }
+
                 if(submitBtn) submitBtn.disabled = false;
+
+                const daysHtml = computed.days.map(day => {
+                    const btnsHtml = day.slots.map(slot => {
+                        const metaParts = [];
+                        if(slot.isBooked) metaParts.push("Already Booked");
+                        else {
+                            metaParts.push(slot.scopeTag);
+                            if(slot.consultation_mode) metaParts.push(slot.consultation_mode.replace(" Consultation", ""));
+                            if(slot.location_or_link) metaParts.push(slot.location_or_link);
+                        }
+                        return `
+                            <button
+                                type="button"
+                                class="stu-slot-btn ${slot.isBooked ? "is-booked" : ""}"
+                                data-slot-key="${escapeHtml(slot.key)}"
+                                ${slot.isBooked ? "disabled" : `onclick="selectReceiverSlot('${escapeHtml(slot.key)}')"`}
+                            >
+                                <span class="stu-slot-time">
+                                    <i class="fa-regular ${slot.isBooked ? "fa-calendar-xmark" : "fa-clock"}"></i>
+                                    ${escapeHtml(slot.timeLabel)}
+                                </span>
+                                <span class="stu-slot-meta">${escapeHtml(metaParts.join(" • "))}</span>
+                            </button>
+                        `;
+                    }).join("");
+
+                    return `
+                        <div class="stu-day-group">
+                            <div class="stu-day-group-title"><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(day.label)}</div>
+                            <div class="stu-slot-grid">${btnsHtml}</div>
+                        </div>
+                    `;
+                }).join("");
+
+                bodyEl.innerHTML = `
+                    ${overviewHtml}
+                    <div class="stu-slots-scroll">${daysHtml}</div>
+                `;
+            } catch (err) {
+                console.error("Load receiver schedule error:", err);
+                bodyEl.innerHTML = `<div class="stu-no-schedule-box"><i class="fa-solid fa-triangle-exclamation"></i><span>Unable to load ${escapeHtml(recName)}'s schedule right now.</span></div>`;
+                if(submitBtn) submitBtn.disabled = true;
             }
         }
 
@@ -247,15 +399,20 @@
             const select = document.getElementById("facultySelect");
             select.innerHTML = "";
             if(!data.success || !data.context || !Array.isArray(data.context.availableFaculty) || data.context.availableFaculty.length === 0){
-                document.getElementById("facultyHint").innerText = "No assigned adviser/instructor found yet.";
+                document.getElementById("facultyHint").innerText = "No assigned adviser, instructor, or defense panelist found yet.";
                 select.innerHTML = `<option value="">No recipient available</option>`;
                 return;
             }
             availableFacultyList = data.context.availableFaculty;
-            document.getElementById("facultyHint").innerText = "You can send to your assigned adviser or instructor.";
+            document.getElementById("facultyHint").innerText = "You can send to your assigned adviser, instructor, or defense panelists (Concept – Final Defense).";
             availableFacultyList.forEach(item => {
-                const isAvail = Number(item.consultation_available ?? 1) === 1;
-                select.innerHTML += `<option value="${item.faculty_id}">${item.assigned_role}: ${item.faculty_name} (${item.faculty_user_id})${isAvail ? "" : " — Unavailable"}</option>`;
+                const hasSchedule = Number(item.available_rule_count || 0) > 0;
+                const roleLabel = escapeHtml(item.assigned_role || "Faculty");
+                const phasesNote = (item.assigned_role === "Panelist" && item.defense_phases)
+                    ? ` — ${escapeHtml(item.defense_phases)}`
+                    : "";
+                const optionValue = `${item.faculty_id}::${item.assigned_role || ""}`;
+                select.innerHTML += `<option value="${escapeHtml(optionValue)}">${roleLabel}: ${escapeHtml(item.faculty_name)} (${escapeHtml(item.faculty_user_id)})${phasesNote}${hasSchedule ? "" : " — No schedule set yet"}</option>`;
             });
             updateSelectedFacultyAvailability();
         }
@@ -268,11 +425,21 @@
 
             const schedBlock = dateStr ? `
                 <div class="sched-box">
-                    <h4>Schedule Details</h4>
-                    <p><strong>Date:</strong> ${dateStr}</p>
-                    <p><strong>Time:</strong> ${startStr}${endStr ? " – " + endStr : ""}</p>
-                    <p><strong>Mode:</strong> ${item.consultation_mode || "N/A"}</p>
-                    <p><strong>Location/Link:</strong> ${item.location_or_link || "N/A"}</p>
+                    <h4>Confirmed Schedule Details</h4>
+                    <p><strong>Date:</strong> ${window.ConsultationScheduleUI ? escapeHtml(window.ConsultationScheduleUI.formatDatePretty(dateStr)) : escapeHtml(dateStr)}</p>
+                    <p><strong>Time:</strong> ${window.ConsultationScheduleUI ? escapeHtml(window.ConsultationScheduleUI.formatTime12(startStr)) : escapeHtml(startStr)}${endStr ? " – " + (window.ConsultationScheduleUI ? escapeHtml(window.ConsultationScheduleUI.formatTime12(endStr)) : escapeHtml(endStr)) : ""}</p>
+                    <p><strong>Mode:</strong> ${escapeHtml(item.consultation_mode || "N/A")}</p>
+                    <p><strong>Location/Link:</strong> ${escapeHtml(item.location_or_link || "N/A")}</p>
+                </div>
+            ` : "";
+
+            const reqSlotText = item.requested_slot_label || (item.requested_date
+                ? `${window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatDatePretty(item.requested_date) : item.requested_date}${item.requested_start_time ? " • " + (window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatTime12(item.requested_start_time) : item.requested_start_time) : ""}${item.requested_end_time ? " – " + (window.ConsultationScheduleUI ? window.ConsultationScheduleUI.formatTime12(item.requested_end_time) : item.requested_end_time) : ""}`
+                : "");
+            const reqSlotBlock = (!dateStr && reqSlotText) ? `
+                <div class="cs-requested-slot-box">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    <div><strong>Chosen Schedule Slot:</strong> ${escapeHtml(reqSlotText)}</div>
                 </div>
             ` : "";
 
@@ -304,7 +471,9 @@
                     ${docBlock}
                     <p><strong>Concern:</strong> ${escapeHtml(item.concern_message || "N/A")}</p>
                     <p><strong>Faculty:</strong> ${escapeHtml(item.faculty_name || "N/A")} (${escapeHtml(item.assigned_role || "-")})</p>
+                    ${item.requested_by_name ? `<p><strong>Requested By:</strong> ${escapeHtml(item.requested_by_name)}</p>` : ""}
                     <p><strong>Requested:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+                    ${reqSlotBlock}
                     ${declinedBlock}
                     ${schedBlock}
                 </article>
@@ -553,12 +722,17 @@
         }
 
         async function submitConsultation(){
-            const assignedFacultyId  = document.getElementById("facultySelect").value;
+            const rawFacultySelection = document.getElementById("facultySelect").value;
+            const [assignedFacultyId, assignedRole] = String(rawFacultySelection || "").split("::");
             const consultationType   = document.getElementById("consultationType").value;
             const concernMessage     = document.getElementById("consultationMessage").value.trim();
             const fileInput          = document.getElementById("consultationFile");
 
             if(!assignedFacultyId){ alert("No assigned faculty available yet."); return; }
+            if(!selectedSlot){
+                alert("Please choose one available consultation schedule slot from the selected faculty's schedule before submitting.");
+                return;
+            }
             if(consultationType === "Document Consultation"){
                 if(!fileInput || !fileInput.files || fileInput.files.length === 0){
                     alert("Please select and upload a PDF document for your consultation.");
@@ -583,8 +757,24 @@
                 const formData = new FormData();
                 formData.append("studentUserId", userId);
                 formData.append("assignedFacultyId", assignedFacultyId);
+                if(assignedRole){
+                    formData.append("assignedRole", assignedRole);
+                }
                 formData.append("consultationType", consultationType);
                 formData.append("concernMessage", concernMessage);
+                formData.append("requestedDate", selectedSlot.date);
+                formData.append("requestedStartTime", selectedSlot.start_time);
+                formData.append("requestedEndTime", selectedSlot.end_time);
+                if(selectedSlot.slot_id){
+                    formData.append("requestedSlotId", String(selectedSlot.slot_id));
+                }
+                formData.append("requestedSlotLabel", selectedSlot.label);
+                if(selectedSlot.consultation_mode){
+                    formData.append("preferredMode", selectedSlot.consultation_mode);
+                }
+                if(selectedSlot.location_or_link){
+                    formData.append("preferredLocation", selectedSlot.location_or_link);
+                }
                 if(fileInput && fileInput.files && fileInput.files.length > 0){
                     formData.append("consultationFile", fileInput.files[0]);
                 }
@@ -598,6 +788,8 @@
                 if(data.success){
                     if(fileInput) fileInput.value = "";
                     document.getElementById("consultationMessage").value = "";
+                    clearSelectedSlot();
+                    await updateSelectedFacultyAvailability();
                     await loadConsultations();
                     if(window.PortalNotifications){ window.PortalNotifications.refresh(false); }
                 }

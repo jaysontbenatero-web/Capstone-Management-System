@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Templates | CMS</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="Form_Templates.css">
+    <link rel="stylesheet" href="../Admin/AdminTheme.css">
+    <link rel="stylesheet" href="student-portal.css">
+    <link rel="stylesheet" href="../shared/custom-alerts.css">
+    <script src="../shared/custom-alerts.js"></script>
+</head>
+
+<body class="admin-portal">
+
+    <div class="bg1"></div>
+    <div class="bg2"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar admin-sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-mark">
+                    <img src="../Images/CapstoneXicon.png" alt="CMS">
+                </div>
+                <div>
+                    <h1>CMS</h1>
+                    <p>Student Portal</p>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div class="menu-title">Main</div>
+                <div class="menu-item" id="nav-home" onclick="window.location.href='StudentDash.html'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-title">Capstone</div>
+                <div class="menu-item" id="nav-titles" onclick="window.location.href='Capstone_Titles.html'">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Capstone Titles</span>
+                </div>
+                <div class="menu-item" id="nav-members" onclick="window.location.href='Members.html'">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </div>
+                <div class="menu-item" id="nav-adviser" onclick="window.location.href='Req_Adviser.html'">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Request Adviser</span>
+                </div>
+                <div class="menu-item" id="nav-documents" onclick="window.location.href='Documents.html'">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Records Management</span>
+                </div>
+                <div class="menu-item active" id="nav-form-templates" onclick="window.location.href='Form_Templates.html'">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Form Templates</span>
+                </div>
+                <div class="menu-item" id="nav-consultation" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
+                </div>
+                <div class="menu-item" id="nav-defense" onclick="window.location.href='Defense_Schedule.html'">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Defense Schedules</span>
+                </div>
+
+                <div class="menu-title">Communication</div>
+                <div class="menu-item" id="nav-messages" onclick="window.location.href='Messages.html'">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Messages</span>
+                </div>
+
+                <div class="menu-title">Updates</div>
+                <div class="menu-item" id="nav-notifications" onclick="window.location.href='Notifications.html'">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+                <div class="menu-item" id="nav-settings" onclick="window.location.href='Settings.html'">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main admin-main">
+        <div class="topbar">
+            <div class="welcome">
+                <h1>Form Templates</h1>
+                <p>Download official capstone PDF and Word templates uploaded by your instructors, organized by capstone phase.</p>
+            </div>
+            <div class="top-actions"></div>
+        </div>
+
+        <!-- STATS -->
+        <div class="tpl-stats-grid">
+            <div class="tpl-stat-card">
+                <div class="tpl-stat-icon purple"><i class="fa-solid fa-folder-open"></i></div>
+                <div>
+                    <h2 id="statTotalTemplates">0</h2>
+                    <p>Available Templates</p>
+                </div>
+            </div>
+            <div class="tpl-stat-card">
+                <div class="tpl-stat-icon red"><i class="fa-solid fa-file-pdf"></i></div>
+                <div>
+                    <h2 id="statPdfTemplates">0</h2>
+                    <p>PDF Forms</p>
+                </div>
+            </div>
+            <div class="tpl-stat-card">
+                <div class="tpl-stat-icon blue"><i class="fa-solid fa-file-word"></i></div>
+                <div>
+                    <h2 id="statWordTemplates">0</h2>
+                    <p>Word (DOC / DOCX) Forms</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEARCH & CATEGORY FILTER -->
+        <div class="tpl-toolbar-card">
+            <div class="tpl-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="templateSearchInput" placeholder="Search template name, file, or instructions..." oninput="renderTemplateSections()">
+            </div>
+            <div class="tpl-category-pills" id="categoryFilterPills"></div>
+        </div>
+
+        <!-- CATEGORY SECTIONS -->
+        <div class="tpl-sections-wrap" id="templateSectionsHost">
+            <div class="tpl-empty-section">Loading form templates...</div>
+        </div>
+    </main>
+
+    <script src="student-portal.js"></script>
+    <script>
+        const TEMPLATE_CATEGORIES = [
+            {
+                key: "Concept Presentation",
+                icon: "fa-lightbulb",
+                iconClass: "cat-concept",
+                description: "Concept paper formats, environmental scanning forms, adviser acceptance, and recommendation forms."
+            },
+            {
+                key: "Outline Defense",
+                icon: "fa-clipboard-check",
+                iconClass: "cat-outline",
+                description: "Chapter 1–2 manuscript templates, outline recommendation forms, and outline defense guides."
+            },
+            {
+                key: "Pre-Final Defense",
+                icon: "fa-person-chalkboard",
+                iconClass: "cat-prefinal",
+                description: "Pre-final manuscript formats, recommendation letters, and system demo checklists."
+            },
+            {
+                key: "Deployment",
+                icon: "fa-rocket",
+                iconClass: "cat-deployment",
+                description: "Recommendation for Deployment forms, Chapter 1–4 deployment formats, and endorsement templates."
+            },
+            {
+                key: "Final Defense",
+                icon: "fa-graduation-cap",
+                iconClass: "cat-final",
+                description: "Final defense recommendation letters, final Chapter 1–4 manuscript formats, and binding templates."
+            },
+            {
+                key: "General / Others",
+                icon: "fa-folder-open",
+                iconClass: "cat-general",
+                description: "General capstone guidelines, rubrics, formatting manuals, and miscellaneous forms."
+            }
+        ];
+
+        let allTemplates = [];
+        let activeCategoryFilter = "All";
+
+        function escapeHtml(val) {
+            return String(val ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function formatBytes(bytes) {
+            const b = Number(bytes || 0);
+            if (!b) return "";
+            if (b < 1024) return `${b} B`;
+            if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+            return `${(b / (1024 * 1024)).toFixed(2)} MB`;
+        }
+
+        function formatDateShort(val) {
+            if (!val) return "";
+            const d = new Date(val);
+            if (Number.isNaN(d.getTime())) return "";
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        function updateStats() {
+            const total = allTemplates.length;
+            const pdfCount = allTemplates.filter(t => String(t.file_format || "").toUpperCase() === "PDF").length;
+            const wordCount = allTemplates.filter(t => ["DOC", "DOCX"].includes(String(t.file_format || "").toUpperCase())).length;
+
+            document.getElementById("statTotalTemplates").textContent = total;
+            document.getElementById("statPdfTemplates").textContent = pdfCount;
+            document.getElementById("statWordTemplates").textContent = wordCount;
+        }
+
+        function renderCategoryPills() {
+            const host = document.getElementById("categoryFilterPills");
+            if (!host) return;
+
+            const allBtn = `
+                <button type="button" class="tpl-cat-pill ${activeCategoryFilter === "All" ? "active" : ""}" onclick="setCategoryFilter('All')">
+                    <i class="fa-solid fa-border-all"></i>
+                    <span>All Categories</span>
+                    <span class="pill-count">${allTemplates.length}</span>
+                </button>
+            `;
+
+            const catBtns = TEMPLATE_CATEGORIES.map(cat => {
+                const count = allTemplates.filter(t => t.category === cat.key).length;
+                const safeKey = cat.key.replace(/'/g, "\\'");
+                return `
+                    <button type="button" class="tpl-cat-pill ${activeCategoryFilter === cat.key ? "active" : ""}" onclick="setCategoryFilter('${safeKey}')">
+                        <i class="fa-solid ${cat.icon}"></i>
+                        <span>${escapeHtml(cat.key)}</span>
+                        <span class="pill-count">${count}</span>
+                    </button>
+                `;
+            }).join("");
+
+            host.innerHTML = allBtn + catBtns;
+        }
+
+        function setCategoryFilter(catKey) {
+            activeCategoryFilter = catKey;
+            renderCategoryPills();
+            renderTemplateSections();
+        }
+
+        function buildTemplateCardHtml(tpl) {
+            const fmt = String(tpl.file_format || "FILE").toUpperCase();
+            const isPdf = fmt === "PDF";
+            const badgeClass = isPdf ? "fmt-pdf" : "fmt-doc";
+            const iconClass = isPdf ? "fa-file-pdf" : "fa-file-word";
+            const sizeText = formatBytes(tpl.file_size);
+            const dateText = formatDateShort(tpl.created_at);
+
+            return `
+                <div class="tpl-card">
+                    <div class="tpl-card-top">
+                        <div class="tpl-file-badge ${badgeClass}">
+                            <i class="fa-solid ${iconClass}"></i>
+                            <span>${escapeHtml(fmt)}</span>
+                        </div>
+                        <div class="tpl-card-info">
+                            <div class="tpl-card-title">${escapeHtml(tpl.title)}</div>
+                            <div class="tpl-card-filename" title="${escapeHtml(tpl.file_name)}">${escapeHtml(tpl.file_name)}</div>
+                        </div>
+                    </div>
+                    ${tpl.description ? `<div class="tpl-card-desc">${escapeHtml(tpl.description)}</div>` : ""}
+                    <div class="tpl-card-meta">
+                        <span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(tpl.uploader_name || "Instructor")}</span>
+                        <span>${sizeText ? `${escapeHtml(sizeText)} &bull; ` : ""}${escapeHtml(dateText)}</span>
+                    </div>
+                    <div class="tpl-card-actions">
+                        ${isPdf ? `<a class="tpl-action-btn btn-view" href="${escapeHtml(tpl.file_path)}" target="_blank" rel="noopener"><i class="fa-solid fa-eye"></i> View PDF</a>` : ""}
+                        <a class="tpl-action-btn btn-download" href="/api/form-templates/${Number(tpl.id)}/download"><i class="fa-solid fa-download"></i> Download</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTemplateSections() {
+            const host = document.getElementById("templateSectionsHost");
+            if (!host) return;
+
+            const query = String(document.getElementById("templateSearchInput")?.value || "").trim().toLowerCase();
+            const categoriesToShow = activeCategoryFilter === "All"
+                ? TEMPLATE_CATEGORIES
+                : TEMPLATE_CATEGORIES.filter(c => c.key === activeCategoryFilter);
+
+            const html = categoriesToShow.map(cat => {
+                const items = allTemplates.filter(t => {
+                    if (t.category !== cat.key) return false;
+                    if (!query) return true;
+                    const hay = `${t.title || ""} ${t.file_name || ""} ${t.description || ""} ${t.uploader_name || ""}`.toLowerCase();
+                    return hay.includes(query);
+                });
+
+                const bodyHtml = items.length > 0
+                    ? `<div class="tpl-cards-grid">${items.map(buildTemplateCardHtml).join("")}</div>`
+                    : `<div class="tpl-empty-section">No templates uploaded under <strong>${escapeHtml(cat.key)}</strong>${query ? " matching your search" : " yet"}.</div>`;
+
+                return `
+                    <section class="tpl-category-section">
+                        <div class="tpl-category-head">
+                            <div class="tpl-category-head-left">
+                                <div class="tpl-category-icon ${cat.iconClass}">
+                                    <i class="fa-solid ${cat.icon}"></i>
+                                </div>
+                                <div>
+                                    <h3>${escapeHtml(cat.key)}</h3>
+                                    <p>${escapeHtml(cat.description)}</p>
+                                </div>
+                            </div>
+                            <span class="tpl-section-count">${items.length} ${items.length === 1 ? "template" : "templates"}</span>
+                        </div>
+                        ${bodyHtml}
+                    </section>
+                `;
+            }).join("");
+
+            host.innerHTML = html;
+        }
+
+        async function loadTemplates() {
+            try {
+                const res = await fetch("/api/form-templates", { cache: "no-store" });
+                const data = await res.json();
+                allTemplates = (data && data.success && Array.isArray(data.templates)) ? data.templates : [];
+                updateStats();
+                renderCategoryPills();
+                renderTemplateSections();
+            } catch (err) {
+                console.error("Failed to load form templates:", err);
+                document.getElementById("templateSectionsHost").innerHTML =
+                    `<div class="tpl-empty-section">Unable to load templates right now. Please try again shortly.</div>`;
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "../Log-in.html";
+        }
+
+        if (typeof initStudentGroupGate === "function") {
+            initStudentGroupGate({ requireGroup: false, activeNav: "nav-form-templates" });
+        }
+
+        loadTemplates();
+    </script>
+
+    <script src="../shared/portal-notifications.js" defer></script>
+</body>
+
+</html>

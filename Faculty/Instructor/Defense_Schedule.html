@@ -125,6 +125,14 @@
                     <i class="fa-solid fa-book-open"></i>
                     <span>Repository</span>
                 </div>
+            <div
+                class="menu-item"
+                id="nav-forms-templates"
+                onclick="window.location.href='Forms_Templates.html'"
+            >
+                <i class="fa-solid fa-file-contract"></i>
+                <span>Forms Templates</span>
+            </div>
 
             </div>
         </div>
@@ -167,9 +175,17 @@
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
 
-                <input type="text" id="searchSchedule" placeholder="Search defense schedule..."
-                    onkeyup="renderScheduleSections()">
+                <input type="text" id="searchSchedule" placeholder="Search group, title, adviser, panelist, room..."
+                    onkeyup="onFilterControlChange()">
             </div>
+
+            <select id="typeFilter" onchange="onTypeFilterChange()">
+                <option value="All">All Defense Types</option>
+                <option value="Concept Presentation">Concept Presentation</option>
+                <option value="Outline Defense">Outline Defense</option>
+                <option value="Pre-Final Defense">Pre-Final Defense</option>
+                <option value="Final Defense">Final Defense</option>
+            </select>
 
             <select id="scopeFilter" onchange="onScopeFilterChange()">
                 <option value="All">All Schedules</option>
@@ -177,7 +193,7 @@
                 <option value="Other">Other Schedules</option>
             </select>
 
-            <select id="statusFilter" onchange="renderScheduleSections()">
+            <select id="statusFilter" onchange="onFilterControlChange()">
                 <option value="All">All Status</option>
                 <option value="Scheduled">Scheduled</option>
                 <option value="Ongoing">Ongoing</option>
@@ -187,52 +203,231 @@
 
         </section>
 
-        <!-- UNIFIED SCHEDULES TABLE -->
+        <!-- UNIFIED SCHEDULES CARD (EXCEL SHEET + CALENDAR VIEWS) -->
         <section class="content-card">
 
-            <div class="section-header">
+            <div class="section-header schedule-section-header">
 
                 <div>
                     <h2>Defense Schedules</h2>
                     <p>
-                        View, manage, and coordinate defense presentation schedules for student capstone groups.
+                        View created schedules in an Excel-style sheet or interactive calendar, and click any open date or time slot to schedule directly.
                     </p>
                 </div>
 
-                <div class="section-icon">
-                    <i class="fa-solid fa-calendar-days"></i>
+                <div class="schedule-view-toolbar">
+                    <div class="view-switcher" role="tablist" aria-label="Schedule display view">
+                        <button type="button" class="view-switch-btn active" id="viewBtnCalendar"
+                            onclick="setScheduleViewMode('calendar')" role="tab" aria-selected="true">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            <span>Calendar View</span>
+                        </button>
+                        <button type="button" class="view-switch-btn" id="viewBtnSheet"
+                            onclick="setScheduleViewMode('sheet')" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-table"></i>
+                            <span>Sheet View</span>
+                        </button>
+                    </div>
                 </div>
 
             </div>
 
-            <div class="table-responsive">
-                <table class="schedule-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 25%;">Group Name & Project Title</th>
-                            <th style="width: 8%;">Program</th>
-                            <th style="width: 14%;">Type</th>
-                            <th style="width: 14%;">Date & Time</th>
-                            <th style="width: 8%;">Room</th>
-                            <th style="width: 16%;">Panelists</th>
-                            <th style="width: 8%;">Status</th>
-                            <th style="width: 7%; text-align: center;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="scheduleTableBody">
-                        <tr>
-                            <td colspan="8" class="empty-table-row">
-                                Loading schedules...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- EXCEL-STYLE TABULAR SHEET VIEW -->
+            <div id="sheetViewContainer" class="sheet-view-container" style="display: none;">
+                <div class="excel-sheet-frame">
+                    <div class="excel-topbar">
+                        <div class="excel-sheet-pill" id="excelActiveSheetPill">
+                            <i class="fa-solid fa-table-cells"></i>
+                            <span id="excelActiveSheetLabel">All Defenses</span>
+                            <span class="excel-pill-count" id="excelActiveSheetCount">0</span>
+                        </div>
+                        <div class="excel-topbar-meta">
+                            <span class="excel-meta-hint">
+                                <i class="fa-regular fa-lightbulb"></i>
+                                Scroll horizontally to view all columns &bull; Click any row action to View or Edit
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="excel-table-scroll">
+                        <table class="excel-schedule-table" id="excelScheduleTable">
+                            <thead>
+                                <tr>
+                                    <th class="col-row-num">#</th>
+                                    <th class="col-project-title">Project Title / Group</th>
+                                    <th class="col-type">Defense Type</th>
+                                    <th class="col-datetime">Date &amp; Time</th>
+                                    <th class="col-room">Room</th>
+                                    <th class="col-adviser">Project Adviser</th>
+                                    <th class="col-panel">Panel Chairman</th>
+                                    <th class="col-panel">Panel Member 1</th>
+                                    <th class="col-panel">Panel Member 2</th>
+                                    <th class="col-members">Group Members</th>
+                                    <th class="col-status">Status</th>
+                                    <th class="col-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleTableBody">
+                                <tr>
+                                    <td colspan="12" class="empty-table-row">
+                                        Loading schedules...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- EXCEL WORKBOOK SHEET TABS BAR -->
+                    <div class="excel-tabs-bar" id="excelSheetTabs">
+                        <button type="button" class="excel-sheet-tab active" data-type="All"
+                            onclick="selectSheetTab('All')">
+                            All Defenses <span class="tab-count" id="tabCountAll">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Concept Presentation"
+                            onclick="selectSheetTab('Concept Presentation')">
+                            Concept <span class="tab-count" id="tabCountConcept">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Outline Defense"
+                            onclick="selectSheetTab('Outline Defense')">
+                            Outline <span class="tab-count" id="tabCountOutline">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Pre-Final Defense"
+                            onclick="selectSheetTab('Pre-Final Defense')">
+                            Pre-Final <span class="tab-count" id="tabCountPreFinal">0</span>
+                        </button>
+                        <button type="button" class="excel-sheet-tab" data-type="Final Defense"
+                            onclick="selectSheetTab('Final Defense')">
+                            Final <span class="tab-count" id="tabCountFinal">0</span>
+                        </button>
+
+                        <button type="button" class="excel-add-row-tab" onclick="openCreateModal()"
+                            title="Add a new defense schedule">
+                            <i class="fa-solid fa-plus"></i> Add Schedule
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PAGINATION -->
+                <div class="pagination-bar" id="paginationBar">
+                    <div class="pagination-info" id="paginationInfo">Showing 0 of 0</div>
+                    <div class="pagination-controls" id="paginationControls"></div>
+                </div>
             </div>
 
-            <!-- PAGINATION -->
-            <div class="pagination-bar" id="paginationBar">
-                <div class="pagination-info" id="paginationInfo">Showing 0 of 0</div>
-                <div class="pagination-controls" id="paginationControls"></div>
+            <!-- INTERACTIVE CALENDAR VIEW -->
+            <div id="calendarViewContainer" class="calendar-view-container">
+                <div class="calendar-workspace">
+                    <!-- LEFT: MONTH CALENDAR GRID -->
+                    <div class="calendar-panel">
+                        <div class="calendar-toolbar">
+                            <div class="calendar-nav-group">
+                                <button type="button" class="cal-nav-btn" onclick="changeCalendarMonth(-1)"
+                                    title="Previous month">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <h3 class="calendar-month-title" id="calendarMonthTitle">Month Year</h3>
+                                <button type="button" class="cal-nav-btn" onclick="changeCalendarMonth(1)"
+                                    title="Next month">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                                <button type="button" class="cal-today-btn" onclick="goToCalendarToday()">
+                                    Today
+                                </button>
+                            </div>
+
+                            <div class="calendar-legend">
+                                <span class="cal-legend-item"><i class="cal-dot dot-scheduled"></i> Scheduled</span>
+                                <span class="cal-legend-item"><i class="cal-dot dot-ongoing"></i> Ongoing</span>
+                                <span class="cal-legend-item"><i class="cal-dot dot-completed"></i> Completed</span>
+                                <span class="cal-legend-item"><i class="cal-dot dot-open"></i> Open Slot</span>
+                            </div>
+                        </div>
+
+                        <div id="calendarQuickJumpBar" class="calendar-quick-jump" style="display: none;"></div>
+
+                        <div class="calendar-weekdays">
+                            <div>Sun</div>
+                            <div>Mon</div>
+                            <div>Tue</div>
+                            <div>Wed</div>
+                            <div>Thu</div>
+                            <div>Fri</div>
+                            <div>Sat</div>
+                        </div>
+
+                        <div class="calendar-days-grid" id="calendarDaysGrid"></div>
+                    </div>
+
+                    <!-- RIGHT: SELECTED DAY SCHEDULE & QUICK-ADD TIME SLOTS -->
+                    <aside class="day-slots-panel" id="daySlotsPanel">
+                        <div class="day-slots-header">
+                            <div>
+                                <span class="day-slots-eyebrow">Selected Date</span>
+                                <h3 id="selectedDayTitle">Select a date</h3>
+                                <p id="selectedDaySummary">Click any calendar date to view booked &amp; open time slots.</p>
+                            </div>
+                            <button type="button" class="day-quick-add-btn" id="dayQuickAddBtn"
+                                onclick="openQuickCreateForSelectedDate()">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Add</span>
+                            </button>
+                        </div>
+
+                        <!-- ROOM & CUSTOM DURATION ANALYZER -->
+                        <div class="cal-slot-controls">
+                            <div class="cal-slot-control-group">
+                                <label for="calSlotRoomFilter">
+                                    <i class="fa-solid fa-door-open"></i> Room Availability
+                                </label>
+                                <select id="calSlotRoomFilter" onchange="onCalendarRoomFilterChange(this.value)">
+                                    <option value="">All Rooms</option>
+                                    <option value="AB3-1">AB3-1</option>
+                                    <option value="AB3-2">AB3-2</option>
+                                    <option value="AB3-3">AB3-3</option>
+                                    <option value="AB3-4">AB3-4</option>
+                                    <option value="AB3-5">AB3-5</option>
+                                    <option value="AB3-6">AB3-6</option>
+                                    <option value="AB3-7">AB3-7</option>
+                                    <option value="ComLab 1">ComLab 1</option>
+                                    <option value="ComLab 2">ComLab 2</option>
+                                    <option value="Networking Lab">Networking Lab</option>
+                                    <option value="Accreditation Room">Accreditation Room</option>
+                                    <option value="Mac Laboratory">Mac Laboratory</option>
+                                    <option value="Accounting and Enterprise Lab">Accounting and Enterprise Lab</option>
+                                    <option value="GIS and Data Analytics Lab">GIS and Data Analytics Lab</option>
+                                    <option value="Online">Online (Meeting Link)</option>
+                                </select>
+                            </div>
+
+                            <div class="cal-slot-control-group">
+                                <label>
+                                    <i class="fa-solid fa-hourglass-half"></i> Slot Duration
+                                </label>
+                                <div class="cal-duration-row">
+                                    <button type="button" class="cal-dur-chip" data-hours="1"
+                                        onclick="setCalendarSlotDuration(1)">1 hr</button>
+                                    <button type="button" class="cal-dur-chip" data-hours="1.5"
+                                        onclick="setCalendarSlotDuration(1.5)">1.5 hrs</button>
+                                    <button type="button" class="cal-dur-chip active" data-hours="2"
+                                        onclick="setCalendarSlotDuration(2)">2 hrs</button>
+                                    <button type="button" class="cal-dur-chip" data-hours="3"
+                                        onclick="setCalendarSlotDuration(3)">3 hrs</button>
+                                    <div class="cal-dur-custom-wrap" title="Enter custom duration (0.5 to 4 hours)">
+                                        <input type="number" id="calCustomDurationInput" min="0.5" max="4" step="0.5"
+                                            value="2" oninput="onCalendarCustomDurationInput(this.value)">
+                                        <span>hr(s)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="cal-availability-pill" id="calSlotAvailabilityPill">
+                                Checking available time slots...
+                            </div>
+                        </div>
+
+                        <div class="day-slots-body" id="daySlotsList"></div>
+                    </aside>
+                </div>
             </div>
 
         </section>
@@ -278,59 +473,94 @@
                 <div id="panelGradingList" class="panel-grading-list"></div>
             </div>
 
-            <div class="form-grid">
+            <!-- TWO-STEP DEFENSE TYPE SELECTION: 1) INFORMAL / FORMAL -> 2) CONCEPT .. FINAL -->
+            <div class="defense-type-stepper-card">
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label>
+                        Defense Type <span class="required-star">*</span>
+                        <span class="defense-step-hint" id="defenseTypeStepHint">Step 1: Choose Informal or Formal defense first</span>
+                    </label>
 
-                <div class="input-group">
-                    <label>Defense Type <span class="required-star">*</span></label>
+                    <div class="defense-format-toggle" id="defenseFormatToggle" role="radiogroup" aria-label="Defense format">
+                        <button type="button" class="defense-format-btn" id="formatBtnInformal" data-format="Informal"
+                            onclick="selectDefenseFormat('Informal')">
+                            <span class="format-btn-icon"><i class="fa-solid fa-comments"></i></span>
+                            <span class="format-btn-copy">
+                                <strong>Informal Defense</strong>
+                            </span>
+                            <span class="format-btn-check"><i class="fa-solid fa-circle-check"></i></span>
+                        </button>
 
-                    <select id="defenseType" onchange="onDefenseTypeChange()">
-                        <option value="Concept Presentation">Concept Presentation</option>
-                        <option value="Outline Defense">Outline Defense</option>
-                        <option value="Pre-Final Defense">Pre-Final Defense</option>
-                        <option value="Final Defense">Final Defense</option>
-                    </select>
+                        <button type="button" class="defense-format-btn" id="formatBtnFormal" data-format="Formal"
+                            onclick="selectDefenseFormat('Formal')">
+                            <span class="format-btn-icon"><i class="fa-solid fa-award"></i></span>
+                            <span class="format-btn-copy">
+                                <strong>Formal Defense</strong>
+                            </span>
+                            <span class="format-btn-check"><i class="fa-solid fa-circle-check"></i></span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="defenseFormat" value="">
                 </div>
 
-                <!-- SELECT GROUP (CREATE MODE) -->
-                <div class="input-group" id="groupSelectGroup">
-                    <label>Capstone Group <span class="required-star">*</span></label>
+                <div class="form-grid" style="margin-top: 4px;">
 
-                    <div class="group-combobox" id="groupCombobox">
-                        <div class="group-combobox-control" onclick="openGroupDropdown()">
-                            <i class="fa-solid fa-magnifying-glass group-combobox-icon"></i>
-                            <input type="text" id="groupSearchInput" placeholder="Search or select group..."
-                                autocomplete="off" onfocus="openGroupDropdown()" oninput="onGroupSearchInput()"
-                                onkeydown="onGroupSearchKeydown(event)">
-                            <button type="button" id="groupSearchClearBtn" class="group-search-clear"
-                                onclick="event.stopPropagation(); clearGroupSearch()" title="Clear selection"
-                                style="display:none;">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                            <button type="button" id="groupDropdownToggleBtn" class="group-combobox-toggle"
-                                onclick="event.stopPropagation(); toggleGroupDropdown()" title="Toggle group list">
-                                <i class="fa-solid fa-chevron-down"></i>
-                            </button>
-                        </div>
+                    <div class="input-group" id="defenseStageGroup" style="margin-bottom: 0;">
+                        <label for="defenseType">
+                            Defense Stage <span class="required-star">*</span>
+                            <span class="defense-format-pill" id="selectedFormatBadge" style="display: none;"></span>
+                        </label>
 
-                        <div class="group-combobox-menu" id="groupDropdownMenu" style="display:none;"></div>
-
-                        <select id="groupSelect" onchange="loadSelectedGroupMembers()" style="display:none;"
-                            tabindex="-1" aria-hidden="true">
-                            <option value="">Select group</option>
+                        <select id="defenseType" onchange="onDefenseTypeChange()" disabled>
+                            <option value="">Select Informal or Formal first...</option>
+                            <option value="Concept Presentation">Concept Presentation</option>
+                            <option value="Outline Defense">Outline Defense</option>
+                            <option value="Pre-Final Defense">Pre-Final Defense</option>
+                            <option value="Final Defense">Final Defense</option>
                         </select>
                     </div>
-                </div>
 
-                <!-- LOCKED GROUP DISPLAY (EDIT MODE) -->
-                <div class="input-group" id="groupLockedGroup" style="display:none;">
-                    <label>Capstone Group <span class="group-locked-badge"><i class="fa-solid fa-lock"></i> Group
-                            Locked</span></label>
-                    <div class="group-locked-box">
-                        <div id="lockedGroupName" style="font-weight: 700; color: #2e1065;"></div>
-                        <div id="lockedProjectTitle" style="font-size: 12px; color: #6d5f85; margin-top: 2px;"></div>
+                    <!-- SELECT GROUP (CREATE MODE) -->
+                    <div class="input-group" id="groupSelectGroup" style="margin-bottom: 0;">
+                        <label>Capstone Group <span class="required-star">*</span></label>
+
+                        <div class="group-combobox" id="groupCombobox">
+                            <div class="group-combobox-control" onclick="openGroupDropdown()">
+                                <i class="fa-solid fa-magnifying-glass group-combobox-icon"></i>
+                                <input type="text" id="groupSearchInput" placeholder="Search or select group..."
+                                    autocomplete="off" onfocus="openGroupDropdown()" oninput="onGroupSearchInput()"
+                                    onkeydown="onGroupSearchKeydown(event)">
+                                <button type="button" id="groupSearchClearBtn" class="group-search-clear"
+                                    onclick="event.stopPropagation(); clearGroupSearch()" title="Clear selection"
+                                    style="display:none;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <button type="button" id="groupDropdownToggleBtn" class="group-combobox-toggle"
+                                    onclick="event.stopPropagation(); toggleGroupDropdown()" title="Toggle group list">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                            </div>
+
+                            <div class="group-combobox-menu" id="groupDropdownMenu" style="display:none;"></div>
+
+                            <select id="groupSelect" onchange="loadSelectedGroupMembers()" style="display:none;"
+                                tabindex="-1" aria-hidden="true">
+                                <option value="">Select group</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
 
+                    <!-- LOCKED GROUP DISPLAY (EDIT MODE) -->
+                    <div class="input-group" id="groupLockedGroup" style="display:none; margin-bottom: 0;">
+                        <label>Capstone Group <span class="group-locked-badge"><i class="fa-solid fa-lock"></i> Group
+                                Locked</span></label>
+                        <div class="group-locked-box">
+                            <div id="lockedGroupName" style="font-weight: 700; color: #2e1065;"></div>
+                            <div id="lockedProjectTitle" style="font-size: 12px; color: #6d5f85; margin-top: 2px;"></div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             <div class="member-preview" id="memberPreview">
@@ -782,33 +1012,88 @@
         let modalMode = "create";
         let groupReadinessMap = {};
 
+        function isConditionalReevalSchedule(item) {
+            if (!item) return false;
+            return Boolean(
+                String(item.schedule_code || "").startsWith("REEVAL-")
+                || String(item.room_name || "").toLowerCase().includes("external re-evaluation")
+                || String(item.notes || "").toLowerCase().includes("no time limit")
+            );
+        }
+
+        function getGroupLatestVerdictsMap(groupDbId) {
+            const latest = {};
+            const groupScheds = (schedules || [])
+                .filter(s => Number(s.group_db_id || s.group_id) === Number(groupDbId)
+                    && String(s.defense_status || "").toLowerCase() === "completed"
+                    && s.panel_result)
+                .sort((a, b) => Number(b.id) - Number(a.id));
+            groupScheds.forEach(s => {
+                const dt = String(s.defense_type || "").trim().toLowerCase();
+                if (dt && !latest[dt]) {
+                    latest[dt] = { defense_type: s.defense_type, result: String(s.panel_result || "").trim() };
+                }
+            });
+            return latest;
+        }
+
         async function updateGroupsReadiness() {
             const defenseType = getDefenseType();
+            const defenseTypeLower = String(defenseType || "").trim().toLowerCase();
             const groupSelect = document.getElementById("groupSelect");
             if (!groupSelect) return;
 
             groupReadinessMap = {};
+            if (!defenseTypeLower) {
+                renderGroupOptions();
+                return;
+            }
 
             const promises = groups.map(async (group) => {
                 try {
                     const response = await fetchWithTimeout(`${getApiBaseUrl()}/group-consultation-approval-status/${group.id}?defenseType=${encodeURIComponent(defenseType)}` + (selectedScheduleId ? `&excludeScheduleId=${selectedScheduleId}` : ''));
                     const data = await response.json();
 
+                    const localVerdicts = getGroupLatestVerdictsMap(group.id);
+                    const localFailed = Object.values(localVerdicts).find(v => v.result.toLowerCase() === "failed");
+                    const localThisType = localVerdicts[defenseTypeLower];
+                    const localCondPass = localThisType && (localThisType.result === "Conditional Passed" || localThisType.result === "Conditional Pass");
+
                     if (data.success) {
+                        const hasFailed = Boolean(data.has_failed_verdict || localFailed);
+                        const isCondReeval = Boolean(data.conditional_reeval_open || localCondPass);
+                        const isBlockedByOutcome = hasFailed || isCondReeval;
+
+                        let blockMessage = data.message || "you cannot create the type of defense presentation in this since there is missing document.";
+                        if (hasFailed) {
+                            const fType = data.failed_defense_type || (localFailed && localFailed.defense_type) || defenseType;
+                            blockMessage = `Cannot create defense schedule. This group received a "Failed" verdict in "${fType}" and cannot progress further.`;
+                        } else if (isCondReeval) {
+                            blockMessage = `No new schedule needed. This group received "Conditional Passed" for "${defenseType}" — it is handled automatically via external re-evaluation (no time limit) by the panel.`;
+                        }
+
                         groupReadinessMap[group.id] = {
-                            allowed: data.ready_for_schedule,
+                            allowed: isBlockedByOutcome ? false : data.ready_for_schedule,
                             isMyGroup: true,
                             alreadyPassed: data.already_passed || false,
-                            reason: data.already_passed ? "Already Passed" : (!data.ready_for_schedule ? "Missing Documents" : ""),
-                            message: data.message || "you cannot create the type of defense presentation in this since there is missing document.",
-                            is_redefense: data.is_redefense || false,
-                            redefense_verdict: data.redefense_verdict || null
+                            conditionalReevalOpen: isCondReeval,
+                            hasFailedVerdict: hasFailed,
+                            reason: hasFailed
+                                ? "Failed — Progress Stopped"
+                                : (isCondReeval
+                                    ? "Conditional Passed — External Re-Eval"
+                                    : (data.already_passed ? "Already Passed" : (!data.ready_for_schedule ? "Missing Documents" : ""))),
+                            message: blockMessage,
+                            is_redefense: isBlockedByOutcome ? false : (data.is_redefense && data.redefense_verdict !== "Conditional Passed"),
+                            redefense_verdict: isBlockedByOutcome ? null : (data.redefense_verdict === "Conditional Passed" ? null : (data.redefense_verdict || null))
                         };
                     } else {
                         groupReadinessMap[group.id] = {
                             allowed: false,
                             isMyGroup: true,
                             alreadyPassed: false,
+                            conditionalReevalOpen: Boolean(localCondPass),
+                            hasFailedVerdict: Boolean(localFailed),
                             reason: "Error",
                             message: "Could not verify group documents."
                         };
@@ -965,6 +1250,9 @@
             predefinedTimeSlots = generateTimeSlotsForDuration(slotDurationHours);
             updateDurationUiControls();
             renderDefenseTimeSlots();
+            if (currentViewMode === "calendar") {
+                renderCalendarView(lastFilteredSchedules);
+            }
         }
 
         function getSelectedTimeSlotLabel() {
@@ -1278,6 +1566,9 @@
 
                 renderGroupOptions();
                 renderPanelistOptions();
+                if (Array.isArray(schedules) && schedules.length > 0) {
+                    renderScheduleSections();
+                }
 
             } catch (error) {
                 console.error("loadDefenseData error:", error);
@@ -1404,6 +1695,15 @@
             const selectedVal = groupSelect ? String(groupSelect.value || "") : "";
             const query = (groupSearchFilterActive && input) ? input.value.trim().toLowerCase() : "";
 
+            if (!getDefenseFormat()) {
+                menu.innerHTML = `<div class="group-combobox-empty">Choose Informal or Formal Defense first</div>`;
+                return;
+            }
+            if (!getDefenseType()) {
+                menu.innerHTML = `<div class="group-combobox-empty">Choose a Defense Stage (Concept to Final) first</div>`;
+                return;
+            }
+
             const visible = filteredGroupOptions.filter(item => {
                 if (!query) return true;
                 return item.haystack.includes(query);
@@ -1416,16 +1716,37 @@
 
             menu.innerHTML = visible.map(item => {
                 const isSelected = selectedVal && String(item.id) === selectedVal;
+                const tagHtml = item.isMyStudents
+                    ? `<span class="group-priority-tag tag-mine">Your Students</span>`
+                    : (item.isMyAdvisory
+                        ? `<span class="group-priority-tag tag-advisory">Advisory</span>`
+                        : "");
                 return `
                     <div
                         class="group-combobox-option ${item.statusClass || ""} ${isSelected ? "selected" : ""}"
                         onmousedown="event.preventDefault(); selectGroupFromCombobox('${item.id}')"
                     >
                         <span class="group-combobox-option-text">${escapeHtml(item.displayName)}</span>
+                        ${tagHtml}
                         ${isSelected ? `<i class="fa-solid fa-check"></i>` : ""}
                     </div>
                 `;
             }).join("");
+        }
+
+        function isMyInstructorGroup(group) {
+            if (!group || !loggedInInstructorId) return false;
+            const me = String(loggedInInstructorId).trim().toLowerCase();
+            const userIds = String(group.instructor_ids || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+            const dbIds = String(group.instructor_db_ids || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+            return userIds.includes(me) || dbIds.includes(me);
+        }
+
+        function isMyAdvisoryGroup(group) {
+            if (!group || !loggedInInstructorId) return false;
+            const me = String(loggedInInstructorId).trim().toLowerCase();
+            return String(group.adviser_user_id || "").trim().toLowerCase() === me
+                || String(group.adviser_db_id || "").trim().toLowerCase() === me;
         }
 
         function renderGroupOptions() {
@@ -1441,11 +1762,30 @@
             const optionHtmlList = [];
             filteredGroupOptions = [];
 
-            groups.forEach(group => {
+            // Sort groups so the logged-in instructor's student groups appear FIRST (priority),
+            // while still allowing scheduling for any other group (including advisory or other instructors' groups).
+            const prioritizedGroups = [...(groups || [])].sort((a, b) => {
+                const aMine = isMyInstructorGroup(a) ? 0 : 1;
+                const bMine = isMyInstructorGroup(b) ? 0 : 1;
+                if (aMine !== bMine) return aMine - bMine;
+                return String(a.group_id || "").localeCompare(String(b.group_id || ""));
+            });
+
+            prioritizedGroups.forEach(group => {
                 const readiness = groupReadinessMap[group.id];
 
-                // 1. Hide groups that already passed the selected presentation type
-                if (readiness && readiness.alreadyPassed) {
+                // 1. Hide groups that already passed, have a Conditional Passed external re-evaluation, or Failed
+                if (readiness && (readiness.alreadyPassed || readiness.conditionalReevalOpen || readiness.hasFailedVerdict)) {
+                    return;
+                }
+
+                // Local safety check: also hide if latest completed verdict for this type is Conditional Passed or any type is Failed
+                const localVerdicts = getGroupLatestVerdictsMap(group.id);
+                if (Object.values(localVerdicts).some(v => v.result.toLowerCase() === "failed")) {
+                    return;
+                }
+                const thisTypeVerdict = localVerdicts[currentDefenseType];
+                if (thisTypeVerdict && (thisTypeVerdict.result === "Conditional Passed" || thisTypeVerdict.result === "Conditional Pass")) {
                     return;
                 }
 
@@ -1513,11 +1853,16 @@
                     displayName
                 ].filter(Boolean).join(" ").toLowerCase();
 
+                const isMine = isMyInstructorGroup(group);
+                const isAdvisory = isMyAdvisoryGroup(group);
+
                 filteredGroupOptions.push({
                     id: group.id,
                     displayName,
                     statusClass,
-                    haystack
+                    haystack,
+                    isMyStudents: isMine,
+                    isMyAdvisory: isAdvisory
                 });
 
                 optionHtmlList.push(`
@@ -2040,7 +2385,7 @@
                     if (tbody) {
                         tbody.innerHTML = `
                             <tr>
-                                <td colspan="8" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
+                                <td colspan="12" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
                                     <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
                                     ${escapeHtml(data.message || "Failed to load schedules.")}
                                 </td>
@@ -2061,7 +2406,7 @@
                 if (tbody) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="8" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
+                            <td colspan="12" class="empty-table-row" style="text-align: center; color: #ef4444; padding: 30px 20px;">
                                 <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; display: block; margin-bottom: 8px; color: #ef4444;"></i>
                                 <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Cannot connect to backend server.</div>
                                 <div style="font-size: 12px; color: #7b6f96; margin-top: 4px;">Make sure the server is running on port 3005 (<code>node server.js</code>).</div>
@@ -2080,13 +2425,248 @@
         }
 
         let currentScopeFilter = "All";
+        let currentTypeFilter = "All";
+        let currentViewMode = localStorage.getItem("instructorDefenseViewModeV2") === "sheet" ? "sheet" : "calendar";
         let currentPage = 1;
-        const PAGE_SIZE = 10;
+        const PAGE_SIZE = 15;
+
+        function canManageSchedule(item) {
+            if (!item) return false;
+            if (item.is_owner === true) return true;
+            const st = String(item.defense_status || "").trim().toLowerCase();
+            return st === "scheduled" || st === "ongoing" || isDefenseHappening(item.defense_date, item.start_time, item.end_time);
+        }
+
+        const todayCalInit = new Date();
+        let calendarYear = todayCalInit.getFullYear();
+        let calendarMonth = todayCalInit.getMonth();
+        let selectedCalendarDate = getTodayLocalISO();
+        let lastFilteredSchedules = [];
+
+        function onFilterControlChange() {
+            currentPage = 1;
+            renderScheduleSections();
+        }
 
         function onScopeFilterChange() {
             currentScopeFilter = document.getElementById("scopeFilter")?.value || "All";
             currentPage = 1;
             renderScheduleSections();
+        }
+
+        function onTypeFilterChange() {
+            currentTypeFilter = document.getElementById("typeFilter")?.value || "All";
+            currentPage = 1;
+            syncSheetTabsActiveState();
+            renderScheduleSections();
+        }
+
+        function selectSheetTab(typeVal) {
+            currentTypeFilter = typeVal || "All";
+            const typeSelect = document.getElementById("typeFilter");
+            if (typeSelect) typeSelect.value = currentTypeFilter;
+            currentPage = 1;
+            syncSheetTabsActiveState();
+            renderScheduleSections();
+        }
+
+        function syncSheetTabsActiveState() {
+            document.querySelectorAll("#excelSheetTabs .excel-sheet-tab").forEach(btn => {
+                const t = btn.getAttribute("data-type") || "All";
+                btn.classList.toggle("active", t === currentTypeFilter);
+            });
+            const pillLabel = document.getElementById("excelActiveSheetLabel");
+            if (pillLabel) {
+                pillLabel.textContent = currentTypeFilter === "All" ? "All Defenses" : currentTypeFilter;
+            }
+        }
+
+        function setScheduleViewMode(mode) {
+            currentViewMode = mode === "sheet" ? "sheet" : "calendar";
+            try {
+                localStorage.setItem("instructorDefenseViewModeV2", currentViewMode);
+            } catch (_) { }
+
+            const sheetEl = document.getElementById("sheetViewContainer");
+            const calEl = document.getElementById("calendarViewContainer");
+            const btnSheet = document.getElementById("viewBtnSheet");
+            const btnCal = document.getElementById("viewBtnCalendar");
+
+            if (sheetEl) sheetEl.style.display = currentViewMode === "sheet" ? "block" : "none";
+            if (calEl) calEl.style.display = currentViewMode === "calendar" ? "block" : "none";
+
+            if (btnSheet) {
+                btnSheet.classList.toggle("active", currentViewMode === "sheet");
+                btnSheet.setAttribute("aria-selected", currentViewMode === "sheet" ? "true" : "false");
+            }
+            if (btnCal) {
+                btnCal.classList.toggle("active", currentViewMode === "calendar");
+                btnCal.setAttribute("aria-selected", currentViewMode === "calendar" ? "true" : "false");
+            }
+
+            if (currentViewMode === "calendar") {
+                renderCalendarView(lastFilteredSchedules);
+            }
+        }
+
+        function getGroupForSchedule(item) {
+            if (!item) return null;
+            const gid = Number(item.group_db_id || 0);
+            return (groups || []).find(g => Number(g.id) === gid) || null;
+        }
+
+        function getScheduleProjectTitle(item) {
+            if (!item) return "";
+            if (item.project_title && String(item.project_title).trim()) {
+                return String(item.project_title).trim();
+            }
+            const grp = getGroupForSchedule(item);
+            if (grp && grp.project_title && String(grp.project_title).trim()) {
+                return String(grp.project_title).trim();
+            }
+            const tryParseSelectedTitle = (raw) => {
+                if (!raw) return "";
+                try {
+                    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+                    return parsed && parsed.selected_title_text ? String(parsed.selected_title_text).trim() : "";
+                } catch (_) {
+                    return "";
+                }
+            };
+            const fromSelf = tryParseSelectedTitle(item.concept_evaluation_details)
+                || tryParseSelectedTitle(item.evaluation && item.evaluation.concept_evaluation_details);
+            if (fromSelf) return fromSelf;
+
+            const sameGroupConcept = (schedules || []).find(s =>
+                Number(s.group_db_id) === Number(item.group_db_id)
+                && (s.concept_evaluation_details || (s.evaluation && s.evaluation.concept_evaluation_details))
+            );
+            if (sameGroupConcept) {
+                const fromConcept = tryParseSelectedTitle(sameGroupConcept.concept_evaluation_details)
+                    || tryParseSelectedTitle(sameGroupConcept.evaluation && sameGroupConcept.evaluation.concept_evaluation_details);
+                if (fromConcept) return fromConcept;
+            }
+            return "";
+        }
+
+        function getScheduleAdviserName(item) {
+            if (!item) return "—";
+            if (item.adviser_name && String(item.adviser_name).trim()) {
+                return String(item.adviser_name).trim();
+            }
+            const grp = getGroupForSchedule(item);
+            if (grp && grp.adviser_name && String(grp.adviser_name).trim()) {
+                return String(grp.adviser_name).trim();
+            }
+            return "—";
+        }
+
+        function formatTime12Hr(timeValue) {
+            const raw = String(timeValue || "").trim();
+            if (!raw) return "N/A";
+            const parts = raw.split(":");
+            const h24 = parseInt(parts[0], 10);
+            const m = parseInt(parts[1] || "0", 10);
+            if (!Number.isFinite(h24) || !Number.isFinite(m)) return raw.slice(0, 5);
+            const ampm = h24 >= 12 ? "PM" : "AM";
+            const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+            return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+        }
+
+        function getFilteredSchedules(ignoreTypeFilter = false) {
+            const keyword =
+                (document.getElementById("searchSchedule")?.value || "").toLowerCase().trim();
+
+            const status =
+                document.getElementById("statusFilter")?.value || "All";
+
+            const scope =
+                document.getElementById("scopeFilter")?.value || currentScopeFilter || "All";
+
+            const typeVal =
+                ignoreTypeFilter ? "All" : (document.getElementById("typeFilter")?.value || currentTypeFilter || "All");
+
+            return (schedules || []).filter(item => {
+                // 1. Scope Filter (All / My / Other)
+                if (scope === "My" && item.is_owner !== true) return false;
+                if (scope === "Other" && item.is_owner === true) return false;
+
+                // 2. Defense Type Filter
+                if (typeVal !== "All") {
+                    const itemType = String(item.defense_type || "").trim().toLowerCase();
+                    if (itemType !== typeVal.trim().toLowerCase()) return false;
+                }
+
+                // 3. Status Filter
+                if (status !== "All") {
+                    const itemStatus = String(item.defense_status || "").trim();
+                    if (status === "Ongoing") {
+                        if (!isDefenseHappening(item.defense_date, item.start_time, item.end_time)) return false;
+                    } else if (itemStatus !== status) {
+                        return false;
+                    }
+                }
+
+                // 4. Search Filter
+                if (keyword) {
+                    const panelistNames =
+                        Array.isArray(item.panelists) && item.panelists.length > 0
+                            ? item.panelists.map(panelist => panelist.fullname || "").join(" ")
+                            : "";
+
+                    const memberNames =
+                        Array.isArray(item.members) && item.members.length > 0
+                            ? item.members.map(member => member.fullname || "").join(" ")
+                            : "";
+
+                    const resolvedTitle = getScheduleProjectTitle(item);
+                    const adviserName = getScheduleAdviserName(item);
+
+                    const matchesKeyword =
+                        String(item.schedule_code || "").toLowerCase().includes(keyword)
+                        || String(item.group_id || "").toLowerCase().includes(keyword)
+                        || String(item.group_name || "").toLowerCase().includes(keyword)
+                        || String(resolvedTitle || "").toLowerCase().includes(keyword)
+                        || String(adviserName || "").toLowerCase().includes(keyword)
+                        || String(item.room_name || "").toLowerCase().includes(keyword)
+                        || String(item.defense_type || "").toLowerCase().includes(keyword)
+                        || String(item.defense_status || "").toLowerCase().includes(keyword)
+                        || String(item.creator_name || "").toLowerCase().includes(keyword)
+                        || panelistNames.toLowerCase().includes(keyword)
+                        || memberNames.toLowerCase().includes(keyword);
+
+                    if (!matchesKeyword) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function updateSheetTabCounts(baseList) {
+            const counts = {
+                All: baseList.length,
+                "Concept Presentation": 0,
+                "Outline Defense": 0,
+                "Pre-Final Defense": 0,
+                "Final Defense": 0
+            };
+            baseList.forEach(item => {
+                const t = String(item.defense_type || "").trim().toLowerCase();
+                if (t === "concept presentation") counts["Concept Presentation"]++;
+                else if (t === "outline defense") counts["Outline Defense"]++;
+                else if (t === "pre-final defense") counts["Pre-Final Defense"]++;
+                else if (t === "final defense") counts["Final Defense"]++;
+            });
+
+            const setText = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = String(val);
+            };
+            setText("tabCountAll", counts.All);
+            setText("tabCountConcept", counts["Concept Presentation"]);
+            setText("tabCountOutline", counts["Outline Defense"]);
+            setText("tabCountPreFinal", counts["Pre-Final Defense"]);
+            setText("tabCountFinal", counts["Final Defense"]);
         }
 
         function isDefenseHappening(defenseDate, startTime, endTime) {
@@ -2214,65 +2794,17 @@
         }
 
         function renderScheduleSections() {
+            const baseList = getFilteredSchedules(true);
+            updateSheetTabCounts(baseList);
 
-            const keyword =
-                (document.getElementById("searchSchedule")?.value || "").toLowerCase().trim();
+            const filtered = getFilteredSchedules(false);
+            lastFilteredSchedules = filtered;
 
-            const status =
-                document.getElementById("statusFilter")?.value || "All";
+            const activePillCount = document.getElementById("excelActiveSheetCount");
+            if (activePillCount) activePillCount.textContent = String(filtered.length);
+            syncSheetTabsActiveState();
 
-            const scope =
-                document.getElementById("scopeFilter")?.value || currentScopeFilter || "All";
-
-            const filtered =
-                schedules.filter(item => {
-
-                    // 1. Scope Filter (All / My / Other)
-                    if (scope === "My" && item.is_owner !== true) return false;
-                    if (scope === "Other" && item.is_owner === true) return false;
-
-                    // 2. Status Filter
-                    if (status !== "All") {
-                        const itemStatus = String(item.defense_status || "").trim();
-                        if (status === "Ongoing") {
-                            if (!isDefenseHappening(item.defense_date, item.start_time, item.end_time)) return false;
-                        } else if (itemStatus !== status) {
-                            return false;
-                        }
-                    }
-
-                    // 3. Search Filter
-                    if (keyword) {
-                        const panelistNames =
-                            Array.isArray(item.panelists) && item.panelists.length > 0
-                                ? item.panelists.map(panelist => panelist.fullname || "").join(" ")
-                                : "";
-
-                        const memberNames =
-                            Array.isArray(item.members) && item.members.length > 0
-                                ? item.members.map(member => member.fullname || "").join(" ")
-                                : "";
-
-                        const matchesKeyword =
-                            String(item.schedule_code || "").toLowerCase().includes(keyword)
-                            || String(item.group_id || "").toLowerCase().includes(keyword)
-                            || String(item.group_name || "").toLowerCase().includes(keyword)
-                            || String(item.project_title || "").toLowerCase().includes(keyword)
-                            || String(item.room_name || "").toLowerCase().includes(keyword)
-                            || String(item.defense_type || "").toLowerCase().includes(keyword)
-                            || String(item.defense_status || "").toLowerCase().includes(keyword)
-                            || String(item.creator_name || "").toLowerCase().includes(keyword)
-                            || panelistNames.toLowerCase().includes(keyword)
-                            || memberNames.toLowerCase().includes(keyword);
-
-                        if (!matchesKeyword) return false;
-                    }
-
-                    return true;
-
-                });
-
-            // Pagination calculation (10 per page)
+            // Pagination calculation for Sheet view
             const totalRecords = filtered.length;
             const totalPages = Math.ceil(totalRecords / PAGE_SIZE) || 1;
             if (currentPage > totalPages) currentPage = totalPages;
@@ -2284,13 +2816,13 @@
 
             renderSchedulesTable(pagedList, totalRecords, startIndex, endIndex, totalPages);
 
+            if (currentViewMode === "calendar") {
+                renderCalendarView(filtered);
+            }
         }
 
         function renderSchedulesTable(list, totalRecords, startIndex, endIndex, totalPages) {
-
-            const tbody =
-                document.getElementById("scheduleTableBody");
-
+            const tbody = document.getElementById("scheduleTableBody");
             if (!tbody) return;
 
             tbody.innerHTML = "";
@@ -2298,8 +2830,8 @@
             if (totalRecords === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="empty-table-row" style="text-align: center; color: #7b6f96; padding: 35px 20px;">
-                            <i class="fa-solid fa-calendar-xmark" style="font-size: 26px; color: #c4b5fd; display: block; margin-bottom: 8px;"></i>
+                        <td colspan="12" class="empty-table-row" style="text-align: center; color: #7b6f96; padding: 38px 20px;">
+                            <i class="fa-solid fa-table-list" style="font-size: 26px; color: #c4b5fd; display: block; margin-bottom: 8px;"></i>
                             No defense schedules found matching your filter criteria.
                         </td>
                     </tr>
@@ -2308,54 +2840,89 @@
                 return;
             }
 
-            tbody.innerHTML = list.map(item => {
-
+            tbody.innerHTML = list.map((item, idx) => {
+                const rowNumber = startIndex + idx + 1;
                 const programText = ({ IS: "BSIS", IT: "BSIT" })[normalizeProgramCode(item.program)] || "Not Set";
+                const resolvedTitle = getScheduleProjectTitle(item);
+                const adviserName = getScheduleAdviserName(item);
 
-                const panelistNames =
-                    Array.isArray(item.panelists) && item.panelists.length > 0
-                        ? item.panelists.map(panelist => panelist.fullname || "").join(", ")
-                        : "No panelists";
+                const assignedPanelists = Array.isArray(item.panelists) ? item.panelists : [];
+                const chairName = assignedPanelists[0]?.fullname || "—";
+                const member1Name = assignedPanelists[1]?.fullname || "—";
+                const member2Name = assignedPanelists[2]?.fullname || "—";
+
+                const groupMembers = Array.isArray(item.members) ? item.members : [];
+                const memberFullList = groupMembers.map(m => m.fullname).filter(Boolean).join(", ");
+                const memberShortList = groupMembers.length > 0
+                    ? groupMembers.map(m => {
+                        const parts = String(m.fullname || "").trim().split(/\s+/);
+                        return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                    }).filter(Boolean).join(", ")
+                    : "—";
 
                 const isHappening = isDefenseHappening(item.defense_date, item.start_time, item.end_time);
-                const displayStatus = isHappening && item.defense_status === "Scheduled" ? "Ongoing" : item.defense_status;
-                const statusClass = String(displayStatus || "Scheduled").toLowerCase();
+                const displayStatus = isHappening && item.defense_status === "Scheduled" ? "Ongoing" : (item.defense_status || "Scheduled");
+                const statusClass = String(displayStatus).toLowerCase();
 
                 const ownerPill = item.is_owner
                     ? `<span class="owner-pill my-owner"><i class="fa-solid fa-user-check"></i> You</span>`
                     : `<span class="owner-pill other-owner" title="Created by ${escapeHtml(item.creator_name || "Instructor")}"><i class="fa-solid fa-user"></i> ${escapeHtml(item.creator_name || "Instructor")}</span>`;
 
-                const canManage = item.is_owner === true;
+                const canManage = canManageSchedule(item);
+                const isExternalReeval = isConditionalReevalSchedule(item);
+                const dateIso = normalizeScheduleDate(item.defense_date);
+                const timeRange12 = isExternalReeval
+                    ? "No Time Limit"
+                    : `${formatTime12Hr(item.start_time)} - ${formatTime12Hr(item.end_time)}`;
+                const roomDisplay = /^Online:/i.test(String(item.room_name || ""))
+                    ? `<a class="excel-online-link" href="${escapeHtml(String(item.room_name).replace(/^Online:\s*/i, ""))}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-video"></i> Online</a>`
+                    : escapeHtml(item.room_name || "—");
+
+                const verdictSub = (statusClass === "completed" && item.panel_result)
+                    ? `<div class="excel-status-verdict">${escapeHtml(item.panel_result)}</div>`
+                    : (isExternalReeval ? `<div class="excel-status-verdict">External Re-Eval</div>` : "");
+
+                const fmtLabel = extractDefenseFormatFromSchedule(item);
+                const fmtBadgeHtml = fmtLabel
+                    ? `<div><span class="excel-format-chip fmt-${fmtLabel.toLowerCase()}">${escapeHtml(fmtLabel)}</span></div>`
+                    : "";
 
                 return `
-                    <tr class="schedule-table-row">
-                        <td class="group-col">
-                            <div class="group-name-cell">
-                                <span>${escapeHtml(item.group_name || "Unnamed Group")}</span>
+                    <tr class="excel-row">
+                        <td class="excel-cell-num">${rowNumber}</td>
+                        <td class="excel-cell-title">
+                            <div class="excel-project-title" title="${escapeHtml(resolvedTitle || item.group_name || "")}">
+                                ${escapeHtml(resolvedTitle || item.group_name || "Untitled Project")}
+                            </div>
+                            <div class="excel-group-sub">
+                                <span class="excel-group-name">${escapeHtml(item.group_name || "Unnamed Group")}</span>
+                                <span class="excel-program-chip">${escapeHtml(programText)}</span>
                                 ${ownerPill}
                             </div>
-                            <div class="project-title-cell" title="${escapeHtml(item.project_title || "")}">
-                                ${escapeHtml(item.project_title || ("Program: " + (normalizeProgramCode(item.program) || "Not Set")))}
-                            </div>
                         </td>
-                        <td class="program-col"><span class="program-badge">${programText}</span></td>
-                        <td class="type-col" style="font-weight: 600; font-size: 12.5px; color: #2e1065;">${escapeHtml(item.defense_type)}</td>
-                        <td class="datetime-col">
-                            <div class="date-cell"><i class="fa-regular fa-calendar-days"></i> ${formatDate(item.defense_date)}</div>
-                            <div class="time-cell"><i class="fa-regular fa-clock"></i> ${formatTime(item.start_time)} - ${formatTime(item.end_time)}</div>
+                        <td class="excel-cell-type">
+                            <span class="excel-type-tag">${escapeHtml(item.defense_type || "—")}</span>
+                            ${fmtBadgeHtml}
                         </td>
-                        <td class="room-col"><span class="room-badge">${/^Online:/i.test(String(item.room_name || "")) ? `<i class="fa-solid fa-video"></i> <a href="${escapeHtml(String(item.room_name).replace(/^Online:\s*/i, ""))}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">Online</a>` : escapeHtml(item.room_name)}</span></td>
-                        <td class="panelists-col">
-                            <div class="panel-cell" title="${escapeHtml(panelistNames)}">
-                                ${escapeHtml(panelistNames)}
-                            </div>
+                        <td class="excel-cell-datetime">
+                            <button type="button" class="excel-date-jump" onclick="jumpToDateInCalendar('${escapeHtml(dateIso)}')" title="Open this date in Calendar View">
+                                <i class="fa-regular fa-calendar-days"></i> ${formatDate(item.defense_date)}
+                            </button>
+                            <div class="excel-time-sub">${escapeHtml(timeRange12)}</div>
                         </td>
-                        <td class="status-col">
-                            <span class="status-badge ${statusClass}">
-                                ${displayStatus}
-                            </span>
+                        <td class="excel-cell-room">${roomDisplay}</td>
+                        <td class="excel-cell-person">${escapeHtml(adviserName)}</td>
+                        <td class="excel-cell-person">${escapeHtml(chairName)}</td>
+                        <td class="excel-cell-person">${escapeHtml(member1Name)}</td>
+                        <td class="excel-cell-person">${escapeHtml(member2Name)}</td>
+                        <td class="excel-cell-members" title="${escapeHtml(memberFullList || "No members")}">
+                            ${escapeHtml(memberShortList)}
                         </td>
-                        <td class="actions-col" style="text-align: center;">
+                        <td class="excel-cell-status status-fill-${statusClass}">
+                            <div class="excel-status-main">${escapeHtml(displayStatus)}</div>
+                            ${verdictSub}
+                        </td>
+                        <td class="excel-cell-actions">
                             <div class="table-actions" style="justify-content: center;">
                                 <button
                                     class="view-btn-sm"
@@ -2399,11 +2966,614 @@
                         </td>
                     </tr>
                 `;
-
             }).join("");
 
             renderPaginationControls(totalRecords, startIndex + 1, endIndex, totalPages);
+        }
 
+        function exportSchedulesToCsv() {
+            const list = getFilteredSchedules(false);
+            if (!list || list.length === 0) {
+                alert("There are no schedules in the current view to export.");
+                return;
+            }
+
+            const csvCell = (val) => {
+                const s = String(val ?? "").replace(/\r?\n/g, " ");
+                return `"${s.replace(/"/g, '""')}"`;
+            };
+
+            const headers = [
+                "#",
+                "Project Title",
+                "Group Name",
+                "Program",
+                "Defense Type",
+                "Date",
+                "Time",
+                "Room",
+                "Project Adviser",
+                "Panel Chairman",
+                "Panel Member 1",
+                "Panel Member 2",
+                "Group Members",
+                "Status",
+                "Verdict"
+            ];
+
+            const rows = list.map((item, idx) => {
+                const programText = ({ IS: "BSIS", IT: "BSIT" })[normalizeProgramCode(item.program)] || "Not Set";
+                const resolvedTitle = getScheduleProjectTitle(item) || item.group_name || "";
+                const adviserName = getScheduleAdviserName(item);
+                const p = Array.isArray(item.panelists) ? item.panelists : [];
+                const m = Array.isArray(item.members) ? item.members.map(x => x.fullname).filter(Boolean).join(", ") : "";
+                const isHappening = isDefenseHappening(item.defense_date, item.start_time, item.end_time);
+                const displayStatus = isHappening && item.defense_status === "Scheduled" ? "Ongoing" : (item.defense_status || "Scheduled");
+
+                return [
+                    idx + 1,
+                    resolvedTitle,
+                    item.group_name || "",
+                    programText,
+                    item.defense_type || "",
+                    formatDate(item.defense_date),
+                    `${formatTime12Hr(item.start_time)} - ${formatTime12Hr(item.end_time)}`,
+                    item.room_name || "",
+                    adviserName === "—" ? "" : adviserName,
+                    p[0]?.fullname || "",
+                    p[1]?.fullname || "",
+                    p[2]?.fullname || "",
+                    m,
+                    displayStatus,
+                    item.panel_result || ""
+                ].map(csvCell).join(",");
+            });
+
+            const csvContent = "\uFEFF" + [headers.map(csvCell).join(","), ...rows].join("\r\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            const safePhase = String(currentTypeFilter || "All").replace(/[^a-z0-9]+/gi, "_");
+            a.href = url;
+            a.download = `Defense_Schedules_${safePhase}_${getTodayLocalISO()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /* ================= INTERACTIVE CALENDAR VIEW & SLOT SCHEDULER ================= */
+
+        function formatIsoDateLong(isoDate) {
+            if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return "Select a date";
+            const [y, m, d] = isoDate.split("-").map(Number);
+            const dt = new Date(y, m - 1, d);
+            return dt.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            });
+        }
+
+        function isSlotStartInPast(isoDate, startTimeHHMM) {
+            const todayIso = getTodayLocalISO();
+            if (!isoDate) return true;
+            if (isoDate < todayIso) return true;
+            if (isoDate > todayIso) return false;
+            const startDt = new Date(`${isoDate}T${String(startTimeHHMM || "00:00").slice(0, 5)}:00`);
+            return !isNaN(startDt.getTime()) && startDt.getTime() < Date.now();
+        }
+
+        let calendarSelectedRoom = "";
+        let calendarSlotDurationHours = 2;
+
+        function getCalendarBaseSlots() {
+            return generateTimeSlotsForDuration(calendarSlotDurationHours);
+        }
+
+        function doesEventMatchCalendarRoom(ev, roomFilter) {
+            const rf = String(roomFilter || "").trim();
+            if (!rf) return true;
+            const evRoom = String(ev?.room_name || "").trim();
+            if (rf === "Online") {
+                return /^Online:/i.test(evRoom);
+            }
+            return evRoom.toLowerCase() === rf.toLowerCase();
+        }
+
+        function onCalendarRoomFilterChange(roomVal) {
+            calendarSelectedRoom = String(roomVal || "").trim();
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function setCalendarSlotDuration(hours) {
+            const parsed = Number(hours);
+            if (!Number.isFinite(parsed) || parsed < 0.5 || parsed > 4) return;
+            calendarSlotDurationHours = parsed;
+            const customInput = document.getElementById("calCustomDurationInput");
+            if (customInput && Number(customInput.value) !== parsed) {
+                customInput.value = String(parsed);
+            }
+            document.querySelectorAll(".cal-dur-chip").forEach(btn => {
+                const h = Number(btn.getAttribute("data-hours"));
+                btn.classList.toggle("active", Math.abs(h - parsed) < 0.01);
+            });
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function onCalendarCustomDurationInput(val) {
+            const parsed = Number(val);
+            if (!Number.isFinite(parsed) || parsed < 0.5 || parsed > 4) return;
+            setCalendarSlotDuration(parsed);
+        }
+
+        function changeCalendarMonth(delta) {
+            calendarMonth += delta;
+            if (calendarMonth < 0) {
+                calendarMonth = 11;
+                calendarYear--;
+            } else if (calendarMonth > 11) {
+                calendarMonth = 0;
+                calendarYear++;
+            }
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function goToCalendarToday() {
+            const now = new Date();
+            calendarYear = now.getFullYear();
+            calendarMonth = now.getMonth();
+            selectedCalendarDate = getTodayLocalISO();
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function selectCalendarDate(isoDate) {
+            if (!isoDate) return;
+            selectedCalendarDate = isoDate;
+            const [y, m] = isoDate.split("-").map(Number);
+            if (Number.isFinite(y) && Number.isFinite(m)) {
+                calendarYear = y;
+                calendarMonth = m - 1;
+            }
+            renderCalendarView(lastFilteredSchedules);
+        }
+
+        function jumpToDateInCalendar(isoDate) {
+            if (isoDate && /^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+                selectedCalendarDate = isoDate;
+                const [y, m] = isoDate.split("-").map(Number);
+                calendarYear = y;
+                calendarMonth = m - 1;
+            }
+            setScheduleViewMode("calendar");
+        }
+
+        function openScheduleItemFromCalendar(scheduleId, event) {
+            if (event) event.stopPropagation();
+            const item = (schedules || []).find(s => Number(s.id) === Number(scheduleId));
+            if (!item) return;
+            const iso = normalizeScheduleDate(item.defense_date);
+            if (iso) selectedCalendarDate = iso;
+            if (canManageSchedule(item)) {
+                openEditModal(item.id);
+            } else {
+                openViewModal(item.id);
+            }
+        }
+
+        function openQuickCreateForSelectedDate(customTime = false) {
+            const todayIso = getTodayLocalISO();
+            if (!selectedCalendarDate || selectedCalendarDate < todayIso) {
+                alert("Selected date is in the past. Please choose today or a future date to add a schedule.");
+                return;
+            }
+            openCreateModal({
+                date: selectedCalendarDate,
+                room: calendarSelectedRoom || "",
+                durationHours: calendarSlotDurationHours,
+                customTime: Boolean(customTime)
+            });
+        }
+
+        function openQuickCreateForDate(isoDate, event) {
+            if (event) event.stopPropagation();
+            const todayIso = getTodayLocalISO();
+            if (!isoDate || isoDate < todayIso) {
+                alert("That date has already passed. Please choose today or a future date.");
+                return;
+            }
+            selectedCalendarDate = isoDate;
+            openCreateModal({
+                date: isoDate,
+                room: calendarSelectedRoom || "",
+                durationHours: calendarSlotDurationHours
+            });
+        }
+
+        function openQuickCreateForSlot(isoDate, startTime, endTime, slotLabel) {
+            const todayIso = getTodayLocalISO();
+            if (!isoDate || isoDate < todayIso || isSlotStartInPast(isoDate, startTime)) {
+                alert("That time slot has already passed. Please choose an upcoming time slot or future date.");
+                return;
+            }
+            selectedCalendarDate = isoDate;
+            openCreateModal({
+                date: isoDate,
+                startTime,
+                endTime,
+                slotLabel,
+                room: calendarSelectedRoom || "",
+                durationHours: calendarSlotDurationHours
+            });
+        }
+
+        function renderCalendarView(filteredList) {
+            const grid = document.getElementById("calendarDaysGrid");
+            const monthTitle = document.getElementById("calendarMonthTitle");
+            const quickJumpBar = document.getElementById("calendarQuickJumpBar");
+            if (!grid || !monthTitle) return;
+
+            const monthDate = new Date(calendarYear, calendarMonth, 1);
+            monthTitle.textContent = monthDate.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric"
+            });
+
+            // Group filtered schedules by YYYY-MM-DD
+            const byDate = {};
+            (filteredList || []).forEach(item => {
+                const iso = normalizeScheduleDate(item.defense_date);
+                if (!iso) return;
+                if (!byDate[iso]) byDate[iso] = [];
+                byDate[iso].push(item);
+            });
+
+            // Sort each day's schedules by start_time
+            Object.keys(byDate).forEach(iso => {
+                byDate[iso].sort((a, b) =>
+                    normalizeScheduleTime(a.start_time).localeCompare(normalizeScheduleTime(b.start_time))
+                );
+            });
+
+            const todayIso = getTodayLocalISO();
+            const firstWeekday = new Date(calendarYear, calendarMonth, 1).getDay();
+            const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+            const daysInPrevMonth = new Date(calendarYear, calendarMonth, 0).getDate();
+            const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+            const baseSlots = getCalendarBaseSlots();
+
+            let monthEventCount = 0;
+            const cellsHtml = [];
+
+            for (let i = 0; i < totalCells; i++) {
+                let cellYear = calendarYear;
+                let cellMonth = calendarMonth;
+                let dayNum = 0;
+                let isOtherMonth = false;
+
+                if (i < firstWeekday) {
+                    isOtherMonth = true;
+                    dayNum = daysInPrevMonth - firstWeekday + i + 1;
+                    cellMonth--;
+                    if (cellMonth < 0) { cellMonth = 11; cellYear--; }
+                } else if (i >= firstWeekday + daysInMonth) {
+                    isOtherMonth = true;
+                    dayNum = i - (firstWeekday + daysInMonth) + 1;
+                    cellMonth++;
+                    if (cellMonth > 11) { cellMonth = 0; cellYear++; }
+                } else {
+                    dayNum = i - firstWeekday + 1;
+                }
+
+                const iso = `${cellYear}-${String(cellMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                const dayEvents = byDate[iso] || [];
+                if (!isOtherMonth) monthEventCount += dayEvents.length;
+
+                const isToday = iso === todayIso;
+                const isSelected = iso === selectedCalendarDate;
+                const isPast = iso < todayIso;
+
+                // Count how many slots (for the selected duration & room) are available on this date
+                const allActiveOnDate = (schedules || []).filter(ev => {
+                    const st = String(ev.defense_status || "").toLowerCase();
+                    if (st === "cancelled" || st === "completed") return false;
+                    if (isConditionalReevalSchedule(ev)) return false;
+                    if (normalizeScheduleDate(ev.defense_date) !== iso) return false;
+                    return doesEventMatchCalendarRoom(ev, calendarSelectedRoom);
+                });
+                const openSlotCount = isPast
+                    ? 0
+                    : baseSlots.filter(slot =>
+                        !isSlotStartInPast(iso, slot.start_time)
+                        && !allActiveOnDate.some(ev => timesOverlap(slot.start_time, slot.end_time, ev.start_time, ev.end_time))
+                    ).length;
+
+                const maxVisibleChips = 2;
+                const chipsHtml = dayEvents.slice(0, maxVisibleChips).map(ev => {
+                    const isHappening = isDefenseHappening(ev.defense_date, ev.start_time, ev.end_time);
+                    const dispStatus = isHappening && ev.defense_status === "Scheduled" ? "Ongoing" : (ev.defense_status || "Scheduled");
+                    const stClass = String(dispStatus).toLowerCase();
+                    const shortTime = formatTime12Hr(ev.start_time).replace(/:00\s/g, " ");
+                    const titleTip = `${ev.group_name || "Group"} — ${ev.defense_type} (${formatTime12Hr(ev.start_time)} - ${formatTime12Hr(ev.end_time)}, ${ev.room_name})`;
+                    return `
+                        <button type="button"
+                            class="cal-event-chip status-${stClass}"
+                            onclick="openScheduleItemFromCalendar(${ev.id}, event)"
+                            title="${escapeHtml(titleTip)}">
+                            <span class="cal-event-time">${escapeHtml(shortTime)}</span>
+                            <span class="cal-event-name">${escapeHtml(ev.group_name || "Group")}</span>
+                        </button>
+                    `;
+                }).join("");
+
+                const moreHtml = dayEvents.length > maxVisibleChips
+                    ? `<div class="cal-more-badge">+${dayEvents.length - maxVisibleChips} more</div>`
+                    : "";
+
+                const openHintHtml = (!isPast && !isOtherMonth && openSlotCount > 0)
+                    ? `<div class="cal-open-hint">${openSlotCount} open slot${openSlotCount > 1 ? "s" : ""}</div>`
+                    : "";
+
+                const addBtnHtml = !isPast
+                    ? `<button type="button" class="cal-cell-add-btn" onclick="openQuickCreateForDate('${iso}', event)" title="Schedule defense on ${escapeHtml(formatIsoDateLong(iso))}"><i class="fa-solid fa-plus"></i></button>`
+                    : "";
+
+                cellsHtml.push(`
+                    <div class="cal-day-cell ${isOtherMonth ? "other-month" : ""} ${isToday ? "is-today" : ""} ${isSelected ? "is-selected" : ""} ${isPast ? "is-past" : ""}"
+                        onclick="selectCalendarDate('${iso}')">
+                        <div class="cal-day-top">
+                            <span class="cal-day-num">${dayNum}</span>
+                            ${addBtnHtml}
+                        </div>
+                        <div class="cal-day-events">
+                            ${chipsHtml}
+                            ${moreHtml}
+                        </div>
+                        ${openHintHtml}
+                    </div>
+                `);
+            }
+
+            grid.innerHTML = cellsHtml.join("");
+
+            // Quick-jump bar if current viewed month has no events but other months do
+            if (quickJumpBar) {
+                const allDates = Object.keys(byDate).sort();
+                if (monthEventCount === 0 && allDates.length > 0) {
+                    const upcoming = allDates.find(d => d >= todayIso) || allDates[allDates.length - 1];
+                    const quickPills = allDates.slice(0, 5).map(d => `
+                        <button type="button" class="cal-jump-pill" onclick="selectCalendarDate('${d}')">
+                            <i class="fa-regular fa-calendar"></i> ${formatDate(d)} (${byDate[d].length})
+                        </button>
+                    `).join("");
+                    quickJumpBar.style.display = "flex";
+                    quickJumpBar.innerHTML = `
+                        <span class="cal-jump-label"><i class="fa-solid fa-compass"></i> No schedules in ${escapeHtml(monthTitle.textContent)}. Jump to scheduled date:</span>
+                        <div class="cal-jump-pills">${quickPills}</div>
+                    `;
+                } else {
+                    quickJumpBar.style.display = "none";
+                    quickJumpBar.innerHTML = "";
+                }
+            }
+
+            renderSelectedDaySlotsPanel(byDate[selectedCalendarDate] || []);
+        }
+
+        function renderSelectedDaySlotsPanel(dayEvents) {
+            const titleEl = document.getElementById("selectedDayTitle");
+            const summaryEl = document.getElementById("selectedDaySummary");
+            const listEl = document.getElementById("daySlotsList");
+            const addBtn = document.getElementById("dayQuickAddBtn");
+            const availPillEl = document.getElementById("calSlotAvailabilityPill");
+            if (!titleEl || !summaryEl || !listEl) return;
+
+            const iso = selectedCalendarDate || getTodayLocalISO();
+            const todayIso = getTodayLocalISO();
+            const isPastDay = iso < todayIso;
+            const baseSlots = getCalendarBaseSlots();
+            const durText = formatDurationLabel(calendarSlotDurationHours);
+            const roomFilter = calendarSelectedRoom;
+
+            titleEl.textContent = formatIsoDateLong(iso);
+            if (addBtn) {
+                addBtn.disabled = isPastDay;
+                addBtn.title = isPastDay ? "Cannot schedule on a past date" : `Schedule a defense on ${formatIsoDateLong(iso)}`;
+            }
+
+            // Use all schedules on this date for accurate room occupancy checking, while respecting room filter
+            const allDaySchedules = (schedules || []).filter(ev =>
+                normalizeScheduleDate(ev.defense_date) === iso
+                && !isConditionalReevalSchedule(ev)
+            );
+            const visibleEvents = (Array.isArray(dayEvents) ? dayEvents : []).filter(ev =>
+                doesEventMatchCalendarRoom(ev, roomFilter)
+            );
+            const activeRoomBookings = allDaySchedules.filter(ev => {
+                const st = String(ev.defense_status || "").toLowerCase();
+                if (st === "cancelled" || st === "completed") return false;
+                return doesEventMatchCalendarRoom(ev, roomFilter);
+            });
+
+            const matchedEventIds = new Set();
+            let openCount = 0;
+            let bookedSlotCount = 0;
+
+            const slotBlocksHtml = baseSlots.map(slot => {
+                const matchingVisible = visibleEvents.filter(ev =>
+                    timesOverlap(slot.start_time, slot.end_time, ev.start_time, ev.end_time)
+                );
+                const matchingActiveRoom = activeRoomBookings.filter(ev =>
+                    timesOverlap(slot.start_time, slot.end_time, ev.start_time, ev.end_time)
+                );
+                matchingVisible.forEach(ev => matchedEventIds.add(ev.id));
+
+                const slotPast = isSlotStartInPast(iso, slot.start_time);
+                const isOccupiedInSelectedRoom = Boolean(roomFilter && matchingActiveRoom.length > 0);
+
+                if (matchingVisible.length === 0 && !isOccupiedInSelectedRoom) {
+                    if (!slotPast) openCount++;
+                    if (slotPast) {
+                        return `
+                            <div class="day-slot-card day-slot-past">
+                                <div class="day-slot-head">
+                                    <span class="day-slot-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(slot.slot_label)}</span>
+                                    <span class="day-slot-pill pill-past">Passed</span>
+                                </div>
+                                <div class="day-slot-empty-msg">No defense was scheduled${roomFilter ? ` in ${escapeHtml(roomFilter)}` : ""} during this slot.</div>
+                            </div>
+                        `;
+                    }
+                    const targetLabel = roomFilter
+                        ? `Available in ${roomFilter} (${durText}) — click to schedule`
+                        : `Unscheduled ${slot.period || ""} slot (${durText}) — click to schedule directly`;
+                    return `
+                        <div class="day-slot-card day-slot-open"
+                            onclick="openQuickCreateForSlot('${iso}', '${slot.start_time}', '${slot.end_time}', '${escapeHtml(slot.slot_label)}')">
+                            <div class="day-slot-head">
+                                <span class="day-slot-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(slot.slot_label)}</span>
+                                <span class="day-slot-pill pill-open"><i class="fa-solid fa-plus"></i> Available</span>
+                            </div>
+                            <div class="day-slot-open-cta">
+                                <span>${escapeHtml(targetLabel)}</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                bookedSlotCount++;
+                const displayCards = matchingVisible.length > 0 ? matchingVisible : matchingActiveRoom;
+                const cardsHtml = displayCards.map(ev => renderDayScheduleMiniCard(ev)).join("");
+
+                // If a specific room is selected and occupied, don't allow double-booking that same room.
+                // If All Rooms is selected, allow scheduling another room in the same slot.
+                const bookAnotherBtn = (!slotPast && !isOccupiedInSelectedRoom)
+                    ? `
+                        <button type="button" class="day-slot-book-another"
+                            onclick="openQuickCreateForSlot('${iso}', '${slot.start_time}', '${slot.end_time}', '${escapeHtml(slot.slot_label)}')">
+                            <i class="fa-solid fa-plus"></i> ${roomFilter ? `Schedule in ${escapeHtml(roomFilter)}` : "Schedule another room in this slot"}
+                        </button>
+                    `
+                    : "";
+
+                const pillText = isOccupiedInSelectedRoom
+                    ? `Booked in ${roomFilter}`
+                    : `${displayCards.length} Booked`;
+
+                return `
+                    <div class="day-slot-card day-slot-booked ${isOccupiedInSelectedRoom ? "day-slot-room-occupied" : ""}">
+                        <div class="day-slot-head">
+                            <span class="day-slot-time"><i class="fa-solid fa-clock"></i> ${escapeHtml(slot.slot_label)}</span>
+                            <span class="day-slot-pill ${isOccupiedInSelectedRoom ? "pill-occupied" : "pill-booked"}">${escapeHtml(pillText)}</span>
+                        </div>
+                        <div class="day-slot-events-stack">
+                            ${cardsHtml}
+                        </div>
+                        ${bookAnotherBtn}
+                    </div>
+                `;
+            }).join("");
+
+            // Any scheduled defenses outside the generated 8 AM - 5 PM slots (e.g., custom times)
+            const customEvents = visibleEvents.filter(ev => !matchedEventIds.has(ev.id));
+            const customSectionHtml = customEvents.length > 0
+                ? `
+                    <div class="day-custom-events-block">
+                        <div class="day-section-divider">
+                            <i class="fa-solid fa-sliders"></i> Custom Time Schedules (${customEvents.length})
+                        </div>
+                        <div class="day-slot-events-stack">
+                            ${customEvents.map(ev => renderDayScheduleMiniCard(ev, true)).join("")}
+                        </div>
+                    </div>
+                `
+                : "";
+
+            const customAddFooterHtml = !isPastDay
+                ? `
+                    <button type="button" class="day-custom-time-add-btn" onclick="openQuickCreateForSelectedDate(true)">
+                        <i class="fa-solid fa-clock"></i> Schedule Custom Time on ${escapeHtml(formatDate(iso))}${roomFilter ? ` (${escapeHtml(roomFilter)})` : ""}
+                    </button>
+                `
+                : `
+                    <div class="day-past-notice">
+                        <i class="fa-solid fa-circle-info"></i> Past date — you can view or inspect records, or select today/a future date to add a schedule.
+                    </div>
+                `;
+
+            if (availPillEl) {
+                const scopeName = roomFilter ? roomFilter : "All Rooms";
+                if (isPastDay) {
+                    availPillEl.className = "cal-availability-pill is-past";
+                    availPillEl.innerHTML = `<i class="fa-regular fa-calendar"></i> <strong>${escapeHtml(scopeName)}</strong> • Past date (${visibleEvents.length} record${visibleEvents.length === 1 ? "" : "s"})`;
+                } else if (openCount === 0) {
+                    availPillEl.className = "cal-availability-pill is-full";
+                    availPillEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <strong>${escapeHtml(scopeName)}</strong> • 0 of ${baseSlots.length} (${escapeHtml(durText)}) slots available`;
+                } else {
+                    availPillEl.className = "cal-availability-pill is-open";
+                    availPillEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>${escapeHtml(scopeName)}</strong> • <strong>${openCount} of ${baseSlots.length}</strong> (${escapeHtml(durText)}) slot${openCount === 1 ? "" : "s"} available`;
+                }
+            }
+
+            if (isPastDay) {
+                summaryEl.textContent = visibleEvents.length > 0
+                    ? `${visibleEvents.length} defense schedule${visibleEvents.length > 1 ? "s" : ""} recorded${roomFilter ? ` in ${roomFilter}` : ""}`
+                    : `No defense schedules on this date${roomFilter ? ` in ${roomFilter}` : ""}`;
+            } else {
+                summaryEl.textContent = `${visibleEvents.length} scheduled • ${openCount} open ${durText} slot${openCount === 1 ? "" : "s"}${roomFilter ? ` in ${roomFilter}` : ""}`;
+            }
+
+            listEl.innerHTML = `
+                <div class="day-section-divider">
+                    <i class="fa-regular fa-clock"></i> Suggested Time Slots (${escapeHtml(durText)} • ${escapeHtml(roomFilter || "All Rooms")})
+                </div>
+                ${slotBlocksHtml}
+                ${customSectionHtml}
+                ${customAddFooterHtml}
+            `;
+        }
+
+        function renderDayScheduleMiniCard(ev, showExactTime = false) {
+            const isHappening = isDefenseHappening(ev.defense_date, ev.start_time, ev.end_time);
+            const dispStatus = isHappening && ev.defense_status === "Scheduled" ? "Ongoing" : (ev.defense_status || "Scheduled");
+            const stClass = String(dispStatus).toLowerCase();
+            const canManage = canManageSchedule(ev);
+            const hasEvals = (Number(ev.evaluations_submitted || 0) > 0) || (ev.evaluation && ev.evaluation.score !== null);
+            const timeText = `${formatTime12Hr(ev.start_time)} - ${formatTime12Hr(ev.end_time)}`;
+            const adviserName = getScheduleAdviserName(ev);
+
+            return `
+                <div class="day-mini-card status-border-${stClass}">
+                    <div class="day-mini-top">
+                        <div>
+                            <div class="day-mini-group">${escapeHtml(ev.group_name || "Unnamed Group")}</div>
+                            <div class="day-mini-type">${escapeHtml(ev.defense_type || "")}${showExactTime ? ` • ${escapeHtml(timeText)}` : ""}</div>
+                        </div>
+                        <span class="status-badge ${stClass}">${escapeHtml(dispStatus)}</span>
+                    </div>
+                    <div class="day-mini-meta">
+                        <span><i class="fa-solid fa-door-open"></i> ${escapeHtml(ev.room_name || "N/A")}</span>
+                        ${adviserName !== "—" ? `<span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(adviserName)}</span>` : ""}
+                    </div>
+                    <div class="day-mini-actions">
+                        <button type="button" class="day-mini-btn btn-view" onclick="openViewModal(${ev.id})">
+                            <i class="fa-solid fa-eye"></i> View
+                        </button>
+                        ${canManage ? `
+                            <button type="button" class="day-mini-btn btn-edit" onclick="openEditModal(${ev.id})">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                            ${!hasEvals ? `
+                                <button type="button" class="day-mini-btn" style="background:#fee2e2;color:#dc2626;" onclick="openDeleteReasonModal(${ev.id})">
+                                    <i class="fa-solid fa-trash"></i> Delete
+                                </button>
+                            ` : ""}
+                        ` : ""}
+                    </div>
+                </div>
+            `;
         }
 
         function renderPaginationControls(totalRecords, fromRecord, toRecord, totalPages) {
@@ -2463,8 +3633,9 @@
             renderScheduleSections();
         }
 
-        async function openCreateModal() {
+        async function openCreateModal(prefill = null) {
             try {
+                const opts = (prefill && typeof prefill === "object" && !(prefill instanceof Event)) ? prefill : {};
                 modalMode = "create";
                 selectedScheduleId = null;
 
@@ -2484,7 +3655,14 @@
                 };
 
                 safeSetText("modalTitle", "Create Defense Schedule");
-                safeSetText("modalSubtitle", "Select group, room, time, defense type, and panelists.");
+                if (opts.date && opts.startTime && opts.endTime) {
+                    const slotText = opts.slotLabel || `${formatTime12Hr(opts.startTime)} - ${formatTime12Hr(opts.endTime)}`;
+                    safeSetText("modalSubtitle", `Pre-filled for ${formatDate(opts.date)} • ${slotText}. Select group, room, and panelists.`);
+                } else if (opts.date) {
+                    safeSetText("modalSubtitle", `Pre-filled for ${formatDate(opts.date)}. Choose time slot, group, room, and panelists.`);
+                } else {
+                    safeSetText("modalSubtitle", "Select group, room, time, defense type, and panelists.");
+                }
 
                 safeSetDisplay("groupSelectGroup", "block");
                 safeSetDisplay("groupLockedGroup", "none");
@@ -2499,7 +3677,39 @@
                 safeSetDisabled("roomSelect", false);
                 safeSetDisabled("otherRoom", false);
                 setTimeSlotsLocked(false);
+
+                // Apply pre-filled date, room, duration & time slot from Calendar / Day Slots panel
+                if (opts.date) {
+                    const dateEl = document.getElementById("defenseDate");
+                    if (dateEl) dateEl.value = opts.date;
+                }
+                if (opts.room) {
+                    const roomSel = document.getElementById("roomSelect");
+                    if (roomSel) {
+                        roomSel.value = opts.room === "Online" ? "Other" : opts.room;
+                        toggleOtherRoom();
+                        syncRoomCombobox();
+                    }
+                }
+                if (opts.durationHours && Number.isFinite(Number(opts.durationHours))) {
+                    slotDurationHours = Number(opts.durationHours);
+                    predefinedTimeSlots = generateTimeSlotsForDuration(slotDurationHours);
+                    updateDurationUiControls();
+                }
+                if (opts.startTime && opts.endTime) {
+                    const startEl = document.getElementById("startTime");
+                    const endEl = document.getElementById("endTime");
+                    if (startEl) startEl.value = String(opts.startTime).slice(0, 5);
+                    if (endEl) endEl.value = String(opts.endTime).slice(0, 5);
+                    selectedTimeSlotLabel = opts.slotLabel || `${formatTime12Hr(opts.startTime)} - ${formatTime12Hr(opts.endTime)}`;
+                    syncTimeSlotSelectionFromInputs();
+                    calculateDuration();
+                } else if (opts.customTime) {
+                    toggleCustomTimeMode(true);
+                }
+
                 refreshOccupiedDefenseSlots();
+                checkRoomAndTimelineConflicts();
 
                 const saveBtn = document.querySelector("#scheduleModal .save-btn");
                 if (saveBtn) saveBtn.style.display = "inline-flex";
@@ -2539,9 +3749,9 @@
 
             }
 
-            if (!Boolean(item.is_owner)) {
+            if (!canManageSchedule(item)) {
 
-                alert("You can only edit schedules that you created.");
+                alert("You can only edit Scheduled/Ongoing schedules or schedules that you created.");
 
                 return;
 
@@ -2593,8 +3803,8 @@
                 if (modalDelBtn) modalDelBtn.style.display = hasEvaluations ? "none" : "inline-flex";
             }
 
-            // 3. Lock date, time, and room if happening or completed
-            const lockDateTimeRoom = isCompleted || isHappening;
+            // 3. Lock date, time, and room only when Completed (or Ongoing with evaluations already submitted)
+            const lockDateTimeRoom = isCompleted || (isHappening && hasEvaluations);
             restrictDefenseDateToFuture(false);
             document.getElementById("defenseDate").disabled = lockDateTimeRoom;
             document.getElementById("startTime").disabled = lockDateTimeRoom;
@@ -2613,10 +3823,19 @@
             document.getElementById("endTime").value =
                 formatTimeInput(item.end_time);
 
+            const detectedFormat = extractDefenseFormatFromSchedule(item) || "Informal";
+            selectDefenseFormat(detectedFormat, { preserveType: true, silent: true });
+
             document.getElementById("defenseType").value =
                 isDefaultDefenseType(item.defense_type)
                     ? item.defense_type
                     : "Concept Presentation";
+
+            const fmtBtnInf = document.getElementById("formatBtnInformal");
+            const fmtBtnFor = document.getElementById("formatBtnFormal");
+            if (fmtBtnInf) fmtBtnInf.disabled = isCompleted;
+            if (fmtBtnFor) fmtBtnFor.disabled = isCompleted;
+            document.getElementById("defenseType").disabled = isCompleted;
 
             toggleOtherDefenseType();
 
@@ -2624,7 +3843,7 @@
                 item.defense_status;
 
             document.getElementById("notes").value =
-                item.notes || "";
+                stripDefenseFormatPrefix(item.notes || "");
 
             document.getElementById("statusBox").style.display =
                 "block";
@@ -2695,22 +3914,49 @@
 
                 countText.innerHTML = `<strong>${submittedCount} of ${requiredCount}</strong> Panelists Graded` + (isCompleted ? ` <span style="font-size:12px;color:#059669;font-weight:700;">(Completed)</span>` : "");
 
-                // Render each assigned panelist and their grade status
+                // Render each assigned panelist and their verdict status
                 const assignedPanelists = item.panelists || [];
                 listEl.innerHTML = assignedPanelists.map((p, idx) => {
-                    const hasGraded = evals.some(ev => Number(ev.panelist_id) === Number(p.id));
+                    const panelEval = evals.find(ev => Number(ev.panelist_id) === Number(p.id));
                     const roleLabel = idx === 0 ? "Chair" : `Member ${idx}`;
+
+                    let statusBadgeHtml = `<span class="pending-tag"><i class="fa-solid fa-clock"></i> Pending</span>`;
+                    if (panelEval) {
+                        const verdictText = String(panelEval.panel_result || "Evaluated").trim();
+                        const verdictLower = verdictText.toLowerCase();
+                        let tagClass = "graded-tag";
+                        let iconClass = "fa-circle-check";
+
+                        if (verdictLower === "passed") {
+                            tagClass = "verdict-tag verdict-passed";
+                            iconClass = "fa-circle-check";
+                        } else if (verdictLower.includes("revision")) {
+                            tagClass = "verdict-tag verdict-revision";
+                            iconClass = "fa-pen-to-square";
+                        } else if (verdictLower.includes("conditional")) {
+                            tagClass = "verdict-tag verdict-conditional";
+                            iconClass = "fa-circle-exclamation";
+                        } else if (verdictLower.includes("formal") || verdictLower.includes("re-defense") || verdictLower.includes("redefense")) {
+                            tagClass = "verdict-tag verdict-redefense";
+                            iconClass = "fa-rotate-left";
+                        } else if (verdictLower === "failed") {
+                            tagClass = "verdict-tag verdict-failed";
+                            iconClass = "fa-circle-xmark";
+                        } else if (verdictLower.includes("did not evaluate") || verdictLower.includes("archived")) {
+                            tagClass = "verdict-tag verdict-muted";
+                            iconClass = "fa-ban";
+                        }
+
+                        statusBadgeHtml = `<span class="${tagClass}"><i class="fa-solid ${iconClass}"></i> ${escapeHtml(verdictText)}</span>`;
+                    }
+
                     return `
                         <div class="panel-grade-item">
                             <div>
                                 <strong>${escapeHtml(p.fullname)}</strong>
                                 <span style="font-size:11px;color:#7c3aed;margin-left:6px;">(${roleLabel})</span>
                             </div>
-                            ${hasGraded ? `
-                                <span class="graded-tag"><i class="fa-solid fa-circle-check"></i> Graded</span>
-                            ` : `
-                                <span class="pending-tag"><i class="fa-solid fa-clock"></i> Pending Grade</span>
-                            `}
+                            ${statusBadgeHtml}
                         </div>
                     `;
                 }).join("");
@@ -2772,8 +4018,8 @@
                 alert("Schedule not found.");
                 return;
             }
-            if (!Boolean(item.is_owner)) {
-                alert("You can only cancel defense schedules that you created.");
+            if (!canManageSchedule(item)) {
+                alert("You can only cancel Scheduled/Ongoing schedules or defense schedules that you created.");
                 return;
             }
 
@@ -2908,7 +4154,7 @@
                 updateDurationUiControls();
                 toggleCustomTimeMode(false);
                 setTimeSlotsLocked(false);
-                safeSetVal("defenseType", "Concept Presentation");
+                resetDefenseFormatSelection();
                 safeSetVal("otherDefenseType", "");
                 safeSetDisplay("otherDefenseTypeBox", "none");
                 safeSetVal("defenseStatus", "Scheduled");
@@ -3177,6 +4423,10 @@
                     return false;
                 }
 
+                if (isConditionalReevalSchedule(item)) {
+                    return false;
+                }
+
                 if (normalizeScheduleDate(item.defense_date) !== targetDate) {
                     return false;
                 }
@@ -3338,12 +4588,106 @@
 
         }
 
+        function extractDefenseFormatFromSchedule(item) {
+            if (!item) return "";
+            if (item.defense_format && /^(informal|formal)$/i.test(String(item.defense_format).trim())) {
+                const f = String(item.defense_format).trim().toLowerCase();
+                return f === "formal" ? "Formal" : "Informal";
+            }
+            const notesStr = String(item.notes || "").trim();
+            const match = notesStr.match(/^\[(Informal|Formal)\s+Defense\]/i);
+            if (match) {
+                return match[1].toLowerCase() === "formal" ? "Formal" : "Informal";
+            }
+            return "";
+        }
+
+        function stripDefenseFormatPrefix(notesText) {
+            return String(notesText || "").replace(/^\[(Informal|Formal)\s+Defense\]\s*(\r?\n)?/i, "").trim();
+        }
+
+        function formatNotesWithDefenseFormat(rawNotes, defenseFormat) {
+            const cleanNotes = stripDefenseFormatPrefix(rawNotes);
+            const fmt = String(defenseFormat || "").trim();
+            if (!fmt) return cleanNotes;
+            const prefix = `[${fmt} Defense]`;
+            return cleanNotes ? `${prefix} ${cleanNotes}` : prefix;
+        }
+
+        function getDefenseFormat() {
+            const el = document.getElementById("defenseFormat");
+            return el ? String(el.value || "").trim() : "";
+        }
+
+        function resetDefenseFormatSelection() {
+            const fmtInput = document.getElementById("defenseFormat");
+            const typeSelect = document.getElementById("defenseType");
+            const hintEl = document.getElementById("defenseTypeStepHint");
+            const badgeEl = document.getElementById("selectedFormatBadge");
+            const btnInf = document.getElementById("formatBtnInformal");
+            const btnFor = document.getElementById("formatBtnFormal");
+
+            if (fmtInput) fmtInput.value = "";
+            if (btnInf) { btnInf.classList.remove("active"); btnInf.disabled = false; }
+            if (btnFor) { btnFor.classList.remove("active"); btnFor.disabled = false; }
+            if (typeSelect) {
+                typeSelect.value = "";
+                typeSelect.disabled = true;
+                if (typeSelect.options && typeSelect.options[0]) {
+                    typeSelect.options[0].textContent = "Select Informal or Formal first...";
+                }
+            }
+            if (hintEl) hintEl.textContent = "Step 1: Choose Informal or Formal defense first";
+            if (badgeEl) {
+                badgeEl.style.display = "none";
+                badgeEl.textContent = "";
+                badgeEl.className = "defense-format-pill";
+            }
+        }
+
+        function selectDefenseFormat(format, options = {}) {
+            const normalized = String(format || "").trim().toLowerCase() === "formal" ? "Formal" : "Informal";
+            const fmtInput = document.getElementById("defenseFormat");
+            const typeSelect = document.getElementById("defenseType");
+            const hintEl = document.getElementById("defenseTypeStepHint");
+            const badgeEl = document.getElementById("selectedFormatBadge");
+            const btnInf = document.getElementById("formatBtnInformal");
+            const btnFor = document.getElementById("formatBtnFormal");
+
+            if (fmtInput) fmtInput.value = normalized;
+            if (btnInf) btnInf.classList.toggle("active", normalized === "Informal");
+            if (btnFor) btnFor.classList.toggle("active", normalized === "Formal");
+
+            if (typeSelect) {
+                typeSelect.disabled = false;
+                if (typeSelect.options && typeSelect.options[0]) {
+                    typeSelect.options[0].textContent = "Select defense type (Concept to Final)...";
+                }
+            }
+            if (hintEl) {
+                hintEl.textContent = `Step 2: Choose the ${normalized.toLowerCase()} defense stage (Concept Presentation to Final Defense)`;
+            }
+            if (badgeEl) {
+                badgeEl.style.display = "inline-flex";
+                badgeEl.textContent = `${normalized} Defense`;
+                badgeEl.className = `defense-format-pill fmt-${normalized.toLowerCase()}`;
+            }
+
+            if (!options.silent) {
+                if (typeSelect && typeSelect.value) {
+                    onDefenseTypeChange();
+                } else if (typeSelect && !options.preserveType) {
+                    typeSelect.focus();
+                }
+            }
+        }
+
         function getDefenseType() {
 
             const el = document.getElementById("defenseType");
-            if (!el) return "Concept Presentation";
+            if (!el) return "";
 
-            return el.value || "Concept Presentation";
+            return el.value || "";
 
         }
 
@@ -3391,6 +4735,10 @@
 
                 const st = String(item.defense_status || "").toLowerCase();
                 if (st === "cancelled" || st === "completed") {
+                    return false;
+                }
+
+                if (isConditionalReevalSchedule(item)) {
                     return false;
                 }
 
@@ -3447,17 +4795,33 @@
             const endTime =
                 document.getElementById("endTime").value;
 
+            const defenseFormat =
+                getDefenseFormat();
+
             const defenseType =
                 getDefenseType();
 
             const defenseStatus =
                 document.getElementById("defenseStatus").value;
 
-            const notes =
+            const rawNotes =
                 document
                     .getElementById("notes")
                     .value
                     .trim();
+
+            const notes =
+                formatNotesWithDefenseFormat(rawNotes, defenseFormat);
+
+            if (!defenseFormat) {
+                alert("Please choose Informal Defense or Formal Defense first.");
+                return;
+            }
+
+            if (!defenseType) {
+                alert("Please select the defense stage (Concept Presentation to Final Defense).");
+                return;
+            }
 
             if (
                 !groupDbId ||
@@ -3510,6 +4874,22 @@
                 modalMode === "edit"
                     ? selectedScheduleId
                     : null;
+
+            // Check if group has a Conditional Passed or Failed verdict that disallows creating a new schedule
+            if (modalMode === "create") {
+                const localVerdicts = getGroupLatestVerdictsMap(groupDbId);
+                const failedEntry = Object.values(localVerdicts).find(v => v.result.toLowerCase() === "failed");
+                if (failedEntry) {
+                    alert(`Cannot create defense schedule. This group received a "Failed" verdict in "${failedEntry.defense_type}" and cannot progress further.`);
+                    return;
+                }
+                const currentTypeLower = (defenseType || "").trim().toLowerCase();
+                const thisTypeOutcome = localVerdicts[currentTypeLower];
+                if (thisTypeOutcome && (thisTypeOutcome.result === "Conditional Passed" || thisTypeOutcome.result === "Conditional Pass")) {
+                    alert(`No new schedule is needed. This group received "Conditional Passed" for "${defenseType}" — the panel automatically handles re-evaluation externally with no time limit.`);
+                    return;
+                }
+            }
 
             // Check if group already has an active defense schedule for this type
             if (modalMode === "create") {
@@ -3786,14 +5166,15 @@
             document.getElementById("viewCreator").innerText =
                 item.creator_name || "N/A";
 
+            const viewFmt = extractDefenseFormatFromSchedule(item);
             document.getElementById("viewType").innerText =
-                item.defense_type;
+                viewFmt ? `${item.defense_type} (${viewFmt})` : item.defense_type;
 
             document.getElementById("viewStatus").innerText =
                 item.defense_status;
 
             document.getElementById("viewNotes").innerText =
-                item.notes || "No notes.";
+                stripDefenseFormatPrefix(item.notes || "") || "No notes.";
 
             renderViewPanelists(item.panelists || []);
 
@@ -4361,8 +5742,25 @@
         window.loadSchedules = loadSchedules;
         window.renderScheduleSections = renderScheduleSections;
         window.onScopeFilterChange = onScopeFilterChange;
+        window.onTypeFilterChange = onTypeFilterChange;
+        window.onFilterControlChange = onFilterControlChange;
+        window.selectSheetTab = selectSheetTab;
+        window.setScheduleViewMode = setScheduleViewMode;
+        window.exportSchedulesToCsv = exportSchedulesToCsv;
+        window.changeCalendarMonth = changeCalendarMonth;
+        window.goToCalendarToday = goToCalendarToday;
+        window.selectCalendarDate = selectCalendarDate;
+        window.jumpToDateInCalendar = jumpToDateInCalendar;
+        window.openScheduleItemFromCalendar = openScheduleItemFromCalendar;
+        window.openQuickCreateForSelectedDate = openQuickCreateForSelectedDate;
+        window.openQuickCreateForDate = openQuickCreateForDate;
+        window.openQuickCreateForSlot = openQuickCreateForSlot;
+        window.onCalendarRoomFilterChange = onCalendarRoomFilterChange;
+        window.setCalendarSlotDuration = setCalendarSlotDuration;
+        window.onCalendarCustomDurationInput = onCalendarCustomDurationInput;
         window.goToPage = goToPage;
         window.onDefenseTypeChange = onDefenseTypeChange;
+        window.selectDefenseFormat = selectDefenseFormat;
         window.onChairChange = onChairChange;
         window.onMember1Change = onMember1Change;
         window.onMember2Change = onMember2Change;
@@ -4375,9 +5773,9 @@
         function initSchedulePage() {
             const createBtn = document.getElementById("createScheduleBtn") || document.querySelector(".primary-btn");
             if (createBtn) {
-                createBtn.onclick = openCreateModal;
-                createBtn.addEventListener("click", openCreateModal);
+                createBtn.onclick = () => openCreateModal();
             }
+            setScheduleViewMode(currentViewMode);
             loadPageData();
         }
 

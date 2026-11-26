@@ -89,12 +89,13 @@ addBtn.addEventListener(
             !title ||
             !abstract ||
             !objectives ||
+            !research_problem ||
             !methodology
 
         ) {
 
             alert(
-                "Please complete required fields."
+                "Please complete required fields (Program, Title, Abstract, Objectives, Research Problem, Methodology)."
             );
 
             return;
@@ -787,7 +788,7 @@ function renderExtractedSectionPills(extracted) {
         { key: "program", label: "Program", req: true },
         { key: "year", label: "Year", req: false },
         { key: "abstract", label: "Abstract", req: true },
-        { key: "research_problem", label: "Research Problem", req: false },
+        { key: "research_problem", label: "Research Problem", req: true },
         { key: "objectives", label: "Objectives", req: true },
         { key: "methodology", label: "Methodology", req: true },
         { key: "researchers", label: "Researchers", req: false },
@@ -867,8 +868,8 @@ async function saveUploadedRepositoryEntry(isAuto = false) {
     const category = document.getElementById("uploadCategory")?.value?.trim() || "";
     const year = document.getElementById("uploadYear")?.value?.trim() || "";
 
-    if (!program || !title || !abstract || !objectives || !methodology) {
-        const msg = "Please complete required fields (Program, Title, Abstract, Objectives, Methodology) before saving.";
+    if (!program || !title || !abstract || !research_problem || !objectives || !methodology) {
+        const msg = "Please complete required fields (Program, Title, Abstract, Research Problem, Objectives, Methodology) before saving.";
         setRepoUploadStatus("warning", `<i class="fa-solid fa-triangle-exclamation"></i><span>${msg}</span>`);
         if (!isAuto) alert(msg);
         return false;
@@ -1074,8 +1075,8 @@ async function saveRepositoryEdit() {
     const category = document.getElementById("editCategory").value;
     const year = document.getElementById("editYear").value;
 
-    if (!program || !title || !abstract || !objectives || !methodology) {
-        alert("Please complete required fields (Program, Title, Abstract, Objectives, Methodology).");
+    if (!program || !title || !abstract || !objectives || !research_problem || !methodology) {
+        alert("Please complete required fields (Program, Title, Abstract, Objectives, Research Problem, Methodology).");
         return;
     }
 

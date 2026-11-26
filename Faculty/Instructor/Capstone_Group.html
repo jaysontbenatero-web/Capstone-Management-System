@@ -144,6 +144,25 @@
             transform: translateY(-1px);
             box-shadow: 0 5px 14px rgba(16, 185, 129, 0.28);
         }
+        .status-badge.actual-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 700;
+            line-height: 1.3;
+            white-space: nowrap;
+        }
+        .status-badge.actual-status-badge.st-passed { background: #dcfce7 !important; color: #15803d !important; }
+        .status-badge.actual-status-badge.st-revision { background: #fef3c7 !important; color: #b45309 !important; }
+        .status-badge.actual-status-badge.st-conditional { background: #f3e8ff !important; color: #6d28d9 !important; }
+        .status-badge.actual-status-badge.st-redefense { background: #ffedd5 !important; color: #c2410c !important; }
+        .status-badge.actual-status-badge.st-failed { background: #fee2e2 !important; color: #dc2626 !important; }
+        .status-badge.actual-status-badge.st-scheduled { background: #dbeafe !important; color: #1d4ed8 !important; }
+        .status-badge.actual-status-badge.st-ongoing { background: #ede9fe !important; color: #5b21b6 !important; }
+        .status-badge.actual-status-badge.st-pending { background: #f1f5f9 !important; color: #475569 !important; }
     </style>
 </head>
 
@@ -304,6 +323,14 @@
                         Repository
                     </span>
                 </div>
+            <div
+                class="menu-item"
+                id="nav-forms-templates"
+                onclick="window.location.href='Forms_Templates.html'"
+            >
+                <i class="fa-solid fa-file-contract"></i>
+                <span>Forms Templates</span>
+            </div>
 
             </div>
 
@@ -828,14 +855,79 @@
             filterGroups();
         }
 
+        function getGroupActualStatus(group) {
+            if (!group) return { label: "In Progress", cls: "st-pending" };
+            const stageStr = String(group.stage || "").trim().toLowerCase();
+            if (stageStr === "completed" || String(group.status || "").trim().toLowerCase() === "completed") {
+                return { label: "Completed", cls: "st-passed" };
+            }
+
+            const defs = (Array.isArray(group.defenses) ? group.defenses : [])
+                .filter(d => String(d.defense_status || "").trim().toLowerCase() !== "cancelled")
+                .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+
+            if (defs.length > 0) {
+                const latest = defs[0];
+                const dType = String(latest.defense_type || "Defense").trim();
+                const dStat = String(latest.defense_status || "").trim();
+                const dStatLower = dStat.toLowerCase();
+                const result = String(latest.panel_result || "").trim();
+                const resLower = result.toLowerCase();
+
+                if (dStatLower === "completed" && result) {
+                    let cls = "st-passed";
+                    if (resLower === "failed" || resLower === "disapproved") cls = "st-failed";
+                    else if (resLower.includes("formal") || resLower.includes("re-defense") || resLower.includes("redefense")) cls = "st-redefense";
+                    else if (resLower.includes("conditional")) cls = "st-conditional";
+                    else if (resLower.includes("revision")) cls = "st-revision";
+                    return { label: `${dType} - ${result}`, cls };
+                }
+
+                // Check if currently happening
+                let isHappening = dStatLower === "ongoing";
+                if (!isHappening && latest.defense_date && latest.start_time && latest.end_time) {
+                    const ds = String(latest.defense_date).slice(0, 10);
+                    const sDt = new Date(`${ds}T${String(latest.start_time).slice(0, 5)}:00`);
+                    const eDt = new Date(`${ds}T${String(latest.end_time).slice(0, 5)}:00`);
+                    const now = new Date();
+                    if (!isNaN(sDt.getTime()) && !isNaN(eDt.getTime()) && now >= sDt && now <= eDt) {
+                        isHappening = true;
+                    }
+                }
+                if (isHappening) {
+                    return { label: `${dType} - Ongoing`, cls: "st-ongoing" };
+                }
+                if (dStatLower === "scheduled") {
+                    return { label: `${dType} - Scheduled`, cls: "st-scheduled" };
+                }
+                return { label: `${dType} - ${dStat || "Evaluated"}`, cls: "st-passed" };
+            }
+
+            if (!group.adviser_name && !group.adviser_user_id) {
+                return { label: "Concept Presentation - No Adviser", cls: "st-pending" };
+            }
+
+            const stageMap = {
+                "stage 1": "Concept Presentation",
+                "stage 2": "Outline Defense",
+                "stage 3": "Pre-Final Defense",
+                "stage 4": "Final Defense",
+                "stage 5": "Deployment",
+                "deployment": "Deployment",
+                "final": "Final Defense"
+            };
+            const phaseLabel = stageMap[stageStr] || "Concept Presentation";
+            return { label: `${phaseLabel} - In Progress`, cls: "st-pending" };
+        }
+
         async function loadCapstoneGroups(){
 
             try{
 
-                const response =
-                    await fetch(
-                        "/instructor-capstone-groups"
-                    );
+                const [response, schedRes] = await Promise.all([
+                    fetch("/instructor-capstone-groups"),
+                    fetch("/defense-schedules").catch(() => null)
+                ]);
 
                 const data =
                     await response.json();
@@ -852,8 +944,26 @@
 
                 }
 
+                let allScheds = [];
+                try {
+                    if (schedRes && schedRes.ok) {
+                        const schedData = await schedRes.json();
+                        if (schedData && schedData.success && Array.isArray(schedData.schedules)) {
+                            allScheds = schedData.schedules;
+                        }
+                    }
+                } catch (_) { }
+
                 groups =
-                    data.groups;
+                    (data.groups || []).map(g => {
+                        const gDefenses = Array.isArray(g.defenses) && g.defenses.length > 0
+                            ? g.defenses
+                            : allScheds.filter(s =>
+                                Number(s.group_db_id || s.group_id) === Number(g.id)
+                                || (g.group_id && String(s.group_id) === String(g.group_id))
+                            );
+                        return { ...g, defenses: gDefenses };
+                    });
 
                 advisers =
                     data.advisers;
@@ -931,6 +1041,8 @@
                 const row =
                     document.createElement("tr");
 
+                const actualStatus = getGroupActualStatus(group);
+
                 row.innerHTML = `
                     <td>${group.group_id}</td>
 
@@ -967,8 +1079,8 @@
                     </td>
 
                     <td>
-                        <span class="status-badge">
-                            ${group.status || "Active"}
+                        <span class="status-badge actual-status-badge ${actualStatus.cls}">
+                            ${escapeHtml(actualStatus.label)}
                         </span>
                     </td>
 
@@ -1022,6 +1134,8 @@
                 String(group.project_manager_name || "").toLowerCase().includes(keyword)
                 ||
                 String(group.adviser_name || "").toLowerCase().includes(keyword)
+                ||
+                String(getGroupActualStatus(group).label || "").toLowerCase().includes(keyword)
             );
 
             renderGroups(filtered);
@@ -1457,7 +1571,7 @@
                 `${getStageProgressPercent(group, group.defenses)}%`;
 
             document.getElementById("viewStatus").innerText =
-                group.status || "Active";
+                getGroupActualStatus(group).label;
 
             document.getElementById("viewAdviser").innerText =
                 group.adviser_name

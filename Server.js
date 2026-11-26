@@ -450,7 +450,58 @@ db.getConnection((err, connection) => {
         };
         ensureCol("consultations", "decline_reason", "TEXT NULL");
         ensureCol("consultations", "declined_at", "TIMESTAMP NULL");
+        ensureCol("consultations", "requested_date", "DATE NULL");
+        ensureCol("consultations", "requested_start_time", "TIME NULL");
+        ensureCol("consultations", "requested_end_time", "TIME NULL");
+        ensureCol("consultations", "requested_slot_id", "INT NULL");
+        ensureCol("consultations", "requested_slot_label", "VARCHAR(255) NULL");
+        ensureCol("defense_panel_evaluations", "first_verdict", "VARCHAR(50) NULL");
         ensureCol("users", "consultation_available", "TINYINT(1) NOT NULL DEFAULT 1");
+        db.query(`
+            CREATE TABLE IF NOT EXISTS academic_programs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                program_name VARCHAR(100) NOT NULL UNIQUE,
+                created_by_user_id VARCHAR(64) NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (apErr) => {
+            if (apErr) {
+                console.warn("[Programs Schema] academic_programs init note:", apErr.message);
+                return;
+            }
+            db.query(
+                "INSERT IGNORE INTO academic_programs (program_name) VALUES ('BSIT'), ('BSIS')",
+                () => { }
+            );
+        });
+        db.query(
+            "ALTER TABLE users MODIFY COLUMN program VARCHAR(100) NULL",
+            (progAlterErr) => {
+                if (progAlterErr && progAlterErr.code !== "ER_NO_SUCH_TABLE") {
+                    console.warn("[Programs Schema] users.program modify note:", progAlterErr.message);
+                }
+            }
+        );
+        db.query(`
+            CREATE TABLE IF NOT EXISTS faculty_consultation_schedules (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                faculty_id INT NOT NULL,
+                rule_type VARCHAR(20) NOT NULL DEFAULT 'available',
+                scope_type VARCHAR(20) NOT NULL DEFAULT 'everyday',
+                day_of_week VARCHAR(20) NULL,
+                specific_date DATE NULL,
+                all_day TINYINT(1) NOT NULL DEFAULT 0,
+                start_time TIME NULL,
+                end_time TIME NULL,
+                consultation_mode VARCHAR(50) NULL,
+                location_or_link VARCHAR(255) NULL,
+                notes VARCHAR(255) NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_fcs_faculty (faculty_id)
+            )
+        `, (fcsErr) => {
+            if (fcsErr) console.warn("[Consultation Schema] faculty_consultation_schedules init note:", fcsErr.message);
+        });
         db.query(
             `UPDATE document_submissions
              SET target_role = 'admin'
@@ -1577,6 +1628,66 @@ app.put("/update-role", (req, res) => {
     });
 });
 
+/* ================= ACADEMIC PROGRAMS ================= */
+
+function registerAcademicProgramIfNew(programName, createdByUserId) {
+    const clean = String(programName || "").trim().slice(0, 100);
+    if (!clean) return;
+    db.query(
+        "INSERT IGNORE INTO academic_programs (program_name, created_by_user_id) VALUES (?, ?)",
+        [clean, createdByUserId || null],
+        () => { }
+    );
+}
+
+app.get("/api/academic-programs", (req, res) => {
+    const defaultPrograms = ["BSIT", "BSIS"];
+    const sql = `
+        SELECT program_name FROM academic_programs
+        UNION
+        SELECT DISTINCT TRIM(program) AS program_name
+        FROM users
+        WHERE role = 'student' AND program IS NOT NULL AND TRIM(program) != ''
+    `;
+    db.query(sql, (err, rows) => {
+        if (err) {
+            console.warn("Fetch academic programs fallback:", err.message);
+            return res.json({ success: true, programs: defaultPrograms });
+        }
+        const seen = new Map();
+        defaultPrograms.forEach(p => seen.set(p.toUpperCase(), p));
+        (rows || []).forEach(r => {
+            const val = String(r.program_name || "").trim();
+            if (val && !seen.has(val.toUpperCase())) {
+                seen.set(val.toUpperCase(), val);
+            }
+        });
+        res.json({ success: true, programs: Array.from(seen.values()) });
+    });
+});
+
+app.post("/api/academic-programs", (req, res) => {
+    const rawName = String(req.body?.programName || req.body?.program || "").trim();
+    const createdBy = req.body?.createdByUserId || null;
+    if (!rawName) {
+        return res.json({ success: false, message: "Please enter a program name." });
+    }
+    if (rawName.length > 100) {
+        return res.json({ success: false, message: "Program name must be 100 characters or fewer." });
+    }
+    db.query(
+        "INSERT IGNORE INTO academic_programs (program_name, created_by_user_id) VALUES (?, ?)",
+        [rawName, createdBy],
+        (err) => {
+            if (err) {
+                console.error("Add academic program error:", err);
+                return res.json({ success: false, message: "Failed to save program." });
+            }
+            res.json({ success: true, program: rawName, message: `Program "${rawName}" added.` });
+        }
+    );
+});
+
 /* ================= ENROLL STUDENT ================= */
 
 app.post("/enroll-student", (req, res) => {
@@ -1589,6 +1700,7 @@ app.post("/enroll-student", (req, res) => {
         email
     } = req.body;
 
+    const cleanProgram = String(program || "").trim();
     const position = student_position || "Not Assigned";
     const year = new Date().getFullYear();
 
@@ -1641,7 +1753,7 @@ app.post("/enroll-student", (req, res) => {
                     fullname,
                     hashedPassword,
                     "student",
-                    program,
+                    cleanProgram,
                     year_level,
                     position,
                     enrolledByUserId || null,
@@ -1652,6 +1764,8 @@ app.post("/enroll-student", (req, res) => {
                         console.log(err);
                         return res.json({ success: false });
                     }
+
+                    registerAcademicProgramIfNew(cleanProgram, enrolledByUserId);
 
                     if (email) {
                         sendCredentialEmail(email, fullname, studentId, tempPassword, "Student");
@@ -1898,6 +2012,7 @@ app.put("/edit-student", (req, res) => {
                             console.log(err);
                             return res.json({ success: false, message: "Failed to update student." });
                         }
+                        registerAcademicProgramIfNew(program, requestorUserId);
                         notifyIfPasswordChanged();
                         res.json({ success: true, in_group: false });
                     });
@@ -2073,6 +2188,7 @@ app.post("/bulk-enroll-students", (req, res) => {
                                 error: "Insert failed"
                             });
                         } else {
+                            registerAcademicProgramIfNew(row.program, enrolledByUserId);
                             if (row.email) {
                                 sendCredentialEmail(row.email, row.fullname, studentId, tempPassword, "Student");
                             }
@@ -2120,6 +2236,13 @@ app.post("/add-repository", (req, res) => {
         category,
         year
     } = req.body;
+
+    if (!program || !title || !abstract || !objectives || !research_problem || !String(research_problem).trim() || !methodology) {
+        return res.json({
+            success: false,
+            message: "Please complete all required fields (Program, Title, Abstract, Objectives, Research Problem, Methodology)."
+        });
+    }
 
     const sql = `
         INSERT INTO repository
@@ -2479,6 +2602,7 @@ app.post(
             if (!extracted.program) missingRequired.push("Program");
             if (!extracted.title) missingRequired.push("Title");
             if (!extracted.abstract) missingRequired.push("Abstract");
+            if (!extracted.research_problem) missingRequired.push("Research Problem");
             if (!extracted.objectives) missingRequired.push("Objectives");
             if (!extracted.methodology) missingRequired.push("Methodology");
 
@@ -2513,6 +2637,13 @@ app.put("/update-repository/:id", (req, res) => {
         category,
         year
     } = req.body;
+
+    if (!program || !title || !abstract || !objectives || !research_problem || !String(research_problem).trim() || !methodology) {
+        return res.json({
+            success: false,
+            message: "Please complete all required fields (Program, Title, Abstract, Objectives, Research Problem, Methodology)."
+        });
+    }
 
     const sql = `
         UPDATE repository
@@ -6859,6 +6990,18 @@ function isDeploymentChapter14Document(documentType, documentTitle) {
     return hasDeployment && hasCh14;
 }
 
+function isFinalDefenseChapter14Document(documentType, documentTitle) {
+    const dt = String(documentType || "").toLowerCase();
+    const tl = String(documentTitle || "").toLowerCase();
+    const isFinal =
+        (dt.includes("final") && !dt.includes("pre-final") && !dt.includes("prefinal")) ||
+        (tl.includes("final defense") && !tl.includes("pre-final") && !tl.includes("prefinal"));
+    const hasCh14 =
+        dt.includes("chapter 1-4") || dt.includes("chapter 1 to 4") || dt.includes("chapters 1-4") ||
+        tl.includes("chapter 1-4") || tl.includes("chapter 1 to 4") || tl.includes("chapters 1-4");
+    return isFinal && hasCh14;
+}
+
 function evaluateDeploymentApprovalStatus(docRows) {
     let recApproved = false;
     let ch14Approved = false;
@@ -6894,7 +7037,9 @@ function checkAndCompleteGroupDeployment(groupDbId, callback) {
         (errG, groupRows) => {
             if (errG || !groupRows || groupRows.length === 0) return done(false);
             const currentStage = String(groupRows[0].stage || "").trim().toLowerCase();
-            if (currentStage === "completed") return done(true);
+            if (currentStage === "completed" || currentStage === "stage 5" || currentStage === "final" || currentStage === "final defense") {
+                return done(true);
+            }
 
             db.query(
                 `SELECT document_type, document_title, document_status FROM student_documents WHERE group_id = ?`,
@@ -6905,11 +7050,11 @@ function checkAndCompleteGroupDeployment(groupDbId, callback) {
                     if (!depStatus.allApproved) return done(false);
 
                     db.query(
-                        `UPDATE capstone_groups SET stage = 'Completed', progress = 100, status = 'Completed' WHERE id = ?`,
+                        `UPDATE capstone_groups SET stage = 'Stage 5', progress = 80 WHERE id = ?`,
                         [groupDbId],
                         (errU) => {
                             if (errU) {
-                                console.log("Error marking group Completed after Deployment approvals:", errU);
+                                console.log("Error advancing group to Final Defense after Deployment approvals:", errU);
                                 return done(false);
                             }
 
@@ -6920,8 +7065,8 @@ function checkAndCompleteGroupDeployment(groupDbId, callback) {
                                     if (!errM && members && members.length > 0 && typeof insertUserNotificationsByDbIds === "function") {
                                         insertUserNotificationsByDbIds(
                                             members.map(m => m.student_id),
-                                            "Capstone Completed!",
-                                            "Congratulations! Both Deployment requirements (Recommendation for Deployment and Chapter 1-4) have been approved. Your capstone progress is now Complete (100%).",
+                                            "Deployment Complete — Final Defense Unlocked!",
+                                            "Both Deployment requirements (Recommendation for Deployment and Chapter 1-4) have been approved. Your group has progressed to Final Defense (80%).",
                                             "Document Review"
                                         );
                                     }
@@ -8315,6 +8460,7 @@ app.post(
                                         updated_at = CURRENT_TIMESTAMP
                                     WHERE id = ?
                                     AND document_status != 'Approved'
+                                    AND COALESCE(file_path, '') NOT LIKE '/uploads/student_documents/%'
                                 `;
                                 db.query(updateDocSql, [proposedTitle, req.file.originalname, filePath, uploadedBy, docId], (err3, updRes) => {
                                     if (err3) {
@@ -10221,7 +10367,7 @@ app.get("/typed-defense-minutes/panelist/:userId", (req, res) => {
 });
 
 app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
-    const { id, panelistUserId, reviewStatus, reviewComment, signatureImage, dateSigned, pageIndex, xPct, yPct, widthPct, targetPanelIndex, targetPanelName } = req.body || {};
+    const { id, panelistUserId, reviewStatus, reviewComment, signatureImage, dateSigned, pageIndex, xPct, yPct, widthPct, targetPanelIndex, targetPanelName, addedComments } = req.body || {};
     const effectiveStatus = String(reviewStatus || "Approved").trim();
     const isApproval = effectiveStatus === "Approved";
 
@@ -10257,9 +10403,16 @@ app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
                 try { sigs = JSON.parse(record.panelist_signatures_json || "[]"); } catch (_) { sigs = []; }
                 if (!Array.isArray(sigs)) sigs = [];
 
-                // Resolve the logged-in panelist's own slot on the minutes sheet so one panelist can never sign another panelist's slot
+                // Resolve the logged-in panelist's own slot on the minutes sheet so one panelist can never sign or edit another panelist's slot
                 let resolvedTargetIdx = (targetPanelIndex !== undefined && targetPanelIndex !== null && targetPanelIndex !== "") ? Number(targetPanelIndex) : null;
                 let resolvedTargetName = targetPanelName ? String(targetPanelName).trim() : panelist.fullname;
+                let updatedMinutesJson = record.minutes_json;
+                const cleanAddedComments = (!isApproval && Array.isArray(addedComments))
+                    ? addedComments
+                        .map(item => String(item || "").replace(/^[-•*]\s*/, "").trim())
+                        .filter(Boolean)
+                    : [];
+
                 try {
                     const parsedMinutes = JSON.parse(record.minutes_json || "{}");
                     const sheetPanelists = Array.isArray(parsedMinutes.panelists) ? parsedMinutes.panelists : [];
@@ -10272,6 +10425,32 @@ app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
                     if (ownIdx >= 0) {
                         resolvedTargetIdx = ownIdx;
                         resolvedTargetName = sheetPanelists[ownIdx].name || panelist.fullname;
+
+                        // Only allow appending new Comments/Suggestions/Recommendations inside the logged-in panelist's OWN section when requesting revision or rejecting
+                        if (!isApproval && cleanAddedComments.length > 0) {
+                            const targetPanel = sheetPanelists[ownIdx];
+                            if (!Array.isArray(targetPanel.rows)) {
+                                targetPanel.rows = [];
+                            }
+                            if (
+                                targetPanel.rows.length === 1
+                                && !String(targetPanel.rows[0]?.comments || "").trim()
+                                && !String(targetPanel.rows[0]?.pageNo || "").trim()
+                                && !String(targetPanel.rows[0]?.actions || "").trim()
+                            ) {
+                                targetPanel.rows = [];
+                            }
+                            cleanAddedComments.forEach((commentText) => {
+                                targetPanel.rows.push({
+                                    pageNo: "",
+                                    comments: commentText,
+                                    actions: "",
+                                    fromPanel: true,
+                                    addedByPanelistReview: true
+                                });
+                            });
+                            updatedMinutesJson = JSON.stringify(parsedMinutes);
+                        }
                     }
                 } catch (_) { }
 
@@ -10310,8 +10489,8 @@ app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
                 }
 
                 db.query(
-                    "UPDATE typed_defense_minutes SET panelist_signatures_json = ?, status = ?, updated_at = NOW() WHERE id = ?",
-                    [JSON.stringify(sigs), nextStatus, id],
+                    "UPDATE typed_defense_minutes SET minutes_json = ?, panelist_signatures_json = ?, status = ?, updated_at = NOW() WHERE id = ?",
+                    [updatedMinutesJson, JSON.stringify(sigs), nextStatus, id],
                     (upErr) => {
                         if (upErr) {
                             console.error("Panelist sign defense minutes error:", upErr);
@@ -10321,10 +10500,14 @@ app.post("/typed-defense-minutes/panelist-sign", (req, res) => {
                         if (!isApproval) {
                             db.query("SELECT student_id FROM group_members WHERE group_id = ?", [record.group_id], (gmErr, gmRows) => {
                                 if (!gmErr && Array.isArray(gmRows) && gmRows.length > 0) {
+                                    const addedBlock = cleanAddedComments.length > 0
+                                        ? `\n\nAdded Comments/Suggestions/Recommendations:\n${cleanAddedComments.map(c => `- ${c}`).join("\n")}`
+                                        : "";
+                                    const noteBlock = reviewComment ? `\n\nPanelist Note:\n${reviewComment}` : "";
                                     insertUserNotificationsByDbIds(
                                         gmRows.map(r => r.student_id),
                                         `Defense Minutes ${effectiveStatus === "Rejected" ? "Rejected" : "Needs Revision"}`,
-                                        `Panelist ${panelist.fullname} marked your ${record.defense_type} minutes as "${effectiveStatus}".${reviewComment ? `\n\nPanelist Note:\n${reviewComment}` : ""}`,
+                                        `Panelist ${panelist.fullname} marked your ${record.defense_type} minutes as "${effectiveStatus}".${addedBlock}${noteBlock}`,
                                         "Defense Minutes"
                                     );
                                 }
@@ -10601,6 +10784,8 @@ app.get("/student-documents/:userId", (req, res) => {
                 // Build: latest verdict per defense_type
                 const latestVerdictByType = {};
                 const redefensePhases = new Set();
+                let failedDefensePhase = null;
+                const phaseOrder = ["Concept Presentation", "Outline Defense", "Pre-Final Defense", "Final Defense"];
                 if (!verdictErr && verdictRows) {
                     verdictRows.forEach(vRow => {
                         const defType = String(vRow.defense_type || "").trim();
@@ -10610,6 +10795,22 @@ app.get("/student-documents/:userId", (req, res) => {
                             latestVerdictByType[defType] = resVal;
                         }
                     });
+                    // Check if any defense phase has a latest verdict of Failed (in phase order)
+                    for (const pName of phaseOrder) {
+                        const matchedEntry = Object.entries(latestVerdictByType).find(([dt]) =>
+                            defenseTypesMatch(dt, pName)
+                        );
+                        if (matchedEntry && String(matchedEntry[1] || "").trim().toLowerCase() === "failed") {
+                            failedDefensePhase = matchedEntry[0];
+                            break;
+                        }
+                    }
+                    if (!failedDefensePhase) {
+                        const anyFailed = Object.entries(latestVerdictByType).find(([, rv]) =>
+                            String(rv || "").trim().toLowerCase() === "failed"
+                        );
+                        if (anyFailed) failedDefensePhase = anyFailed[0];
+                    }
                     // Determine re-defense phases: latest verdict is Conditional Passed, For Formal Defense, or For Re-Defense
                     Object.entries(latestVerdictByType).forEach(([defType, resVal]) => {
                         if (resVal === "Conditional Passed" || resVal === "Conditional Pass" || resVal === "For Formal Defense" || resVal === "For Re-Defense") {
@@ -10623,6 +10824,8 @@ app.get("/student-documents/:userId", (req, res) => {
                     defense_type,
                     latest_result
                 }));
+
+                const isStoppedByFailure = Boolean(failedDefensePhase);
 
                 const documents =
                     (documentsResult || []).map(row => {
@@ -10646,14 +10849,18 @@ app.get("/student-documents/:userId", (req, res) => {
                             adviserLocked = false;
                         }
 
+                        if (isStoppedByFailure) {
+                            adviserLocked = true;
+                        }
+
                         const submissionCount =
                             Number(row.submission_count || 0);
 
                         return {
                             ...row,
                             adviser_locked: adviserLocked,
-                            can_send: !adviserLocked && slotHasStudentDocumentFile(row),
-                            can_upload_replace: !adviserLocked
+                            can_send: !isStoppedByFailure && !adviserLocked && slotHasStudentDocumentFile(row),
+                            can_upload_replace: !isStoppedByFailure && !adviserLocked
                         };
 
                     });
@@ -10744,6 +10951,8 @@ app.get("/student-documents/:userId", (req, res) => {
                             documents,
                             title_proposals: proposalsResult || [],
                             defense_verdicts: defenseVerdicts || [],
+                            failed_defense_phase: failedDefensePhase,
+                            is_stopped_by_failure: isStoppedByFailure,
                             concept_presentation_graded: isConceptGraded,
                             graded_defense_types: Array.from(gradedSet)
                         });
@@ -10825,7 +11034,7 @@ function syncTitleProposalFromStudentDocument(groupDbId, documentType, documentT
 app.post(
     "/upload-student-document",
     studentDocumentUpload.single("documentFile"),
-    (req, res) => {
+    async (req, res) => {
 
         const {
             studentUserId,
@@ -10848,6 +11057,29 @@ app.post(
                 message: "Please complete all document information and upload a file."
             });
 
+        }
+
+        const conceptPaperSlotMatch = String(documentType || "").match(/^Concept Presentation • Proposed concept paper \(([123])\)$/i);
+        const fileFormatUpper = path.extname(req.file.originalname).replace(".", "").toUpperCase();
+        let resolvedDocumentTitle = String(documentTitle || "").trim();
+        const isGenericConceptTitle = /^Concept Presentation\s*-\s*Proposed concept paper\s*\(\d\)$/i.test(resolvedDocumentTitle);
+
+        if (conceptPaperSlotMatch && fileFormatUpper === "PDF") {
+            try {
+                const uploadedPhysicalPath = path.join(__dirname, "uploads", "student_documents", req.file.filename);
+                const extractedPdfTitle = await extractTitleFromPdfFile(uploadedPhysicalPath, req.file.originalname);
+                if (extractedPdfTitle && extractedPdfTitle.trim()) {
+                    resolvedDocumentTitle = extractedPdfTitle.trim();
+                } else if (!resolvedDocumentTitle || isGenericConceptTitle) {
+                    resolvedDocumentTitle = String(req.file.originalname || `Proposed Concept Paper ${conceptPaperSlotMatch[1]}`)
+                        .replace(/\.pdf$/i, "")
+                        .replace(/[_\-]+/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                }
+            } catch (titleExtractErr) {
+                console.warn("[Upload Student Document] Proposed concept paper title extraction warning:", titleExtractErr.message || titleExtractErr);
+            }
         }
 
         const groupSql = `
@@ -10891,6 +11123,34 @@ app.post(
 
             const uploadedBy =
                 groupResult[0].uploaded_by;
+
+            // Block adding/uploading any document in Records Management if group has a Failed panel verdict
+            const failedCheckSql = `
+                SELECT defense_type, panel_result
+                FROM defense_schedules
+                WHERE group_id = ?
+                  AND defense_status = 'Completed'
+                  AND panel_result IS NOT NULL
+                ORDER BY id DESC
+            `;
+
+            db.query(failedCheckSql, [groupDbId], (failCheckErr, failCheckRows) => {
+                if (!failCheckErr && Array.isArray(failCheckRows) && failCheckRows.length > 0) {
+                    const latestByType = {};
+                    failCheckRows.forEach(r => {
+                        const dt = String(r.defense_type || "").trim();
+                        if (dt && !latestByType[dt]) {
+                            latestByType[dt] = String(r.panel_result || "").trim();
+                        }
+                    });
+                    const failedEntry = Object.entries(latestByType).find(([, rv]) => rv.toLowerCase() === "failed");
+                    if (failedEntry) {
+                        return res.json({
+                            success: false,
+                            message: `Cannot add or upload documents in Records Management. Your group received a "Failed" panel verdict in "${failedEntry[0]}" and progress has stopped at this stage.`
+                        });
+                    }
+                }
 
             const filePath =
                 "/uploads/student_documents/" + req.file.filename;
@@ -10950,7 +11210,7 @@ app.post(
                             return db.query(
                                 updateSql,
                                 [
-                                    documentTitle,
+                                    resolvedDocumentTitle,
                                     req.file.originalname,
                                     filePath,
                                     fileFormat,
@@ -11023,7 +11283,7 @@ app.post(
                                     groupDbId,
                                     uploadedBy,
                                     documentType,
-                                    documentTitle,
+                                    resolvedDocumentTitle,
                                     req.file.originalname,
                                     filePath,
                                     fileFormat
@@ -11050,7 +11310,7 @@ app.post(
                             syncTitleProposalFromStudentDocument(
                                 groupDbId,
                                 documentType,
-                                documentTitle,
+                                resolvedDocumentTitle,
                                 req.file.originalname,
                                 filePath,
                                 uploadedBy,
@@ -11062,7 +11322,8 @@ app.post(
 
                                     res.json({
                                         success: true,
-                                        message: "Document uploaded successfully."
+                                        message: "Document uploaded successfully.",
+                                        extractedTitle: conceptPaperSlotMatch ? resolvedDocumentTitle : undefined
                                     });
 
                                 }
@@ -11124,6 +11385,8 @@ app.post(
 
                 }
             );
+
+            });
 
         });
 
@@ -12748,7 +13011,34 @@ app.post("/send-student-document", (req, res) => {
                     });
                 };
 
-                processSubmission(0, (err) => {
+                const failedSendCheckSql = `
+                    SELECT defense_type, panel_result
+                    FROM defense_schedules
+                    WHERE group_id = ?
+                      AND defense_status = 'Completed'
+                      AND panel_result IS NOT NULL
+                    ORDER BY id DESC
+                `;
+
+                db.query(failedSendCheckSql, [documentRow.group_db_id], (fErr, fRows) => {
+                    if (!fErr && Array.isArray(fRows) && fRows.length > 0) {
+                        const latestByType = {};
+                        fRows.forEach(r => {
+                            const dt = String(r.defense_type || "").trim();
+                            if (dt && !latestByType[dt]) {
+                                latestByType[dt] = String(r.panel_result || "").trim();
+                            }
+                        });
+                        const failedEntry = Object.entries(latestByType).find(([, rv]) => rv.toLowerCase() === "failed");
+                        if (failedEntry) {
+                            return res.json({
+                                success: false,
+                                message: `Cannot submit documents in Records Management. Your group received a "Failed" verdict in "${failedEntry[0]}" and progress has stopped at this stage.`
+                            });
+                        }
+                    }
+
+                    processSubmission(0, (err) => {
 
                     if (err) {
                         console.log(err);
@@ -12780,13 +13070,52 @@ app.post("/send-student-document", (req, res) => {
                             });
                         }
 
-                        // Send notification to selected faculty recipients
-                        insertUserNotificationsByDbIds(
-                            normalizedRecipients.map(r => r.receiverId),
-                            "New Document Submission",
-                            `Student ${documentRow.student_name} from group "${documentRow.group_name || documentRow.group_code}" has submitted a ${documentRow.document_type || "document"} ("${documentRow.document_title}").`,
-                            "Document"
-                        );
+                        // Send role-specific notification to each recipient so clicking routes to the exact portal side
+                        const adviserRecipients = [];
+                        const instructorRecipients = [];
+                        const adminRecipients = [];
+                        const otherRecipients = [];
+                        normalizedRecipients.forEach(r => {
+                            const tr = String(r.targetRole || "").toLowerCase();
+                            if (tr === "adviser") adviserRecipients.push(r.receiverId);
+                            else if (tr === "instructor") instructorRecipients.push(r.receiverId);
+                            else if (tr === "admin") adminRecipients.push(r.receiverId);
+                            else otherRecipients.push(r.receiverId);
+                        });
+                        const docLabel = `${documentRow.document_type || "document"} ("${documentRow.document_title}")`;
+                        const groupLabel = documentRow.group_name || documentRow.group_code;
+                        if (adviserRecipients.length > 0) {
+                            insertUserNotificationsByDbIds(
+                                adviserRecipients,
+                                "Adviser Review / E-Sign Required",
+                                `Student ${documentRow.student_name} from group "${groupLabel}" submitted ${docLabel} for your adviser review/e-signature.`,
+                                "Document Review"
+                            );
+                        }
+                        if (instructorRecipients.length > 0) {
+                            insertUserNotificationsByDbIds(
+                                instructorRecipients,
+                                "Instructor Review / E-Sign Required",
+                                `Student ${documentRow.student_name} from group "${groupLabel}" submitted ${docLabel} for your instructor review/e-signature.`,
+                                "Document Review"
+                            );
+                        }
+                        if (adminRecipients.length > 0) {
+                            insertUserNotificationsByDbIds(
+                                adminRecipients,
+                                "Admin E-Signature Required",
+                                `Student ${documentRow.student_name} from group "${groupLabel}" submitted ${docLabel} for your admin signature.`,
+                                "Document Review"
+                            );
+                        }
+                        if (otherRecipients.length > 0) {
+                            insertUserNotificationsByDbIds(
+                                otherRecipients,
+                                "New Document Submission",
+                                `Student ${documentRow.student_name} from group "${groupLabel}" has submitted a ${docLabel}.`,
+                                "Document"
+                            );
+                        }
 
                         res.json({
                             success: true,
@@ -12794,6 +13123,8 @@ app.post("/send-student-document", (req, res) => {
                         });
 
                     });
+
+                });
 
                 });
 
@@ -14124,6 +14455,8 @@ app.get("/api/defense-schedules/occupied-slots", (req, res) => {
         LEFT JOIN capstone_groups cg ON ds.group_id = cg.id
         WHERE ds.defense_date = ?
           AND ds.defense_status NOT IN ('Cancelled', 'Completed')
+          AND COALESCE(ds.schedule_code, '') NOT LIKE 'REEVAL-%'
+          AND COALESCE(ds.room_name, '') NOT LIKE 'External Re-Evaluation%'
     `;
     const params = [date];
 
@@ -14585,7 +14918,7 @@ app.put("/update-defense-schedule/:scheduleId", (req, res) => {
             FROM defense_schedules ds
             LEFT JOIN capstone_groups cg ON ds.group_id = cg.id
             WHERE ds.id = ?
-            AND ds.created_by = ?
+            AND (ds.created_by = ? OR ds.defense_status IN ('Scheduled', 'Ongoing'))
             LIMIT 1
         `;
 
@@ -15023,7 +15356,7 @@ app.delete("/delete-defense-schedule/:scheduleId", (req, res) => {
                 room_name
             FROM defense_schedules
             WHERE id = ?
-            AND created_by = ?
+            AND (created_by = ? OR defense_status IN ('Scheduled', 'Ongoing'))
             LIMIT 1
         `;
 
@@ -15251,29 +15584,82 @@ app.post("/force-complete-defense-schedule/:scheduleId", (req, res) => {
 
                     const nextStage = getGroupStageAfterDefense(schedule.defense_type, compiledResult);
                     if (nextStage && schedule.group_id) {
-                        db.query("UPDATE capstone_groups SET stage = ?, progress = ? WHERE id = ?", [nextStage, getProgressPercentForStage(nextStage), schedule.group_id], () => { });
+                        const updGroupSql = nextStage === "Completed"
+                            ? "UPDATE capstone_groups SET stage = ?, progress = ?, status = 'Completed' WHERE id = ?"
+                            : "UPDATE capstone_groups SET stage = ?, progress = ? WHERE id = ?";
+                        db.query(updGroupSql, [nextStage, getProgressPercentForStage(nextStage), schedule.group_id], () => { });
                     }
 
                     if (String(schedule.defense_type || "").toLowerCase().includes("outline")) {
                         ensureOutlineDefenseGroupChat(scheduleId, () => { });
                     }
 
-                    const memberSql = `SELECT student_id FROM group_members WHERE group_id = ?`;
-                    db.query(memberSql, [schedule.group_id], (mErr, mRows) => {
-                        if (!mErr && mRows) {
+                    const isConditionalPassedResult =
+                        compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass";
+                    const isFormalDefenseResult =
+                        compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense";
+                    const isFailedResult =
+                        compiledResult === "Failed";
+
+                    const formattedComments = (evaluations || [])
+                        .map((row, idx) => {
+                            const txt = String(row.comments || "").trim();
+                            if (!txt || txt.toLowerCase() === "none") return "";
+                            return `Panelist ${idx + 1}:\n${txt}`;
+                        })
+                        .filter(Boolean)
+                        .join("\n");
+
+                    const sendForceCompleteResponse = () => {
+                        const memberSql = `SELECT student_id FROM group_members WHERE group_id = ?`;
+                        db.query(memberSql, [schedule.group_id], (mErr, mRows) => {
+                            if (!mErr && mRows) {
+                                let stuMsg = `Your ${schedule.defense_type} has been completed with ${count} panel evaluations. Result: ${compiledResult}.`;
+                                if (isConditionalPassedResult) {
+                                    stuMsg += ` An open external re-evaluation (no time limit) has been automatically created for your panel, and panelist Comments/Suggestions/Recommendations were added to your Defense Minutes.`;
+                                    if (formattedComments) stuMsg += `\n${formattedComments}`;
+                                } else if (isFormalDefenseResult) {
+                                    stuMsg += ` Your instructor has been notified to create another Formal Defense schedule. Please review the panelist Comments/Suggestions/Recommendations below before your next presentation:`;
+                                    if (formattedComments) stuMsg += `\n${formattedComments}`;
+                                } else if (isFailedResult) {
+                                    stuMsg += ` Your group's progress has stopped at this stage and remaining phases are locked.`;
+                                    if (formattedComments) stuMsg += `\nComments/Suggestions/Recommendations:\n${formattedComments}`;
+                                } else if (compiledResult === "Passed" && formattedComments) {
+                                    stuMsg += `\nComments/Suggestions/Recommendations (for viewing only):\n${formattedComments}`;
+                                }
+                                insertUserNotificationsByDbIds(
+                                    mRows.map(r => r.student_id),
+                                    "Defense Completed",
+                                    stuMsg,
+                                    "Defense Evaluation"
+                                );
+                            }
+                        });
+
+                        if (schedule.created_by && isFormalDefenseResult) {
                             insertUserNotificationsByDbIds(
-                                mRows.map(r => r.student_id),
-                                "Defense Completed",
-                                `Your ${schedule.defense_type} has been completed with ${count} panel evaluations. Result: ${compiledResult}.`,
+                                [schedule.created_by],
+                                "Action Required: Schedule New Formal Defense",
+                                `Evaluations for ${schedule.defense_type} are complete. Final result: For Formal Defense. You are required to create another defense schedule for this group.`,
                                 "Defense Evaluation"
                             );
                         }
-                    });
 
-                    res.json({
-                        success: true,
-                        message: `Defense schedule force-completed successfully with ${count} panel evaluations.`
-                    });
+                        res.json({
+                            success: true,
+                            message: isConditionalPassedResult
+                                ? `Defense schedule force-completed with verdict Conditional Passed. An open external re-evaluation (no time limit) was automatically created for the panel.`
+                                : `Defense schedule force-completed successfully with ${count} panel evaluations.`
+                        });
+                    };
+
+                    if (isConditionalPassedResult) {
+                        createConditionalPassedReEvaluationSchedule(scheduleId, () => {
+                            sendForceCompleteResponse();
+                        });
+                    } else {
+                        sendForceCompleteResponse();
+                    }
                 });
             });
         });
@@ -15505,10 +15891,17 @@ const CONSULTATION_CATALOG = [
         ]
     },
     {
+        category: "Deployment",
+        items: [
+            { label: "Recommendation for Deployment", slots: 1 },
+            { label: "Chapter 1-4", slots: 1 }
+        ]
+    },
+    {
         category: "Final Defense",
         items: [
-            { label: "Chapter 1-4", slots: 1 },
             { label: "Recommendation letter", slots: 1 },
+            { label: "Chapter 1-4", slots: 1 },
             { label: "Defense minutes", slots: 1 }
         ]
     }
@@ -15923,7 +16316,8 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
         SELECT
             ds.id,
             ds.defense_type,
-            ds.defense_status
+            ds.defense_status,
+            ds.panel_result
         FROM defense_schedules ds
         WHERE ds.group_id = ?
         AND ds.defense_status != 'Cancelled'
@@ -15951,6 +16345,26 @@ function fetchPriorDefensePanelEvaluationStatus(groupDbId, defenseType, callback
                 message: `No ${priorDefenseType} schedule found. Complete that defense before scheduling ${defenseType}.`
             });
 
+        }
+
+        const priorVerdict = String(priorSchedule.panel_result || "").trim();
+        if (priorVerdict.toLowerCase() === "failed") {
+            return callback(null, {
+                ok: false,
+                prior_defense_type: priorDefenseType,
+                evaluations_submitted: 0,
+                evaluations_required: 0,
+                message: `Cannot schedule ${defenseType}. This group received a "Failed" verdict in ${priorDefenseType} and cannot progress further.`
+            });
+        }
+        if (priorVerdict === "Conditional Passed" || priorVerdict === "Conditional Pass" || priorVerdict === "For Formal Defense" || priorVerdict === "For Re-Defense") {
+            return callback(null, {
+                ok: false,
+                prior_defense_type: priorDefenseType,
+                evaluations_submitted: 0,
+                evaluations_required: 0,
+                message: `Cannot schedule ${defenseType}. This group has not yet passed ${priorDefenseType} (Latest Verdict: ${priorVerdict}).`
+            });
         }
 
         const panelistsSql = `
@@ -16074,7 +16488,7 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
         FROM defense_schedules
         WHERE group_id = ?
         AND defense_status != 'Cancelled'
-        ORDER BY defense_date DESC, id DESC
+        ORDER BY id DESC
     `;
 
     db.query(schedulesSql, [groupDbId], (schedulesErr, scheduleRows) => {
@@ -16120,6 +16534,53 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
                 ready_for_schedule: false,
                 already_passed: true,
                 message: `Cannot create defense schedule. This group has already completed and passed the "${defenseType}" (Result: ${completedPassedSchedule.panel_result}).`
+            });
+        }
+
+        // 2b. Check latest completed verdict per defense type for Failed (stops all progression)
+        //     or Conditional Passed for this defense type (handled automatically via external re-evaluation, no new schedule needed)
+        const latestCompletedByType = {};
+        rows.forEach(row => {
+            if (row.defense_status === 'Completed' && row.panel_result) {
+                const key = String(row.defense_type || '').trim();
+                if (key && !latestCompletedByType[key]) {
+                    latestCompletedByType[key] = String(row.panel_result || '').trim();
+                }
+            }
+        });
+
+        const failedEntry = Object.entries(latestCompletedByType).find(([, verdict]) =>
+            verdict.toLowerCase() === 'failed'
+        );
+        if (failedEntry) {
+            return callback(null, {
+                documents: [],
+                summaries: [],
+                missing: [],
+                documents_ready_for_schedule: false,
+                prior_panel_evaluations: null,
+                ready_for_schedule: false,
+                has_failed_verdict: true,
+                failed_defense_type: failedEntry[0],
+                message: `Cannot create defense schedule. This group received a "Failed" verdict in "${failedEntry[0]}" and cannot progress further.`
+            });
+        }
+
+        const latestForThisType = Object.entries(latestCompletedByType).find(([dt]) =>
+            defenseTypesMatch(dt, defenseType)
+        );
+        if (latestForThisType && (latestForThisType[1] === 'Conditional Passed' || latestForThisType[1] === 'Conditional Pass')) {
+            return callback(null, {
+                documents: [],
+                summaries: [],
+                missing: [],
+                documents_ready_for_schedule: false,
+                prior_panel_evaluations: null,
+                ready_for_schedule: false,
+                conditional_reeval_open: true,
+                is_redefense: false,
+                redefense_verdict: "Conditional Passed",
+                message: `No new schedule needed. This group received "Conditional Passed" for "${defenseType}" — an external re-evaluation (no time limit) is automatically handled by the panel.`
             });
         }
 
@@ -16170,7 +16631,7 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
                             // If not all panelists graded, ensure readyForSchedule is false
                         }
 
-                        // Check if group has a completed schedule for this defense type (re-defense scenario)
+                        // Check if group has a completed schedule for this defense type (re-defense scenario: For Formal Defense only)
                         const priorCompletedForType = rows.find(row =>
                             row.defense_status === 'Completed' &&
                             defenseTypesMatch(row.defense_type, defenseType)
@@ -16178,11 +16639,8 @@ function validateGroupReadyForScheduleCreate(groupDbId, defenseType, options, ca
                         let isRedefense = false;
                         let redefenseVerdict = null;
                         if (priorCompletedForType) {
-                            const res = String(priorCompletedForType.panel_result || "").trim();
-                            if (res === "Conditional Passed" || res === "Conditional Pass") {
-                                isRedefense = true;
-                                redefenseVerdict = "Conditional Passed";
-                            } else if (res === "For Formal Defense" || res === "For Re-Defense") {
+                            const resVal = String(priorCompletedForType.panel_result || "").trim();
+                            if (resVal === "For Formal Defense" || resVal === "For Re-Defense") {
                                 isRedefense = true;
                                 redefenseVerdict = "For Formal Defense";
                             }
@@ -16343,7 +16801,10 @@ app.get("/group-consultation-approval-status/:groupDbId", (req, res) => {
                 required_phase_summaries: result.summaries || [],
                 prior_panel_evaluations: result.prior_panel_evaluations || null,
                 is_redefense: result.is_redefense || false,
-                redefense_verdict: result.redefense_verdict || null
+                redefense_verdict: result.redefense_verdict || null,
+                conditional_reeval_open: result.conditional_reeval_open || false,
+                has_failed_verdict: result.has_failed_verdict || false,
+                failed_defense_type: result.failed_defense_type || null
             });
 
         }
@@ -16556,6 +17017,8 @@ app.post("/create-defense-schedule", (req, res) => {
                         WHERE defense_date = ?
                         AND room_name = ?
                         AND defense_status NOT IN ('Cancelled', 'Completed')
+                        AND COALESCE(schedule_code, '') NOT LIKE 'REEVAL-%'
+                        AND COALESCE(room_name, '') NOT LIKE 'External Re-Evaluation%'
                         AND (
                             (? < end_time AND ? > start_time)
                         )
@@ -16588,7 +17051,7 @@ app.post("/create-defense-schedule", (req, res) => {
                                         });
                                     }
 
-                                    // Check panelist conflicts with other defense schedules
+                                    // Check panelist conflicts with other defense schedules (ignore external no-time-limit re-evaluations)
                                     const panelistConflictSql = `
                                 SELECT dsp.panelist_id, u.fullname
                                 FROM defense_schedule_panelists dsp
@@ -16597,6 +17060,8 @@ app.post("/create-defense-schedule", (req, res) => {
                                 WHERE dsp.panelist_id IN (?)
                                 AND ds.defense_date = ?
                                 AND ds.defense_status NOT IN ('Cancelled', 'Completed')
+                                AND COALESCE(ds.schedule_code, '') NOT LIKE 'REEVAL-%'
+                                AND COALESCE(ds.room_name, '') NOT LIKE 'External Re-Evaluation%'
                                 AND (? < ds.end_time AND ? > ds.start_time)
                                 LIMIT 1
                             `;
@@ -17310,11 +17775,11 @@ function notifyDefenseUsersWithDetails(groupDbId, panelistIds, title, action, de
 function notifyDefenseUsers(groupDbId, panelistIds, title, message) {
 
     const membersSql = `
-        SELECT student_id AS user_id
+        SELECT student_id AS user_id, 'student' AS notify_role
         FROM group_members
         WHERE group_id = ?
         UNION
-        SELECT adviser_id AS user_id
+        SELECT adviser_id AS user_id, 'adviser' AS notify_role
         FROM capstone_groups
         WHERE id = ?
           AND adviser_id IS NOT NULL
@@ -17327,35 +17792,46 @@ function notifyDefenseUsers(groupDbId, panelistIds, title, message) {
             return;
         }
 
-        const receiverIds =
-            members.map(member => member.user_id);
+        const panelistIdSet = new Set(
+            (Array.isArray(panelistIds) ? panelistIds : [panelistIds])
+                .map(id => Number(id))
+                .filter(id => id > 0)
+        );
 
-        if (Array.isArray(panelistIds)) {
+        const recipientRows = [];
+        const seenIds = new Set();
 
-            panelistIds.forEach(panelistId => {
-                receiverIds.push(panelistId);
-            });
-
-        } else {
-
-            receiverIds.push(panelistIds);
-
-        }
-
-        const uniqueReceiverIds =
-            [...new Set(receiverIds)];
-
-        if (uniqueReceiverIds.length === 0) {
-            return;
-        }
-
-        const values =
-            uniqueReceiverIds.map(userId => [
-                userId,
+        // 1. Panelists first (explicitly tagged so clicking goes to Panelist Defense Schedule)
+        panelistIdSet.forEach(pid => {
+            if (seenIds.has(pid)) return;
+            seenIds.add(pid);
+            recipientRows.push([
+                pid,
                 title,
-                message,
+                `You are assigned as a panelist. ${message}`,
                 "Defense Schedule"
             ]);
+        });
+
+        // 2. Group students & adviser
+        (members || []).forEach(member => {
+            const uid = Number(member.user_id);
+            if (!uid || seenIds.has(uid)) return;
+            seenIds.add(uid);
+            const msg = member.notify_role === "adviser"
+                ? `Your advisory group has a defense schedule update. ${message}`
+                : message;
+            recipientRows.push([
+                uid,
+                title,
+                msg,
+                "Defense Schedule"
+            ]);
+        });
+
+        if (recipientRows.length === 0) {
+            return;
+        }
 
         const insertSql = `
             INSERT INTO user_notifications
@@ -17368,7 +17844,7 @@ function notifyDefenseUsers(groupDbId, panelistIds, title, message) {
             VALUES ?
         `;
 
-        db.query(insertSql, [values], (err) => {
+        db.query(insertSql, [recipientRows], (err) => {
 
             if (err) {
                 console.log(err);
@@ -18078,6 +18554,11 @@ function fetchUserActionQueuePendingCounts(user, callback) {
                           AND TRIM(dpe.panel_result) != ''
                     )`,
             params: [uid, uid]
+        },
+        {
+            path: "/faculty/panelist/consultation.html",
+            sql: `SELECT COUNT(*) AS cnt FROM consultations WHERE assigned_faculty_id = ? AND LOWER(COALESCE(assigned_role, '')) = 'panelist' AND status = 'Pending'`,
+            params: [uid]
         }
     ];
 
@@ -19486,6 +19967,11 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                 const is_redefense = Boolean(isFormalDef || isCondPass);
                                 const prior_verdict = isFormalDef ? 'For Formal Defense' : (isCondPass ? 'Conditional Passed' : null);
                                 const max_grade = isFormalDef ? 75 : null;
+                                const is_conditional_reeval = Boolean(
+                                    String(schedule.schedule_code || "").startsWith("REEVAL-")
+                                    || String(schedule.room_name || "").toLowerCase().includes("external re-evaluation")
+                                    || (isCondPass && String(schedule.notes || "").toLowerCase().includes("no time limit"))
+                                );
 
                                 const titleProposals =
                                     (proposals || [])
@@ -19529,6 +20015,7 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                             id: myEvalRow.id,
                                             score: myEvalRow.score,
                                             panel_result: myEvalRow.panel_result,
+                                            first_verdict: myEvalRow.first_verdict || null,
                                             comments: myEvalRow.comments,
                                             recommendations: myEvalRow.recommendations,
                                             approved_title_id: myEvalRow.approved_title_id,
@@ -19578,8 +20065,18 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                         && evaluationsSubmitted >= evaluationsRequired,
 
                                     is_redefense: is_redefense,
+                                    is_conditional_reeval: is_conditional_reeval,
                                     prior_verdict: prior_verdict,
-                                    max_grade: max_grade
+                                    max_grade: max_grade,
+                                    prior_evaluations: priorMatches.map(p => ({
+                                        schedule_id: p.id,
+                                        schedule_code: p.schedule_code || "",
+                                        defense_date: p.defense_date || null,
+                                        defense_type: p.defense_type || schedule.defense_type,
+                                        panel_result: p.panel_result || "",
+                                        comments: p.comments || "",
+                                        recommendations: p.recommendations || ""
+                                    }))
                                 };
 
                             });
@@ -19689,100 +20186,198 @@ app.get("/panelist-assigned-defenses/:userId", (req, res) => {
                                 });
                             }
 
-                            if (scheduleIds.length === 0) {
-
-                                return finishPanelistResponse(
-                                    proposals,
-                                    documents,
-                                    [],
-                                    []
-                                );
-
-                            }
-
-                            const myEvaluationsSql = `
+                            const conceptDocsSql = `
                                 SELECT
                                     id,
-                                    schedule_id,
-                                    panelist_id,
-                                    score,
-                                    panel_result,
-                                    comments,
-                                    recommendations,
-                                    approved_title_id,
-                                    concept_evaluation_details,
-                                    outline_evaluation_details
-                                FROM defense_panel_evaluations
-                                WHERE panelist_id = ?
-                                AND schedule_id IN (?)
+                                    group_id,
+                                    document_type,
+                                    document_title,
+                                    file_name,
+                                    file_path,
+                                    document_status,
+                                    created_at
+                                FROM student_documents
+                                WHERE group_id IN (?)
+                                  AND document_type LIKE 'Concept Presentation • Proposed concept paper (%'
+                                  AND file_path IS NOT NULL
+                                  AND TRIM(file_path) != ''
+                                ORDER BY CASE WHEN document_status = 'Approved' THEN 0 ELSE 1 END ASC, id DESC
                             `;
 
-                            db.query(
-                                myEvaluationsSql,
-                                [panelistDbId, scheduleIds],
-                                (myEvalErr, myEvaluations) => {
+                            db.query(conceptDocsSql, [groupDbIds], async (conceptDocsErr, conceptDocs) => {
+                                if (conceptDocsErr) {
+                                    console.log("Failed to load concept paper documents:", conceptDocsErr);
+                                }
 
-                                    if (myEvalErr) {
-                                        console.log(myEvalErr);
+                                // Build Concept Presentation titles strictly from Records Management Proposed concept paper (1)-(3)
+                                const bestSlotByKey = new Map();
+                                (conceptDocs || []).forEach((doc) => {
+                                    const m = String(doc.document_type || "").match(/^Concept Presentation • Proposed concept paper \(([123])\)$/i);
+                                    if (!m) return;
+                                    const slotNum = parseInt(m[1], 10);
+                                    const key = `${doc.group_id}:${slotNum}`;
+                                    if (!bestSlotByKey.has(key)) {
+                                        bestSlotByKey.set(key, { doc, slotNum });
+                                    }
+                                });
 
-                                        return res.json({
-                                            success: false,
-                                            message: "Failed to load panel evaluations."
-                                        });
+                                const recordsManagementProposals = [];
+                                const slotEntries = Array.from(bestSlotByKey.values()).sort((a, b) =>
+                                    (Number(a.doc.group_id) - Number(b.doc.group_id)) || (a.slotNum - b.slotNum)
+                                );
+
+                                for (const entry of slotEntries) {
+                                    const { doc, slotNum } = entry;
+                                    let resolvedTitle = String(doc.document_title || "").trim();
+                                    const isGenericPlaceholder = !resolvedTitle || /^Concept Presentation\s*-\s*Proposed concept paper\s*\(\d\)$/i.test(resolvedTitle);
+
+                                    if (isGenericPlaceholder && doc.file_path && /\.pdf$/i.test(String(doc.file_path))) {
+                                        try {
+                                            const relPath = String(doc.file_path).replace(/^\/+/, "");
+                                            const physicalPath = path.join(__dirname, relPath);
+                                            if (fs.existsSync(physicalPath)) {
+                                                const extracted = await extractTitleFromPdfFile(physicalPath, doc.file_name || "");
+                                                if (extracted && extracted.trim()) {
+                                                    resolvedTitle = extracted.trim();
+                                                    db.query(
+                                                        "UPDATE student_documents SET document_title = ? WHERE id = ?",
+                                                        [resolvedTitle, doc.id],
+                                                        () => { }
+                                                    );
+                                                    db.query(
+                                                        "UPDATE title_proposals SET proposed_title = ? WHERE group_id = ? AND title_number = ?",
+                                                        [resolvedTitle, doc.group_id, slotNum],
+                                                        () => { }
+                                                    );
+                                                }
+                                            }
+                                        } catch (extractErr) {
+                                            console.warn("Panelist concept paper title backfill warning:", extractErr.message || extractErr);
+                                        }
                                     }
 
-                                    const evaluationCountsSql = `
-                                        SELECT
-                                            schedule_id,
-                                            COUNT(*) AS evaluation_count
-                                        FROM defense_panel_evaluations
-                                        WHERE schedule_id IN (?)
-                                        GROUP BY schedule_id
-                                    `;
+                                    if (!resolvedTitle) {
+                                        resolvedTitle = String(doc.file_name || `Proposed Concept Paper ${slotNum}`)
+                                            .replace(/\.pdf$/i, "")
+                                            .replace(/[_\-]+/g, " ")
+                                            .replace(/\s+/g, " ")
+                                            .trim();
+                                    }
 
-                                    db.query(
-                                        evaluationCountsSql,
-                                        [scheduleIds],
-                                        (countErr, evaluationCounts) => {
+                                    const syncedProposal = (proposals || []).find((tp) =>
+                                        Number(tp.group_id) === Number(doc.group_id)
+                                        && Number(tp.title_number) === slotNum
+                                    );
 
-                                            if (countErr) {
-                                                console.log(countErr);
+                                    recordsManagementProposals.push({
+                                        id: syncedProposal ? syncedProposal.id : doc.id,
+                                        group_id: doc.group_id,
+                                        title_number: slotNum,
+                                        proposed_title: resolvedTitle,
+                                        file_name: doc.file_name,
+                                        file_path: doc.file_path,
+                                        status: doc.document_status,
+                                        created_at: doc.created_at
+                                    });
+                                }
 
-                                                return res.json({
-                                                    success: false,
-                                                    message: "Failed to count panel evaluations."
-                                                });
-                                            }
+                                if (scheduleIds.length === 0) {
 
-                                            const priorSchedulesSql = `
-                                                SELECT id, group_id, defense_type, panel_result
-                                                FROM defense_schedules
-                                                WHERE group_id IN (?)
-                                                  AND defense_status = 'Completed'
-                                                ORDER BY id ASC
-                                            `;
-
-                                            db.query(
-                                                priorSchedulesSql,
-                                                [groupDbIds],
-                                                (priorErr, priorSchedules) => {
-
-                                                    finishPanelistResponse(
-                                                        proposals,
-                                                        documents,
-                                                        myEvaluations,
-                                                        evaluationCounts,
-                                                        priorSchedules || []
-                                                    );
-
-                                                }
-                                            );
-
-                                        }
+                                    return finishPanelistResponse(
+                                        recordsManagementProposals,
+                                        documents,
+                                        [],
+                                        []
                                     );
 
                                 }
-                            );
+
+                                const myEvaluationsSql = `
+                                    SELECT
+                                        id,
+                                        schedule_id,
+                                        panelist_id,
+                                        score,
+                                        panel_result,
+                                        first_verdict,
+                                        comments,
+                                        recommendations,
+                                        approved_title_id,
+                                        concept_evaluation_details,
+                                        outline_evaluation_details
+                                    FROM defense_panel_evaluations
+                                    WHERE panelist_id = ?
+                                    AND schedule_id IN (?)
+                                `;
+
+                                db.query(
+                                    myEvaluationsSql,
+                                    [panelistDbId, scheduleIds],
+                                    (myEvalErr, myEvaluations) => {
+
+                                        if (myEvalErr) {
+                                            console.log(myEvalErr);
+
+                                            return res.json({
+                                                success: false,
+                                                message: "Failed to load panel evaluations."
+                                            });
+                                        }
+
+                                        const evaluationCountsSql = `
+                                            SELECT
+                                                schedule_id,
+                                                COUNT(*) AS evaluation_count
+                                            FROM defense_panel_evaluations
+                                            WHERE schedule_id IN (?)
+                                            GROUP BY schedule_id
+                                        `;
+
+                                        db.query(
+                                            evaluationCountsSql,
+                                            [scheduleIds],
+                                            (countErr, evaluationCounts) => {
+
+                                                if (countErr) {
+                                                    console.log(countErr);
+
+                                                    return res.json({
+                                                        success: false,
+                                                        message: "Failed to count panel evaluations."
+                                                    });
+                                                }
+
+                                                const priorSchedulesSql = `
+                                                    SELECT id, schedule_code, group_id, defense_type, defense_date, panel_result, comments, recommendations
+                                                    FROM defense_schedules
+                                                    WHERE group_id IN (?)
+                                                      AND defense_status = 'Completed'
+                                                    ORDER BY id ASC
+                                                `;
+
+                                                db.query(
+                                                    priorSchedulesSql,
+                                                    [groupDbIds],
+                                                    (priorErr, priorSchedules) => {
+
+                                                        finishPanelistResponse(
+                                                            recordsManagementProposals,
+                                                            documents,
+                                                            myEvaluations,
+                                                            evaluationCounts,
+                                                            priorSchedules || []
+                                                        );
+
+                                                    }
+                                                );
+
+                                            }
+                                        );
+
+                                    }
+                                );
+
+                            });
 
                         });
 
@@ -20109,8 +20704,8 @@ function getGroupStageAfterDefense(defenseType, panelResult) {
     const stageMap = {
         "Concept Presentation": "Stage 2",
         "Outline Defense": "Stage 3",
-        "Pre-Final Defense": "Stage 4",
-        "Final Defense": "Deployment"
+        "Pre-Final Defense": "Deployment",
+        "Final Defense": "Completed"
     };
 
     return stageMap[phaseCategory] || null;
@@ -20124,9 +20719,10 @@ function getProgressPercentForStage(stage) {
         "Stage 2": 20,
         "Stage 3": 40,
         "Stage 4": 60,
+        "Deployment": 60,
         "Stage 5": 80,
-        "Deployment": 80,
         "Final": 80,
+        "Final Defense": 80,
         "Completed": 100
     };
 
@@ -20169,6 +20765,129 @@ function pickCompiledApprovedTitleId(evaluations) {
 
     return sorted[0][0];
 
+}
+
+function createConditionalPassedReEvaluationSchedule(completedScheduleId, callback) {
+    const done = typeof callback === "function" ? callback : () => { };
+
+    const srcSql = `
+        SELECT id, group_id, panelist_id, created_by, defense_type
+        FROM defense_schedules
+        WHERE id = ?
+        LIMIT 1
+    `;
+
+    db.query(srcSql, [completedScheduleId], (srcErr, srcRows) => {
+        if (srcErr || !srcRows || srcRows.length === 0) {
+            return done(srcErr || null, null);
+        }
+
+        const src = srcRows[0];
+
+        // Avoid duplicate open re-evaluation for the same group & defense type
+        const existingOpenSql = `
+            SELECT id
+            FROM defense_schedules
+            WHERE group_id = ?
+              AND defense_type = ?
+              AND defense_status IN ('Scheduled', 'Ongoing')
+              AND id > ?
+            LIMIT 1
+        `;
+
+        db.query(existingOpenSql, [src.group_id, src.defense_type, src.id], (exErr, exRows) => {
+            if (exErr) return done(exErr, null);
+            if (exRows && exRows.length > 0) {
+                return done(null, { already_exists: true, schedule_id: exRows[0].id });
+            }
+
+            const panelSql = `
+                SELECT panelist_id
+                FROM defense_schedule_panelists
+                WHERE schedule_id = ?
+                ORDER BY id ASC
+            `;
+
+            db.query(panelSql, [src.id], (pErr, pRows) => {
+                if (pErr) return done(pErr, null);
+
+                const panelistIds = (pRows || []).map(r => r.panelist_id).filter(Boolean);
+                const chairId = src.panelist_id || panelistIds[0] || null;
+                const now = new Date();
+                const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                const reevalCode = `REEVAL-${Date.now()}`;
+
+                const insertReevalSql = `
+                    INSERT INTO defense_schedules
+                    (
+                        schedule_code,
+                        group_id,
+                        panelist_id,
+                        created_by,
+                        room_name,
+                        defense_date,
+                        start_time,
+                        end_time,
+                        defense_type,
+                        defense_status,
+                        notes
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Ongoing', ?)
+                `;
+
+                const reevalNotes = "Automatic Re-Evaluation (Conditional Passed — No Time Limit). Coordinated externally by the panel.";
+
+                db.query(
+                    insertReevalSql,
+                    [
+                        reevalCode,
+                        src.group_id,
+                        chairId,
+                        src.created_by,
+                        "External Re-Evaluation (No Time Limit)",
+                        todayIso,
+                        "00:00:00",
+                        "23:59:00",
+                        src.defense_type,
+                        reevalNotes
+                    ],
+                    (insErr, insResult) => {
+                        if (insErr) {
+                            console.error("Failed to auto-create Conditional Passed re-evaluation:", insErr);
+                            return done(insErr, null);
+                        }
+
+                        const newScheduleId = insResult.insertId;
+                        const allPanelists = panelistIds.length > 0 ? panelistIds : (chairId ? [chairId] : []);
+
+                        if (allPanelists.length === 0) {
+                            return done(null, { created: true, schedule_id: newScheduleId });
+                        }
+
+                        const values = allPanelists.map(pid => [newScheduleId, pid]);
+                        db.query(
+                            `INSERT INTO defense_schedule_panelists (schedule_id, panelist_id) VALUES ?`,
+                            [values],
+                            (panInsErr) => {
+                                if (panInsErr) {
+                                    console.error("Failed to attach panelists to Conditional Passed re-evaluation:", panInsErr);
+                                }
+
+                                insertUserNotificationsByDbIds(
+                                    allPanelists,
+                                    "Re-Evaluation Ready (No Time Limit)",
+                                    `A Conditional Passed re-evaluation for ${src.defense_type} has been automatically created with no time limit. Submit your updated evaluation once external compliance is completed.`,
+                                    "Defense Evaluation"
+                                );
+
+                                return done(null, { created: true, schedule_id: newScheduleId });
+                            }
+                        );
+                    }
+                );
+            });
+        });
+    });
 }
 
 function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
@@ -20288,6 +21007,9 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
                         .map(row => row.outline_evaluation_details)
                         .find(value => value) || null;
 
+                const isCompiledCondPass =
+                    compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass";
+
                 const updateScheduleSql = `
                     UPDATE defense_schedules
                     SET
@@ -20298,7 +21020,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
                         approved_title_id = ?,
                         concept_evaluation_details = ?,
                         outline_evaluation_details = ?,
-                        defense_status = 'Completed'
+                        defense_status = ?
                     WHERE id = ?
                 `;
 
@@ -20312,6 +21034,7 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
                         compiledApprovedTitleId,
                         compiledConceptDetails,
                         compiledOutlineDetails,
+                        isCompiledCondPass ? "Ongoing" : "Completed",
                         scheduleId
                     ],
                     (updateErr) => {
@@ -20328,60 +21051,116 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
 
                         const finishGroupUpdate = () => {
                             const continueAfterOutlineChat = () => {
+                                const isConditionalPassedResult =
+                                    compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass";
+                                const isFormalDefenseResult =
+                                    compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense";
+                                const isPassedWithRevisionsResult =
+                                    compiledResult === "Passed with Revisions";
+                                const isPassedResult =
+                                    compiledResult === "Passed";
+                                const isFailedResult =
+                                    compiledResult === "Failed";
 
-                            const membersSql = `
-                                SELECT student_id
-                                FROM group_members
-                                WHERE group_id = ?
-                            `;
+                                const formattedPanelFeedback = (evaluations || [])
+                                    .map((row, idx) => {
+                                        const cTxt = String(row.comments || "").trim();
+                                        const rTxt = String(row.recommendations || "").trim();
+                                        const parts = [];
+                                        if (cTxt && cTxt.toLowerCase() !== "none") parts.push(cTxt);
+                                        if (rTxt && rTxt.toLowerCase() !== "none") parts.push(`Recommendations: ${rTxt}`);
+                                        if (!parts.length) return "";
+                                        return `Panelist ${idx + 1}:\n${parts.join("\n")}`;
+                                    })
+                                    .filter(Boolean)
+                                    .join("\n");
 
-                            db.query(
-                                membersSql,
-                                [schedule.group_id],
-                                (memberErr, memberRows) => {
+                                const notifyAndFinish = () => {
+                                    const membersSql = `
+                                        SELECT student_id
+                                        FROM group_members
+                                        WHERE group_id = ?
+                                    `;
 
-                                    if (!memberErr && memberRows) {
+                                    db.query(
+                                        membersSql,
+                                        [schedule.group_id],
+                                        (memberErr, memberRows) => {
 
-                                        let studentMsg = `Your ${schedule.defense_type} panel evaluations are complete. Final result: ${compiledResult}.`;
-                                        if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense") {
-                                            studentMsg += ` Feedback: ${compiledComments}\nRecommendations: ${compiledRecommendations}`;
+                                            if (!memberErr && memberRows) {
+
+                                                let studentMsg = `Your ${schedule.defense_type} panel evaluations are complete. Final result: ${compiledResult}.`;
+                                                if (isPassedResult) {
+                                                    if (formattedPanelFeedback) {
+                                                        studentMsg += `\nComments/Suggestions/Recommendations (for viewing only):\n${formattedPanelFeedback}`;
+                                                    }
+                                                } else if (isPassedWithRevisionsResult) {
+                                                    studentMsg += ` Panelist Comments/Suggestions/Recommendations have been added to your Defense Minutes in Records Management.`;
+                                                    if (formattedPanelFeedback) {
+                                                        studentMsg += `\n${formattedPanelFeedback}`;
+                                                    }
+                                                } else if (isConditionalPassedResult) {
+                                                    studentMsg += ` Your panel can re-evaluate directly on this defense once revisions are completed — Comments/Suggestions/Recommendations have also been added to your Defense Minutes.`;
+                                                    if (formattedPanelFeedback) {
+                                                        studentMsg += `\n${formattedPanelFeedback}`;
+                                                    }
+                                                } else if (isFormalDefenseResult) {
+                                                    studentMsg += ` Your instructor has been notified to create another Formal Defense schedule. Please address the following Comments/Suggestions/Recommendations before your next presentation:`;
+                                                    if (formattedPanelFeedback) {
+                                                        studentMsg += `\n${formattedPanelFeedback}`;
+                                                    }
+                                                } else if (isFailedResult) {
+                                                    studentMsg += ` Your group's progress has stopped at this stage and remaining phases are locked.`;
+                                                    if (formattedPanelFeedback) {
+                                                        studentMsg += `\nComments/Suggestions/Recommendations:\n${formattedPanelFeedback}`;
+                                                    }
+                                                }
+
+                                                insertUserNotificationsByDbIds(
+                                                    memberRows.map(row => row.student_id),
+                                                    "Defense Evaluation Complete",
+                                                    studentMsg,
+                                                    "Defense Evaluation"
+                                                );
+
+                                            }
+
+                                            if (schedule.created_by) {
+
+                                                let instructorTitle = "Panel Evaluations Complete";
+                                                let instructorMsg = `All panelists submitted evaluations for ${schedule.defense_type}. Final result: ${compiledResult}.`;
+                                                if (isConditionalPassedResult) {
+                                                    instructorMsg += ` Panelists will see a Re-Evaluate button directly on this defense (1st Verdict: Conditional Passed) — no new schedule is needed.`;
+                                                } else if (isFormalDefenseResult) {
+                                                    instructorTitle = "Action Required: Schedule New Formal Defense";
+                                                    instructorMsg += ` You are required to create another defense schedule for this group.`;
+                                                } else if (isFailedResult) {
+                                                    instructorMsg += ` This group's progress has stopped at this stage.`;
+                                                }
+
+                                                insertUserNotificationsByDbIds(
+                                                    [schedule.created_by],
+                                                    instructorTitle,
+                                                    instructorMsg,
+                                                    "Defense Evaluation"
+                                                );
+
+                                            }
+
+                                            callback(null, {
+                                                complete: true,
+                                                evaluations_required: evaluationsRequired,
+                                                evaluations_submitted: evaluationsSubmitted,
+                                                panel_result: compiledResult,
+                                                score: compiledScore,
+                                                auto_reeval_created: isConditionalPassedResult
+                                            });
+
                                         }
+                                    );
+                                };
 
-                                        insertUserNotificationsByDbIds(
-                                            memberRows.map(row => row.student_id),
-                                            "Defense Evaluation Complete",
-                                            studentMsg,
-                                            "Defense Evaluation"
-                                        );
-
-                                    }
-
-                                    if (schedule.created_by) {
-
-                                        let instructorMsg = `All panelists submitted evaluations for ${schedule.defense_type}. Final result: ${compiledResult}.`;
-                                        if (compiledResult === "Conditional Passed" || compiledResult === "Conditional Pass" || compiledResult === "For Formal Defense" || compiledResult === "For Re-Defense") {
-                                            instructorMsg += ` Please create schedule again.`;
-                                        }
-
-                                        insertUserNotificationsByDbIds(
-                                            [schedule.created_by],
-                                            "Panel Evaluations Complete",
-                                            instructorMsg,
-                                            "Defense Evaluation"
-                                        );
-
-                                    }
-
-                                    callback(null, {
-                                        complete: true,
-                                        evaluations_required: evaluationsRequired,
-                                        evaluations_submitted: evaluationsSubmitted,
-                                        panel_result: compiledResult,
-                                        score: compiledScore
-                                    });
-
-                                }
-                            );
+                                notifyAndFinish();
 
                             };
 
@@ -20402,13 +21181,22 @@ function finalizeDefenseScheduleIfComplete(scheduleId, callback) {
                         const progressPercent =
                             getProgressPercentForStage(nextStage);
 
-                        const updateGroupSql = `
-                            UPDATE capstone_groups
-                            SET
-                                stage = ?,
-                                progress = ?
-                            WHERE id = ?
-                        `;
+                        const updateGroupSql = nextStage === "Completed"
+                            ? `
+                                UPDATE capstone_groups
+                                SET
+                                    stage = ?,
+                                    progress = ?,
+                                    status = 'Completed'
+                                WHERE id = ?
+                            `
+                            : `
+                                UPDATE capstone_groups
+                                SET
+                                    stage = ?,
+                                    progress = ?
+                                WHERE id = ?
+                            `;
 
                         db.query(
                             updateGroupSql,
@@ -20611,17 +21399,26 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
 
     }
 
-    if ((panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense") && (!comments || String(comments).trim() === "")) {
+    const requiresFeedbackComments =
+        panel_result === "Passed with Revisions"
+        || panel_result === "Conditional Passed"
+        || panel_result === "Conditional Pass"
+        || panel_result === "For Formal Defense"
+        || panel_result === "For Re-Defense"
+        || panel_result === "Failed";
+
+    if (requiresFeedbackComments && (!comments || String(comments).trim() === "")) {
 
         return res.json({
             success: false,
-            message: `Comments and feedback are required when the result is "${panel_result}".`
+            message: `Comments/Suggestions/Recommendations are required when the verdict is "${panel_result}".`
         });
 
     }
 
-    const isScoreOptional = panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense";
-    if (!isScoreOptional && (score === undefined || score === null || String(score).trim() === "")) {
+    const isScoreOptional = panel_result === "Conditional Passed" || panel_result === "Conditional Pass" || panel_result === "For Formal Defense" || panel_result === "For Re-Defense" || panel_result === "Failed";
+    const hasStructuredDetails = Boolean(concept_evaluation_details || outline_evaluation_details);
+    if (!isScoreOptional && !hasStructuredDetails && (score === undefined || score === null || String(score).trim() === "")) {
 
         return res.json({
             success: false,
@@ -20818,14 +21615,16 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
                                 panelist_id,
                                 score,
                                 panel_result,
+                                first_verdict,
                                 comments,
                                 recommendations,
                                 approved_title_id,
                                 concept_evaluation_details,
                                 outline_evaluation_details
                             )
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             ON DUPLICATE KEY UPDATE
+                                first_verdict = COALESCE(first_verdict, panel_result),
                                 score = VALUES(score),
                                 panel_result = VALUES(panel_result),
                                 comments = VALUES(comments),
@@ -20841,7 +21640,8 @@ app.put("/submit-defense-evaluation/:scheduleId", (req, res) => {
                                 [
                                     scheduleId,
                                     panelistDbId,
-                                    String(score),
+                                    String(score ?? ""),
+                                    panel_result,
                                     panel_result,
                                     comments || "",
                                     recommendations || "",
@@ -25495,11 +26295,16 @@ app.put("/adviser-review-student-document/:submissionId", (req, res) => {
                                         console.log(err2);
                                     }
 
-                                    if (isDeploymentChapter14Document(submission.document_type, submission.document_title)) {
+                                    if (isFinalDefenseChapter14Document(submission.document_type, submission.document_title)) {
                                         archiveDeploymentChapter14ToRepository(submission, adviserName, () => {
-                                            checkAndCompleteGroupDeploymentByDocumentId(submission.document_id, () => {
-                                                finishAdviserReview();
-                                            });
+                                            finishAdviserReview();
+                                        });
+                                        return;
+                                    }
+
+                                    if (isDeploymentChapter14Document(submission.document_type, submission.document_title)) {
+                                        checkAndCompleteGroupDeploymentByDocumentId(submission.document_id, () => {
+                                            finishAdviserReview();
                                         });
                                         return;
                                     }
@@ -26724,6 +27529,16 @@ app.post("/send-chat-message", chatFileUpload.single("file"), (req, res) => {
 
 /* ================= CONSULTATION API ENDPOINTS ================= */
 
+// Ensure consultations.assigned_role supports Adviser, Instructor, and Panelist (handles legacy ENUM columns safely)
+db.query(
+    "ALTER TABLE consultations MODIFY COLUMN assigned_role VARCHAR(50) NOT NULL DEFAULT 'Adviser'",
+    (alterErr) => {
+        if (alterErr && alterErr.code !== "ER_NO_SUCH_TABLE") {
+            console.warn("[Consultation Schema] assigned_role column migration note:", alterErr.message);
+        }
+    }
+);
+
 app.get("/consultation-context/:userId", (req, res) => {
     const userId = req.params.userId;
     if (!userId) {
@@ -26743,7 +27558,9 @@ app.get("/consultation-context/:userId", (req, res) => {
         const studentDbId = studentResult[0].id;
         const enrolledByUserId = studentResult[0].enrolled_by_user_id;
 
-        const availableFaculty = [];
+        const adviserList = [];
+        const instructorList = [];
+        const panelistList = [];
 
         const getAdviser = new Promise((resolve) => {
             const adviserSql = `
@@ -26757,7 +27574,7 @@ app.get("/consultation-context/:userId", (req, res) => {
                 if (err) {
                     console.error("Adviser query error:", err);
                 } else if (adviserResult.length > 0) {
-                    availableFaculty.push(adviserResult[0]);
+                    adviserList.push(adviserResult[0]);
                 }
                 resolve();
             });
@@ -26776,20 +27593,424 @@ app.get("/consultation-context/:userId", (req, res) => {
                 if (err) {
                     console.error("Instructor query error:", err);
                 } else if (instructorResult.length > 0) {
-                    availableFaculty.push(instructorResult[0]);
+                    instructorList.push(instructorResult[0]);
                 }
                 resolve();
             });
         });
 
-        Promise.all([getAdviser, getInstructor]).then(() => {
-            res.json({
-                success: true,
-                context: {
-                    availableFaculty
+        const getPanelists = new Promise((resolve) => {
+            const panelistSql = `
+                SELECT
+                    u.id AS faculty_id,
+                    u.fullname AS faculty_name,
+                    u.user_id AS faculty_user_id,
+                    COALESCE(u.consultation_available, 1) AS consultation_available,
+                    'Panelist' AS assigned_role,
+                    GROUP_CONCAT(DISTINCT ds.defense_type ORDER BY ds.id ASC SEPARATOR ', ') AS defense_phases
+                FROM group_members gm
+                JOIN defense_schedules ds ON ds.group_id = gm.group_id
+                JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+                JOIN users u ON dsp.panelist_id = u.id
+                WHERE gm.student_id = ?
+                  AND COALESCE(ds.defense_status, '') != 'Cancelled'
+                GROUP BY u.id, u.fullname, u.user_id, u.consultation_available
+                ORDER BY u.fullname ASC
+            `;
+            db.query(panelistSql, [studentDbId], (err, panelistResult) => {
+                if (err) {
+                    console.error("Panelist query error:", err);
+                } else if (Array.isArray(panelistResult) && panelistResult.length > 0) {
+                    panelistResult.forEach((p) => panelistList.push(p));
                 }
+                resolve();
             });
         });
+
+        Promise.all([getAdviser, getInstructor, getPanelists]).then(() => {
+            const availableFaculty = [...adviserList, ...instructorList, ...panelistList];
+            const facultyIds = [...new Set(availableFaculty.map(f => Number(f.faculty_id)).filter(Boolean))];
+            if (facultyIds.length === 0) {
+                return res.json({ success: true, context: { availableFaculty } });
+            }
+            const placeholders = facultyIds.map(() => "?").join(",");
+            const countSql = `
+                SELECT
+                    faculty_id,
+                    SUM(CASE WHEN rule_type = 'available' THEN 1 ELSE 0 END) AS available_rule_count,
+                    COUNT(*) AS total_rule_count
+                FROM faculty_consultation_schedules
+                WHERE faculty_id IN (${placeholders})
+                GROUP BY faculty_id
+            `;
+            db.query(countSql, facultyIds, (cntErr, cntRows) => {
+                const countMap = new Map();
+                if (!cntErr && Array.isArray(cntRows)) {
+                    cntRows.forEach(r => {
+                        countMap.set(Number(r.faculty_id), {
+                            available_rule_count: Number(r.available_rule_count || 0),
+                            total_rule_count: Number(r.total_rule_count || 0)
+                        });
+                    });
+                }
+                const enriched = availableFaculty.map(f => {
+                    const stats = countMap.get(Number(f.faculty_id)) || { available_rule_count: 0, total_rule_count: 0 };
+                    return {
+                        ...f,
+                        available_rule_count: stats.available_rule_count,
+                        total_rule_count: stats.total_rule_count
+                    };
+                });
+                res.json({
+                    success: true,
+                    context: {
+                        availableFaculty: enriched
+                    }
+                });
+            });
+        });
+    });
+});
+
+function formatConsultTime12Server(timeStr) {
+    if (!timeStr) return "";
+    const parts = String(timeStr).trim().slice(0, 5).split(":");
+    if (parts.length < 2) return String(timeStr);
+    const h = parseInt(parts[0], 10);
+    const m = parts[1];
+    if (isNaN(h)) return String(timeStr);
+    const period = h >= 12 ? "PM" : "AM";
+    const hr12 = h % 12 || 12;
+    return `${hr12}:${m} ${period}`;
+}
+
+function getWeekdayNameFromYmd(dateStr) {
+    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return "";
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    const names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return names[dt.getDay()] || "";
+}
+
+function timeToMinutesServer(t) {
+    if (!t) return null;
+    const parts = String(t).trim().slice(0, 5).split(":");
+    if (parts.length < 2) return null;
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h * 60 + m;
+}
+
+function fetchFacultyScheduleRows(facultyDbId, callback) {
+    const sql = `
+        SELECT
+            id,
+            faculty_id,
+            rule_type,
+            scope_type,
+            day_of_week,
+            DATE_FORMAT(specific_date, '%Y-%m-%d') AS specific_date,
+            all_day,
+            TIME_FORMAT(start_time, '%H:%i') AS start_time,
+            TIME_FORMAT(end_time, '%H:%i') AS end_time,
+            consultation_mode,
+            location_or_link,
+            notes,
+            created_at
+        FROM faculty_consultation_schedules
+        WHERE faculty_id = ?
+        ORDER BY
+            FIELD(rule_type, 'available', 'unavailable'),
+            FIELD(scope_type, 'everyday', 'weekday', 'specific_date'),
+            FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
+            specific_date ASC,
+            start_time ASC,
+            id ASC
+    `;
+    db.query(sql, [facultyDbId], callback);
+}
+
+app.get("/api/faculty/consultation-schedule", (req, res) => {
+    const { facultyId, facultyUserId } = req.query;
+    if (!facultyId && !facultyUserId) {
+        return res.json({ success: false, message: "Missing facultyId or facultyUserId." });
+    }
+
+    const lookupSql = facultyId
+        ? "SELECT id, user_id, fullname FROM users WHERE id = ? LIMIT 1"
+        : "SELECT id, user_id, fullname FROM users WHERE user_id = ? LIMIT 1";
+    const lookupVal = facultyId || facultyUserId;
+
+    db.query(lookupSql, [lookupVal], (uErr, uRows) => {
+        if (uErr) {
+            console.error("Faculty schedule lookup error:", uErr);
+            return res.json({ success: false, message: "Database error." });
+        }
+        if (!uRows || uRows.length === 0) {
+            return res.json({ success: false, message: "Faculty account not found." });
+        }
+        const faculty = uRows[0];
+        fetchFacultyScheduleRows(faculty.id, (sErr, schedules) => {
+            if (sErr) {
+                console.error("Fetch faculty schedules error:", sErr);
+                return res.json({ success: false, message: "Failed to load consultation schedule." });
+            }
+
+            const bookedSql = `
+                SELECT
+                    id,
+                    consultation_code,
+                    status,
+                    DATE_FORMAT(COALESCE(scheduled_date, requested_date), '%Y-%m-%d') AS slot_date,
+                    TIME_FORMAT(COALESCE(scheduled_start_time, requested_start_time), '%H:%i') AS start_time,
+                    TIME_FORMAT(COALESCE(scheduled_end_time, requested_end_time), '%H:%i') AS end_time
+                FROM consultations
+                WHERE assigned_faculty_id = ?
+                  AND COALESCE(status, 'Pending') NOT IN ('Declined', 'Cancelled', 'Completed')
+                  AND COALESCE(scheduled_date, requested_date) >= CURDATE()
+            `;
+            db.query(bookedSql, [faculty.id], (bErr, bookedRows) => {
+                if (bErr) {
+                    console.warn("Booked consultation lookup warning:", bErr.message);
+                }
+                res.json({
+                    success: true,
+                    faculty,
+                    schedules: schedules || [],
+                    bookedSlots: (!bErr && Array.isArray(bookedRows)) ? bookedRows : []
+                });
+            });
+        });
+    });
+});
+
+app.post("/api/faculty/consultation-schedule", (req, res) => {
+    const {
+        facultyUserId,
+        ruleType,
+        scopeType,
+        daysOfWeek,
+        dayOfWeek,
+        specificDate,
+        allDay,
+        startTime,
+        endTime,
+        consultationMode,
+        locationOrLink,
+        notes
+    } = req.body || {};
+
+    if (!facultyUserId) {
+        return res.json({ success: false, message: "Missing facultyUserId." });
+    }
+
+    const cleanRuleType = String(ruleType || "available").trim().toLowerCase() === "unavailable"
+        ? "unavailable"
+        : "available";
+
+    const rawScope = String(scopeType || "everyday").trim().toLowerCase();
+    const cleanScopeType = ["everyday", "weekday", "specific_date"].includes(rawScope)
+        ? rawScope
+        : "everyday";
+
+    const cleanAllDay = (cleanRuleType === "unavailable" && cleanScopeType !== "everyday" && Boolean(allDay)) ? 1 : 0;
+
+    const validDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    let targetDays = [];
+    if (cleanScopeType === "weekday") {
+        const rawList = Array.isArray(daysOfWeek)
+            ? daysOfWeek
+            : (dayOfWeek ? [dayOfWeek] : []);
+        targetDays = [...new Set(rawList.map(d => String(d || "").trim()).filter(d => validDays.includes(d)))];
+        if (targetDays.length === 0) {
+            return res.json({ success: false, message: "Please select at least one day of the week." });
+        }
+    }
+
+    let cleanSpecificDate = null;
+    if (cleanScopeType === "specific_date") {
+        const dStr = String(specificDate || "").trim().slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
+            return res.json({ success: false, message: "Please select a valid specific date." });
+        }
+        cleanSpecificDate = dStr;
+    }
+
+    let cleanStart = null;
+    let cleanEnd = null;
+    if (!cleanAllDay) {
+        const sStr = String(startTime || "").trim().slice(0, 5);
+        const eStr = String(endTime || "").trim().slice(0, 5);
+        const sMin = timeToMinutesServer(sStr);
+        const eMin = timeToMinutesServer(eStr);
+        if (sMin === null || eMin === null) {
+            return res.json({ success: false, message: "Please provide both Start Time and End Time." });
+        }
+        if (eMin <= sMin) {
+            return res.json({ success: false, message: "End Time must be later than Start Time." });
+        }
+        cleanStart = `${sStr}:00`;
+        cleanEnd = `${eStr}:00`;
+    }
+
+    const cleanMode = cleanRuleType === "available" && consultationMode
+        ? String(consultationMode).trim().slice(0, 50)
+        : null;
+    const cleanLoc = cleanRuleType === "available" && locationOrLink
+        ? String(locationOrLink).trim().slice(0, 255)
+        : null;
+    const cleanNotes = notes ? String(notes).trim().slice(0, 255) : null;
+
+    db.query("SELECT id FROM users WHERE user_id = ? LIMIT 1", [facultyUserId], (uErr, uRows) => {
+        if (uErr || !uRows || uRows.length === 0) {
+            return res.json({ success: false, message: "Faculty account not found." });
+        }
+        const facultyDbId = uRows[0].id;
+
+        fetchFacultyScheduleRows(facultyDbId, (existErr, existingRows) => {
+            if (existErr) {
+                console.error("Existing schedule conflict check error:", existErr);
+                return res.json({ success: false, message: "Failed to validate schedule conflict." });
+            }
+
+            const existing = Array.isArray(existingRows) ? existingRows : [];
+            const oppositeType = cleanRuleType === "available" ? "unavailable" : "available";
+            const oppositeLabel = oppositeType === "unavailable" ? "Unavailable" : "Available";
+            const currentLabel = cleanRuleType === "available" ? "Available" : "Unavailable";
+            const newStartMin = cleanAllDay ? 0 : timeToMinutesServer(cleanStart);
+            const newEndMin = cleanAllDay ? 24 * 60 : timeToMinutesServer(cleanEnd);
+
+            const timesOverlap = (r) => {
+                if (cleanAllDay || Number(r.all_day) === 1) return true;
+                const s = timeToMinutesServer(r.start_time);
+                const e = timeToMinutesServer(r.end_time);
+                if (s === null || e === null) return true;
+                return newStartMin < e && newEndMin > s;
+            };
+
+            const oppositeRows = existing.filter(r => r.rule_type === oppositeType);
+
+            if (cleanScopeType === "weekday") {
+                const conflictedDays = [];
+                targetDays.forEach(day => {
+                    const hasSameWeekdayOpp = oppositeRows.some(r =>
+                        r.scope_type === "weekday" && r.day_of_week === day
+                    );
+                    const hasSpecificDateOppOnDay = cleanAllDay && oppositeRows.some(r =>
+                        r.scope_type === "specific_date" && getWeekdayNameFromYmd(r.specific_date) === day
+                    );
+                    if (hasSameWeekdayOpp || hasSpecificDateOppOnDay) {
+                        conflictedDays.push(day);
+                    }
+                });
+                if (conflictedDays.length > 0) {
+                    return res.json({
+                        success: false,
+                        message: `Cannot set ${conflictedDays.join(", ")} as ${currentLabel} because ${conflictedDays.length === 1 ? "it is" : "they are"} already set as ${oppositeLabel}. Please remove the existing ${oppositeLabel} rule first.`
+                    });
+                }
+            } else if (cleanScopeType === "specific_date") {
+                const targetWeekday = getWeekdayNameFromYmd(cleanSpecificDate);
+                const hasSameDateOpp = oppositeRows.some(r =>
+                    r.scope_type === "specific_date" && String(r.specific_date || "").slice(0, 10) === cleanSpecificDate
+                );
+                if (hasSameDateOpp) {
+                    return res.json({
+                        success: false,
+                        message: `Cannot set ${cleanSpecificDate} as ${currentLabel} because this date is already set as ${oppositeLabel}. Please remove the existing ${oppositeLabel} rule first.`
+                    });
+                }
+                const hasWeekdayOpp = oppositeRows.some(r =>
+                    r.scope_type === "weekday" &&
+                    r.day_of_week === targetWeekday &&
+                    (Number(r.all_day) === 1 || cleanAllDay || timesOverlap(r))
+                );
+                if (hasWeekdayOpp) {
+                    return res.json({
+                        success: false,
+                        message: `Cannot set ${cleanSpecificDate} (${targetWeekday}) as ${currentLabel} because ${targetWeekday} is already set as ${oppositeLabel}. Please remove the existing ${oppositeLabel} rule first.`
+                    });
+                }
+            } else if (cleanScopeType === "everyday") {
+                const hasEverydayOverlapOpp = oppositeRows.some(r =>
+                    r.scope_type === "everyday" && timesOverlap(r)
+                );
+                if (hasEverydayOverlapOpp) {
+                    return res.json({
+                        success: false,
+                        message: `This Every Day time range conflicts with an existing Every Day ${oppositeLabel} rule. Remove the conflicting rule first.`
+                    });
+                }
+            }
+
+            const rowsToInsert = cleanScopeType === "weekday"
+                ? targetDays.map(day => [
+                    facultyDbId, cleanRuleType, "weekday", day, null, cleanAllDay,
+                    cleanStart, cleanEnd, cleanMode, cleanLoc, cleanNotes
+                ])
+                : [[
+                    facultyDbId, cleanRuleType, cleanScopeType, null, cleanSpecificDate, cleanAllDay,
+                    cleanStart, cleanEnd, cleanMode, cleanLoc, cleanNotes
+                ]];
+
+            const insertSql = `
+                INSERT INTO faculty_consultation_schedules
+                    (faculty_id, rule_type, scope_type, day_of_week, specific_date, all_day, start_time, end_time, consultation_mode, location_or_link, notes)
+                VALUES ?
+            `;
+
+            db.query(insertSql, [rowsToInsert], (insErr) => {
+                if (insErr) {
+                    console.error("Insert faculty consultation schedule error:", insErr);
+                    return res.json({ success: false, message: "Failed to save custom schedule." });
+                }
+                fetchFacultyScheduleRows(facultyDbId, (fErr, schedules) => {
+                    res.json({
+                        success: true,
+                        message: cleanRuleType === "unavailable"
+                            ? "Unavailable schedule rule added."
+                            : "Consultation availability schedule added.",
+                        schedules: (!fErr && Array.isArray(schedules)) ? schedules : []
+                    });
+                });
+            });
+        });
+    });
+});
+
+app.delete("/api/faculty/consultation-schedule/:id", (req, res) => {
+    const ruleId = Number(req.params.id);
+    const facultyUserId = req.query.facultyUserId || (req.body && req.body.facultyUserId);
+    if (!ruleId || !facultyUserId) {
+        return res.json({ success: false, message: "Missing schedule rule ID or facultyUserId." });
+    }
+
+    db.query("SELECT id FROM users WHERE user_id = ? LIMIT 1", [facultyUserId], (uErr, uRows) => {
+        if (uErr || !uRows || uRows.length === 0) {
+            return res.json({ success: false, message: "Faculty account not found." });
+        }
+        const facultyDbId = uRows[0].id;
+        db.query(
+            "DELETE FROM faculty_consultation_schedules WHERE id = ? AND faculty_id = ?",
+            [ruleId, facultyDbId],
+            (delErr, result) => {
+                if (delErr) {
+                    console.error("Delete faculty schedule error:", delErr);
+                    return res.json({ success: false, message: "Failed to delete schedule rule." });
+                }
+                if (!result || result.affectedRows === 0) {
+                    return res.json({ success: false, message: "Schedule rule not found." });
+                }
+                fetchFacultyScheduleRows(facultyDbId, (fErr, schedules) => {
+                    res.json({
+                        success: true,
+                        message: "Schedule rule removed.",
+                        schedules: (!fErr && Array.isArray(schedules)) ? schedules : []
+                    });
+                });
+            }
+        );
     });
 });
 
@@ -26801,7 +28022,21 @@ app.post("/student-consultations", (req, res, next) => {
         next();
     });
 }, (req, res) => {
-    const { studentUserId, assignedFacultyId, consultationType, topic, concernMessage } = req.body;
+    const {
+        studentUserId,
+        assignedFacultyId,
+        assignedRole: requestedRoleInput,
+        consultationType,
+        topic,
+        concernMessage,
+        requestedDate,
+        requestedStartTime,
+        requestedEndTime,
+        requestedSlotId,
+        requestedSlotLabel,
+        preferredMode,
+        preferredLocation
+    } = req.body;
     const uploadedFile = req.file || null;
     const filePath = uploadedFile ? `/uploads/consultation_documents/${uploadedFile.filename}` : null;
     const fileName = uploadedFile ? uploadedFile.originalname : null;
@@ -26810,113 +28045,280 @@ app.post("/student-consultations", (req, res, next) => {
         return res.json({ success: false, message: "Missing required fields." });
     }
 
-    db.query("SELECT fullname, COALESCE(consultation_available, 1) AS consultation_available FROM users WHERE id = ? LIMIT 1", [assignedFacultyId], (availErr, availRows) => {
+    const cleanReqDate = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(String(requestedDate).trim().slice(0, 10))
+        ? String(requestedDate).trim().slice(0, 10)
+        : null;
+    const cleanReqStart = requestedStartTime && timeToMinutesServer(requestedStartTime) !== null
+        ? `${String(requestedStartTime).trim().slice(0, 5)}:00`
+        : null;
+    const cleanReqEnd = requestedEndTime && timeToMinutesServer(requestedEndTime) !== null
+        ? `${String(requestedEndTime).trim().slice(0, 5)}:00`
+        : null;
+    const cleanSlotId = requestedSlotId ? Number(requestedSlotId) || null : null;
+    const cleanSlotLabel = requestedSlotLabel ? String(requestedSlotLabel).trim().slice(0, 255) : null;
+
+    const normalizedRequestedRole = (() => {
+        const raw = String(requestedRoleInput || "").trim().toLowerCase();
+        if (raw === "adviser") return "Adviser";
+        if (raw === "instructor") return "Instructor";
+        if (raw === "panelist") return "Panelist";
+        return "";
+    })();
+
+    db.query("SELECT id, fullname FROM users WHERE id = ? LIMIT 1", [assignedFacultyId], (availErr, availRows) => {
         if (availErr) {
             console.error(availErr);
-            return res.json({ success: false, message: "Database error while checking faculty availability." });
+            return res.json({ success: false, message: "Database error while checking faculty schedule." });
         }
-        if (availRows && availRows.length > 0 && Number(availRows[0].consultation_available) === 0) {
-            return res.json({
-                success: false,
-                message: `${availRows[0].fullname} is currently unavailable and not accepting new consultation requests.`
+        if (!availRows || availRows.length === 0) {
+            return res.json({ success: false, message: "Selected faculty member not found." });
+        }
+        const facultyName = availRows[0].fullname;
+
+        fetchFacultyScheduleRows(assignedFacultyId, (schedErr, rules) => {
+            if (schedErr) {
+                console.error("Faculty schedule check error:", schedErr);
+                return res.json({ success: false, message: "Database error while checking faculty schedule." });
+            }
+
+            const availRules = (rules || []).filter(r => r.rule_type === "available");
+            const unavailRules = (rules || []).filter(r => r.rule_type === "unavailable");
+
+            if (availRules.length === 0) {
+                return res.json({
+                    success: false,
+                    message: `${facultyName} has not set a custom consultation schedule yet.`
+                });
+            }
+
+            if (!cleanReqDate || !cleanReqStart || !cleanReqEnd) {
+                return res.json({
+                    success: false,
+                    message: "Please select an available consultation schedule slot before submitting."
+                });
+            }
+
+            const reqStartMin = timeToMinutesServer(cleanReqStart);
+            const reqEndMin = timeToMinutesServer(cleanReqEnd);
+            if (reqEndMin <= reqStartMin) {
+                return res.json({ success: false, message: "Invalid consultation time slot selected." });
+            }
+
+            // Validate selected slot is not blocked by an unavailable rule on that date
+            const reqWeekday = getWeekdayNameFromYmd(cleanReqDate);
+            const isBlocked = unavailRules.some(r => {
+                const matchesDay =
+                    r.scope_type === "everyday" ||
+                    (r.scope_type === "weekday" && r.day_of_week === reqWeekday) ||
+                    (r.scope_type === "specific_date" && r.specific_date === cleanReqDate);
+                if (!matchesDay) return false;
+                if (Number(r.all_day) === 1) return true;
+                const bStart = timeToMinutesServer(r.start_time);
+                const bEnd = timeToMinutesServer(r.end_time);
+                if (bStart === null || bEnd === null) return false;
+                return reqStartMin < bEnd && reqEndMin > bStart;
             });
-        }
 
-        const studentSql = "SELECT id, fullname FROM users WHERE user_id = ? AND role = 'student'";
-        db.query(studentSql, [studentUserId], (err, studentResult) => {
-            if (err) {
-                console.error(err);
-                return res.json({ success: false, message: "Database error while fetching student." });
-            }
-            if (studentResult.length === 0) {
-                return res.json({ success: false, message: "Student not found." });
+            if (isBlocked) {
+                return res.json({
+                    success: false,
+                    message: `${facultyName} is unavailable during the selected schedule slot. Please choose another open slot.`
+                });
             }
 
-            const studentDbId = studentResult[0].id;
-            const studentName = studentResult[0].fullname;
-
-            const groupSql = "SELECT group_id FROM group_members WHERE student_id = ?";
-            db.query(groupSql, [studentDbId], (err, groupResult) => {
-                if (err) {
-                    console.error(err);
-                    return res.json({ success: false, message: "Database error while checking student group." });
+            // Prevent exact duplicate booking on the same faculty date+time
+            const conflictSql = `
+                SELECT id FROM consultations
+                WHERE assigned_faculty_id = ?
+                  AND COALESCE(status, 'Pending') NOT IN ('Declined', 'Cancelled', 'Completed')
+                  AND COALESCE(scheduled_date, requested_date) = ?
+                  AND COALESCE(scheduled_start_time, requested_start_time) < ?
+                  AND COALESCE(scheduled_end_time, requested_end_time) > ?
+                LIMIT 1
+            `;
+            db.query(conflictSql, [assignedFacultyId, cleanReqDate, cleanReqEnd, cleanReqStart], (cErr, cRows) => {
+                if (!cErr && Array.isArray(cRows) && cRows.length > 0) {
+                    return res.json({
+                        success: false,
+                        message: "That consultation slot was just booked by another request. Please select another available slot."
+                    });
                 }
 
-                const groupDbId = groupResult.length > 0 ? groupResult[0].group_id : null;
-
-                const determineRole = (callback) => {
-                    if (!groupDbId) {
-                        return callback("Instructor");
+                const studentSql = "SELECT id, fullname FROM users WHERE user_id = ? AND role = 'student'";
+                db.query(studentSql, [studentUserId], (err, studentResult) => {
+                    if (err) {
+                        console.error(err);
+                        return res.json({ success: false, message: "Database error while fetching student." });
                     }
-                    const adviserSql = "SELECT adviser_id FROM capstone_groups WHERE id = ?";
-                    db.query(adviserSql, [groupDbId], (err, adviserResult) => {
+                    if (studentResult.length === 0) {
+                        return res.json({ success: false, message: "Student not found." });
+                    }
+
+                    const studentDbId = studentResult[0].id;
+                    const studentName = studentResult[0].fullname;
+
+                    const groupSql = "SELECT group_id FROM group_members WHERE student_id = ?";
+                    db.query(groupSql, [studentDbId], (err, groupResult) => {
                         if (err) {
                             console.error(err);
-                            return callback("Instructor");
-                        }
-                        if (adviserResult.length > 0 && Number(adviserResult[0].adviser_id) === Number(assignedFacultyId)) {
-                            return callback("Adviser");
-                        }
-                        callback("Instructor");
-                    });
-                };
-
-                determineRole((assignedRole) => {
-                    const year = new Date().getFullYear();
-                    const prefix = `CNS-${year}-`;
-                    const codeSql = "SELECT consultation_code FROM consultations WHERE consultation_code LIKE ? ORDER BY id DESC LIMIT 1";
-                    db.query(codeSql, [prefix + "%"], (err, codeResult) => {
-                        let nextNumber = 1;
-                        if (err) {
-                            console.error(err);
-                        } else if (codeResult.length > 0) {
-                            const lastCode = codeResult[0].consultation_code;
-                            const parts = lastCode.split("-");
-                            const lastNum = parseInt(parts[2]);
-                            if (!isNaN(lastNum)) {
-                                nextNumber = lastNum + 1;
-                            }
+                            return res.json({ success: false, message: "Database error while checking student group." });
                         }
 
-                        const consultationCode = `${prefix}${String(nextNumber).padStart(4, "0")}`;
+                        const groupDbId = groupResult.length > 0 ? groupResult[0].group_id : null;
 
-                        const insertSql = `
-                        INSERT INTO consultations
-                        (consultation_code, student_id, group_id, assigned_faculty_id, assigned_role, consultation_type, topic, concern_message, file_path, file_name, status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
-                    `;
-                        const insertParams = [
-                            consultationCode,
-                            studentDbId,
-                            groupDbId,
-                            assignedFacultyId,
-                            assignedRole,
-                            consultationType,
-                            topic || null,
-                            concernMessage,
-                            filePath,
-                            fileName
-                        ];
-
-                        db.query(insertSql, insertParams, (err) => {
-                            if (err) {
-                                console.error(err);
-                                return res.json({ success: false, message: "Failed to submit consultation request." });
-                            }
-
-                            const notifSql = `
-                            INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
-                            VALUES (?, ?, ?, 'Consultation')
-                        `;
-                            const notifTitle = "New Consultation Request";
-                            const notifMessage = `Student ${studentName} requested a ${consultationType} on "${topic || 'General Topic'}".`;
-                            db.query(notifSql, [assignedFacultyId, notifTitle, notifMessage], (notifErr) => {
-                                if (notifErr) {
-                                    console.error("Notification insert error:", notifErr);
+                        const determineRole = (callback) => {
+                            if (normalizedRequestedRole === "Panelist") {
+                                if (!groupDbId) {
+                                    return callback("Panelist");
                                 }
+                                const panelCheckSql = `
+                                    SELECT 1
+                                    FROM defense_schedules ds
+                                    JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+                                    WHERE ds.group_id = ?
+                                      AND dsp.panelist_id = ?
+                                      AND COALESCE(ds.defense_status, '') != 'Cancelled'
+                                    LIMIT 1
+                                `;
+                                return db.query(panelCheckSql, [groupDbId, assignedFacultyId], (panelErr, panelRows) => {
+                                    if (panelErr) {
+                                        console.error("Panelist consultation role check error:", panelErr);
+                                    }
+                                    if (panelRows && panelRows.length > 0) {
+                                        return callback("Panelist");
+                                    }
+                                    return callback("Panelist");
+                                });
+                            }
+                            if (normalizedRequestedRole === "Adviser" || normalizedRequestedRole === "Instructor") {
+                                return callback(normalizedRequestedRole);
+                            }
+                            if (!groupDbId) {
+                                return callback("Instructor");
+                            }
+                            const adviserSql = "SELECT adviser_id FROM capstone_groups WHERE id = ?";
+                            db.query(adviserSql, [groupDbId], (err, adviserResult) => {
+                                if (err) {
+                                    console.error(err);
+                                    return callback("Instructor");
+                                }
+                                if (adviserResult.length > 0 && Number(adviserResult[0].adviser_id) === Number(assignedFacultyId)) {
+                                    return callback("Adviser");
+                                }
+                                const panelCheckSql = `
+                                    SELECT 1
+                                    FROM defense_schedules ds
+                                    JOIN defense_schedule_panelists dsp ON dsp.schedule_id = ds.id
+                                    WHERE ds.group_id = ?
+                                      AND dsp.panelist_id = ?
+                                      AND COALESCE(ds.defense_status, '') != 'Cancelled'
+                                    LIMIT 1
+                                `;
+                                db.query(panelCheckSql, [groupDbId, assignedFacultyId], (panelErr, panelRows) => {
+                                    if (!panelErr && panelRows && panelRows.length > 0) {
+                                        return callback("Panelist");
+                                    }
+                                    callback("Instructor");
+                                });
                             });
+                        };
 
-                            res.json({ success: true, message: "Consultation request submitted successfully." });
+                        determineRole((assignedRole) => {
+                            const year = new Date().getFullYear();
+                            const prefix = `CNS-${year}-`;
+                            const codeSql = "SELECT consultation_code FROM consultations WHERE consultation_code LIKE ? ORDER BY id DESC LIMIT 1";
+                            db.query(codeSql, [prefix + "%"], (err, codeResult) => {
+                                let nextNumber = 1;
+                                if (err) {
+                                    console.error(err);
+                                } else if (codeResult.length > 0) {
+                                    const lastCode = codeResult[0].consultation_code;
+                                    const parts = lastCode.split("-");
+                                    const lastNum = parseInt(parts[2]);
+                                    if (!isNaN(lastNum)) {
+                                        nextNumber = lastNum + 1;
+                                    }
+                                }
+
+                                const consultationCode = `${prefix}${String(nextNumber).padStart(4, "0")}`;
+                                const fallbackSlotDesc = `${cleanReqDate} (${formatConsultTime12Server(cleanReqStart)} - ${formatConsultTime12Server(cleanReqEnd)})`;
+                                const slotDisplay = cleanSlotLabel || fallbackSlotDesc;
+                                const initialMode = (preferredMode && preferredMode !== "Both" && preferredMode !== "Any")
+                                    ? String(preferredMode).trim().slice(0, 50)
+                                    : null;
+                                const initialLoc = preferredLocation ? String(preferredLocation).trim().slice(0, 255) : null;
+
+                                const insertSql = `
+                                    INSERT INTO consultations
+                                    (consultation_code, student_id, group_id, assigned_faculty_id, assigned_role, consultation_type, topic, concern_message, file_path, file_name, requested_date, requested_start_time, requested_end_time, requested_slot_id, requested_slot_label, consultation_mode, location_or_link, status)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+                                `;
+                                const insertParams = [
+                                    consultationCode,
+                                    studentDbId,
+                                    groupDbId,
+                                    assignedFacultyId,
+                                    assignedRole,
+                                    consultationType,
+                                    topic || null,
+                                    concernMessage,
+                                    filePath,
+                                    fileName,
+                                    cleanReqDate,
+                                    cleanReqStart,
+                                    cleanReqEnd,
+                                    cleanSlotId,
+                                    slotDisplay,
+                                    initialMode,
+                                    initialLoc
+                                ];
+
+                                db.query(insertSql, insertParams, (err) => {
+                                    if (err) {
+                                        console.error(err);
+                                        return res.json({ success: false, message: "Failed to submit consultation request." });
+                                    }
+
+                                    const notifSql = `
+                                        INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                                        VALUES (?, ?, ?, 'Consultation')
+                                    `;
+
+                                    // 1. Notify the selected faculty receiver (Adviser / Instructor / Panelist)
+                                    const facultyTitle = `New Consultation Request (${assignedRole})`;
+                                    const facultyMsg = `Student ${studentName} requested a ${consultationType} (${assignedRole}) for ${slotDisplay}.`;
+                                    db.query(notifSql, [assignedFacultyId, facultyTitle, facultyMsg], (notifErr) => {
+                                        if (notifErr) console.error("Faculty notification insert error:", notifErr);
+                                    });
+
+                                    // 2. Notify EVERY member of the student's group (or the student if not yet in a group)
+                                    const studentNotifTitle = `Consultation Request Sent (${assignedRole})`;
+                                    const studentNotifMsg = `${studentName} submitted a ${consultationType} request to ${facultyName} (${assignedRole}) for ${slotDisplay} (${consultationCode}).`;
+
+                                    if (groupDbId) {
+                                        db.query("SELECT DISTINCT student_id FROM group_members WHERE group_id = ?", [groupDbId], (gmErr, gmRows) => {
+                                            const memberIds = new Set([Number(studentDbId)]);
+                                            if (!gmErr && Array.isArray(gmRows)) {
+                                                gmRows.forEach(r => { if (r.student_id) memberIds.add(Number(r.student_id)); });
+                                            }
+                                            memberIds.forEach(memberId => {
+                                                db.query(notifSql, [memberId, studentNotifTitle, studentNotifMsg], (mNotifErr) => {
+                                                    if (mNotifErr) console.error("Group member consultation notification error:", mNotifErr);
+                                                });
+                                            });
+                                        });
+                                    } else {
+                                        db.query(notifSql, [studentDbId, studentNotifTitle, studentNotifMsg], (sNotifErr) => {
+                                            if (sNotifErr) console.error("Student consultation notification error:", sNotifErr);
+                                        });
+                                    }
+
+                                    res.json({
+                                        success: true,
+                                        message: `Consultation request (${consultationCode}) submitted for ${slotDisplay}. Notifications sent to ${facultyName} and your group.`
+                                    });
+                                });
+                            });
                         });
                     });
                 });
@@ -26934,17 +28336,31 @@ app.get("/student-consultations/:userId", (req, res) => {
     const sql = `
         SELECT c.id, c.consultation_code, c.consultation_type, c.topic, c.concern_message, c.status,
                c.decline_reason, c.declined_at, c.schedule_notes,
+               DATE_FORMAT(c.requested_date, '%Y-%m-%d') AS requested_date,
+               TIME_FORMAT(c.requested_start_time, '%H:%i') AS requested_start_time,
+               TIME_FORMAT(c.requested_end_time, '%H:%i') AS requested_end_time,
+               c.requested_slot_id, c.requested_slot_label,
                DATE_FORMAT(c.scheduled_date, '%Y-%m-%d') AS scheduled_date,
                c.scheduled_start_time, c.scheduled_end_time, c.consultation_mode, c.location_or_link,
-               c.created_at, c.file_path, c.file_name, u.fullname AS faculty_name, c.assigned_role
+               c.created_at, c.file_path, c.file_name, u.fullname AS faculty_name, c.assigned_role,
+               s.fullname AS requested_by_name
         FROM consultations c
         JOIN users u ON c.assigned_faculty_id = u.id
         JOIN users s ON c.student_id = s.id
         WHERE s.user_id = ?
+           OR (
+               c.group_id IS NOT NULL
+               AND c.group_id IN (
+                   SELECT gm.group_id
+                   FROM group_members gm
+                   JOIN users me ON me.id = gm.student_id
+                   WHERE me.user_id = ?
+               )
+           )
         ORDER BY c.id DESC
     `;
 
-    db.query(sql, [userId], (err, results) => {
+    db.query(sql, [userId, userId], (err, results) => {
         if (err) {
             console.error(err);
             return res.json({ success: false, message: "Failed to fetch consultation records." });
@@ -26963,6 +28379,10 @@ app.get("/faculty-consultations", (req, res) => {
     const sql = `
         SELECT c.id, c.consultation_code, c.consultation_type, c.topic, c.concern_message, c.status,
                c.decline_reason, c.declined_at,
+               DATE_FORMAT(c.requested_date, '%Y-%m-%d') AS requested_date,
+               TIME_FORMAT(c.requested_start_time, '%H:%i') AS requested_start_time,
+               TIME_FORMAT(c.requested_end_time, '%H:%i') AS requested_end_time,
+               c.requested_slot_id, c.requested_slot_label,
                DATE_FORMAT(c.scheduled_date, '%Y-%m-%d') AS scheduled_date,
                c.scheduled_start_time, c.scheduled_end_time, c.consultation_mode, c.location_or_link,
                c.schedule_notes, c.created_at, c.file_path, c.file_name,
@@ -26979,11 +28399,17 @@ app.get("/faculty-consultations", (req, res) => {
             console.error(err);
             return res.json({ success: false, message: "Failed to fetch assigned consultations." });
         }
-        db.query("SELECT COALESCE(consultation_available, 1) AS consultation_available FROM users WHERE user_id = ? LIMIT 1", [facultyUserId], (availErr, availRows) => {
-            const consultationAvailable = (!availErr && availRows && availRows.length > 0)
-                ? Number(availRows[0].consultation_available) === 1
-                : true;
-            res.json({ success: true, consultations: results, consultationAvailable });
+        db.query("SELECT id FROM users WHERE user_id = ? LIMIT 1", [facultyUserId], (uErr, uRows) => {
+            if (uErr || !uRows || uRows.length === 0) {
+                return res.json({ success: true, consultations: results, customSchedules: [] });
+            }
+            fetchFacultyScheduleRows(uRows[0].id, (sErr, schedules) => {
+                res.json({
+                    success: true,
+                    consultations: results,
+                    customSchedules: (!sErr && Array.isArray(schedules)) ? schedules : []
+                });
+            });
         });
     });
 });
@@ -26997,6 +28423,13 @@ app.put("/faculty-consultations/:id/schedule", (req, res) => {
 
     if (!id || !facultyUserId) {
         return res.json({ success: false, message: "Missing required parameters." });
+    }
+    if (!locationOrLink || !String(locationOrLink).trim()) {
+        const locFieldName = consultationMode === "Online Consultation" ? "Meeting Link" : "Location/Place";
+        return res.json({ success: false, message: `${locFieldName} is required.` });
+    }
+    if (!scheduleNotes || !String(scheduleNotes).trim()) {
+        return res.json({ success: false, message: "Notes are required." });
     }
 
     /* ── Compute status from date/time fields ── */
@@ -27022,7 +28455,7 @@ app.put("/faculty-consultations/:id/schedule", (req, res) => {
     /* ── Fetch previous schedule to detect reschedule ── */
     const prevSql = `
         SELECT c.scheduled_date, c.scheduled_start_time, c.scheduled_end_time,
-               c.student_id, c.consultation_code,
+               c.student_id, c.group_id, c.consultation_code,
                f.fullname AS faculty_name, f.id AS faculty_db_id
         FROM consultations c
         JOIN users f ON c.assigned_faculty_id = f.id
@@ -27082,13 +28515,24 @@ app.put("/faculty-consultations/:id/schedule", (req, res) => {
                 VALUES (?, ?, ?, 'Consultation')
             `;
 
-            /* Notify student about status update */
-            if (studentDbId) {
-                const msg = isReschedule
-                    ? `Your consultation (${consultationCode}) has been rescheduled to ${scheduledDate} ${scheduledStartTime || ""} - ${scheduledEndTime || ""} by ${facultyName}.`
-                    : `Your consultation request (${consultationCode}) is now "${computedStatus}" (updated by ${facultyName}).`;
+            /* Notify student (and all group members) about status update */
+            const msg = isReschedule
+                ? `Your consultation (${consultationCode}) has been rescheduled to ${scheduledDate} ${formatConsultTime12Server(scheduledStartTime)} - ${formatConsultTime12Server(scheduledEndTime)} by ${facultyName}.`
+                : `Your consultation request (${consultationCode}) is now "${computedStatus}" (${scheduledDate} ${formatConsultTime12Server(scheduledStartTime)} - ${formatConsultTime12Server(scheduledEndTime)}, updated by ${facultyName}).`;
+            const title = isReschedule ? "Consultation Rescheduled" : "Consultation Approved & Scheduled";
 
-                const title = isReschedule ? "Consultation Rescheduled" : "Consultation Updated";
+            if (prev.group_id) {
+                db.query("SELECT DISTINCT student_id FROM group_members WHERE group_id = ?", [prev.group_id], (gmErr, gmRows) => {
+                    const ids = new Set();
+                    if (studentDbId) ids.add(Number(studentDbId));
+                    if (!gmErr && Array.isArray(gmRows)) gmRows.forEach(r => { if (r.student_id) ids.add(Number(r.student_id)); });
+                    ids.forEach(uid => {
+                        db.query(notifSql, [uid, title, msg], (notifErr) => {
+                            if (notifErr) console.error("Student notification error:", notifErr);
+                        });
+                    });
+                });
+            } else if (studentDbId) {
                 db.query(notifSql, [studentDbId, title, msg], (notifErr) => {
                     if (notifErr) console.error("Student notification error:", notifErr);
                 });
@@ -27120,7 +28564,7 @@ app.put("/api/consultations/:id/decline", (req, res) => {
         : (baseReason || extraNote || "No specific reason provided.");
 
     const lookupSql = `
-        SELECT c.id, c.student_id, c.consultation_code, c.created_at, c.scheduled_date,
+        SELECT c.id, c.student_id, c.group_id, c.consultation_code, c.created_at, c.scheduled_date, c.requested_date,
                f.fullname AS faculty_name, f.user_id AS faculty_user_id
         FROM consultations c
         JOIN users f ON c.assigned_faculty_id = f.id
@@ -27156,19 +28600,31 @@ app.put("/api/consultations/:id/decline", (req, res) => {
                 return res.json({ success: false, message: "Failed to decline consultation request." });
             }
 
-            const dateSource = item.scheduled_date || item.created_at || new Date();
+            const dateSource = item.scheduled_date || item.requested_date || item.created_at || new Date();
             const formattedDate = new Date(dateSource).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
                 day: "numeric"
             });
 
-            if (item.student_id) {
-                const notifSql = `
-                    INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
-                    VALUES (?, 'Consultation Request Declined', ?, 'Consultation')
-                `;
-                const notifMsg = `Your consultation request on ${formattedDate} was declined by ${item.faculty_name}. Reason: ${finalReason}`;
+            const notifSql = `
+                INSERT INTO user_notifications (user_id, notification_title, notification_message, notification_type)
+                VALUES (?, 'Consultation Request Declined', ?, 'Consultation')
+            `;
+            const notifMsg = `Your consultation request on ${formattedDate} was declined by ${item.faculty_name}. Reason: ${finalReason}`;
+
+            if (item.group_id) {
+                db.query("SELECT DISTINCT student_id FROM group_members WHERE group_id = ?", [item.group_id], (gmErr, gmRows) => {
+                    const ids = new Set();
+                    if (item.student_id) ids.add(Number(item.student_id));
+                    if (!gmErr && Array.isArray(gmRows)) gmRows.forEach(r => { if (r.student_id) ids.add(Number(r.student_id)); });
+                    ids.forEach(uid => {
+                        db.query(notifSql, [uid, notifMsg], (notifErr) => {
+                            if (notifErr) console.error("Student decline notification error:", notifErr);
+                        });
+                    });
+                });
+            } else if (item.student_id) {
                 db.query(notifSql, [item.student_id, notifMsg], (notifErr) => {
                     if (notifErr) console.error("Student decline notification error:", notifErr);
                 });
@@ -28200,6 +29656,350 @@ app.get("/adviser-defense-minutes/:adviserUserId", (req, res) => {
                 defenseMinutesList: Object.values(grouped)
             });
         });
+    });
+});
+
+/* ================= CAPSTONE FORM TEMPLATES (INSTRUCTOR UPLOAD / STUDENT VIEW) ================= */
+
+const formTemplatesUploadDir = path.join(__dirname, "uploads", "form-templates");
+if (!fs.existsSync(formTemplatesUploadDir)) {
+    fs.mkdirSync(formTemplatesUploadDir, { recursive: true });
+}
+
+db.query(
+    `
+        CREATE TABLE IF NOT EXISTS capstone_form_templates (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            category VARCHAR(100) NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            description TEXT NULL,
+            file_name VARCHAR(255) NOT NULL,
+            file_path VARCHAR(500) NOT NULL,
+            file_format VARCHAR(20) NOT NULL,
+            file_size BIGINT DEFAULT 0,
+            uploaded_by INT NULL,
+            uploader_name VARCHAR(255) NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    `,
+    (err) => {
+        if (err) {
+            console.error("Failed to ensure capstone_form_templates table:", err);
+        } else {
+            console.log("capstone_form_templates table verified/created");
+        }
+    }
+);
+
+const FORM_TEMPLATE_CATEGORIES = [
+    "Concept Presentation",
+    "Outline Defense",
+    "Pre-Final Defense",
+    "Deployment",
+    "Final Defense",
+    "General / Others"
+];
+
+const formTemplateStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        if (!fs.existsSync(formTemplatesUploadDir)) {
+            fs.mkdirSync(formTemplatesUploadDir, { recursive: true });
+        }
+        cb(null, formTemplatesUploadDir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname || "").toLowerCase();
+        const base = path
+            .basename(file.originalname || "template", ext)
+            .replace(/[^a-zA-Z0-9_-]+/g, "_")
+            .slice(0, 60);
+        cb(null, `tpl_${Date.now()}_${Math.round(Math.random() * 1e6)}_${base}${ext}`);
+    }
+});
+
+const formTemplateUpload = multer({
+    storage: formTemplateStorage,
+    limits: { fileSize: 25 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname || "").toLowerCase();
+        if ([".pdf", ".doc", ".docx"].includes(ext)) {
+            return cb(null, true);
+        }
+        cb(new Error("Only PDF, DOC, and DOCX files are allowed for form templates."));
+    }
+});
+
+app.get("/api/form-templates", (req, res) => {
+    const category = String(req.query.category || "").trim();
+    const hasFilter = category && category.toLowerCase() !== "all";
+    const sql = hasFilter
+        ? `SELECT * FROM capstone_form_templates WHERE category = ? ORDER BY created_at DESC, id DESC`
+        : `SELECT * FROM capstone_form_templates ORDER BY created_at DESC, id DESC`;
+    const params = hasFilter ? [category] : [];
+
+    db.query(sql, params, (err, rows) => {
+        if (err) {
+            console.error("GET /api/form-templates error:", err);
+            return res.json({ success: false, message: "Failed to load form templates." });
+        }
+        res.json({ success: true, templates: rows || [] });
+    });
+});
+
+app.post("/api/form-templates", (req, res) => {
+    formTemplateUpload.single("templateFile")(req, res, (uploadErr) => {
+        if (uploadErr) {
+            return res.json({
+                success: false,
+                message: uploadErr.message || "File upload failed. Only PDF, DOC, or DOCX up to 25MB is allowed."
+            });
+        }
+
+        const category = String(req.body.category || "").trim();
+        const title = String(req.body.title || "").trim();
+        const description = String(req.body.description || "").trim();
+        const uploaderUserId = String(req.body.uploaderUserId || "").trim();
+
+        if (!req.file) {
+            return res.json({ success: false, message: "Please attach a PDF, DOC, or DOCX template file." });
+        }
+
+        if (!category || !FORM_TEMPLATE_CATEGORIES.includes(category)) {
+            try { fs.unlinkSync(req.file.path); } catch (_) { }
+            return res.json({ success: false, message: "Please choose a valid template category." });
+        }
+
+        if (!title) {
+            try { fs.unlinkSync(req.file.path); } catch (_) { }
+            return res.json({ success: false, message: "Please enter a template title." });
+        }
+
+        if (!uploaderUserId) {
+            try { fs.unlinkSync(req.file.path); } catch (_) { }
+            return res.json({ success: false, message: "Missing instructor account. Please log in again." });
+        }
+
+        const userSql = `
+            SELECT id, fullname, role, instructor_access
+            FROM users
+            WHERE user_id = ?
+            LIMIT 1
+        `;
+
+        db.query(userSql, [uploaderUserId], (uErr, uRows) => {
+            if (uErr || !uRows || uRows.length === 0) {
+                try { fs.unlinkSync(req.file.path); } catch (_) { }
+                return res.json({ success: false, message: "Instructor account not found." });
+            }
+
+            const uploader = uRows[0];
+            const isAllowed =
+                String(uploader.role || "").toLowerCase() === "admin"
+                || Number(uploader.instructor_access) === 1;
+
+            if (!isAllowed) {
+                try { fs.unlinkSync(req.file.path); } catch (_) { }
+                return res.json({ success: false, message: "Only instructors can upload form templates." });
+            }
+
+            const ext = path.extname(req.file.originalname || "").replace(".", "").toUpperCase() || "FILE";
+            const relPath = `/uploads/form-templates/${req.file.filename}`;
+
+            const insertSql = `
+                INSERT INTO capstone_form_templates
+                (category, title, description, file_name, file_path, file_format, file_size, uploaded_by, uploader_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            db.query(
+                insertSql,
+                [
+                    category,
+                    title,
+                    description || null,
+                    req.file.originalname,
+                    relPath,
+                    ext,
+                    req.file.size || 0,
+                    uploader.id,
+                    uploader.fullname || "Instructor"
+                ],
+                (insErr, insRes) => {
+                    if (insErr) {
+                        console.error("POST /api/form-templates insert error:", insErr);
+                        try { fs.unlinkSync(req.file.path); } catch (_) { }
+                        return res.json({ success: false, message: "Failed to save form template." });
+                    }
+
+                    res.json({
+                        success: true,
+                        message: "Form template uploaded successfully!",
+                        template: {
+                            id: insRes.insertId,
+                            category,
+                            title,
+                            description: description || null,
+                            file_name: req.file.originalname,
+                            file_path: relPath,
+                            file_format: ext,
+                            file_size: req.file.size || 0,
+                            uploaded_by: uploader.id,
+                            uploader_name: uploader.fullname || "Instructor"
+                        }
+                    });
+                }
+            );
+        });
+    });
+});
+
+app.put("/api/form-templates/:id", (req, res) => {
+    formTemplateUpload.single("templateFile")(req, res, (uploadErr) => {
+        if (uploadErr) {
+            return res.json({
+                success: false,
+                message: uploadErr.message || "File upload failed."
+            });
+        }
+
+        const templateId = Number(req.params.id);
+        const category = String(req.body.category || "").trim();
+        const title = String(req.body.title || "").trim();
+        const description = String(req.body.description || "").trim();
+        const uploaderUserId = String(req.body.uploaderUserId || "").trim();
+
+        if (!templateId) {
+            if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) { } }
+            return res.json({ success: false, message: "Invalid template ID." });
+        }
+
+        if (!category || !FORM_TEMPLATE_CATEGORIES.includes(category)) {
+            if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) { } }
+            return res.json({ success: false, message: "Please select a valid category." });
+        }
+
+        if (!title) {
+            if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) { } }
+            return res.json({ success: false, message: "Please enter a template title." });
+        }
+
+        db.query(
+            `SELECT id, role, instructor_access FROM users WHERE user_id = ? LIMIT 1`,
+            [uploaderUserId],
+            (uErr, uRows) => {
+                const user = (!uErr && uRows && uRows[0]) ? uRows[0] : null;
+                const isAllowed = user && (String(user.role || "").toLowerCase() === "admin" || Number(user.instructor_access) === 1);
+                if (!isAllowed) {
+                    if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) { } }
+                    return res.json({ success: false, message: "Only instructors can edit form templates." });
+                }
+
+                db.query(`SELECT * FROM capstone_form_templates WHERE id = ? LIMIT 1`, [templateId], (fErr, fRows) => {
+                    if (fErr || !fRows || fRows.length === 0) {
+                        if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) { } }
+                        return res.json({ success: false, message: "Template not found." });
+                    }
+
+                    const existing = fRows[0];
+                    let fileName = existing.file_name;
+                    let filePath = existing.file_path;
+                    let fileFormat = existing.file_format;
+                    let fileSize = existing.file_size;
+
+                    if (req.file) {
+                        fileName = req.file.originalname;
+                        filePath = `/uploads/form-templates/${req.file.filename}`;
+                        fileFormat = path.extname(req.file.originalname || "").replace(".", "").toUpperCase() || "FILE";
+                        fileSize = req.file.size || 0;
+                    }
+
+                    db.query(
+                        `
+                            UPDATE capstone_form_templates
+                            SET category = ?, title = ?, description = ?, file_name = ?, file_path = ?, file_format = ?, file_size = ?
+                            WHERE id = ?
+                        `,
+                        [category, title, description || null, fileName, filePath, fileFormat, fileSize, templateId],
+                        (updErr) => {
+                            if (updErr) {
+                                console.error("PUT /api/form-templates update error:", updErr);
+                                if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) { } }
+                                return res.json({ success: false, message: "Failed to update template." });
+                            }
+
+                            if (req.file && existing.file_path) {
+                                const oldDisk = path.join(__dirname, String(existing.file_path).replace(/^\/+/, ""));
+                                try { if (fs.existsSync(oldDisk)) fs.unlinkSync(oldDisk); } catch (_) { }
+                            }
+
+                            res.json({ success: true, message: "Form template updated successfully!" });
+                        }
+                    );
+                });
+            }
+        );
+    });
+});
+
+app.delete("/api/form-templates/:id", (req, res) => {
+    const templateId = Number(req.params.id);
+    const uploaderUserId = String(req.query.userId || req.body?.uploaderUserId || "").trim();
+
+    if (!templateId) {
+        return res.json({ success: false, message: "Invalid template ID." });
+    }
+
+    db.query(
+        `SELECT id, role, instructor_access FROM users WHERE user_id = ? LIMIT 1`,
+        [uploaderUserId],
+        (uErr, uRows) => {
+            const user = (!uErr && uRows && uRows[0]) ? uRows[0] : null;
+            const isAllowed = user && (String(user.role || "").toLowerCase() === "admin" || Number(user.instructor_access) === 1);
+            if (!isAllowed) {
+                return res.json({ success: false, message: "Only instructors can delete form templates." });
+            }
+
+            db.query(`SELECT file_path FROM capstone_form_templates WHERE id = ? LIMIT 1`, [templateId], (fErr, fRows) => {
+                if (fErr || !fRows || fRows.length === 0) {
+                    return res.json({ success: false, message: "Template not found." });
+                }
+
+                const existingPath = fRows[0].file_path;
+                db.query(`DELETE FROM capstone_form_templates WHERE id = ?`, [templateId], (delErr) => {
+                    if (delErr) {
+                        console.error("DELETE /api/form-templates error:", delErr);
+                        return res.json({ success: false, message: "Failed to delete template." });
+                    }
+
+                    if (existingPath) {
+                        const diskPath = path.join(__dirname, String(existingPath).replace(/^\/+/, ""));
+                        try { if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath); } catch (_) { }
+                    }
+
+                    res.json({ success: true, message: "Form template deleted successfully." });
+                });
+            });
+        }
+    );
+});
+
+app.get("/api/form-templates/:id/download", (req, res) => {
+    const templateId = Number(req.params.id);
+    if (!templateId) {
+        return res.status(400).send("Invalid template ID.");
+    }
+
+    db.query(`SELECT file_name, file_path FROM capstone_form_templates WHERE id = ? LIMIT 1`, [templateId], (err, rows) => {
+        if (err || !rows || rows.length === 0) {
+            return res.status(404).send("Template not found.");
+        }
+        const relPath = String(rows[0].file_path || "").replace(/^\/+/, "");
+        const diskPath = path.join(__dirname, relPath);
+        if (!fs.existsSync(diskPath)) {
+            return res.status(404).send("Template file missing on server.");
+        }
+        return res.download(diskPath, rows[0].file_name || path.basename(diskPath));
     });
 });
 

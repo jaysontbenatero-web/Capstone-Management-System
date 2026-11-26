@@ -207,7 +207,12 @@
                 <div class="menu-title">Panel Duties</div>
                 <div class="menu-item" onclick="window.location.href='Assigned_Defenses.html'">
                     <i class="fa-solid fa-gavel"></i>
-                    <span>Assigned Defenses</span>
+                    <span>Defense Evaluation</span>
+                </div>
+
+                <div class="menu-item" onclick="window.location.href='Defense_Schedule.html'">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Defense Schedule</span>
                 </div>
 
                 <div class="menu-item" onclick="window.location.href='Defense_Document.html'">
@@ -218,6 +223,11 @@
                 <div class="menu-item active" onclick="window.location.href='Document_Review.html'">
                     <i class="fa-solid fa-file-signature"></i>
                     <span>Document Review</span>
+                </div>
+
+                <div class="menu-item" onclick="window.location.href='Consultation.html'">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Consultation</span>
                 </div>
 
                 <div class="menu-title">Communication</div>
@@ -425,6 +435,37 @@
                     </div>
 
                     <div id="panDmSignControls">
+                        <div id="panDmRevisionEditBox"
+                            style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:14px; padding:12px 14px; margin-bottom:14px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <strong style="font-size:12.5px; color:#92400e; display:inline-flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit Your Minutes Section
+                                </strong>
+                                <span id="panDmAddedCountBadge"
+                                    style="display:none; padding:2px 8px; border-radius:999px; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:11px; font-weight:700;">
+                                    0 added
+                                </span>
+                            </div>
+                            <p style="font-size:11.5px; color:#78350f; margin:0 0 10px; line-height:1.45;">
+                                For <strong>Request Revision</strong> or <strong>Reject</strong> only: add more Comments/Suggestions/Recommendations directly in your own part of the minutes.
+                            </p>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <button type="button" id="panDmEditModeBtn" onclick="togglePanDmEditMode()"
+                                    style="flex:1; padding:8px 12px; border-radius:10px; border:1.5px solid #d97706; background:#ffffff; color:#b45309; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                                    <i class="fa-solid fa-plus-circle"></i>
+                                    <span>Add Comments in Minutes</span>
+                                </button>
+                                <button type="button" id="panDmClearAddedBtn" onclick="clearPanDmAddedComments()"
+                                    style="display:none; padding:8px 10px; border-radius:10px; border:1px solid #fca5a5; background:#fef2f2; color:#b91c1c; font-size:11.5px; font-weight:700; cursor:pointer;">
+                                    Clear Added
+                                </button>
+                            </div>
+                            <div id="panDmApproveBlockedNote"
+                                style="display:none; margin-top:8px; padding:7px 9px; border-radius:9px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:11px; line-height:1.4;">
+                                <i class="fa-solid fa-circle-info"></i> Added comments apply only to <strong>Request Revision</strong> or <strong>Reject</strong>. Clear added comments to approve &amp; sign.
+                            </div>
+                        </div>
+
                         <div class="input-group">
                             <label>Panelist Notes</label>
                             <textarea id="panDmNotes"
@@ -494,6 +535,9 @@
         let panelistDmRecords = [];
         let activePanDmRecord = null;
         let panDmDragState = null;
+        let panDmMinutesData = null;
+        let panDmPlacedSigs = [];
+        let panDmEditMode = false;
 
         function syncLoggedInPanelistSession() {
             const currentUid = localStorage.getItem("userId");
@@ -723,11 +767,246 @@
             });
         }
 
+        function normalizePanDmName(name) {
+            return String(name || "")
+                .toLowerCase()
+                .replace(/\b(dr|engr|prof|mr|ms|mrs|sir|maam|phd|mit|msit|mscs|dit)\b\.?/g, " ")
+                .replace(/[^a-z0-9\s]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function findOwnPanelistIndexInMinutes(minutesData) {
+            const list = (minutesData && Array.isArray(minutesData.panelists)) ? minutesData.panelists : [];
+            if (!list.length) return -1;
+            const myId = Number(panelistDbId || 0);
+            if (myId) {
+                const byId = list.findIndex(p => p && Number(p.panelistId || 0) === myId);
+                if (byId >= 0) return byId;
+            }
+            const myNorm = normalizePanDmName(panelistFullName);
+            if (!myNorm) return -1;
+            return list.findIndex(p => {
+                const pn = normalizePanDmName(p && p.name);
+                return pn && (pn === myNorm || pn.includes(myNorm) || myNorm.includes(pn));
+            });
+        }
+
+        function getPanelistDraftAddedComments() {
+            const ownIdx = findOwnPanelistIndexInMinutes(panDmMinutesData);
+            if (ownIdx < 0) return [];
+            const rows = (panDmMinutesData.panelists[ownIdx] && Array.isArray(panDmMinutesData.panelists[ownIdx].rows))
+                ? panDmMinutesData.panelists[ownIdx].rows
+                : [];
+            return rows
+                .filter(r => r && r._panelistDraftNew)
+                .map(r => String(r.comments || "").replace(/^[-•*]\s*/, "").trim())
+                .filter(Boolean);
+        }
+
+        function hasAnyPanelistDraftRows() {
+            const ownIdx = findOwnPanelistIndexInMinutes(panDmMinutesData);
+            if (ownIdx < 0) return false;
+            const rows = (panDmMinutesData.panelists[ownIdx] && Array.isArray(panDmMinutesData.panelists[ownIdx].rows))
+                ? panDmMinutesData.panelists[ownIdx].rows
+                : [];
+            return rows.some(r => r && r._panelistDraftNew);
+        }
+
+        function updatePanDmEditBoxUi() {
+            const editBtn = document.getElementById("panDmEditModeBtn");
+            const clearBtn = document.getElementById("panDmClearAddedBtn");
+            const badge = document.getElementById("panDmAddedCountBadge");
+            const blockedNote = document.getElementById("panDmApproveBlockedNote");
+
+            const added = getPanelistDraftAddedComments();
+            const hasDrafts = hasAnyPanelistDraftRows();
+
+            if (editBtn) {
+                if (panDmEditMode) {
+                    editBtn.style.background = "#d97706";
+                    editBtn.style.color = "#ffffff";
+                    editBtn.innerHTML = `<i class="fa-solid fa-check"></i><span>Done Editing Section</span>`;
+                } else {
+                    editBtn.style.background = "#ffffff";
+                    editBtn.style.color = "#b45309";
+                    editBtn.innerHTML = added.length > 0
+                        ? `<i class="fa-solid fa-pen"></i><span>Edit Added Comments (${added.length})</span>`
+                        : `<i class="fa-solid fa-plus-circle"></i><span>Add Comments in Minutes</span>`;
+                }
+            }
+            if (badge) {
+                if (added.length > 0) {
+                    badge.style.display = "inline-block";
+                    badge.textContent = `${added.length} added`;
+                } else {
+                    badge.style.display = "none";
+                }
+            }
+            if (clearBtn) {
+                clearBtn.style.display = (added.length > 0 || hasDrafts) ? "inline-flex" : "none";
+            }
+            if (blockedNote) {
+                blockedNote.style.display = (panDmEditMode || added.length > 0) ? "block" : "none";
+            }
+            togglePanDmApprovalCheckbox();
+        }
+
+        function renderPanDmSheet(focusLastDraft = false) {
+            if (!activePanDmRecord || !panDmMinutesData) return { pageCount: 1 };
+            const viewport = document.getElementById("panDmSheetViewport");
+            const alreadySigned = hasPanelistSigned(activePanDmRecord);
+
+            const renderRes = DefenseMinutesSheet.renderPages(viewport, {
+                minutesData: panDmMinutesData,
+                placedSignatures: panDmPlacedSigs,
+                imgBasePath: "../../Images/dnsc",
+                editablePanelistComments: (!alreadySigned && panDmEditMode)
+                    ? {
+                        enabled: true,
+                        panelistId: panelistDbId,
+                        panelistName: panelistFullName,
+                        onChangeComment: (pIdx, rIdx, newVal) => {
+                            const panel = panDmMinutesData.panelists && panDmMinutesData.panelists[pIdx];
+                            if (panel && Array.isArray(panel.rows) && panel.rows[rIdx]) {
+                                panel.rows[rIdx].comments = newVal;
+                            }
+                            updatePanDmEditBoxUi();
+                        },
+                        onAddRow: (pIdx) => {
+                            const panel = panDmMinutesData.panelists && panDmMinutesData.panelists[pIdx];
+                            if (!panel) return;
+                            if (!Array.isArray(panel.rows)) panel.rows = [];
+                            panel.rows.push({
+                                pageNo: "",
+                                comments: "",
+                                actions: "",
+                                fromPanel: true,
+                                _panelistDraftNew: true
+                            });
+                            renderPanDmSheet(true);
+                        },
+                        onRemoveRow: (pIdx, rIdx) => {
+                            const panel = panDmMinutesData.panelists && panDmMinutesData.panelists[pIdx];
+                            if (!panel || !Array.isArray(panel.rows) || !panel.rows[rIdx]) return;
+                            if (!panel.rows[rIdx]._panelistDraftNew) return;
+                            panel.rows.splice(rIdx, 1);
+                            if (panel.rows.length === 0) {
+                                panel.rows.push({ pageNo: "", comments: "", actions: "" });
+                            }
+                            renderPanDmSheet(false);
+                        }
+                    }
+                    : null
+            });
+
+            DefenseMinutesSheet.fitPagesToViewport(viewport);
+
+            const pageSelect = document.getElementById("panDmPageSelect");
+            if (pageSelect) {
+                const prevVal = Number(pageSelect.value || 0);
+                const clampedVal = Math.max(0, Math.min(renderRes.pageCount - 1, prevVal));
+                pageSelect.innerHTML = Array.from({ length: renderRes.pageCount }, (_, i) =>
+                    `<option value="${i}" ${i === clampedVal ? "selected" : ""}>Page ${i + 1} of ${renderRes.pageCount}</option>`
+                ).join("");
+                document.getElementById("panDmPageInfo").innerText = `Page ${clampedVal + 1} of ${renderRes.pageCount}`;
+            }
+
+            if (!alreadySigned && savedPanelistSignature && panDmDragState) {
+                const slotStatusEl = document.getElementById("panDmSelectedSlotStatus");
+                const wasPlaced = Boolean(panDmDragState.placed);
+                DefenseMinutesSheet.enableClickToSign(viewport, {
+                    role: "panelist",
+                    panelistId: panelistDbId,
+                    panelistName: panelistFullName,
+                    signatureImage: savedPanelistSignature,
+                    dateSigned: panDmDragState.dateSigned || document.getElementById("panDmDateSigned").value || "",
+                    onSelectSlot: (sel) => {
+                        if (!panDmDragState) return;
+                        panDmDragState.placed = true;
+                        panDmDragState.pageIndex = sel.pageIndex;
+                        panDmDragState.targetPanelIndex = sel.targetPanelIndex;
+                        panDmDragState.targetPanelName = sel.targetPanelName;
+                        if (slotStatusEl) {
+                            slotStatusEl.style.background = "#dcfce7";
+                            slotStatusEl.style.color = "#15803d";
+                            slotStatusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Signature placed under: <strong>${escapeHtml(sel.targetPanelName || "Selected Panelist")}</strong>`;
+                        }
+                    }
+                });
+                if (wasPlaced) {
+                    const mySlotEl = viewport.querySelector(".dm-clickable-sign-slot");
+                    if (mySlotEl) mySlotEl.click();
+                }
+            }
+
+            updatePanDmEditBoxUi();
+
+            if (focusLastDraft) {
+                requestAnimationFrame(() => {
+                    const tas = viewport.querySelectorAll(".dm-pan-inline-textarea");
+                    const lastTa = tas.length ? tas[tas.length - 1] : null;
+                    if (lastTa) {
+                        lastTa.scrollIntoView({ behavior: "smooth", block: "center" });
+                        lastTa.focus();
+                    }
+                });
+            }
+
+            return renderRes;
+        }
+
+        function togglePanDmEditMode() {
+            if (!activePanDmRecord || !panDmMinutesData) return;
+            const ownIdx = findOwnPanelistIndexInMinutes(panDmMinutesData);
+            if (ownIdx < 0) {
+                alert("Could not locate your panelist section in these defense minutes.");
+                return;
+            }
+            const panel = panDmMinutesData.panelists[ownIdx];
+            if (!Array.isArray(panel.rows)) panel.rows = [];
+
+            panDmEditMode = !panDmEditMode;
+            if (panDmEditMode) {
+                const hasEmptyDraft = panel.rows.some(r => r && r._panelistDraftNew && !String(r.comments || "").trim());
+                if (!hasEmptyDraft) {
+                    panel.rows.push({
+                        pageNo: "",
+                        comments: "",
+                        actions: "",
+                        fromPanel: true,
+                        _panelistDraftNew: true
+                    });
+                }
+                renderPanDmSheet(true);
+            } else {
+                panel.rows = panel.rows.filter(r => !(r && r._panelistDraftNew && !String(r.comments || "").trim()));
+                if (panel.rows.length === 0) {
+                    panel.rows.push({ pageNo: "", comments: "", actions: "" });
+                }
+                renderPanDmSheet(false);
+            }
+        }
+
+        function clearPanDmAddedComments() {
+            if (!panDmMinutesData) return;
+            const ownIdx = findOwnPanelistIndexInMinutes(panDmMinutesData);
+            if (ownIdx >= 0 && Array.isArray(panDmMinutesData.panelists[ownIdx].rows)) {
+                panDmMinutesData.panelists[ownIdx].rows = panDmMinutesData.panelists[ownIdx].rows.filter(r => !(r && r._panelistDraftNew));
+                if (panDmMinutesData.panelists[ownIdx].rows.length === 0) {
+                    panDmMinutesData.panelists[ownIdx].rows.push({ pageNo: "", comments: "", actions: "" });
+                }
+            }
+            panDmEditMode = false;
+            renderPanDmSheet(false);
+        }
+
         async function openPanelistDmSignModal(dmId) {
             if (syncLoggedInPanelistSession()) return;
             const rec = (panelistDmRecords || []).find(m => Number(m.id) === Number(dmId));
             if (!rec) return;
             activePanDmRecord = rec;
+            panDmEditMode = false;
 
             if (!savedPanelistSignature) {
                 await loadPanelistSignature();
@@ -735,6 +1014,7 @@
 
             let minutesData = {};
             try { minutesData = JSON.parse(rec.minutes_json || "{}"); } catch (_) { }
+            panDmMinutesData = minutesData;
 
             const placed = [];
             try {
@@ -746,6 +1026,7 @@
                     if (Array.isArray(arr)) placed.push(...arr);
                 }
             } catch (_) { }
+            panDmPlacedSigs = placed;
 
             document.getElementById("panDmTitle").innerText = `${rec.defense_type} — Defense Minutes`;
             document.getElementById("panDmGroupName").innerText = rec.group_name || "—";
@@ -754,28 +1035,12 @@
             document.getElementById("panDmStatus").innerText = rec.status || "Pending";
 
             const viewport = document.getElementById("panDmSheetViewport");
-            const renderRes = DefenseMinutesSheet.renderPages(viewport, {
-                minutesData,
-                placedSignatures: placed,
-                imgBasePath: "../../Images/dnsc"
-            });
-
             const alreadySigned = hasPanelistSigned(rec);
             const controls = document.getElementById("panDmSignControls");
             controls.style.display = alreadySigned ? "none" : "block";
 
             const panApproveChk = document.getElementById("panDmApproveCheck");
             if (panApproveChk) panApproveChk.checked = false;
-            togglePanDmApprovalCheckbox();
-
-            document.getElementById("panelistDmSignModal").style.display = "flex";
-            DefenseMinutesSheet.fitPagesToViewport(viewport);
-
-            const pageSelect = document.getElementById("panDmPageSelect");
-            pageSelect.innerHTML = Array.from({ length: renderRes.pageCount }, (_, i) =>
-                `<option value="${i}" ${i === 0 ? "selected" : ""}>Page ${i + 1} of ${renderRes.pageCount}</option>`
-            ).join("");
-            document.getElementById("panDmPageInfo").innerText = `Page 1 of ${renderRes.pageCount}`;
 
             const slotStatusEl = document.getElementById("panDmSelectedSlotStatus");
             if (slotStatusEl) {
@@ -783,8 +1048,6 @@
                 slotStatusEl.style.color = "#6d28d9";
                 slotStatusEl.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Click your name/title on the defense minutes sheet to place your e-signature.`;
             }
-
-            let targetScrollEl = viewport.querySelector(`.dm-a4-page[data-dm-page="0"]`);
 
             if (!alreadySigned) {
                 document.getElementById("panDmNotes").value = "";
@@ -805,42 +1068,36 @@
                         targetPanelIndex: null,
                         targetPanelName: ""
                     };
-                    DefenseMinutesSheet.enableClickToSign(viewport, {
-                        role: "panelist",
-                        panelistId: panelistDbId,
-                        panelistName: panelistFullName,
-                        signatureImage: savedPanelistSignature,
-                        dateSigned: todayStr,
-                        onSelectSlot: (sel) => {
-                            if (!panDmDragState) return;
-                            panDmDragState.placed = true;
-                            panDmDragState.pageIndex = sel.pageIndex;
-                            panDmDragState.targetPanelIndex = sel.targetPanelIndex;
-                            panDmDragState.targetPanelName = sel.targetPanelName;
-                            if (slotStatusEl) {
-                                slotStatusEl.style.background = "#dcfce7";
-                                slotStatusEl.style.color = "#15803d";
-                                slotStatusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Signature placed under: <strong>${escapeHtml(sel.targetPanelName || "Selected Panelist")}</strong>`;
-                            }
-                        }
-                    });
-                    const mySlotEl = viewport.querySelector(".dm-clickable-sign-slot");
-                    if (mySlotEl) {
-                        const myPageEl = mySlotEl.closest(".dm-a4-page");
-                        const myPageIdx = myPageEl ? Number(myPageEl.getAttribute("data-dm-page") || 0) : 0;
-                        pageSelect.value = String(myPageIdx);
-                        document.getElementById("panDmPageInfo").innerText = `Page ${myPageIdx + 1} of ${renderRes.pageCount}`;
-                        if (slotStatusEl) {
-                            slotStatusEl.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Click your name on <strong>Page ${myPageIdx + 1}</strong> to place your e-signature.`;
-                        }
-                        targetScrollEl = mySlotEl;
-                    }
                 } else {
                     sigPreview.innerHTML = `<span style="font-size:12px; color:#dc2626;">No saved e-signature found in Settings. Please upload your e-signature in Faculty Settings first.</span>`;
                     panDmDragState = null;
                 }
             } else {
                 panDmDragState = null;
+            }
+
+            document.getElementById("panelistDmSignModal").style.display = "flex";
+            const renderRes = renderPanDmSheet(false);
+
+            const pageSelect = document.getElementById("panDmPageSelect");
+            pageSelect.innerHTML = Array.from({ length: renderRes.pageCount }, (_, i) =>
+                `<option value="${i}" ${i === 0 ? "selected" : ""}>Page ${i + 1} of ${renderRes.pageCount}</option>`
+            ).join("");
+            document.getElementById("panDmPageInfo").innerText = `Page 1 of ${renderRes.pageCount}`;
+
+            let targetScrollEl = viewport.querySelector(`.dm-a4-page[data-dm-page="0"]`);
+            if (!alreadySigned && savedPanelistSignature) {
+                const mySlotEl = viewport.querySelector(".dm-clickable-sign-slot");
+                if (mySlotEl) {
+                    const myPageEl = mySlotEl.closest(".dm-a4-page");
+                    const myPageIdx = myPageEl ? Number(myPageEl.getAttribute("data-dm-page") || 0) : 0;
+                    pageSelect.value = String(myPageIdx);
+                    document.getElementById("panDmPageInfo").innerText = `Page ${myPageIdx + 1} of ${renderRes.pageCount}`;
+                    if (slotStatusEl) {
+                        slotStatusEl.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Click your name on <strong>Page ${myPageIdx + 1}</strong> to place your e-signature.`;
+                    }
+                    targetScrollEl = mySlotEl;
+                }
             }
 
             if (targetScrollEl) {
@@ -854,6 +1111,9 @@
             document.getElementById("panelistDmSignModal").style.display = "none";
             activePanDmRecord = null;
             panDmDragState = null;
+            panDmMinutesData = null;
+            panDmPlacedSigs = [];
+            panDmEditMode = false;
         }
 
         function stepPanelistDmPage(delta) {
@@ -884,12 +1144,19 @@
         function togglePanDmApprovalCheckbox() {
             const chk = document.getElementById("panDmApproveCheck");
             const btn = document.getElementById("panDmSubmitBtn");
-            if (btn) btn.disabled = !(chk && chk.checked);
+            const blockedByRevisionEdits = panDmEditMode || getPanelistDraftAddedComments().length > 0;
+            if (btn) btn.disabled = blockedByRevisionEdits || !(chk && chk.checked);
         }
 
         async function submitPanelistDmReview(reviewStatus) {
             if (!activePanDmRecord) return;
             const isApproval = reviewStatus === "Approved";
+            const addedComments = getPanelistDraftAddedComments();
+
+            if (isApproval && (panDmEditMode || addedComments.length > 0)) {
+                alert("Adding Comments/Suggestions/Recommendations in the minutes is only applicable when selecting Request Revision or Reject. Click 'Clear Added' if you want to approve instead.");
+                return;
+            }
             if (isApproval) {
                 const chk = document.getElementById("panDmApproveCheck");
                 if (!chk || !chk.checked) {
@@ -907,8 +1174,8 @@
             }
 
             const notes = (document.getElementById("panDmNotes").value || "").trim();
-            if (!isApproval && !notes) {
-                alert("Please enter a note explaining the required revision or rejection.");
+            if (!isApproval && !notes && addedComments.length === 0) {
+                alert("Please enter a Panelist Note or click 'Add Comments in Minutes' to add Comments/Suggestions/Recommendations to your section before requesting revision or rejecting.");
                 return;
             }
 
@@ -924,6 +1191,7 @@
                         panelistUserId: loggedInUserId,
                         reviewStatus,
                         reviewComment: notes,
+                        addedComments: !isApproval ? addedComments : [],
                         signatureImage: isApproval ? panDmDragState.signatureImage : null,
                         dateSigned: isApproval ? panDmDragState.dateSigned : "",
                         pageIndex: isApproval ? panDmDragState.pageIndex : 0,

@@ -134,15 +134,7 @@
                 </p>
             </div>
 
-            <div class="top-actions">
-
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-
-                    <input type="text" id="dashboardSearch" placeholder="Search dashboard..."
-                        onkeyup="renderDashboardData()">
-                </div>
-            </div>
+            <div class="top-actions"></div>
 
         </div>
 
@@ -701,10 +693,8 @@
 
         function getKeyword() {
 
-            return document
-                .getElementById("dashboardSearch")
-                .value
-                .toLowerCase();
+            const searchEl = document.getElementById("dashboardSearch");
+            return searchEl ? searchEl.value.toLowerCase() : "";
 
         }
 

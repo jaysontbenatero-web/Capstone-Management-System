@@ -612,6 +612,49 @@ body{
     background: #e5e7eb;
 }
 
+.step.failed .step-icon {
+    background: #dc2626;
+    color: white;
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.35);
+    transform: scale(1.08);
+}
+
+.step.failed .step-line {
+    background: #d1d5db;
+}
+
+.step.halted {
+    opacity: 0.42;
+    filter: grayscale(1);
+    pointer-events: none;
+}
+
+.step.halted .step-icon {
+    background: #d1d5db;
+    color: #6b7280;
+    box-shadow: none;
+}
+
+.step.halted .step-line {
+    background: #d1d5db;
+}
+
+.step.halted .step-content h4,
+.step.halted .step-remarks {
+    color: #6b7280;
+}
+
+.status-badge-tracker.failed {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+}
+
+.status-badge-tracker.halted {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
 .step-content h4 {
     font-size: 13px;
     color: #2e1065;
